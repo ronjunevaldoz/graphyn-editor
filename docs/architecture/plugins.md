@@ -36,6 +36,14 @@ Recommended package split:
 - `:app:*`
   - host applications that select and register plugins
 
+Example sample plugin layout:
+
+- `:plugins:sample-logger`
+  - `SampleLoggerPlugin.kt`
+  - `SampleLoggerNodes.kt`
+  - `SampleLoggerExecutors.kt`
+  - `SampleLoggerPluginTest.kt`
+
 ## Core Rule
 
 Plugins should never depend on editor internals directly. They should only know:
