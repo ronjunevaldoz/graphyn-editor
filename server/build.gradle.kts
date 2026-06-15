@@ -3,10 +3,10 @@ plugins {
     alias(libs.plugins.ktor)
 }
 
-group = "org.example.project"
+group = "com.ronjunevaldoz.graphyn"
 version = "1.0.0"
 application {
-    mainClass = "org.example.project.ApplicationKt"
+    mainClass = "com.ronjunevaldoz.graphyn.ApplicationKt"
 }
 
 dependencies {

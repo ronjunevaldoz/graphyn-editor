@@ -17,11 +17,11 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "org.example.project.MainKt"
+        mainClass = "com.ronjunevaldoz.graphyn.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.example.project"
+            packageName = "com.ronjunevaldoz.graphyn"
             packageVersion = "1.0.0"
         }
     }

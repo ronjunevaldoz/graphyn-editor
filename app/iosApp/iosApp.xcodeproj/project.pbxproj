@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		359D41BAF78AFE0DE1BBE7AE /* KotlinProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KotlinProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		359D41BAF78AFE0DE1BBE7AE /* Graphyn.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Graphyn.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,7 +59,7 @@
 		6FBCE62655DFBD6F83B89670 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				359D41BAF78AFE0DE1BBE7AE /* KotlinProject.app */,
+				359D41BAF78AFE0DE1BBE7AE /* Graphyn.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = 359D41BAF78AFE0DE1BBE7AE /* KotlinProject.app */;
+			productReference = 359D41BAF78AFE0DE1BBE7AE /* Graphyn.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
