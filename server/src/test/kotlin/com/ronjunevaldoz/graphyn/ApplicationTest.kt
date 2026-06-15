@@ -15,6 +15,6 @@ class ApplicationTest {
         }
         val response = client.get("/")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("Hello, Ktor!", response.bodyAsText())
+        assertEquals("Graphyn server is running", response.bodyAsText())
     }
 }
