@@ -42,3 +42,18 @@ fun App(
         )
     }
 }
+
+@Composable
+fun DemoApp(
+    branding: GraphynBranding = GraphynBranding(),
+    plugins: List<GraphynPlugin>,
+    panels: EditorPanelRegistry? = null,
+    executionEngine: WorkflowExecutionEngine? = null,
+) {
+    App(
+        branding = branding,
+        plugins = plugins,
+        panels = panels,
+        executionEngine = executionEngine,
+    )
+}
