@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +30,8 @@ import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
+import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
+import com.ronjunevaldoz.graphyn.editor.theme.GraphynThemeMode
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 
 data class GraphynEditorShellDependencies(
@@ -41,6 +44,7 @@ data class GraphynEditorShellDependencies(
 fun GraphynEditorShell(
     dependencies: GraphynEditorShellDependencies,
     branding: GraphynBranding = GraphynBranding(),
+    appearanceState: GraphynAppearanceState = GraphynAppearanceState(),
     state: GraphynEditorState = rememberGraphynEditorState(),
     canvas: (@Composable () -> Unit)? = null,
 ) {
@@ -61,6 +65,7 @@ fun GraphynEditorShell(
         Column(modifier = Modifier.weight(0.56f).fillMaxSize()) {
             TopToolbar(
                 branding = branding,
+                appearanceState = appearanceState,
                 canRun = executionEngine != null,
                 onRun = {
                     executionEngine?.let { engine -> state.execute(engine) }
@@ -88,31 +93,76 @@ fun GraphynEditorShell(
 @Composable
 private fun TopToolbar(
     branding: GraphynBranding,
+    appearanceState: GraphynAppearanceState,
     canRun: Boolean,
     onRun: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-        Row(
+        Column(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            branding.logo?.let { logo ->
-                Image(
-                    painter = logo,
-                    contentDescription = branding.appName,
-                    modifier = Modifier.size(28.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            Text(
-                text = branding.appName,
-                style = MaterialTheme.typography.titleMedium,
-            )
-            if (canRun) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Button(onClick = onRun) {
-                    Text("Run")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                branding.logo?.let { logo ->
+                    Image(
+                        painter = logo,
+                        contentDescription = branding.appName,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
+                Text(
+                    text = branding.appName,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                if (canRun) {
+                    Button(onClick = onRun) {
+                        Text("Run")
+                    }
+                }
+            }
+            ThemeControls(appearanceState = appearanceState)
+        }
+    }
+}
+
+@Composable
+private fun ThemeControls(
+    appearanceState: GraphynAppearanceState,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Theme",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            GraphynThemeMode.entries.forEach { mode ->
+                FilterChip(
+                    selected = appearanceState.themeMode == mode,
+                    onClick = { appearanceState.themeMode = mode },
+                    label = {
+                        Text(
+                            text = when (mode) {
+                                GraphynThemeMode.System -> "System"
+                                GraphynThemeMode.Light -> "Light"
+                                GraphynThemeMode.Dark -> "Dark"
+                            },
+                        )
+                    },
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            appearanceState.presets.forEach { preset ->
+                FilterChip(
+                    selected = appearanceState.selectedPresetId == preset.id,
+                    onClick = { appearanceState.selectedPresetId = preset.id },
+                    label = { Text(preset.label) },
+                )
             }
         }
     }

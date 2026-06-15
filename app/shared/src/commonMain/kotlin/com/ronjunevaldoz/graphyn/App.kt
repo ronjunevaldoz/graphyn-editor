@@ -3,9 +3,12 @@ package com.ronjunevaldoz.graphyn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynDemoWorkflow
 import com.ronjunevaldoz.graphyn.bootstrap.rememberGraphynDemoPanelRegistry
+import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
+import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
@@ -27,6 +30,7 @@ fun App(
     panels: EditorPanelRegistry? = null,
     executionEngine: WorkflowExecutionEngine? = null,
     initialWorkflow: WorkflowDefinition? = null,
+    appearanceState: GraphynAppearanceState = rememberGraphynAppearanceState(),
 ) {
     val pluginRegistry = remember(plugins) {
         DefaultGraphynPluginRegistry().apply {
@@ -35,8 +39,14 @@ fun App(
     }
     val editorPanels = panels ?: remember { DefaultEditorPanelRegistry() }
     val state = rememberGraphynEditorState(initialWorkflow)
+    val systemDarkTheme = isSystemInDarkTheme()
+    val darkTheme = appearanceState.resolvedDarkTheme(systemDarkTheme)
+    val activePalette = appearanceState.resolvePalette(darkTheme)
 
-    GraphynTheme(branding = branding) {
+    GraphynTheme(
+        branding = branding.copy(palette = activePalette),
+        darkTheme = darkTheme,
+    ) {
         GraphynEditorShell(
             branding = branding,
             dependencies = GraphynEditorShellDependencies(
@@ -44,6 +54,7 @@ fun App(
                 panels = editorPanels,
                 executionEngine = executionEngine,
             ),
+            appearanceState = appearanceState,
             state = state,
         )
     }
@@ -63,5 +74,6 @@ fun DemoApp(
         panels = editorPanels,
         executionEngine = executionEngine,
         initialWorkflow = GraphynDemoWorkflow.initial,
+        appearanceState = rememberGraphynAppearanceState(),
     )
 }

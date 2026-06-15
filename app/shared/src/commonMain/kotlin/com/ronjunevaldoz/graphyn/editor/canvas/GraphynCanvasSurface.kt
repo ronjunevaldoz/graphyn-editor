@@ -4,38 +4,48 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
-import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
-import androidx.compose.foundation.gestures.detectDragGestures
+import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
+
+private enum class PortSide {
+    Input,
+    Output,
+}
 
 @Composable
 fun GraphynCanvasSurface(
@@ -49,6 +59,12 @@ fun GraphynCanvasSurface(
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
             .padding(8.dp),
     ) {
+        val dotColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        GridBackdrop(
+            modifier = Modifier.fillMaxSize(),
+            dotColor = dotColor,
+        )
+
         val workflow = state.workflow
         if (workflow == null) {
             EmptyCanvasHint()
@@ -93,12 +109,38 @@ fun GraphynCanvasSurface(
 }
 
 @Composable
+private fun GridBackdrop(
+    modifier: Modifier,
+    dotColor: Color,
+) {
+    Canvas(modifier = modifier) {
+        val spacing = 28.dp.toPx()
+        val dotRadius = 1.4.dp.toPx()
+        val offset = spacing / 2f
+
+        var x = offset
+        while (x < size.width) {
+            var y = offset
+            while (y < size.height) {
+                drawCircle(
+                    color = dotColor,
+                    radius = dotRadius,
+                    center = Offset(x, y),
+                )
+                y += spacing
+            }
+            x += spacing
+        }
+    }
+}
+
+@Composable
 private fun ConnectionLayer(
     workflow: WorkflowDefinition,
     state: GraphynEditorState,
     modifier: Modifier,
 ) {
-    val connectionColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+    val connectionColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
     Canvas(modifier = modifier) {
         workflow.connections.forEach { connection ->
             val fromNode = workflow.nodes.firstOrNull { it.id == connection.fromNodeId } ?: return@forEach
@@ -107,6 +149,7 @@ private fun ConnectionLayer(
             val toIndex = workflow.nodes.indexOf(toNode)
             val fromPosition = state.nodePosition(fromNode.id, fromIndex)
             val toPosition = state.nodePosition(toNode.id, toIndex)
+
             val start = Offset(
                 x = fromPosition.x.toFloat() + GraphynCanvasMetrics.NodeSize.width.toFloat(),
                 y = fromPosition.y.toFloat() + GraphynCanvasMetrics.NodeSize.height / 2f,
@@ -115,11 +158,26 @@ private fun ConnectionLayer(
                 x = toPosition.x.toFloat(),
                 y = toPosition.y.toFloat() + GraphynCanvasMetrics.NodeSize.height / 2f,
             )
-            drawLine(
+            val distance = (end.x - start.x).absoluteValue.coerceAtLeast(120f)
+            val direction = if (end.x >= start.x) 1f else -1f
+            val control = distance * 0.35f
+
+            val path = Path().apply {
+                moveTo(start.x, start.y)
+                cubicTo(
+                    start.x + (control * direction),
+                    start.y,
+                    end.x - (control * direction),
+                    end.y,
+                    end.x,
+                    end.y,
+                )
+            }
+
+            drawPath(
+                path = path,
                 color = connectionColor,
-                start = start,
-                end = end,
-                strokeWidth = 4f,
+                style = Stroke(width = 4f),
             )
         }
     }
@@ -155,7 +213,6 @@ private fun CanvasNodeCard(
                 minHeight = GraphynCanvasMetrics.NodeSize.height.dp,
             )
             .border(1.dp, borderColor, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .pointerInput(node.id) {
                 detectDragGestures { change, dragAmount ->
@@ -189,11 +246,13 @@ private fun CanvasNodeCard(
                 PortSection(
                     title = "Inputs",
                     ports = spec.inputs.map { "${it.name}:${it.type}" },
+                    side = PortSide.Input,
                     onPortClick = onCompleteConnection,
                 )
                 PortSection(
                     title = "Outputs",
                     ports = spec.outputs.map { "${it.name}:${it.type}" },
+                    side = PortSide.Output,
                     onPortClick = onBeginConnection,
                 )
             } else {
@@ -223,6 +282,7 @@ private fun CanvasNodeCard(
 private fun PortSection(
     title: String,
     ports: List<String>,
+    side: PortSide,
     onPortClick: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -238,12 +298,59 @@ private fun PortSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                ports.take(3).forEach { port ->
-                    AssistChip(onClick = { onPortClick(port) }, label = { Text(port) })
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ports.take(4).forEach { port ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (side == PortSide.Input) {
+                            Arrangement.Start
+                        } else {
+                            Arrangement.End
+                        },
+                    ) {
+                        PortBubble(
+                            label = port,
+                            side = side,
+                            onClick = { onPortClick(port) },
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PortBubble(
+    label: String,
+    side: PortSide,
+    onClick: () -> Unit,
+) {
+    val accent = if (side == PortSide.Input) {
+        MaterialTheme.colorScheme.secondary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+    val background = accent.copy(alpha = 0.14f)
+
+    Row(
+        modifier = Modifier
+            .background(background, RoundedCornerShape(999.dp))
+            .border(1.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(accent, CircleShape),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 
