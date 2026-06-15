@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
+import com.ronjunevaldoz.graphyn.bootstrap.GraphynDemoWorkflow
 import com.ronjunevaldoz.graphyn.bootstrap.rememberGraphynDemoPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
@@ -16,6 +17,7 @@ import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynTheme
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 
 @Composable
 @Preview
@@ -24,6 +26,7 @@ fun App(
     plugins: List<GraphynPlugin> = emptyList(),
     panels: EditorPanelRegistry? = null,
     executionEngine: WorkflowExecutionEngine? = null,
+    initialWorkflow: WorkflowDefinition? = null,
 ) {
     val pluginRegistry = remember(plugins) {
         DefaultGraphynPluginRegistry().apply {
@@ -31,7 +34,7 @@ fun App(
         }
     }
     val editorPanels = panels ?: remember { DefaultEditorPanelRegistry() }
-    val state = rememberGraphynEditorState()
+    val state = rememberGraphynEditorState(initialWorkflow)
 
     GraphynTheme(branding = branding) {
         GraphynEditorShell(
@@ -59,5 +62,6 @@ fun DemoApp(
         plugins = runtimePlugins,
         panels = editorPanels,
         executionEngine = executionEngine,
+        initialWorkflow = GraphynDemoWorkflow.initial,
     )
 }

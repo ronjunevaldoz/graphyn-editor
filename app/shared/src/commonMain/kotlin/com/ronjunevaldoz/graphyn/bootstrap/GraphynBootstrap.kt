@@ -2,6 +2,10 @@ package com.ronjunevaldoz.graphyn.bootstrap
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
+import com.ronjunevaldoz.graphyn.core.model.NodeRef
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
@@ -13,6 +17,37 @@ import com.ronjunevaldoz.graphyn.plugins.sampleloggerui.SampleLoggerEditorPlugin
 object GraphynDemoPlugins {
     val runtime: List<GraphynPlugin> = listOf(SampleLoggerPlugin)
     val editor: List<GraphynEditorPlugin> = listOf(SampleLoggerEditorPlugin)
+}
+
+object GraphynDemoWorkflow {
+    val initial: WorkflowDefinition = WorkflowDefinition(
+        id = "demo-workflow",
+        name = "Demo Workflow",
+        nodes = listOf(
+            NodeRef(
+                id = "logger-1",
+                type = "sample.logger",
+                config = mapOf(
+                    "message" to WorkflowValue.StringValue("Hello from Graphyn"),
+                ),
+            ),
+            NodeRef(
+                id = "logger-2",
+                type = "sample.logger",
+                config = mapOf(
+                    "message" to WorkflowValue.StringValue("Connected output"),
+                ),
+            ),
+        ),
+        connections = listOf(
+            ConnectionRef(
+                fromNodeId = "logger-1",
+                fromPort = "message",
+                toNodeId = "logger-2",
+                toPort = "message",
+            ),
+        ),
+    )
 }
 
 object GraphynBootstrap {
