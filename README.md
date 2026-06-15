@@ -17,6 +17,31 @@ Use Graphyn as the editing layer inside another repo when you want:
 - a shader or material graph editor
 - any other app that needs a reusable node-based workflow surface
 
+## Quick Start
+
+Minimal branding and shell customization:
+
+```kotlin
+App(
+    branding = GraphynBranding(
+        appName = "My Studio",
+        palette = GraphynPalette(
+            primary = Color(0xFF6D5EF6),
+            background = Color(0xFFF6F7FB),
+        ),
+    ),
+)
+```
+
+Minimal node registration outside the core:
+
+```kotlin
+val registry = DefaultNodeSpecRegistry()
+registry.register(MyNodeSpec)
+```
+
+Register an executor and optional editor panel in the editor layer when needed.
+
 ## Layout
 
 - [`/core`](./core/src) - workflow model, validation, plugin contracts, JSON serialization
