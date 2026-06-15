@@ -19,3 +19,9 @@ Phase 2 focus:
 - Keep node placement and selection in editor state.
 - Render node metadata from registered specs, not hardcoded UI.
 - Keep output/state changes reactive so the canvas and inspector update together.
+
+Phase 3 focus:
+- Add editor intents for select, move, and connect.
+- Render workflow connections on the canvas.
+- Allow dragging nodes without binding the model to a specific layout engine.
+- Keep connection creation editor-owned so runtime execution can stay separate.

@@ -4,11 +4,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntOffset
+import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 
 class GraphynEditorState(
     initialWorkflow: WorkflowDefinition? = null,
@@ -24,10 +27,40 @@ class GraphynEditorState(
     var selectedNodeId by mutableStateOf<String?>(null)
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
     var nodePositionsByNodeId by mutableStateOf<Map<String, IntOffset>>(emptyMap())
+    var connectionDraft by mutableStateOf<GraphynConnectionDraft?>(null)
     private val dataStore = WorkflowDataStore(initialWorkflow)
 
     fun selectNode(nodeId: String?) {
         selectedNodeId = nodeId
+    }
+
+    fun dispatch(intent: GraphynEditorIntent) {
+        when (intent) {
+            is GraphynEditorIntent.SelectNode -> selectNode(intent.nodeId)
+            is GraphynEditorIntent.MoveNode -> moveNode(intent.nodeId, intent.delta)
+            is GraphynEditorIntent.BeginConnection -> {
+                connectionDraft = GraphynConnectionDraft(
+                    fromNodeId = intent.fromNodeId,
+                    fromPort = intent.fromPort,
+                )
+            }
+            is GraphynEditorIntent.CompleteConnection -> {
+                val draft = connectionDraft ?: return
+                val currentWorkflow = workflow ?: return
+                workflow = currentWorkflow.copy(
+                    connections = currentWorkflow.connections + ConnectionRef(
+                        fromNodeId = draft.fromNodeId,
+                        fromPort = draft.fromPort,
+                        toNodeId = intent.toNodeId,
+                        toPort = intent.toPort,
+                    ),
+                )
+                connectionDraft = null
+            }
+            GraphynEditorIntent.CancelConnection -> {
+                connectionDraft = null
+            }
+        }
     }
 
     fun updateNodeOutputs(nodeId: String, outputs: Map<String, WorkflowValue>) {

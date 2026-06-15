@@ -9,6 +9,7 @@ import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultGraphynEditorPluginContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelFactory
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -87,5 +88,36 @@ class EditorRegistryTest {
         state.moveNode("first", IntOffset(10, 20))
 
         assertEquals(IntOffset(130, 100), state.nodePosition("first", 0))
+    }
+
+    @Test
+    fun editorStateCompletesDraftConnectionsIntoWorkflowConnections() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-connect",
+                name = "Connect",
+                nodes = listOf(
+                    NodeRef(id = "source", type = "switch"),
+                    NodeRef(id = "target", type = "display"),
+                ),
+                connections = emptyList(),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("source", "on"))
+        state.dispatch(GraphynEditorIntent.CompleteConnection("target", "enabled"))
+
+        assertEquals(
+            listOf(
+                ConnectionRef(
+                    fromNodeId = "source",
+                    fromPort = "on",
+                    toNodeId = "target",
+                    toPort = "enabled",
+                ),
+            ),
+            state.workflow?.connections,
+        )
+        assertEquals(null, state.connectionDraft)
     }
 }
