@@ -34,15 +34,12 @@ kotlin {
        namespace = "com.ronjunevaldoz.graphyn.app.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
        minSdk = libs.versions.android.minSdk.get().toInt()
-    
+   
        compilerOptions {
            jvmTarget = JvmTarget.JVM_11
        }
        androidResources {
            enable = true
-       }
-       withHostTest {
-           isIncludeAndroidResources = true
        }
     }
     
@@ -67,6 +64,11 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.compose.uiTest)
+        }
+        jvmTest.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(compose.desktop.uiTestJUnit4)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)

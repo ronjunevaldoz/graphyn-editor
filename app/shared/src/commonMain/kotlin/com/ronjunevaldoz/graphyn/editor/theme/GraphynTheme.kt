@@ -57,6 +57,34 @@ data class GraphynThemePreset(
 object GraphynThemePresets {
     val defaults: List<GraphynThemePreset> = listOf(
         GraphynThemePreset(
+            id = "codex",
+            label = "Codex",
+            lightPalette = GraphynPalette(
+                primary = Color(0xFF3457FF),
+                onPrimary = Color(0xFFFFFFFF),
+                secondary = Color(0xFF475569),
+                onSecondary = Color(0xFFFFFFFF),
+                background = Color(0xFFF6F5F2),
+                onBackground = Color(0xFF111827),
+                surface = Color(0xFFFFFFFF),
+                onSurface = Color(0xFF111827),
+                error = Color(0xFFB42318),
+                onError = Color(0xFFFFFFFF),
+            ),
+            darkPalette = GraphynPalette(
+                primary = Color(0xFF4F7CFF),
+                onPrimary = Color(0xFFFFFFFF),
+                secondary = Color(0xFFF59E0B),
+                onSecondary = Color(0xFF1B1406),
+                background = Color(0xFF0B1020),
+                onBackground = Color(0xFFE5E7EB),
+                surface = Color(0xFF111827),
+                onSurface = Color(0xFFF3F4F6),
+                error = Color(0xFFF87171),
+                onError = Color(0xFF1F0B0B),
+            ),
+        ),
+        GraphynThemePreset(
             id = "graphite",
             label = "Graphite",
             lightPalette = GraphynPalette(

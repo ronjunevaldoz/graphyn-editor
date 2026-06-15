@@ -16,6 +16,7 @@ import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShell
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShellDependencies
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynTheme
@@ -30,6 +31,7 @@ fun App(
     panels: EditorPanelRegistry? = null,
     executionEngine: WorkflowExecutionEngine? = null,
     initialWorkflow: WorkflowDefinition? = null,
+    canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
     appearanceState: GraphynAppearanceState = rememberGraphynAppearanceState(),
 ) {
     val pluginRegistry = remember(plugins) {
@@ -38,7 +40,10 @@ fun App(
         }
     }
     val editorPanels = panels ?: remember { DefaultEditorPanelRegistry() }
-    val state = rememberGraphynEditorState(initialWorkflow)
+    val state = rememberGraphynEditorState(
+        initialWorkflow = initialWorkflow,
+        canvasBounds = canvasBounds,
+    )
     val systemDarkTheme = isSystemInDarkTheme()
     val darkTheme = appearanceState.resolvedDarkTheme(systemDarkTheme)
     val activePalette = appearanceState.resolvePalette(darkTheme)
@@ -66,6 +71,7 @@ fun DemoApp(
     runtimePlugins: List<GraphynPlugin> = GraphynBootstrap.runtimePlugins(),
     editorPlugins: List<GraphynEditorPlugin> = GraphynBootstrap.editorPlugins(),
     executionEngine: WorkflowExecutionEngine? = null,
+    canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
 ) {
     val editorPanels = rememberGraphynDemoPanelRegistry(editorPlugins)
     App(
@@ -74,6 +80,7 @@ fun DemoApp(
         panels = editorPanels,
         executionEngine = executionEngine,
         initialWorkflow = GraphynDemoWorkflow.initial,
+        canvasBounds = canvasBounds,
         appearanceState = rememberGraphynAppearanceState(),
     )
 }

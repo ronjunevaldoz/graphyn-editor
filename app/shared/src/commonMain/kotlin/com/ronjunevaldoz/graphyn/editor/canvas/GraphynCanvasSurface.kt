@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,9 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
@@ -59,24 +66,90 @@ fun GraphynCanvasSurface(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
             .padding(8.dp)
-            .pointerInput(state.connectionDraft?.fromNodeId) {
+            .onSizeChanged { state.updateCanvasSize(it) }
+            .graphicsLayer { clip = true }
+            .pointerInput(state.connectionDraft?.fromNodeId, state.viewport) {
                 if (state.connectionDraft == null) return@pointerInput
                 awaitPointerEventScope {
                     while (true) {
                         val event = awaitPointerEvent()
                         val position = event.changes.firstOrNull()?.position
                         if (position != null) {
-                            state.dispatch(GraphynEditorIntent.UpdateConnectionDraftPosition(position))
+                            state.dispatch(
+                                GraphynEditorIntent.UpdateConnectionDraftPosition(
+                                    state.screenToWorld(position),
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+            .pointerInput(state.viewport) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val scrollDelta = event.changes.firstOrNull()?.scrollDelta ?: Offset.Zero
+                        if (scrollDelta != Offset.Zero) {
+                            val focus = event.changes.firstOrNull()?.position ?: Offset.Zero
+                            val zoomFactor = (1f - scrollDelta.y * 0.0045f).coerceIn(0.7f, 1.35f)
+                            state.dispatch(
+                                GraphynEditorIntent.UpdateViewportTransform(
+                                    pan = Offset.Zero,
+                                    zoom = zoomFactor,
+                                    focus = focus,
+                                ),
+                            )
                         }
                     }
                 }
             },
         contentAlignment = Alignment.TopStart,
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(state.workflow, state.nodePositionsByNodeId) {
+                    awaitEachGesture {
+                        val firstDown = awaitFirstDown(requireUnconsumed = false)
+                        val startWorld = state.screenToWorld(firstDown.position)
+                        if (state.isWorldPositionOverNode(startWorld)) {
+                            return@awaitEachGesture
+                        }
+
+                        var accumulatedDrag = Offset.Zero
+                        var dragging = false
+
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull() ?: continue
+                            if (!change.pressed) break
+
+                            val delta = change.positionChange()
+                            if (delta != Offset.Zero) {
+                                accumulatedDrag += delta
+                                if (!dragging && accumulatedDrag.getDistance() <= viewConfiguration.touchSlop) {
+                                    continue
+                                }
+                                dragging = true
+                                change.consume()
+                                state.dispatch(
+                                    GraphynEditorIntent.UpdateViewportTransform(
+                                        pan = delta,
+                                        zoom = 1f,
+                                        focus = change.position,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                },
+        )
+
         val dotColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         GridBackdrop(
             modifier = Modifier.fillMaxSize(),
             dotColor = dotColor,
+            viewport = state.viewport,
         )
 
         val workflow = state.workflow
@@ -85,41 +158,53 @@ fun GraphynCanvasSurface(
             return
         }
 
-        ConnectionLayer(
-            workflow = workflow,
-            state = state,
-            draft = state.connectionDraft,
-            draftPointer = state.connectionDraftPosition,
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        workflow.nodes.forEachIndexed { index, node ->
-            val spec = nodeSpecs.resolve(node.type)
-            val position = state.nodePosition(node.id, index)
-            CanvasNodeCard(
-                modifier = Modifier.offset { position },
-                node = node,
-                spec = spec,
-                selected = state.selectedNodeId == node.id,
-                outputs = state.outputsFor(node.id),
-                flattenedOutputs = state.flattenedOutputsFor(node.id),
-                onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
-                onMove = { delta ->
-                    state.dispatch(
-                        GraphynEditorIntent.MoveNode(
-                            nodeId = node.id,
-                            delta = delta,
-                        ),
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(0f, 0f)
+                    translationX = state.viewport.offset.x
+                    translationY = state.viewport.offset.y
+                    scaleX = state.viewport.scale
+                    scaleY = state.viewport.scale
                 },
-                onBeginConnection = { port ->
-                    state.dispatch(GraphynEditorIntent.BeginConnection(node.id, port))
-                },
-                onCompleteConnection = { port ->
-                    state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, port))
-                },
-                isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
+        ) {
+            ConnectionLayer(
+                workflow = workflow,
+                state = state,
+                draft = state.connectionDraft,
+                draftPointer = state.connectionDraftPosition,
+                modifier = Modifier.fillMaxSize(),
             )
+
+            workflow.nodes.forEachIndexed { index, node ->
+                val spec = nodeSpecs.resolve(node.type)
+                val position = state.nodePosition(node.id, index)
+                CanvasNodeCard(
+                    modifier = Modifier.offset { position },
+                    node = node,
+                    spec = spec,
+                    selected = state.selectedNodeId == node.id,
+                    outputs = state.outputsFor(node.id),
+                    flattenedOutputs = state.flattenedOutputsFor(node.id),
+                    onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
+                    onMove = { delta ->
+                        state.dispatch(
+                            GraphynEditorIntent.MoveNode(
+                                nodeId = node.id,
+                                delta = delta,
+                            ),
+                        )
+                    },
+                    onBeginConnection = { port ->
+                        state.dispatch(GraphynEditorIntent.BeginConnection(node.id, port))
+                    },
+                    onCompleteConnection = { port ->
+                        state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, port))
+                    },
+                    isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
+                )
+            }
         }
     }
 }
@@ -128,24 +213,51 @@ fun GraphynCanvasSurface(
 private fun GridBackdrop(
     modifier: Modifier,
     dotColor: Color,
+    viewport: com.ronjunevaldoz.graphyn.editor.state.GraphynViewport,
 ) {
+    val backdropStart = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f)
+    val backdropEnd = MaterialTheme.colorScheme.surface.copy(alpha = 0.06f)
     Canvas(modifier = modifier) {
-        val spacing = 28.dp.toPx()
-        val dotRadius = 1.4.dp.toPx()
-        val offset = spacing / 2f
+        val baseSpacing = 28.dp.toPx()
+        val spacing = (baseSpacing * viewport.scale).coerceAtLeast(8f)
+        val dotRadius = (1.15.dp.toPx() + (viewport.scale * 0.25f)).coerceIn(1.15f, 2.35f)
+        val majorSpacing = spacing * 4f
+        val originX = ((viewport.offset.x % spacing) + spacing) % spacing
+        val originY = ((viewport.offset.y % spacing) + spacing) % spacing
 
-        var x = offset
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    backdropStart,
+                    backdropEnd,
+                ),
+            ),
+        )
+
+        var x = originX
         while (x < size.width) {
-            var y = offset
+            var y = originY
             while (y < size.height) {
+                val isMajor = ((x - originX) / spacing).toInt() % 4 == 0 && ((y - originY) / spacing).toInt() % 4 == 0
                 drawCircle(
-                    color = dotColor,
-                    radius = dotRadius,
+                    color = dotColor.copy(alpha = if (isMajor) 0.75f else 0.35f),
+                    radius = if (isMajor) dotRadius * 1.35f else dotRadius,
                     center = Offset(x, y),
                 )
                 y += spacing
             }
             x += spacing
+        }
+
+        var majorX = ((viewport.offset.x % majorSpacing) + majorSpacing) % majorSpacing
+        while (majorX < size.width) {
+            drawLine(
+                color = dotColor.copy(alpha = 0.05f),
+                start = Offset(majorX, 0f),
+                end = Offset(majorX, size.height),
+                strokeWidth = 1f,
+            )
+            majorX += majorSpacing
         }
     }
 }
@@ -165,16 +277,16 @@ private fun ConnectionLayer(
             val toNode = workflow.nodes.firstOrNull { it.id == connection.toNodeId } ?: return@forEach
             val fromIndex = workflow.nodes.indexOf(fromNode)
             val toIndex = workflow.nodes.indexOf(toNode)
-            val fromPosition = state.nodePosition(fromNode.id, fromIndex)
-            val toPosition = state.nodePosition(toNode.id, toIndex)
+            val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
+            val toBounds = state.nodeBounds(toNode.id, toIndex)
 
             val start = Offset(
-                x = fromPosition.x.toFloat() + GraphynCanvasMetrics.NodeSize.width.toFloat(),
-                y = fromPosition.y.toFloat() + GraphynCanvasMetrics.NodeSize.height / 2f,
+                x = fromBounds.right,
+                y = fromBounds.center.y,
             )
             val end = Offset(
-                x = toPosition.x.toFloat(),
-                y = toPosition.y.toFloat() + GraphynCanvasMetrics.NodeSize.height / 2f,
+                x = toBounds.left,
+                y = toBounds.center.y,
             )
             val distance = (end.x - start.x).absoluteValue.coerceAtLeast(120f)
             val direction = if (end.x >= start.x) 1f else -1f
@@ -202,10 +314,10 @@ private fun ConnectionLayer(
         val draftConnection = draft ?: return@Canvas
         val fromNode = workflow.nodes.firstOrNull { it.id == draftConnection.fromNodeId } ?: return@Canvas
         val fromIndex = workflow.nodes.indexOf(fromNode)
-        val fromPosition = state.nodePosition(fromNode.id, fromIndex)
+        val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
         val start = Offset(
-            x = fromPosition.x.toFloat() + GraphynCanvasMetrics.NodeSize.width.toFloat(),
-            y = fromPosition.y.toFloat() + GraphynCanvasMetrics.NodeSize.height / 2f,
+            x = fromBounds.right,
+            y = fromBounds.center.y,
         )
         val end = draftPointer ?: Offset(start.x + 120f, start.y)
         val distance = (end.x - start.x).absoluteValue.coerceAtLeast(120f)

@@ -11,5 +11,10 @@ sealed interface GraphynEditorIntent {
     data class CompleteConnection(val toNodeId: String, val toPort: String) : GraphynEditorIntent
     data class AddNode(val spec: NodeSpec) : GraphynEditorIntent
     data class UpdateConnectionDraftPosition(val position: Offset?) : GraphynEditorIntent
+    data class UpdateViewportTransform(
+        val pan: Offset,
+        val zoom: Float,
+        val focus: Offset,
+    ) : GraphynEditorIntent
     data object CancelConnection : GraphynEditorIntent
 }
