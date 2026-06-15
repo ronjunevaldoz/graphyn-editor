@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultGraphynEditorPluginContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
@@ -63,5 +64,28 @@ class EditorRegistryTest {
             state.flattenedOutputsFor("switch-1")["on"],
         )
         assertTrue("panel-1" in state.affectedNodeIds("switch-1"))
+    }
+
+    @Test
+    fun editorStateTracksNodePositionsAndFallbackLayout() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-layout",
+                name = "Layout",
+                nodes = listOf(
+                    NodeRef(id = "first", type = "switch"),
+                    NodeRef(id = "second", type = "display"),
+                ),
+                connections = emptyList(),
+            ),
+        )
+
+        assertEquals(IntOffset.Zero, state.nodePosition("first", 0))
+        assertEquals(IntOffset(304, 0), state.nodePosition("second", 1))
+
+        state.setNodePosition("first", IntOffset(120, 80))
+        state.moveNode("first", IntOffset(10, 20))
+
+        assertEquals(IntOffset(130, 100), state.nodePosition("first", 0))
     }
 }

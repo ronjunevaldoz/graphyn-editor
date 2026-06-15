@@ -13,3 +13,9 @@ Tasking style:
 - Keep tasks small and outcome-based.
 - Reference architecture docs instead of duplicating rules here.
 - Update the plan when a phase changes, not for every tiny implementation detail.
+
+Phase 2 focus:
+- Add a reusable canvas surface for workflow nodes.
+- Keep node placement and selection in editor state.
+- Render node metadata from registered specs, not hardcoded UI.
+- Keep output/state changes reactive so the canvas and inspector update together.

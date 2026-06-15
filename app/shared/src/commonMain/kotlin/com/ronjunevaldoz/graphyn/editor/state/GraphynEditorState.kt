@@ -3,10 +3,12 @@ package com.ronjunevaldoz.graphyn.editor.state
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
 
 class GraphynEditorState(
     initialWorkflow: WorkflowDefinition? = null,
@@ -21,6 +23,7 @@ class GraphynEditorState(
 
     var selectedNodeId by mutableStateOf<String?>(null)
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
+    var nodePositionsByNodeId by mutableStateOf<Map<String, IntOffset>>(emptyMap())
     private val dataStore = WorkflowDataStore(initialWorkflow)
 
     fun selectNode(nodeId: String?) {
@@ -31,6 +34,24 @@ class GraphynEditorState(
         nodeOutputsByNodeId = nodeOutputsByNodeId + (nodeId to outputs)
         dataStore.updateNodeOutputs(nodeId, outputs)
     }
+
+    fun setNodePosition(nodeId: String, position: IntOffset) {
+        nodePositionsByNodeId = nodePositionsByNodeId + (nodeId to position)
+    }
+
+    fun moveNode(nodeId: String, delta: IntOffset) {
+        val currentPosition = nodePositionsByNodeId[nodeId] ?: IntOffset.Zero
+        setNodePosition(
+            nodeId = nodeId,
+            position = IntOffset(
+                x = currentPosition.x + delta.x,
+                y = currentPosition.y + delta.y,
+            ),
+        )
+    }
+
+    fun nodePosition(nodeId: String, index: Int): IntOffset =
+        nodePositionsByNodeId[nodeId] ?: GraphynCanvasLayout.fallbackPosition(index)
 
     fun outputsFor(nodeId: String): Map<String, WorkflowValue> = nodeOutputsByNodeId[nodeId].orEmpty()
 

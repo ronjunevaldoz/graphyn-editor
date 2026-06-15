@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
@@ -38,8 +39,15 @@ fun GraphynEditorShell(
     dependencies: GraphynEditorShellDependencies,
     branding: GraphynBranding = GraphynBranding(),
     state: GraphynEditorState = rememberGraphynEditorState(),
-    canvas: @Composable () -> Unit = { DefaultCanvasPlaceholder() },
+    canvas: (@Composable () -> Unit)? = null,
 ) {
+    val canvasContent = canvas ?: {
+        GraphynCanvasSurface(
+            state = state,
+            nodeSpecs = dependencies.nodeSpecs,
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -54,7 +62,7 @@ fun GraphynEditorShell(
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
-                canvas()
+                canvasContent()
             }
             BottomStatusBar()
         }
@@ -159,18 +167,6 @@ private fun RightPanelHost(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun DefaultCanvasPlaceholder() {
-    Card(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = "Canvas surface goes here",
-                modifier = Modifier.padding(24.dp),
-            )
         }
     }
 }
