@@ -1,9 +1,11 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.api.tasks.JavaExec
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
+    alias(libs.plugins.serialization)
 }
 
 kotlin {
@@ -39,10 +41,21 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
+            implementation(libs.serialization.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
     }
+}
+
+tasks.register<JavaExec>("benchmarkCore") {
+    group = "verification"
+    description = "Runs the Graphyn core benchmark snapshot."
+    dependsOn("jvmTestClasses")
+    mainClass.set("com.ronjunevaldoz.graphyn.core.benchmark.CoreBenchmarkKt")
+    classpath = files(
+        layout.buildDirectory.dir("classes/kotlin/jvm/test"),
+        configurations.getByName("jvmTestRuntimeClasspath"),
+    )
 }

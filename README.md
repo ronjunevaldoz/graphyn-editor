@@ -1,54 +1,60 @@
-This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop (JVM), Server.
+# Graphyn
 
-* [/app/iosApp](./app/iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Compose Multiplatform](https://img.shields.io/badge/Compose-Multiplatform-3DDC84)](https://www.jetbrains.com/lp/compose-multiplatform/)
+[![KMP](https://img.shields.io/badge/Kotlin-Multiplatform-0095D5)](https://kotlinlang.org/docs/multiplatform.html)
 
-* [/app/shared](./app/shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./app/shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./app/shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./app/shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+Graphyn is a Kotlin Multiplatform workflow editor library with:
 
-* [/core](./core/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./core/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
+- a shared `core` model for workflow types, nodes, validation, and serialization
+- an editor shell for canvas, panels, and node-specific UI
+- a server runtime for execution only
 
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
+Use Graphyn as the editing layer inside another repo when you want:
 
-### Running the apps
+- an AI generation workflow builder
+- a 3D game editor pipeline
+- a shader or material graph editor
+- any other app that needs a reusable node-based workflow surface
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+## Layout
 
-- Android app: `./gradlew :app:androidApp:assembleDebug`
-- Desktop app:
-  - Hot reload: `./gradlew :app:desktopApp:hotRun --auto`
-  - Standard run: `./gradlew :app:desktopApp:run`
+- [`/core`](./core/src) - workflow model, validation, plugin contracts, JSON serialization
+- [`/app/shared`](./app/shared/src) - shared editor shell and panel host
+- [`/app/androidApp`](./app/androidApp) - Android entrypoint
+- [`/app/desktopApp`](./app/desktopApp) - Desktop entrypoint
+- [`/app/webApp`](./app/webApp) - Web entrypoint
+- [`/app/iosApp`](./app/iosApp) - iOS entrypoint
+- [`/server`](./server/src/main/kotlin) - execution runtime
+- [`/docs`](./docs) - architecture notes, agent rules, and plans
+
+## Running
+
+- Android: `./gradlew :app:androidApp:assembleDebug`
+- Desktop: `./gradlew :app:desktopApp:run`
+- Web Wasm: `./gradlew :app:webApp:wasmJsBrowserDevelopmentRun`
+- Web JS: `./gradlew :app:webApp:jsBrowserDevelopmentRun`
 - Server: `./gradlew :server:run`
-- Web app:
-  - Wasm target (faster, modern browsers): `./gradlew :app:webApp:wasmJsBrowserDevelopmentRun`
-  - JS target (slower, supports older browsers): `./gradlew :app:webApp:jsBrowserDevelopmentRun`
-- iOS app: open the [/app/iosApp](./app/iosApp) directory in Xcode and run it from there.
 
-### Running tests
+## Testing
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
-
-- Android tests: `./gradlew :app:shared:testAndroidHostTest`
-- Desktop tests: `./gradlew :app:shared:jvmTest`
+- Shared tests: `./gradlew :app:shared:check`
+- Core tests: `./gradlew :core:check`
 - Server tests: `./gradlew :server:test`
-- Web tests:
-  - Wasm target: `./gradlew :app:shared:wasmJsTest`
-  - JS target: `./gradlew :app:shared:jsTest`
-- iOS tests: `./gradlew :app:shared:iosSimulatorArm64Test`
 
----
+## Docs
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+- [Agent rules](./docs/agents.md)
+- [Architecture overview](./docs/architecture/README.md)
+- [Core API draft](./docs/architecture/core-api.md)
+- [Plugin API draft](./docs/architecture/plugins.md)
+- [Plan phases](./docs/plans/README.md)
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+## Performance
+
+Snapshot benchmark from the current workspace machine:
+
+![Graphyn core benchmark snapshot](./docs/benchmarks/core-benchmark.svg)
+
+- [Benchmark notes](./docs/benchmarks/README.md)
+- Run it with `./gradlew :core:benchmarkCore`
