@@ -5,7 +5,7 @@ Graphyn plugins should extend the editor and runtime without touching the core w
 ## Goals
 
 - Keep `core` free of plugin and UI concerns.
-- Let hosts register nodes, executors, and panels from external modules.
+- Let hosts register nodes and executors from external modules.
 - Support both in-repo plugins and published third-party plugins.
 - Keep the first version explicit and predictable, not magical.
 
@@ -42,8 +42,9 @@ Plugins should never depend on editor internals directly. They should only know:
 
 - workflow types and node specs
 - executor contracts
-- panel contracts
 - plugin metadata
+
+Editor panels stay in the editor module and can be registered with the existing editor plugin context.
 
 That keeps plugins portable across different hosts.
 
@@ -63,7 +64,6 @@ interface GraphynPlugin {
 interface GraphynPluginRegistrar {
     fun registerNodeSpec(spec: NodeSpec)
     fun registerExecutor(type: String, executor: NodeExecutor)
-    fun registerPanel(type: String, panelFactory: EditorPanelFactory)
 }
 ```
 
@@ -81,7 +81,6 @@ Start with explicit host registration:
 
 ```kotlin
 val plugins = listOf(
-    GraphynCorePlugin,
     MyCustomPlugin,
 )
 
@@ -122,7 +121,6 @@ A plugin may contribute:
 
 - node specs
 - node executors
-- custom editor panels
 - palette metadata
 - icons or labels
 
@@ -170,18 +168,17 @@ object MathPlugin : GraphynPlugin {
 The host should build plugin registries once, then pass them into the editor and server layers.
 
 ```kotlin
-val pluginRegistry = GraphynPluginRegistry()
+val pluginRegistry = DefaultGraphynPluginRegistry()
 
 listOf(MyPluginA, MyPluginB).forEach {
     it.register(pluginRegistry)
 }
 
 val nodeSpecs = pluginRegistry.nodeSpecs
-val executors = pluginRegistry.executors
-val panels = pluginRegistry.panels
+val nodeExecutors = pluginRegistry.nodeExecutors
 ```
 
-The editor shell and server runtime then consume the resulting registries instead of knowing about plugins themselves.
+The editor shell and server runtime then consume the resulting registries instead of knowing about plugins themselves. Custom editor panels remain registered through the editor plugin context.
 
 ## Versioning
 
