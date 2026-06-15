@@ -8,12 +8,15 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValueFlattener
+import com.ronjunevaldoz.graphyn.core.execution.DefaultNodeExecutorRegistry
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
 import com.ronjunevaldoz.graphyn.core.serialization.DefaultWorkflowJsonCodec
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowGraphImpact
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.core.serialization.DefaultWorkflowDocumentCodec
 import com.ronjunevaldoz.graphyn.core.validation.WorkflowGraphValidator
+import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -166,5 +169,68 @@ class CoreWorkflowTest {
         assertTrue("switch-1" in affected)
         assertTrue("display-1" in affected)
         assertTrue("detail-1" in affected)
+    }
+
+    @Test
+    fun workflowExecutionResolvesExecutorsInTopologicalOrder() {
+        val specs = DefaultNodeSpecRegistry().apply {
+            register(
+                NodeSpec(
+                    type = "switch",
+                    label = "Switch",
+                    inputs = listOf(
+                        PortSpec(name = "enabled", type = WorkflowType.BooleanType, required = false),
+                    ),
+                    outputs = listOf(
+                        PortSpec(name = "on", type = WorkflowType.BooleanType),
+                    ),
+                ),
+            )
+            register(
+                NodeSpec(
+                    type = "display",
+                    label = "Display",
+                    inputs = listOf(
+                        PortSpec(name = "enabled", type = WorkflowType.BooleanType, required = false),
+                    ),
+                    outputs = listOf(
+                        PortSpec(name = "state", type = WorkflowType.BooleanType),
+                    ),
+                ),
+            )
+        }
+        val executors = DefaultNodeExecutorRegistry().apply {
+            register("switch") { input ->
+                mapOf("on" to (input["enabled"] ?: WorkflowValue.BooleanValue(false)))
+            }
+            register("display") { input ->
+                mapOf("state" to (input["enabled"] ?: WorkflowValue.BooleanValue(false)))
+            }
+        }
+        val engine = WorkflowExecutionEngine(executors, specs)
+        val workflow = WorkflowDefinition(
+            id = "workflow-exec",
+            name = "Exec",
+            nodes = listOf(
+                NodeRef(id = "switch-1", type = "switch", config = mapOf("enabled" to WorkflowValue.BooleanValue(true))),
+                NodeRef(id = "display-1", type = "display"),
+            ),
+            connections = listOf(
+                ConnectionRef(
+                    fromNodeId = "switch-1",
+                    fromPort = "on",
+                    toNodeId = "display-1",
+                    toPort = "enabled",
+                ),
+            ),
+        )
+
+        val result = engine.execute(workflow)
+
+        assertEquals(listOf("switch-1", "display-1"), result.executionOrder)
+        assertEquals(
+            WorkflowValue.BooleanValue(true),
+            result.nodeOutputsByNodeId["display-1"]?.get("state"),
+        )
     }
 }

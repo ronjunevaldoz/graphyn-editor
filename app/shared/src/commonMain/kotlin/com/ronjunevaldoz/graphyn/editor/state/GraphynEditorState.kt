@@ -4,10 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntOffset
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
@@ -66,6 +68,18 @@ class GraphynEditorState(
     fun updateNodeOutputs(nodeId: String, outputs: Map<String, WorkflowValue>) {
         nodeOutputsByNodeId = nodeOutputsByNodeId + (nodeId to outputs)
         dataStore.updateNodeOutputs(nodeId, outputs)
+    }
+
+    fun applyExecutionResult(result: WorkflowExecutionResult) {
+        nodeOutputsByNodeId = result.nodeOutputsByNodeId
+        result.nodeOutputsByNodeId.forEach { (nodeId, outputs) ->
+            dataStore.updateNodeOutputs(nodeId, outputs)
+        }
+    }
+
+    fun execute(engine: WorkflowExecutionEngine) {
+        val currentWorkflow = workflow ?: return
+        applyExecutionResult(engine.execute(currentWorkflow))
     }
 
     fun setNodePosition(nodeId: String, position: IntOffset) {

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
@@ -32,6 +34,7 @@ import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 data class GraphynEditorShellDependencies(
     val nodeSpecs: NodeSpecRegistry,
     val panels: EditorPanelRegistry = DefaultEditorPanelRegistry(),
+    val executionEngine: WorkflowExecutionEngine? = null,
 )
 
 @Composable
@@ -47,6 +50,7 @@ fun GraphynEditorShell(
             nodeSpecs = dependencies.nodeSpecs,
         )
     }
+    val executionEngine = dependencies.executionEngine
 
     Row(
         modifier = Modifier
@@ -55,7 +59,13 @@ fun GraphynEditorShell(
     ) {
         LeftPalette(modifier = Modifier.weight(0.22f), nodeSpecs = dependencies.nodeSpecs)
         Column(modifier = Modifier.weight(0.56f).fillMaxSize()) {
-            TopToolbar(branding = branding)
+            TopToolbar(
+                branding = branding,
+                canRun = executionEngine != null,
+                onRun = {
+                    executionEngine?.let { engine -> state.execute(engine) }
+                },
+            )
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -76,7 +86,11 @@ fun GraphynEditorShell(
 }
 
 @Composable
-private fun TopToolbar(branding: GraphynBranding) {
+private fun TopToolbar(
+    branding: GraphynBranding,
+    canRun: Boolean,
+    onRun: () -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -94,6 +108,12 @@ private fun TopToolbar(branding: GraphynBranding) {
                 text = branding.appName,
                 style = MaterialTheme.typography.titleMedium,
             )
+            if (canRun) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Button(onClick = onRun) {
+                    Text("Run")
+                }
+            }
         }
     }
 }

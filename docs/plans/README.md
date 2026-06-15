@@ -25,3 +25,9 @@ Phase 3 focus:
 - Render workflow connections on the canvas.
 - Allow dragging nodes without binding the model to a specific layout engine.
 - Keep connection creation editor-owned so runtime execution can stay separate.
+
+Phase 4 focus:
+- Execute workflows through a shared core engine.
+- Keep execution synchronous for the MVP so JS, Wasm, and server targets stay simple.
+- Expose the execution flow through the editor shell without coupling panels to runtime internals.
+- Add a thin server endpoint that accepts workflow JSON and returns execution results.
