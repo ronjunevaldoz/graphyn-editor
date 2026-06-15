@@ -15,9 +15,19 @@ object GraphynDemoPlugins {
     val editor: List<GraphynEditorPlugin> = listOf(SampleLoggerEditorPlugin)
 }
 
+object GraphynBootstrap {
+    fun runtimePlugins(
+        extraPlugins: Iterable<GraphynPlugin> = emptyList(),
+    ): List<GraphynPlugin> = GraphynDemoPlugins.runtime + extraPlugins
+
+    fun editorPlugins(
+        extraPlugins: Iterable<GraphynEditorPlugin> = emptyList(),
+    ): List<GraphynEditorPlugin> = GraphynDemoPlugins.editor + extraPlugins
+}
+
 @Composable
 fun rememberGraphynDemoPanelRegistry(
-    editorPlugins: List<GraphynEditorPlugin> = GraphynDemoPlugins.editor,
+    editorPlugins: List<GraphynEditorPlugin> = GraphynBootstrap.editorPlugins(),
 ): EditorPanelRegistry {
     return remember(editorPlugins) {
         DefaultEditorPanelRegistry().apply {

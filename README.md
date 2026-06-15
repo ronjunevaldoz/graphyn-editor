@@ -17,6 +17,15 @@ Use Graphyn as the editing layer inside another repo when you want:
 - a shader or material graph editor
 - any other app that needs a reusable node-based workflow surface
 
+## Plugin Model
+
+Graphyn splits plugins into two layers:
+
+- runtime plugins register node specs and executors
+- editor plugins register custom inspector panels
+
+The built-in demo wires both through shared bootstrap helpers, but external hosts can provide their own plugin lists too.
+
 ## Quick Start
 
 Minimal branding and shell customization:
@@ -33,14 +42,37 @@ App(
 )
 ```
 
-Minimal node registration outside the core:
+Runtime plugin registration:
 
 ```kotlin
-val registry = DefaultNodeSpecRegistry()
-registry.register(MyNodeSpec)
+val runtimeRegistry = DefaultGraphynPluginRegistry().apply {
+    install(MyWorkflowPlugin)
+}
+
+val nodeSpecs = runtimeRegistry.nodeSpecs
+val nodeExecutors = runtimeRegistry.nodeExecutors
 ```
 
-Register an executor and optional editor panel in the editor layer when needed.
+Editor plugin registration:
+
+```kotlin
+val editorRegistry = DefaultGraphynEditorPluginRegistry().apply {
+    install(MyInspectorPlugin)
+}
+
+val panels = editorRegistry.panels
+```
+
+Host wiring:
+
+```kotlin
+App(
+    plugins = listOf(MyWorkflowPlugin),
+    panels = editorRegistry.panels,
+)
+```
+
+If you want the bundled demo setup, `DemoApp()` uses the sample runtime and editor plugins from shared bootstrap code. If you want your own host setup, call `App(...)` directly and pass your own plugin lists.
 
 ## Layout
 
