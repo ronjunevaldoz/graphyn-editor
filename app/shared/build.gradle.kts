@@ -54,6 +54,8 @@ kotlin {
             api(projects.core)
             api(projects.editorApi)
             api(projects.pluginApi)
+            implementation(projects.plugins.sampleLogger)
+            implementation(projects.plugins.sampleLoggerUi)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

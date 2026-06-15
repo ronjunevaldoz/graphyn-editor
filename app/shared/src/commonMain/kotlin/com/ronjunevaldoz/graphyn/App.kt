@@ -3,6 +3,8 @@ package com.ronjunevaldoz.graphyn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
+import com.ronjunevaldoz.graphyn.bootstrap.GraphynDemoPlugins
+import com.ronjunevaldoz.graphyn.bootstrap.rememberGraphynDemoPanelRegistry
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShell
@@ -46,14 +48,13 @@ fun App(
 @Composable
 fun DemoApp(
     branding: GraphynBranding = GraphynBranding(),
-    plugins: List<GraphynPlugin>,
-    panels: EditorPanelRegistry? = null,
     executionEngine: WorkflowExecutionEngine? = null,
 ) {
+    val editorPanels = rememberGraphynDemoPanelRegistry()
     App(
         branding = branding,
-        plugins = plugins,
-        panels = panels,
+        plugins = GraphynDemoPlugins.runtime,
+        panels = editorPanels,
         executionEngine = executionEngine,
     )
 }

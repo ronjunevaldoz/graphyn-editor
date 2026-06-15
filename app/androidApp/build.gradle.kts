@@ -13,9 +13,6 @@ kotlin {
 }
 dependencies {
     implementation(projects.app.shared)
-    implementation(projects.editorApi)
-    implementation(projects.plugins.sampleLogger)
-    implementation(projects.plugins.sampleLoggerUi)
 
     implementation(libs.androidx.activity.compose)
 
