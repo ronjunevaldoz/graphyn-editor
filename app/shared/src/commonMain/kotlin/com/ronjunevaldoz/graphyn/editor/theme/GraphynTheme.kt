@@ -15,6 +15,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 
+private const val APPEARANCE_THEME_MODE_KEY = "graphyn.theme.mode"
+private const val APPEARANCE_PRESET_KEY = "graphyn.theme.preset"
+
 enum class GraphynThemeMode {
     System,
     Light,
@@ -120,12 +123,27 @@ class GraphynAppearanceState(
     val presets: List<GraphynThemePreset> = GraphynThemePresets.defaults,
     initialPresetId: String = GraphynThemePresets.defaults.first().id,
     initialThemeMode: GraphynThemeMode = GraphynThemeMode.System,
+    private val settingsStore: GraphynSettingsStore? = null,
 ) {
     var selectedPresetId by mutableStateOf(initialPresetId)
+        private set
     var themeMode by mutableStateOf(initialThemeMode)
+        private set
 
     val selectedPreset: GraphynThemePreset
         get() = presets.firstOrNull { it.id == selectedPresetId } ?: presets.first()
+
+    fun selectPreset(presetId: String) {
+        if (presetId == selectedPresetId) return
+        selectedPresetId = presets.firstOrNull { it.id == presetId }?.id ?: selectedPreset.id
+        settingsStore?.putString(APPEARANCE_PRESET_KEY, selectedPresetId)
+    }
+
+    fun updateThemeMode(mode: GraphynThemeMode) {
+        if (mode == themeMode) return
+        themeMode = mode
+        settingsStore?.putString(APPEARANCE_THEME_MODE_KEY, mode.name)
+    }
 
     fun resolvePalette(darkTheme: Boolean): GraphynPalette {
         return if (darkTheme) {
@@ -149,12 +167,27 @@ fun rememberGraphynAppearanceState(
     presets: List<GraphynThemePreset> = GraphynThemePresets.defaults,
     initialPresetId: String = GraphynThemePresets.defaults.first().id,
     initialThemeMode: GraphynThemeMode = GraphynThemeMode.System,
-): GraphynAppearanceState = remember(presets, initialPresetId, initialThemeMode) {
-    GraphynAppearanceState(
-        presets = presets,
-        initialPresetId = initialPresetId,
-        initialThemeMode = initialThemeMode,
-    )
+): GraphynAppearanceState {
+    val settingsStore = rememberGraphynSettingsStore()
+    val storedPresetId = remember(presets, settingsStore) {
+        settingsStore.getString(APPEARANCE_PRESET_KEY)
+            ?.takeIf { candidate -> presets.any { it.id == candidate } }
+            ?: initialPresetId
+    }
+    val storedThemeMode = remember(settingsStore) {
+        settingsStore.getString(APPEARANCE_THEME_MODE_KEY)
+            ?.let { value -> GraphynThemeMode.entries.firstOrNull { it.name == value } }
+            ?: initialThemeMode
+    }
+
+    return remember(presets, storedPresetId, storedThemeMode, settingsStore) {
+        GraphynAppearanceState(
+            presets = presets,
+            initialPresetId = storedPresetId,
+            initialThemeMode = storedThemeMode,
+            settingsStore = settingsStore,
+        )
+    }
 }
 
 fun GraphynPalette.toColorScheme(darkTheme: Boolean = false): ColorScheme {

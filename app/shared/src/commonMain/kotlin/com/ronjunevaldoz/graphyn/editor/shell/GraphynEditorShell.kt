@@ -23,16 +23,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
+import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynThemeMode
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
+import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
 
 data class GraphynEditorShellDependencies(
     val nodeSpecs: NodeSpecRegistry,
@@ -44,7 +47,7 @@ data class GraphynEditorShellDependencies(
 fun GraphynEditorShell(
     dependencies: GraphynEditorShellDependencies,
     branding: GraphynBranding = GraphynBranding(),
-    appearanceState: GraphynAppearanceState = GraphynAppearanceState(),
+    appearanceState: GraphynAppearanceState = rememberGraphynAppearanceState(),
     state: GraphynEditorState = rememberGraphynEditorState(),
     canvas: (@Composable () -> Unit)? = null,
 ) {
@@ -61,7 +64,11 @@ fun GraphynEditorShell(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        LeftPalette(modifier = Modifier.weight(0.22f), nodeSpecs = dependencies.nodeSpecs)
+        LeftPalette(
+            modifier = Modifier.weight(0.22f),
+            nodeSpecs = dependencies.nodeSpecs,
+            onAddNode = { spec -> state.dispatch(GraphynEditorIntent.AddNode(spec)) },
+        )
         Column(modifier = Modifier.weight(0.56f).fillMaxSize()) {
             TopToolbar(
                 branding = branding,
@@ -143,7 +150,7 @@ private fun ThemeControls(
             GraphynThemeMode.entries.forEach { mode ->
                 FilterChip(
                     selected = appearanceState.themeMode == mode,
-                    onClick = { appearanceState.themeMode = mode },
+                    onClick = { appearanceState.updateThemeMode(mode) },
                     label = {
                         Text(
                             text = when (mode) {
@@ -160,7 +167,7 @@ private fun ThemeControls(
             appearanceState.presets.forEach { preset ->
                 FilterChip(
                     selected = appearanceState.selectedPresetId == preset.id,
-                    onClick = { appearanceState.selectedPresetId = preset.id },
+                    onClick = { appearanceState.selectPreset(preset.id) },
                     label = { Text(preset.label) },
                 )
             }
@@ -172,6 +179,7 @@ private fun ThemeControls(
 private fun LeftPalette(
     modifier: Modifier,
     nodeSpecs: NodeSpecRegistry,
+    onAddNode: (NodeSpec) -> Unit,
 ) {
     Card(modifier = modifier.fillMaxSize().padding(12.dp)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -181,7 +189,9 @@ private fun LeftPalette(
                 Text("No nodes registered yet.")
             } else {
                 specs.forEach { spec ->
-                    Text(spec.label)
+                    Button(onClick = { onAddNode(spec) }) {
+                        Text(spec.label)
+                    }
                 }
             }
         }

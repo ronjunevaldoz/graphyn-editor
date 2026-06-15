@@ -37,6 +37,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import kotlin.math.absoluteValue
@@ -57,7 +58,20 @@ fun GraphynCanvasSurface(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-            .padding(8.dp),
+            .padding(8.dp)
+            .pointerInput(state.connectionDraft?.fromNodeId) {
+                if (state.connectionDraft == null) return@pointerInput
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val position = event.changes.firstOrNull()?.position
+                        if (position != null) {
+                            state.dispatch(GraphynEditorIntent.UpdateConnectionDraftPosition(position))
+                        }
+                    }
+                }
+            },
+        contentAlignment = Alignment.TopStart,
     ) {
         val dotColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         GridBackdrop(
@@ -74,6 +88,8 @@ fun GraphynCanvasSurface(
         ConnectionLayer(
             workflow = workflow,
             state = state,
+            draft = state.connectionDraft,
+            draftPointer = state.connectionDraftPosition,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -138,6 +154,8 @@ private fun GridBackdrop(
 private fun ConnectionLayer(
     workflow: WorkflowDefinition,
     state: GraphynEditorState,
+    draft: GraphynConnectionDraft?,
+    draftPointer: Offset?,
     modifier: Modifier,
 ) {
     val connectionColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
@@ -180,6 +198,37 @@ private fun ConnectionLayer(
                 style = Stroke(width = 4f),
             )
         }
+
+        val draftConnection = draft ?: return@Canvas
+        val fromNode = workflow.nodes.firstOrNull { it.id == draftConnection.fromNodeId } ?: return@Canvas
+        val fromIndex = workflow.nodes.indexOf(fromNode)
+        val fromPosition = state.nodePosition(fromNode.id, fromIndex)
+        val start = Offset(
+            x = fromPosition.x.toFloat() + GraphynCanvasMetrics.NodeSize.width.toFloat(),
+            y = fromPosition.y.toFloat() + GraphynCanvasMetrics.NodeSize.height / 2f,
+        )
+        val end = draftPointer ?: Offset(start.x + 120f, start.y)
+        val distance = (end.x - start.x).absoluteValue.coerceAtLeast(120f)
+        val direction = if (end.x >= start.x) 1f else -1f
+        val control = distance * 0.35f
+
+        val draftPath = Path().apply {
+            moveTo(start.x, start.y)
+            cubicTo(
+                start.x + (control * direction),
+                start.y,
+                end.x - (control * direction),
+                end.y,
+                end.x,
+                end.y,
+            )
+        }
+
+        drawPath(
+            path = draftPath,
+            color = connectionColor.copy(alpha = 0.35f),
+            style = Stroke(width = 3f),
+        )
     }
 }
 

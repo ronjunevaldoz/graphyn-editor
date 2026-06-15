@@ -3,10 +3,12 @@ package com.ronjunevaldoz.graphyn.editor.state
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
+import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
@@ -30,6 +32,7 @@ class GraphynEditorState(
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
     var nodePositionsByNodeId by mutableStateOf<Map<String, IntOffset>>(emptyMap())
     var connectionDraft by mutableStateOf<GraphynConnectionDraft?>(null)
+    var connectionDraftPosition by mutableStateOf<Offset?>(null)
     private val dataStore = WorkflowDataStore(initialWorkflow)
 
     fun selectNode(nodeId: String?) {
@@ -45,6 +48,7 @@ class GraphynEditorState(
                     fromNodeId = intent.fromNodeId,
                     fromPort = intent.fromPort,
                 )
+                connectionDraftPosition = null
             }
             is GraphynEditorIntent.CompleteConnection -> {
                 val draft = connectionDraft ?: return
@@ -58,11 +62,40 @@ class GraphynEditorState(
                     ),
                 )
                 connectionDraft = null
+                connectionDraftPosition = null
+            }
+            is GraphynEditorIntent.AddNode -> {
+                addNode(intent.spec)
+            }
+            is GraphynEditorIntent.UpdateConnectionDraftPosition -> {
+                connectionDraftPosition = intent.position
             }
             GraphynEditorIntent.CancelConnection -> {
                 connectionDraft = null
+                connectionDraftPosition = null
             }
         }
+    }
+
+    fun addNode(spec: NodeSpec) {
+        val currentWorkflow = workflow ?: WorkflowDefinition(
+            id = "workflow",
+            name = "Untitled Workflow",
+            nodes = emptyList(),
+            connections = emptyList(),
+        )
+        val nodeId = buildNodeId(spec, currentWorkflow.nodes)
+        val node = NodeRef(
+            id = nodeId,
+            type = spec.type,
+            config = spec.defaultValues,
+        )
+        val nextWorkflow = currentWorkflow.copy(nodes = currentWorkflow.nodes + node)
+        workflow = nextWorkflow
+        selectedNodeId = nodeId
+        connectionDraft = null
+        connectionDraftPosition = null
+        setNodePosition(nodeId, GraphynCanvasLayout.fallbackPosition(nextWorkflow.nodes.lastIndex))
     }
 
     fun updateNodeOutputs(nodeId: String, outputs: Map<String, WorkflowValue>) {
@@ -115,5 +148,18 @@ class GraphynEditorState(
         val currentWorkflow = workflow ?: return null
         val selectedId = selectedNodeId ?: return null
         return currentWorkflow.nodes.firstOrNull { it.id == selectedId }
+    }
+
+    private fun buildNodeId(spec: NodeSpec, nodes: List<NodeRef>): String {
+        val prefix = spec.type.substringAfterLast('.').ifBlank { "node" }
+        var suffix = 1
+        val existingIds = nodes.mapTo(mutableSetOf()) { it.id }
+        while (true) {
+            val candidate = "$prefix-$suffix"
+            if (candidate !in existingIds) {
+                return candidate
+            }
+            suffix += 1
+        }
     }
 }
