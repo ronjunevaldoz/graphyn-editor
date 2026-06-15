@@ -23,6 +23,10 @@ Recommended package split:
   - plugin contracts
   - registrar interfaces
   - metadata/version checks
+- `:editor-api`
+  - editor panel contracts
+  - editor plugin contracts
+  - editor plugin registry
 - `:editor`
   - canvas
   - shell
@@ -43,6 +47,9 @@ Example sample plugin layout:
   - `SampleLoggerNodes.kt`
   - `SampleLoggerExecutors.kt`
   - `SampleLoggerPluginTest.kt`
+- `:plugins:sample-logger-ui`
+  - `SampleLoggerEditorPlugin.kt`
+  - `SampleLoggerEditorPluginTest.kt`
 
 ## Core Rule
 
@@ -51,12 +58,12 @@ Plugins should never depend on editor internals directly. They should only know:
 - workflow types and node specs
 - executor contracts
 - plugin metadata
+- editor panel contracts
+- editor plugin metadata
 
-Editor panels stay in the editor module and can be registered with the existing editor plugin context.
+That keeps plugins portable across different hosts, while still letting UI extensions stay separate from the core runtime.
 
-That keeps plugins portable across different hosts.
-
-## Proposed API
+## Runtime API
 
 ```kotlin
 interface GraphynPlugin {
@@ -77,6 +84,30 @@ interface GraphynPluginRegistrar {
 
 ```kotlin
 data class GraphynPluginMetadata(
+    val id: String,
+    val version: String,
+    val apiVersion: Int,
+)
+```
+
+## Editor API
+
+```kotlin
+interface GraphynEditorPlugin {
+    val metadata: GraphynEditorPluginMetadata
+
+    fun register(registrar: GraphynEditorPluginRegistrar)
+}
+```
+
+```kotlin
+interface GraphynEditorPluginRegistrar {
+    fun registerPanel(nodeType: String, factory: EditorPanelFactory)
+}
+```
+
+```kotlin
+data class GraphynEditorPluginMetadata(
     val id: String,
     val version: String,
     val apiVersion: Int,
@@ -129,6 +160,7 @@ A plugin may contribute:
 
 - node specs
 - node executors
+- editor panels
 - palette metadata
 - icons or labels
 
@@ -171,6 +203,22 @@ object MathPlugin : GraphynPlugin {
 }
 ```
 
+```kotlin
+object MathPluginEditor : GraphynEditorPlugin {
+    override val metadata = GraphynEditorPluginMetadata(
+        id = "graphyn.math.editor",
+        version = "1.0.0",
+        apiVersion = 1,
+    )
+
+    override fun register(registrar: GraphynEditorPluginRegistrar) {
+        registrar.registerPanel("math.add") { context ->
+            // custom inspector UI
+        }
+    }
+}
+```
+
 ## Host Wiring
 
 The host should build plugin registries once, then pass them into the editor and server layers.
@@ -186,7 +234,19 @@ val nodeSpecs = pluginRegistry.nodeSpecs
 val nodeExecutors = pluginRegistry.nodeExecutors
 ```
 
-The editor shell and server runtime then consume the resulting registries instead of knowing about plugins themselves. Custom editor panels remain registered through the editor plugin context.
+The editor shell and server runtime then consume the resulting registries instead of knowing about plugins themselves.
+
+```kotlin
+val editorPluginRegistry = DefaultGraphynEditorPluginRegistry()
+
+listOf(MyEditorPluginA, MyEditorPluginB).forEach {
+    it.register(editorPluginRegistry)
+}
+
+val panels = editorPluginRegistry.panels
+```
+
+Custom editor panels remain registered through the editor plugin registry, which keeps the host wiring explicit and portable.
 
 ## Versioning
 
@@ -208,8 +268,8 @@ Later, we can add:
 For the first implementation, use:
 
 - explicit registration only
-- one plugin interface
-- one registrar interface
-- one host-side plugin registry
+- separate runtime and editor plugin interfaces
+- one registrar interface per plugin layer
+- one host-side registry per layer
 
 That gives us extensibility without introducing dynamic-loading complexity too early.

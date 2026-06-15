@@ -24,7 +24,7 @@ kotlin {
     }
 
     androidLibrary {
-        namespace = "com.ronjunevaldoz.graphyn.plugins.sampleloggerui"
+        namespace = "com.ronjunevaldoz.graphyn.editorapi"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -41,11 +41,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(projects.editorApi)
+            api(projects.core)
             implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.ui)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

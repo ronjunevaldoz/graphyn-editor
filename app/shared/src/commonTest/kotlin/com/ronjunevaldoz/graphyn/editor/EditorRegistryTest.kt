@@ -12,9 +12,12 @@ import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
 import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
-import com.ronjunevaldoz.graphyn.editor.panels.DefaultGraphynEditorPluginContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelFactory
+import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
+import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
+import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
+import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginRegistrar
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import kotlin.test.Test
@@ -25,15 +28,25 @@ import kotlin.test.assertTrue
 class EditorRegistryTest {
     @Test
     fun editorPanelsCanBeRegisteredAndResolved() {
-        val registry = DefaultEditorPanelRegistry()
-        val context = DefaultGraphynEditorPluginContext(registry)
+        val registry = DefaultGraphynEditorPluginRegistry()
+        registry.install(
+            object : GraphynEditorPlugin {
+                override val metadata = GraphynEditorPluginMetadata(
+                    id = "graphyn.test.editor",
+                    displayName = "Editor Test",
+                    version = "1.0.0",
+                )
 
-        context.registerPanel(
-            "printer",
-            EditorPanelFactory { _: EditorPanelContext -> }
+                override fun register(registrar: GraphynEditorPluginRegistrar) {
+                    registrar.registerPanel(
+                        "printer",
+                        EditorPanelFactory { _: EditorPanelContext -> },
+                    )
+                }
+            },
         )
 
-        assertNotNull(registry.resolve("printer"))
+        assertNotNull(registry.panels.resolve("printer"))
     }
 
     @Test

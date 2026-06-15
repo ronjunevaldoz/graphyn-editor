@@ -10,16 +10,29 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelFactory
-import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
-import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
+import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
+import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
+import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginRegistrar
 
-object SampleLoggerEditorPanels {
-    fun register(registry: EditorPanelRegistry) {
-        registry.register("sample.logger", EditorPanelFactory { context ->
-            SampleLoggerPanel(context)
-        })
+object SampleLoggerEditorPlugin : GraphynEditorPlugin {
+    override val metadata = GraphynEditorPluginMetadata(
+        id = "graphyn.sample.logger.editor",
+        displayName = "Sample Logger Editor",
+        version = "1.0.0",
+        apiVersion = GRAPHYN_EDITOR_PLUGIN_API_VERSION,
+    )
+
+    override fun register(registrar: GraphynEditorPluginRegistrar) {
+        registrar.registerPanel(
+            "sample.logger",
+            EditorPanelFactory { context ->
+                SampleLoggerPanel(context)
+            },
+        )
     }
 }
 

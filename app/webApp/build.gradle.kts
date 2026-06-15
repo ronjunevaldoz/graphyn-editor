@@ -21,6 +21,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.app.shared)
+            implementation(projects.editorApi)
             implementation(projects.plugins.sampleLogger)
             implementation(projects.plugins.sampleLoggerUi)
 
