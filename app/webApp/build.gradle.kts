@@ -22,6 +22,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.app.shared)
             implementation(projects.plugins.sampleLogger)
+            implementation(projects.plugins.sampleLoggerUi)
 
             implementation(libs.compose.ui)
         }

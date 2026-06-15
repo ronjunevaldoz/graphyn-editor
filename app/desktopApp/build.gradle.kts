@@ -9,6 +9,7 @@ plugins {
 dependencies {
     implementation(projects.app.shared)
     implementation(projects.plugins.sampleLogger)
+    implementation(projects.plugins.sampleLoggerUi)
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutinesSwing)
