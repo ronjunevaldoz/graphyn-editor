@@ -1,59 +1,32 @@
 package com.ronjunevaldoz.graphyn.editor.canvas
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import com.ronjunevaldoz.graphyn.core.model.NodeRef
-import com.ronjunevaldoz.graphyn.core.model.NodeSpec
-import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
-import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynCanvasBackdrop
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionLayer
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyCanvasHint
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
-import kotlin.math.absoluteValue
-import kotlin.math.roundToInt
-
-private enum class PortSide {
-    Input,
-    Output,
-}
 
 @Composable
 fun GraphynCanvasSurface(
@@ -112,9 +85,7 @@ fun GraphynCanvasSurface(
                     awaitEachGesture {
                         val firstDown = awaitFirstDown(requireUnconsumed = false)
                         val startWorld = state.screenToWorld(firstDown.position)
-                        if (state.isWorldPositionOverNode(startWorld)) {
-                            return@awaitEachGesture
-                        }
+                        if (state.isWorldPositionOverNode(startWorld)) return@awaitEachGesture
 
                         var accumulatedDrag = Offset.Zero
                         var dragging = false
@@ -124,14 +95,14 @@ fun GraphynCanvasSurface(
                             val change = event.changes.firstOrNull() ?: continue
                             if (!change.pressed) break
 
-                            val delta = change.positionChange()
+                            val delta = change.position - change.previousPosition
                             if (delta != Offset.Zero) {
                                 accumulatedDrag += delta
                                 if (!dragging && accumulatedDrag.getDistance() <= viewConfiguration.touchSlop) {
                                     continue
                                 }
                                 dragging = true
-                                change.consume()
+                                change.consumePositionChange()
                                 state.dispatch(
                                     GraphynEditorIntent.UpdateViewportTransform(
                                         pan = delta,
@@ -146,7 +117,7 @@ fun GraphynCanvasSurface(
         )
 
         val dotColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-        GridBackdrop(
+        GraphynCanvasBackdrop(
             modifier = Modifier.fillMaxSize(),
             dotColor = dotColor,
             viewport = state.viewport,
@@ -154,7 +125,7 @@ fun GraphynCanvasSurface(
 
         val workflow = state.workflow
         if (workflow == null) {
-            EmptyCanvasHint()
+            GraphynEmptyCanvasHint()
             return
         }
 
@@ -169,18 +140,19 @@ fun GraphynCanvasSurface(
                     scaleY = state.viewport.scale
                 },
         ) {
-            ConnectionLayer(
+            GraphynConnectionLayer(
                 workflow = workflow,
                 state = state,
                 draft = state.connectionDraft,
                 draftPointer = state.connectionDraftPosition,
                 modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
             )
 
             workflow.nodes.forEachIndexed { index, node ->
                 val spec = nodeSpecs.resolve(node.type)
                 val position = state.nodePosition(node.id, index)
-                CanvasNodeCard(
+                GraphynNodeCard(
                     modifier = Modifier.offset { position },
                     node = node,
                     spec = spec,
@@ -200,350 +172,32 @@ fun GraphynCanvasSurface(
                         state.dispatch(GraphynEditorIntent.BeginConnection(node.id, port))
                     },
                     onCompleteConnection = { port ->
-                        state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, port))
+                        val draft = state.connectionDraft
+                        val sourceNode = draft?.let { workflow.nodes.firstOrNull { nodeRef -> nodeRef.id == it.fromNodeId } }
+                        val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
+                        val sourcePort = draft?.let { draftConnection ->
+                            sourceSpec?.outputs?.firstOrNull { it.name == draftConnection.fromPort }
+                        }
+                        val targetSpec = spec
+                        val targetPort = targetSpec?.inputs?.firstOrNull { it.name == port }
+
+                        if (draft == null || sourceNode == null || sourceSpec == null || sourcePort == null || targetPort == null) {
+                            state.addDebugLog("Rejected connection: unknown port")
+                            state.dispatch(GraphynEditorIntent.CancelConnection)
+                        } else {
+                            if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
+                                state.addDebugLog(
+                                    "Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:$port",
+                                )
+                                state.dispatch(GraphynEditorIntent.CancelConnection)
+                            } else {
+                                state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, port))
+                            }
+                        }
                     },
                     isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun GridBackdrop(
-    modifier: Modifier,
-    dotColor: Color,
-    viewport: com.ronjunevaldoz.graphyn.editor.state.GraphynViewport,
-) {
-    val backdropStart = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f)
-    val backdropEnd = MaterialTheme.colorScheme.surface.copy(alpha = 0.06f)
-    Canvas(modifier = modifier) {
-        val baseSpacing = 28.dp.toPx()
-        val spacing = (baseSpacing * viewport.scale).coerceAtLeast(8f)
-        val dotRadius = (1.15.dp.toPx() + (viewport.scale * 0.25f)).coerceIn(1.15f, 2.35f)
-        val majorSpacing = spacing * 4f
-        val originX = ((viewport.offset.x % spacing) + spacing) % spacing
-        val originY = ((viewport.offset.y % spacing) + spacing) % spacing
-
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    backdropStart,
-                    backdropEnd,
-                ),
-            ),
-        )
-
-        var x = originX
-        while (x < size.width) {
-            var y = originY
-            while (y < size.height) {
-                val isMajor = ((x - originX) / spacing).toInt() % 4 == 0 && ((y - originY) / spacing).toInt() % 4 == 0
-                drawCircle(
-                    color = dotColor.copy(alpha = if (isMajor) 0.75f else 0.35f),
-                    radius = if (isMajor) dotRadius * 1.35f else dotRadius,
-                    center = Offset(x, y),
-                )
-                y += spacing
-            }
-            x += spacing
-        }
-
-        var majorX = ((viewport.offset.x % majorSpacing) + majorSpacing) % majorSpacing
-        while (majorX < size.width) {
-            drawLine(
-                color = dotColor.copy(alpha = 0.05f),
-                start = Offset(majorX, 0f),
-                end = Offset(majorX, size.height),
-                strokeWidth = 1f,
-            )
-            majorX += majorSpacing
-        }
-    }
-}
-
-@Composable
-private fun ConnectionLayer(
-    workflow: WorkflowDefinition,
-    state: GraphynEditorState,
-    draft: GraphynConnectionDraft?,
-    draftPointer: Offset?,
-    modifier: Modifier,
-) {
-    val connectionColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-    Canvas(modifier = modifier) {
-        workflow.connections.forEach { connection ->
-            val fromNode = workflow.nodes.firstOrNull { it.id == connection.fromNodeId } ?: return@forEach
-            val toNode = workflow.nodes.firstOrNull { it.id == connection.toNodeId } ?: return@forEach
-            val fromIndex = workflow.nodes.indexOf(fromNode)
-            val toIndex = workflow.nodes.indexOf(toNode)
-            val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
-            val toBounds = state.nodeBounds(toNode.id, toIndex)
-
-            val start = Offset(
-                x = fromBounds.right,
-                y = fromBounds.center.y,
-            )
-            val end = Offset(
-                x = toBounds.left,
-                y = toBounds.center.y,
-            )
-            val distance = (end.x - start.x).absoluteValue.coerceAtLeast(120f)
-            val direction = if (end.x >= start.x) 1f else -1f
-            val control = distance * 0.35f
-
-            val path = Path().apply {
-                moveTo(start.x, start.y)
-                cubicTo(
-                    start.x + (control * direction),
-                    start.y,
-                    end.x - (control * direction),
-                    end.y,
-                    end.x,
-                    end.y,
-                )
-            }
-
-            drawPath(
-                path = path,
-                color = connectionColor,
-                style = Stroke(width = 4f),
-            )
-        }
-
-        val draftConnection = draft ?: return@Canvas
-        val fromNode = workflow.nodes.firstOrNull { it.id == draftConnection.fromNodeId } ?: return@Canvas
-        val fromIndex = workflow.nodes.indexOf(fromNode)
-        val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
-        val start = Offset(
-            x = fromBounds.right,
-            y = fromBounds.center.y,
-        )
-        val end = draftPointer ?: Offset(start.x + 120f, start.y)
-        val distance = (end.x - start.x).absoluteValue.coerceAtLeast(120f)
-        val direction = if (end.x >= start.x) 1f else -1f
-        val control = distance * 0.35f
-
-        val draftPath = Path().apply {
-            moveTo(start.x, start.y)
-            cubicTo(
-                start.x + (control * direction),
-                start.y,
-                end.x - (control * direction),
-                end.y,
-                end.x,
-                end.y,
-            )
-        }
-
-        drawPath(
-            path = draftPath,
-            color = connectionColor.copy(alpha = 0.35f),
-            style = Stroke(width = 3f),
-        )
-    }
-}
-
-@Composable
-private fun CanvasNodeCard(
-    modifier: Modifier,
-    node: NodeRef,
-    spec: NodeSpec?,
-    selected: Boolean,
-    outputs: Map<String, WorkflowValue>,
-    flattenedOutputs: Map<String, WorkflowValue>,
-    onClick: () -> Unit,
-    onMove: (IntOffset) -> Unit,
-    onBeginConnection: (String) -> Unit,
-    onCompleteConnection: (String) -> Unit,
-    isConnectingFrom: Boolean,
-) {
-    val borderColor = if (selected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outlineVariant
-    }
-
-    Card(
-        modifier = modifier
-            .wrapContentWidth()
-            .wrapContentHeight()
-            .sizeIn(
-                minWidth = GraphynCanvasMetrics.NodeSize.width.dp,
-                maxWidth = GraphynCanvasMetrics.NodeSize.width.dp + 40.dp,
-                minHeight = GraphynCanvasMetrics.NodeSize.height.dp,
-            )
-            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .pointerInput(node.id) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    onMove(
-                        IntOffset(
-                            x = dragAmount.x.roundToInt(),
-                            y = dragAmount.y.roundToInt(),
-                        ),
-                    )
-                }
-            },
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = spec?.label ?: node.type,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = node.id,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            if (spec != null) {
-                PortSection(
-                    title = "Inputs",
-                    ports = spec.inputs.map { "${it.name}:${it.type}" },
-                    side = PortSide.Input,
-                    onPortClick = onCompleteConnection,
-                )
-                PortSection(
-                    title = "Outputs",
-                    ports = spec.outputs.map { "${it.name}:${it.type}" },
-                    side = PortSide.Output,
-                    onPortClick = onBeginConnection,
-                )
-            } else {
-                Text(
-                    text = "No node spec registered yet.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            if (outputs.isNotEmpty()) {
-                SummarySection(title = "Outputs", text = outputs.keys.joinToString())
-            }
-
-            if (flattenedOutputs.isNotEmpty()) {
-                SummarySection(title = "Flattened", text = flattenedOutputs.keys.joinToString())
-            }
-
-            if (isConnectingFrom) {
-                SummarySection(title = "Connection", text = "Draft connection started")
-            }
-        }
-    }
-}
-
-@Composable
-private fun PortSection(
-    title: String,
-    ports: List<String>,
-    side: PortSide,
-    onPortClick: (String) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (ports.isEmpty()) {
-            Text(
-                text = "None",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ports.take(4).forEach { port ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (side == PortSide.Input) {
-                            Arrangement.Start
-                        } else {
-                            Arrangement.End
-                        },
-                    ) {
-                        PortBubble(
-                            label = port,
-                            side = side,
-                            onClick = { onPortClick(port) },
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PortBubble(
-    label: String,
-    side: PortSide,
-    onClick: () -> Unit,
-) {
-    val accent = if (side == PortSide.Input) {
-        MaterialTheme.colorScheme.secondary
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
-    val background = accent.copy(alpha = 0.14f)
-
-    Row(
-        modifier = Modifier
-            .background(background, RoundedCornerShape(999.dp))
-            .border(1.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .background(accent, CircleShape),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-}
-
-@Composable
-private fun SummarySection(
-    title: String,
-    text: String,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-        )
-    }
-}
-
-@Composable
-private fun EmptyCanvasHint() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "Add a workflow to start laying out nodes.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

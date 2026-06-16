@@ -1,0 +1,225 @@
+package com.ronjunevaldoz.graphyn.editor.canvas.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.model.NodeRef
+import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
+import kotlin.math.roundToInt
+
+private enum class PortSide {
+    Input,
+    Output,
+}
+
+@Composable
+fun GraphynNodeCard(
+    modifier: Modifier,
+    node: NodeRef,
+    spec: NodeSpec?,
+    selected: Boolean,
+    outputs: Map<String, WorkflowValue>,
+    flattenedOutputs: Map<String, WorkflowValue>,
+    onClick: () -> Unit,
+    onMove: (IntOffset) -> Unit,
+    onBeginConnection: (String) -> Unit,
+    onCompleteConnection: (String) -> Unit,
+    isConnectingFrom: Boolean,
+) {
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
+    val interactionSource = remember(node.id) { MutableInteractionSource() }
+
+    Card(
+        modifier = modifier
+            .size(GraphynCanvasMetrics.NodeSize.width.dp, GraphynCanvasMetrics.NodeSize.height.dp)
+            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            )
+            .pointerInput(node.id) {
+                detectDragGestures { change, dragAmount ->
+                    change.consumePositionChange()
+                    onMove(
+                        IntOffset(
+                            x = dragAmount.x.roundToInt(),
+                            y = dragAmount.y.roundToInt(),
+                        ),
+                    )
+                }
+            },
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = spec?.label ?: node.type,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = node.id,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (spec != null) {
+                GraphynPortSection(
+                    title = "Inputs",
+                    ports = spec.inputs.map { "${it.name}:${it.type}" },
+                    side = PortSide.Input,
+                    onPortClick = onCompleteConnection,
+                )
+                GraphynPortSection(
+                    title = "Outputs",
+                    ports = spec.outputs.map { "${it.name}:${it.type}" },
+                    side = PortSide.Output,
+                    onPortClick = onBeginConnection,
+                )
+            } else {
+                Text(
+                    text = "No node spec registered yet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (outputs.isNotEmpty()) {
+                GraphynSummarySection(title = "Outputs", text = outputs.keys.joinToString())
+            }
+
+            if (flattenedOutputs.isNotEmpty()) {
+                GraphynSummarySection(title = "Flattened", text = flattenedOutputs.keys.joinToString())
+            }
+
+            if (isConnectingFrom) {
+                GraphynSummarySection(title = "Connection", text = "Draft connection started")
+            }
+        }
+    }
+}
+
+@Composable
+private fun GraphynPortSection(
+    title: String,
+    ports: List<String>,
+    side: PortSide,
+    onPortClick: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (ports.isEmpty()) {
+            Text(
+                text = "None",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ports.take(4).forEach { port ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (side == PortSide.Input) {
+                            Arrangement.Start
+                        } else {
+                            Arrangement.End
+                        },
+                    ) {
+                        GraphynPortBubble(
+                            label = port,
+                            side = side,
+                            onClick = { onPortClick(port) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GraphynPortBubble(
+    label: String,
+    side: PortSide,
+    onClick: () -> Unit,
+) {
+    val accent = if (side == PortSide.Input) {
+        MaterialTheme.colorScheme.secondary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+    val background = accent.copy(alpha = 0.14f)
+
+    Row(
+        modifier = Modifier
+            .background(background, RoundedCornerShape(999.dp))
+            .border(1.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(accent, CircleShape),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+@Composable
+private fun GraphynSummarySection(
+    title: String,
+    text: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}

@@ -135,6 +135,54 @@ class CoreWorkflowTest {
     }
 
     @Test
+    fun validatorRejectsTypeIncompatibleConnections() {
+        val specRegistry = DefaultNodeSpecRegistry().apply {
+            register(
+                NodeSpec(
+                    type = "source",
+                    label = "Source",
+                    inputs = emptyList(),
+                    outputs = listOf(
+                        PortSpec(name = "value", type = WorkflowType.IntType),
+                    ),
+                ),
+            )
+            register(
+                NodeSpec(
+                    type = "sink",
+                    label = "Sink",
+                    inputs = listOf(
+                        PortSpec(name = "value", type = WorkflowType.StringType),
+                    ),
+                    outputs = emptyList(),
+                ),
+            )
+        }
+
+        val validator = WorkflowGraphValidator(specRegistry)
+        val errors = validator.validate(
+            WorkflowDefinition(
+                id = "workflow-3",
+                name = "Broken Connection",
+                nodes = listOf(
+                    NodeRef(id = "source-1", type = "source"),
+                    NodeRef(id = "sink-1", type = "sink"),
+                ),
+                connections = listOf(
+                    ConnectionRef(
+                        fromNodeId = "source-1",
+                        fromPort = "value",
+                        toNodeId = "sink-1",
+                        toPort = "value",
+                    ),
+                ),
+            ),
+        )
+
+        assertTrue(errors.any { it.code == "type_mismatch" })
+    }
+
+    @Test
     fun downstreamNodesAreAffectedWhenSourceNodeUpdates() {
         val workflow = WorkflowDefinition(
             id = "workflow-3",

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.core.validation.WorkflowGraphValidator
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
@@ -84,6 +85,12 @@ fun GraphynEditorShell(
         )
     }
     val executionEngine = dependencies.executionEngine
+    val validationValidator = remember(dependencies.nodeSpecs) {
+        WorkflowGraphValidator(dependencies.nodeSpecs)
+    }
+    val validationErrors = remember(state.workflow, dependencies.nodeSpecs) {
+        state.workflow?.let(validationValidator::validate).orEmpty()
+    }
 
     Row(
         modifier = Modifier
@@ -150,6 +157,7 @@ fun GraphynEditorShell(
             state = state,
             nodeSpecs = dependencies.nodeSpecs,
             panels = dependencies.panels,
+            validationErrors = validationErrors,
         )
     }
 }
@@ -274,6 +282,7 @@ private fun RightPanelHost(
     state: GraphynEditorState,
     nodeSpecs: NodeSpecRegistry,
     panels: EditorPanelRegistry,
+    validationErrors: List<com.ronjunevaldoz.graphyn.core.model.ValidationError>,
 ) {
     val selectedNode = remember(state.workflow, state.selectedNodeId) { state.selectedNode() }
     val selectedNodeSpec = remember(selectedNode, nodeSpecs) {
@@ -289,13 +298,14 @@ private fun RightPanelHost(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Inspector", style = MaterialTheme.typography.titleMedium)
+            ValidationSummary(validationErrors = validationErrors)
             if (panelFactory != null) {
                 panelFactory.Content(
                     EditorPanelContext(
                         workflow = state.workflow,
                         selectedNode = selectedNode,
                         selectedNodeSpec = selectedNodeSpec,
-                        validationErrors = emptyList(),
+                        validationErrors = validationErrors,
                         selectedNodeOutputs = selectedNodeOutputs,
                         flattenedSelectedNodeOutputs = flattenedOutputs,
                     ),
@@ -319,6 +329,42 @@ private fun RightPanelHost(
                         modifier = Modifier.padding(top = 8.dp),
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ValidationSummary(
+    validationErrors: List<com.ronjunevaldoz.graphyn.core.model.ValidationError>,
+) {
+    if (validationErrors.isEmpty()) {
+        Text(
+            text = "Workflow valid.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.secondary,
+        )
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = "${validationErrors.size} validation issue(s)",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.error,
+        )
+        validationErrors.take(4).forEach { error ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = error.code,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                Text(
+                    text = error.message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
