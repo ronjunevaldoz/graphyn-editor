@@ -1,5 +1,7 @@
 package com.ronjunevaldoz.graphyn.editor
 
+import com.ronjunevaldoz.graphyn.core.execution.DefaultNodeExecutorRegistry
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
@@ -7,13 +9,11 @@ import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-import com.ronjunevaldoz.graphyn.core.execution.DefaultNodeExecutorRegistry
-import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
 import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
-import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelFactory
+import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -26,6 +26,18 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class EditorRegistryTest {
+    @Test
+    fun defaultEditorPanelRegistryStoresRegisteredPanels() {
+        val registry = DefaultEditorPanelRegistry()
+
+        registry.register(
+            "printer",
+            EditorPanelFactory { _: EditorPanelContext -> },
+        )
+
+        assertNotNull(registry.resolve("printer"))
+    }
+
     @Test
     fun editorPanelsCanBeRegisteredAndResolved() {
         val registry = DefaultGraphynEditorPluginRegistry()

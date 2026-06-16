@@ -21,4 +21,5 @@ Related:
 - [Type Model](./types.md)
 - [Core API Draft](./core-api.md)
 - [Plugin API Draft](./plugins.md)
+- [Editor Panel Host](./editor-panels.md)
 - [Plans](../plans/README.md)

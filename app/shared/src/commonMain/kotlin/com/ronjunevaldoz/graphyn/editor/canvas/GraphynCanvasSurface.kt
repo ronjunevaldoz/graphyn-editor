@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
@@ -24,6 +23,10 @@ import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynCanvasBackdrop
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionLayer
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyCanvasHint
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardFooter
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardHeader
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardSlots
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardPorts
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
@@ -102,7 +105,7 @@ fun GraphynCanvasSurface(
                                     continue
                                 }
                                 dragging = true
-                                change.consumePositionChange()
+                                change.consume()
                                 state.dispatch(
                                     GraphynEditorIntent.UpdateViewportTransform(
                                         pan = delta,
@@ -154,11 +157,7 @@ fun GraphynCanvasSurface(
                 val position = state.nodePosition(node.id, index)
                 GraphynNodeCard(
                     modifier = Modifier.offset { position },
-                    node = node,
-                    spec = spec,
                     selected = state.selectedNodeId == node.id,
-                    outputs = state.outputsFor(node.id),
-                    flattenedOutputs = state.flattenedOutputsFor(node.id),
                     onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
                     onMove = { delta ->
                         state.dispatch(
@@ -168,34 +167,53 @@ fun GraphynCanvasSurface(
                             ),
                         )
                     },
-                    onBeginConnection = { port ->
-                        state.dispatch(GraphynEditorIntent.BeginConnection(node.id, port))
-                    },
-                    onCompleteConnection = { port ->
-                        val draft = state.connectionDraft
-                        val sourceNode = draft?.let { workflow.nodes.firstOrNull { nodeRef -> nodeRef.id == it.fromNodeId } }
-                        val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
-                        val sourcePort = draft?.let { draftConnection ->
-                            sourceSpec?.outputs?.firstOrNull { it.name == draftConnection.fromPort }
-                        }
-                        val targetSpec = spec
-                        val targetPort = targetSpec?.inputs?.firstOrNull { it.name == port }
+                    slots = GraphynNodeCardSlots(
+                        header = {
+                            GraphynNodeCardHeader(
+                                node = node,
+                                spec = spec,
+                            )
+                        },
+                        ports = {
+                            GraphynNodeCardPorts(
+                                spec = spec,
+                                onBeginConnection = { port ->
+                                    state.dispatch(GraphynEditorIntent.BeginConnection(node.id, port))
+                                },
+                                onCompleteConnection = { port ->
+                                    val draft = state.connectionDraft
+                                    val sourceNode = draft?.let { workflow.nodes.firstOrNull { nodeRef -> nodeRef.id == it.fromNodeId } }
+                                    val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
+                                    val sourcePort = draft?.let { draftConnection ->
+                                        sourceSpec?.outputs?.firstOrNull { it.name == draftConnection.fromPort }
+                                    }
+                                    val targetSpec = spec
+                                    val targetPort = targetSpec?.inputs?.firstOrNull { it.name == port }
 
-                        if (draft == null || sourceNode == null || sourceSpec == null || sourcePort == null || targetPort == null) {
-                            state.addDebugLog("Rejected connection: unknown port")
-                            state.dispatch(GraphynEditorIntent.CancelConnection)
-                        } else {
-                            if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
-                                state.addDebugLog(
-                                    "Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:$port",
-                                )
-                                state.dispatch(GraphynEditorIntent.CancelConnection)
-                            } else {
-                                state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, port))
-                            }
-                        }
-                    },
-                    isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
+                                    if (draft == null || sourceNode == null || sourceSpec == null || sourcePort == null || targetPort == null) {
+                                        state.addDebugLog("Rejected connection: unknown port")
+                                        state.dispatch(GraphynEditorIntent.CancelConnection)
+                                    } else {
+                                        if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
+                                            state.addDebugLog(
+                                                "Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:$port",
+                                            )
+                                            state.dispatch(GraphynEditorIntent.CancelConnection)
+                                        } else {
+                                            state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, port))
+                                        }
+                                    }
+                                },
+                            )
+                        },
+                        footer = {
+                            GraphynNodeCardFooter(
+                                outputs = state.outputsFor(node.id),
+                                flattenedOutputs = state.flattenedOutputsFor(node.id),
+                                isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
+                            )
+                        },
+                    ),
                 )
             }
         }

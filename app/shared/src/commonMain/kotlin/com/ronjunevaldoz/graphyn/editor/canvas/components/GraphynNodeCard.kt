@@ -2,12 +2,13 @@ package com.ronjunevaldoz.graphyn.editor.canvas.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -39,23 +39,17 @@ private enum class PortSide {
 @Composable
 fun GraphynNodeCard(
     modifier: Modifier,
-    node: NodeRef,
-    spec: NodeSpec?,
     selected: Boolean,
-    outputs: Map<String, WorkflowValue>,
-    flattenedOutputs: Map<String, WorkflowValue>,
     onClick: () -> Unit,
     onMove: (IntOffset) -> Unit,
-    onBeginConnection: (String) -> Unit,
-    onCompleteConnection: (String) -> Unit,
-    isConnectingFrom: Boolean,
+    slots: GraphynNodeCardSlots = GraphynNodeCardSlots(),
 ) {
     val borderColor = if (selected) {
         MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.outlineVariant
     }
-    val interactionSource = remember(node.id) { MutableInteractionSource() }
+    val interactionSource = remember(selected) { MutableInteractionSource() }
 
     Card(
         modifier = modifier
@@ -66,9 +60,9 @@ fun GraphynNodeCard(
                 indication = null,
                 onClick = onClick,
             )
-            .pointerInput(node.id) {
+            .pointerInput(selected) {
                 detectDragGestures { change, dragAmount ->
-                    change.consumePositionChange()
+                    change.consume()
                     onMove(
                         IntOffset(
                             x = dragAmount.x.roundToInt(),
@@ -82,51 +76,79 @@ fun GraphynNodeCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = spec?.label ?: node.type,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = node.id,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            if (spec != null) {
-                GraphynPortSection(
-                    title = "Inputs",
-                    ports = spec.inputs.map { "${it.name}:${it.type}" },
-                    side = PortSide.Input,
-                    onPortClick = onCompleteConnection,
-                )
-                GraphynPortSection(
-                    title = "Outputs",
-                    ports = spec.outputs.map { "${it.name}:${it.type}" },
-                    side = PortSide.Output,
-                    onPortClick = onBeginConnection,
-                )
-            } else {
-                Text(
-                    text = "No node spec registered yet.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            if (outputs.isNotEmpty()) {
-                GraphynSummarySection(title = "Outputs", text = outputs.keys.joinToString())
-            }
-
-            if (flattenedOutputs.isNotEmpty()) {
-                GraphynSummarySection(title = "Flattened", text = flattenedOutputs.keys.joinToString())
-            }
-
-            if (isConnectingFrom) {
-                GraphynSummarySection(title = "Connection", text = "Draft connection started")
+            with(slots) {
+                header()
+                body()
+                ports()
+                footer()
             }
         }
+    }
+}
+
+@Composable
+fun GraphynNodeCardHeader(
+    node: NodeRef,
+    spec: NodeSpec?,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = spec?.label ?: node.type,
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = node.id,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+fun GraphynNodeCardPorts(
+    spec: NodeSpec?,
+    onBeginConnection: (String) -> Unit,
+    onCompleteConnection: (String) -> Unit,
+) {
+    if (spec == null) {
+        Text(
+            text = "No node spec registered yet.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+
+    GraphynPortSection(
+        title = "Inputs",
+        ports = spec.inputs.map { "${it.name}:${it.type}" },
+        side = PortSide.Input,
+        onPortClick = onCompleteConnection,
+    )
+    GraphynPortSection(
+        title = "Outputs",
+        ports = spec.outputs.map { "${it.name}:${it.type}" },
+        side = PortSide.Output,
+        onPortClick = onBeginConnection,
+    )
+}
+
+@Composable
+fun GraphynNodeCardFooter(
+    outputs: Map<String, WorkflowValue>,
+    flattenedOutputs: Map<String, WorkflowValue>,
+    isConnectingFrom: Boolean,
+) {
+    if (outputs.isNotEmpty()) {
+        GraphynSummarySection(title = "Outputs", text = outputs.keys.joinToString())
+    }
+
+    if (flattenedOutputs.isNotEmpty()) {
+        GraphynSummarySection(title = "Flattened", text = flattenedOutputs.keys.joinToString())
+    }
+
+    if (isConnectingFrom) {
+        GraphynSummarySection(title = "Connection", text = "Draft connection started")
     }
 }
 

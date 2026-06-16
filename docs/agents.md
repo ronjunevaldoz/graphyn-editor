@@ -12,6 +12,7 @@ Reference docs:
 - [Project Structure](./architecture/README.md)
 - [Plan Phases](./plans/README.md)
 - [Type Model](./architecture/types.md)
+- [Skills Prospect](./skills/README.md)
 
 Working rule:
 - If a decision changes architecture, add or update a referenced doc first, then implement code.
