@@ -78,7 +78,7 @@ fun calculateMinimapLayout(
     nodePositions: List<IntOffset>,
     nodeSize: IntSize,
     minimapSize: IntSize,
-    padding: Float = 80f,
+    padding: Float = 0f,
 ): GraphynMinimapLayout {
     val worldBounds = calculateWorldBounds(nodePositions, nodeSize, padding)
     return calculateMinimapLayout(
@@ -132,7 +132,7 @@ fun viewportCenteredOnWorldPoint(
 fun calculateWorldBounds(
     nodePositions: List<IntOffset>,
     nodeSize: IntSize,
-    padding: Float = 80f,
+    padding: Float = 0f,
 ): Rect {
     if (nodePositions.isEmpty()) {
         return Rect(0f, 0f, 1f, 1f)

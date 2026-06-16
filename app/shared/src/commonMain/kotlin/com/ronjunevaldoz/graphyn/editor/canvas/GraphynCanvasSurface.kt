@@ -41,7 +41,6 @@ fun GraphynCanvasSurface(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-            .padding(8.dp)
             .onSizeChanged { state.updateCanvasSize(it) }
             .graphicsLayer { clip = true }
             .pointerInput(state.connectionDraft?.fromNodeId, state.viewport) {

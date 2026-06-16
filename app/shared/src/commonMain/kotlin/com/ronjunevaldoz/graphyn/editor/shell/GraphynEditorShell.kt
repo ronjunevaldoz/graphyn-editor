@@ -79,28 +79,19 @@ fun GraphynEditorShell(
         GraphynPalettePanel(
             modifier = Modifier
                 .fillMaxHeight()
-                .fillMaxWidth(0.22f),
+                .weight(0.15f),
             nodeSpecs = dependencies.nodeSpecs,
             onAddNode = { spec -> state.dispatch(GraphynEditorIntent.AddNode(spec)) },
         )
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .fillMaxWidth(0.56f),
+                .weight(0.7f),
         ) {
-            GraphynTopToolbar(
-                branding = branding,
-                appearanceState = appearanceState,
-                canRun = executionEngine != null,
-                onRun = {
-                    executionEngine?.let { engine -> state.execute(engine) }
-                },
-            )
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(.8f)
                     .fillMaxWidth()
-                    .padding(16.dp),
             ) {
                 Box(
                     modifier = Modifier
@@ -118,26 +109,42 @@ fun GraphynEditorShell(
                         state = state,
                         modifier = Modifier
                             .align(androidx.compose.ui.Alignment.BottomEnd)
-                            .padding(16.dp)
                             .size(width = 240.dp, height = 160.dp)
                             .graphicsLayer {
                                 alpha = 0.96f
-                                shadowElevation = 8f
                                 clip = true
                             },
                     )
                 }
             }
-            GraphynLogPanel(state = state)
+            GraphynLogPanel(
+                modifier = Modifier.weight(0.2f),
+                state = state
+            )
         }
-        GraphynInspectorPanel(
-            modifier = Modifier
+        Column(
+            Modifier
                 .fillMaxHeight()
-                .fillMaxWidth(0.22f),
-            state = state,
-            nodeSpecs = dependencies.nodeSpecs,
-            panels = dependencies.panels,
-            validationErrors = validationErrors,
-        )
+                .weight(0.15f)
+        ) {
+
+            GraphynTopToolbar(
+//                modifier = Modifier.weight(0.2f),
+                branding = branding,
+                appearanceState = appearanceState,
+                canRun = executionEngine != null,
+                onRun = {
+                    executionEngine?.let { engine -> state.execute(engine) }
+                },
+            )
+
+            GraphynInspectorPanel(
+                modifier = Modifier,
+                state = state,
+                nodeSpecs = dependencies.nodeSpecs,
+                panels = dependencies.panels,
+                validationErrors = validationErrors,
+            )
+        }
     }
 }

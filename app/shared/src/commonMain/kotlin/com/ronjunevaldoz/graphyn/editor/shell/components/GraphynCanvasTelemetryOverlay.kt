@@ -1,93 +1,61 @@
 package com.ronjunevaldoz.graphyn.editor.shell.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import kotlin.math.roundToInt
 
+/**
+ * TODO audit for design system
+ * The current design is for stats
+ */
 @Composable
 internal fun GraphynCanvasTelemetryOverlay(
     state: GraphynEditorState,
     modifier: Modifier = Modifier,
 ) {
-    GraphynChromePanel(
+    Surface(
         modifier = modifier,
-        tonalElevation = 4.dp,
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+        ),
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        Row(
+            modifier = Modifier
+                .background(Color.Black.copy(alpha = 0.5f))
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Canvas",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = "Scale ${formatScale(state.viewport.scale)}x",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-                Text(
-                    text = "Offset ${formatOffset(state.viewport.offset)}",
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-            Text(
-                text = "Pan: drag canvas",
+                text = "Scale ${formatScale(state.viewport.scale)}x",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color.White
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GraphynSmallOverlayButton(
-                    text = "Zoom +",
-                    tag = "zoom-in-button",
-                    onClick = {
-                        state.dispatch(
-                            GraphynEditorIntent.UpdateViewportTransform(
-                                pan = Offset.Zero,
-                                zoom = 1.15f,
-                                focus = Offset.Zero,
-                            ),
-                        )
-                        state.addDebugLog("Zoomed in to ${formatScale(state.viewport.scale)}x")
-                    },
-                )
-                GraphynSmallOverlayButton(
-                    text = "Zoom -",
-                    tag = "zoom-out-button",
-                    onClick = {
-                        state.dispatch(
-                            GraphynEditorIntent.UpdateViewportTransform(
-                                pan = Offset.Zero,
-                                zoom = 1f / 1.15f,
-                                focus = Offset.Zero,
-                            ),
-                        )
-                        state.addDebugLog("Zoomed out to ${formatScale(state.viewport.scale)}x")
-                    },
-                )
-                GraphynSmallOverlayButton(
-                    text = "Reset",
-                    tag = "reset-viewport-button",
-                    onClick = { state.resetViewport() },
-                )
-            }
+            Text(
+                text = "Offset ${formatOffset(state.viewport.offset)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White
+            )
         }
     }
 }

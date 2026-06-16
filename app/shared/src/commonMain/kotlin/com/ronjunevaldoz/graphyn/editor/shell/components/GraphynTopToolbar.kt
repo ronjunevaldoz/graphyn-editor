@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
@@ -25,15 +24,14 @@ import com.ronjunevaldoz.graphyn.editor.theme.GraphynThemeMode
 
 @Composable
 internal fun GraphynTopToolbar(
+    modifier: Modifier = Modifier,
     branding: GraphynBranding,
     appearanceState: GraphynAppearanceState,
     canRun: Boolean,
     onRun: () -> Unit,
 ) {
     GraphynChromePanel(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp, start = 12.dp, end = 12.dp),
+        modifier = modifier.fillMaxWidth(),
         tonalElevation = 4.dp,
     ) {
         Column(
