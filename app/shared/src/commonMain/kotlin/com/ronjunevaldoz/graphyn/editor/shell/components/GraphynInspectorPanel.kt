@@ -52,6 +52,11 @@ internal fun GraphynInspectorPanel(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Text(
+                    text = "Click an input port to reconnect.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Button(onClick = { state.dispatch(GraphynEditorIntent.DeleteSelectedConnection) }) {
                     Text("Delete connection")
                 }

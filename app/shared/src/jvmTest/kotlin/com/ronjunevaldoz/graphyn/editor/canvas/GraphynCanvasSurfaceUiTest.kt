@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.editor.canvas
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -14,6 +15,7 @@ import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShell
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShellDependencies
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
@@ -152,6 +154,155 @@ class GraphynCanvasSurfaceUiTest {
         rule.waitUntil(timeoutMillis = 5_000) { state.selectedConnection != null }
 
         assertEquals(connection, state.selectedConnection)
+    }
+
+    @Test
+    fun clickingEmptyCanvasWhileDraftActiveShowsNodePicker() {
+        val state = GraphynEditorState(twoNodeWorkflow())
+
+        rule.setContent {
+            GraphynEditorShell(
+                dependencies = GraphynEditorShellDependencies(nodeSpecs = nodeSpecs()),
+                state = state,
+                appearanceState = rememberGraphynAppearanceState(),
+            )
+        }
+
+        rule.onNodeWithTag("output-port-logger-1-message").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) { state.connectionDraft != null }
+
+        rule.onNodeWithTag("canvas-background").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) { state.nodePickerState != null }
+
+        assertNotNull(state.nodePickerState)
+        // draft is preserved so the picker can complete the connection
+        assertNotNull(state.connectionDraft)
+    }
+
+    @Test
+    fun clickingInputPortWithNoDraftStartsInputDraft() {
+        val state = GraphynEditorState(twoNodeWorkflow())
+
+        rule.setContent {
+            GraphynEditorShell(
+                dependencies = GraphynEditorShellDependencies(nodeSpecs = nodeSpecs()),
+                state = state,
+                appearanceState = rememberGraphynAppearanceState(),
+            )
+        }
+
+        assertNull(state.connectionDraft)
+        rule.onNodeWithTag("input-port-logger-2-message").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) { state.connectionDraft != null }
+
+        assertEquals("logger-2", state.connectionDraft?.fromNodeId)
+        assertEquals("message", state.connectionDraft?.fromPort)
+        assertEquals(true, state.connectionDraft?.isFromInput)
+    }
+
+    @Test
+    fun emptyNodesHintShownWhenWorkflowHasNoNodes() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(id = "empty", name = "Empty", nodes = emptyList(), connections = emptyList()),
+        )
+
+        rule.setContent {
+            GraphynEditorShell(
+                dependencies = GraphynEditorShellDependencies(nodeSpecs = nodeSpecs()),
+                state = state,
+                appearanceState = rememberGraphynAppearanceState(),
+            )
+        }
+
+        rule.onNodeWithTag("empty-nodes-hint").assertIsDisplayed()
+    }
+
+    @Test
+    fun reconnectingSelectedConnectionUpdatesTarget() {
+        val connection = ConnectionRef(
+            fromNodeId = "logger-1",
+            fromPort = "message",
+            toNodeId = "logger-2",
+            toPort = "message",
+        )
+        val state = GraphynEditorState(twoNodeWorkflow(connection)).apply {
+            setNodePosition("logger-1", IntOffset(0, 0))
+            setNodePosition("logger-2", IntOffset(400, 0))
+        }
+
+        rule.setContent {
+            GraphynEditorShell(
+                dependencies = GraphynEditorShellDependencies(nodeSpecs = nodeSpecs()),
+                state = state,
+                appearanceState = rememberGraphynAppearanceState(),
+            )
+        }
+
+        // select the connection via its midpoint dot
+        rule.onNodeWithTag("connection-midpoint-logger-1-message").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) { state.selectedConnection != null }
+
+        // click the input port of logger-1 to reconnect the same connection back to logger-1
+        rule.onNodeWithTag("input-port-logger-1-message").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) {
+            state.selectedConnection?.toNodeId == "logger-1"
+        }
+
+        assertEquals("logger-1", state.selectedConnection?.toNodeId)
+        assertEquals("message", state.selectedConnection?.toPort)
+        assertEquals("logger-1", state.workflow?.connections?.first()?.toNodeId)
+    }
+
+    @Test
+    fun nodePickerPopupAppearsWhenShowNodePickerDispatched() {
+        val state = GraphynEditorState(twoNodeWorkflow())
+
+        rule.setContent {
+            GraphynEditorShell(
+                dependencies = GraphynEditorShellDependencies(nodeSpecs = nodeSpecs()),
+                state = state,
+                appearanceState = rememberGraphynAppearanceState(),
+            )
+        }
+
+        rule.onNodeWithTag("output-port-logger-1-message").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) { state.connectionDraft != null }
+
+        state.dispatch(GraphynEditorIntent.ShowNodePicker(
+            screenPosition = Offset(200f, 200f),
+            worldPosition = Offset(100f, 100f),
+        ))
+        rule.waitUntil(timeoutMillis = 5_000) { state.nodePickerState != null }
+
+        rule.onNodeWithTag("node-picker-popup").assertIsDisplayed()
+    }
+
+    @Test
+    fun pickingNodeFromPickerAddsNodeAndConnects() {
+        val state = GraphynEditorState(twoNodeWorkflow())
+
+        rule.setContent {
+            GraphynEditorShell(
+                dependencies = GraphynEditorShellDependencies(nodeSpecs = nodeSpecs()),
+                state = state,
+                appearanceState = rememberGraphynAppearanceState(),
+            )
+        }
+
+        rule.onNodeWithTag("output-port-logger-1-message").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) { state.connectionDraft != null }
+
+        state.dispatch(GraphynEditorIntent.ShowNodePicker(
+            screenPosition = Offset(200f, 200f),
+            worldPosition = Offset(100f, 100f),
+        ))
+        rule.waitUntil(timeoutMillis = 5_000) { state.nodePickerState != null }
+
+        rule.onNodeWithTag("node-picker-item-logger").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) { state.nodePickerState == null }
+
+        assertEquals(3, state.workflow?.nodes?.size)
+        assertNotNull(state.workflow?.connections?.firstOrNull())
     }
 
     @Test

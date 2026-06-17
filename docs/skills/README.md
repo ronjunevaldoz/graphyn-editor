@@ -137,4 +137,5 @@ Use case:
 - [Type Model](../architecture/types.md)
 - [Plugin API Draft](../architecture/plugins.md)
 - [Plan Phases](../plans/README.md)
+- [External KMP Agent Skills](../../.gemini/skills/kotlin-multiplatform-expert/SKILL.md)
 

@@ -30,11 +30,29 @@ This folder is for phased execution notes and task breakdowns.
 
 ### Phase 4: Editing UX
 
-- [ ] Delete selected nodes.
-- [ ] Delete selected connections.
-- [ ] Reconnect existing connections.
-- [ ] Improve empty states and canvas hints.
-- [ ] Add clearer drag/hover states for ports.
+- [x] Delete selected nodes.
+- [x] Delete selected connections.
+- [x] Reconnect existing connections.
+- [x] Improve empty states and canvas hints.
+- [x] Add clearer drag/hover states for ports.
+
+### Phase 4.6: Connection-Drop Node Picker ✓
+
+- [x] Releasing a connection draft on empty canvas shows a floating node picker popup at the drop position.
+- [x] Picker filters to only nodes compatible with the dragged port type.
+- [x] Picking a node adds it at the drop world position and auto-connects it.
+- [x] Dismissing the picker (click-away / Escape) cancels the draft.
+
+### Phase 4.5: Gesture & Keyboard Polish ✓
+
+Gaps found by comparing with the stable old Graphyn codebase.
+
+- [x] Cancel connection draft when user releases on empty canvas (currently hangs forever).
+- [x] Cancel connection draft on two-finger pinch/scroll while dragging.
+- [x] Cancel connection draft on Escape key.
+- [x] Delete selected node/connection on Backspace / Delete key.
+- [x] Unify the three separate `pointerInput` blocks in the canvas into a single gesture coordinator (pan, node drag, connection drag — one `ActiveDrag` state, one modifier).
+- [x] Start connections from input ports as well as output ports (drag backward from input → find compatible output).
 
 ### Phase 5: Plugin Ecosystem
 
@@ -55,15 +73,9 @@ Tasking style:
 - Reference architecture docs instead of duplicating rules here.
 - Update the plan when a phase changes, not for every tiny implementation detail.
 
-Current focus:
-- Delete selected nodes.
-- Delete selected connections.
-- Reconnect existing connections.
-- Improve empty states and canvas hints.
+Current focus: Phase 5 — plugin ecosystem.
 
-Implementation note:
-- Phase 2 is now functionally complete in the current shell.
-- Phase 3 validation is also wired into the editor shell and core validator.
-- The next visible editor win is editing UX polish: delete, reconnect, and clearer canvas hints.
-- Port identifier bug fixed: port ID is now `portSpec.name` (not `"name:type"`), unblocking connection creation.
-- Port dots moved to card edges (n8n-style), connections use per-port Y anchors via `GraphynCanvasMetrics.portAnchorY`.
+Implementation notes:
+- Phase 2–4.5 complete. Port dots at card edges (n8n-style), reconnect via midpoint click, hover states on ports, gesture/keyboard polish.
+- Phase 4.5: empty-canvas click/Escape/Backspace cancel drafts; bidirectional port connections (input→output); scroll/pinch cancels draft; separate gesture modifiers per concern.
+- Phase 5 should build on the now-stable editor to showcase the plugin API.

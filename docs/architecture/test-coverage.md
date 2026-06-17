@@ -31,6 +31,18 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Editor — draft connection → workflow connection** | ✅ | | | |
 | **Editor — execution result applied to state** | ✅ | | | |
 | **Editor — delete selected connection** | ✅ | | | |
+| **Editor — reconnect connection replaces target** | ✅ | | | |
+| **Editor — reconnect no-op when none selected** | ✅ | | | |
+| **Editor — begin connection from input port sets isFromInput** | ✅ | | | |
+| **Editor — complete from-input connection swaps endpoint order** | ✅ | | | |
+| **Editor — cancel draft clears connectionDraft** | ✅ | | | |
+| **Editor — delete key deletes selected node** | ✅ | | | |
+| **Editor — delete key deletes selected connection** | ✅ | | | |
+| **Editor — ShowNodePicker stores picker state with draft intact** | ✅ | | | |
+| **Editor — DismissNodePicker clears draft and picker state** | ✅ | | | |
+| **Editor — AddNodeAndConnect adds node and creates connection** | ✅ | | | |
+| **Canvas — clicking empty canvas while draft shows node picker** | | ✅ | | |
+| **Canvas — picking from node picker adds node and connects** | | ✅ | | |
 | **Viewport — panBy moves offset** | ✅ | | | |
 | **Viewport — zoomAt keeps focus stable** | ✅ | | | |
 | **Viewport — minimap layout + viewport rect bounded** | ✅ | | | |
@@ -51,6 +63,8 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Canvas — clicking output port starts connection draft** | | ✅ | | |
 | **Canvas — connection midpoint dot visible when connection exists** | | ✅ | | |
 | **Canvas — clicking midpoint dot selects connection** | | ✅ | | |
+| **Canvas — empty nodes hint visible when workflow has no nodes** | | ✅ | | |
+| **Canvas — reconnect via midpoint → input port click** | | ✅ | | |
 | **Canvas — node card renders (screenshot baseline)** | | | | 🖼 |
 | **Canvas — port dots + connection midpoint (screenshot baseline)** | | | | 🖼 |
 | **Canvas — full demo app renders (screenshot baseline)** | | | | 🖼 |
@@ -64,10 +78,7 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | Feature | Status |
 |---------|--------|
 | Delete selected node (UI flow) | ⬜ state logic covered, no UI test |
-| Reconnect existing connection | ⬜ not implemented |
 | Port type validation rejection (UI click-through) | ⬜ unit covered, UI flow untested |
-| Empty canvas hint renders | ⬜ |
-| Port drag hover states | ⬜ |
 | Canvas — wasmJs port dot tests | ⬜ JVM only so far |
 
 ---
