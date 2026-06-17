@@ -3,7 +3,11 @@ package com.ronjunevaldoz.graphyn.editor.canvas.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.drag
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,15 +64,27 @@ fun GraphynNodeCard(
                 indication = null,
                 onClick = onClick,
             )
-            .pointerInput(selected) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    onMove(
-                        IntOffset(
-                            x = dragAmount.x.roundToInt(),
-                            y = dragAmount.y.roundToInt(),
-                        ),
-                    )
+            .pointerInput(Unit) {
+                // Unit key: selection state changes don't restart this block mid-drag,
+                // which was the primary cause of the initial-drag blink/jump.
+                // awaitTouchSlopOrCancellation absorbs the slop zone silently;
+                // overSlop (the excess past threshold) is applied as the first delta,
+                // then each subsequent movement reports only its own incremental change.
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    var slopOvershoot = Offset.Zero
+                    awaitTouchSlopOrCancellation(down.id) { change, overSlop ->
+                        change.consume()
+                        slopOvershoot = overSlop
+                    } ?: return@awaitEachGesture
+                    if (slopOvershoot != Offset.Zero) {
+                        onMove(IntOffset(slopOvershoot.x.roundToInt(), slopOvershoot.y.roundToInt()))
+                    }
+                    drag(down.id) { change ->
+                        change.consume()
+                        val d = change.position - change.previousPosition
+                        onMove(IntOffset(d.x.roundToInt(), d.y.roundToInt()))
+                    }
                 }
             },
     ) {
