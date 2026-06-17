@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -23,14 +21,9 @@ import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionLayer
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionMidpoints
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyCanvasHint
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyNodesHint
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardFooter
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardHeader
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardPorts
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardSlots
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodePickerPopup
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodePortDots
 import com.ronjunevaldoz.graphyn.editor.canvas.components.compatiblePickerSpecs
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
@@ -45,7 +38,7 @@ fun GraphynCanvasSurface(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+            .background(GraphynDs.colors.canvasBackground)
             .onSizeChanged { state.updateCanvasSize(it) }
             .graphicsLayer { clip = true }
             .focusRequester(focusRequester)
@@ -75,23 +68,17 @@ fun GraphynCanvasSurface(
 
         GraphynCanvasBackdrop(
             modifier = Modifier.fillMaxSize(),
-            dotColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            dotColor = GraphynDs.colors.border,
             viewport = state.viewport,
         )
 
         val workflow = state.workflow
-        if (workflow == null) {
-            GraphynEmptyCanvasHint()
-            return
-        }
+        if (workflow == null) { GraphynEmptyCanvasHint(); return }
+        if (workflow.nodes.isEmpty()) GraphynEmptyNodesHint()
 
-        if (workflow.nodes.isEmpty()) {
-            GraphynEmptyNodesHint()
-        }
-
-        val outputColor = MaterialTheme.colorScheme.primary
-        val inputColor = MaterialTheme.colorScheme.secondary
-        val surfaceColor = MaterialTheme.colorScheme.surface
+        val outputColor = GraphynDs.colors.connectionLine
+        val inputColor = GraphynDs.colors.portInput
+        val surfaceColor = GraphynDs.colors.surfaceCard
 
         Box(
             modifier = Modifier
@@ -105,60 +92,18 @@ fun GraphynCanvasSurface(
                 },
         ) {
             GraphynConnectionLayer(
-                workflow = workflow,
-                state = state,
-                nodeSpecs = nodeSpecs,
-                draft = state.connectionDraft,
-                draftPointer = state.connectionDraftPosition,
-                modifier = Modifier.fillMaxSize(),
-                color = outputColor.copy(alpha = 0.6f),
+                workflow = workflow, state = state, nodeSpecs = nodeSpecs,
+                draft = state.connectionDraft, draftPointer = state.connectionDraftPosition,
+                modifier = Modifier.fillMaxSize(), color = outputColor.copy(alpha = 0.6f),
             )
-
             GraphynConnectionMidpoints(
-                workflow = workflow,
-                state = state,
-                nodeSpecs = nodeSpecs,
-                connectionColor = outputColor,
-                selectedColor = MaterialTheme.colorScheme.error,
-                surfaceColor = surfaceColor,
+                workflow = workflow, state = state, nodeSpecs = nodeSpecs,
+                connectionColor = outputColor, selectedColor = GraphynDs.colors.danger, surfaceColor = surfaceColor,
             )
-
-            workflow.nodes.forEachIndexed { index, node ->
-                val spec = nodeSpecs.resolve(node.type)
-                val position = state.nodePosition(node.id, index)
-                GraphynNodeCard(
-                    modifier = Modifier.offset { position },
-                    selected = state.selectedNodeId == node.id,
-                    onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
-                    onMove = { delta ->
-                        state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta))
-                    },
-                    slots = GraphynNodeCardSlots(
-                        header = { GraphynNodeCardHeader(node = node, spec = spec) },
-                        ports = { GraphynNodeCardPorts(spec = spec) },
-                        footer = {
-                            GraphynNodeCardFooter(
-                                outputs = state.outputsFor(node.id),
-                                flattenedOutputs = state.flattenedOutputsFor(node.id),
-                                isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
-                            )
-                        },
-                    ),
-                )
-                if (spec != null) {
-                    GraphynNodePortDots(
-                        node = node,
-                        position = position,
-                        spec = spec,
-                        state = state,
-                        workflow = workflow,
-                        nodeSpecs = nodeSpecs,
-                        outputColor = outputColor,
-                        inputColor = inputColor,
-                        surfaceColor = surfaceColor,
-                    )
-                }
-            }
+            GraphynNodeLayer(
+                workflow = workflow, state = state, nodeSpecs = nodeSpecs,
+                outputColor = outputColor, inputColor = inputColor, surfaceColor = surfaceColor,
+            )
         }
     }
 }

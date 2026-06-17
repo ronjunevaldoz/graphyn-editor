@@ -2,12 +2,12 @@ package com.ronjunevaldoz.graphyn.editor.canvas.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.state.GraphynViewport
 import kotlin.math.floor
 import kotlin.math.max
@@ -19,8 +19,8 @@ fun GraphynCanvasBackdrop(
     viewport: GraphynViewport,
     dotColor: Color,
 ) {
-    val backdropStart = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.16f)
-    val backdropEnd = MaterialTheme.colorScheme.surface.copy(alpha = 0.06f)
+    val backdropStart = GraphynDs.colors.surfaceCard.copy(alpha = 0.16f)
+    val backdropEnd = GraphynDs.colors.panelBackground.copy(alpha = 0.06f)
 
     Canvas(modifier = modifier) {
         val worldSpacing = 28.dp.toPx()
