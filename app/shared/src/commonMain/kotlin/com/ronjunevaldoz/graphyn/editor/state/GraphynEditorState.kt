@@ -49,6 +49,7 @@ class GraphynEditorState(
         }
 
     var selectedNodeId by mutableStateOf<String?>(null)
+    var selectedConnection by mutableStateOf<ConnectionRef?>(null)
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
     var nodePositionsByNodeId by mutableStateOf<Map<String, IntOffset>>(emptyMap())
     var graphWorldBounds by mutableStateOf<Rect?>(null)
@@ -67,6 +68,21 @@ class GraphynEditorState(
 
     fun selectNode(nodeId: String?) {
         selectedNodeId = nodeId
+        selectedConnection = null
+    }
+
+    fun selectConnection(connection: ConnectionRef?) {
+        selectedConnection = connection
+        selectedNodeId = null
+    }
+
+    fun deleteSelectedConnection() {
+        val conn = selectedConnection ?: return
+        workflow = workflow?.copy(
+            connections = workflow?.connections.orEmpty().filterNot { it == conn },
+        )
+        selectedConnection = null
+        pushDebugLog("Deleted connection ${conn.fromNodeId}:${conn.fromPort} -> ${conn.toNodeId}:${conn.toPort}")
     }
 
     fun deleteSelectedNode() {
@@ -80,6 +96,9 @@ class GraphynEditorState(
         nodePositionsByNodeId = nodePositionsByNodeId - nodeId
         nodeOutputsByNodeId = nodeOutputsByNodeId - nodeId
         selectedNodeId = null
+        if (selectedConnection?.fromNodeId == nodeId || selectedConnection?.toNodeId == nodeId) {
+            selectedConnection = null
+        }
         pushDebugLog("Deleted node $nodeId")
     }
 
@@ -87,6 +106,8 @@ class GraphynEditorState(
         when (intent) {
             is GraphynEditorIntent.SelectNode -> selectNode(intent.nodeId)
             GraphynEditorIntent.DeleteSelectedNode -> deleteSelectedNode()
+            is GraphynEditorIntent.SelectConnection -> selectConnection(intent.connection)
+            GraphynEditorIntent.DeleteSelectedConnection -> deleteSelectedConnection()
             is GraphynEditorIntent.MoveNode -> moveNode(intent.nodeId, intent.delta)
             is GraphynEditorIntent.BeginConnection -> {
                 connectionDraft = GraphynConnectionDraft(

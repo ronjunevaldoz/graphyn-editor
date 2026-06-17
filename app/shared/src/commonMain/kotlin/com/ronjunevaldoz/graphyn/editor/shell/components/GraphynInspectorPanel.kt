@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
@@ -24,6 +25,7 @@ internal fun GraphynInspectorPanel(
     panels: EditorPanelRegistry,
     validationErrors: List<ValidationError>,
 ) {
+    val selectedConnection = state.selectedConnection
     val selectedNode = remember(state.workflow, state.selectedNodeId) { state.selectedNode() }
     val selectedNodeSpec = remember(selectedNode, nodeSpecs) {
         selectedNode?.let { nodeSpecs.resolve(it.type) }
@@ -40,8 +42,18 @@ internal fun GraphynInspectorPanel(
             Text("Inspector", style = MaterialTheme.typography.titleMedium)
             GraphynValidationSummary(validationErrors = validationErrors)
             if (selectedNode != null) {
-                Button(onClick = { state.dispatch(com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent.DeleteSelectedNode) }) {
+                Button(onClick = { state.dispatch(GraphynEditorIntent.DeleteSelectedNode) }) {
                     Text("Delete node")
+                }
+            }
+            if (selectedConnection != null) {
+                Text(
+                    text = "${selectedConnection.fromNodeId}:${selectedConnection.fromPort} → ${selectedConnection.toNodeId}:${selectedConnection.toPort}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(onClick = { state.dispatch(GraphynEditorIntent.DeleteSelectedConnection) }) {
+                    Text("Delete connection")
                 }
             }
             if (panelFactory != null) {
