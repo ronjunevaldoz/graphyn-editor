@@ -65,3 +65,5 @@ Implementation note:
 - Phase 2 is now functionally complete in the current shell.
 - Phase 3 validation is also wired into the editor shell and core validator.
 - The next visible editor win is editing UX polish: delete, reconnect, and clearer canvas hints.
+- Port identifier bug fixed: port ID is now `portSpec.name` (not `"name:type"`), unblocking connection creation.
+- Port dots moved to card edges (n8n-style), connections use per-port Y anchors via `GraphynCanvasMetrics.portAnchorY`.

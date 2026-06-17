@@ -22,6 +22,9 @@ import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 
+/**
+ * TODO for optimization, too complex, find a cleaner way, must be readable, maintainable
+ */
 class GraphynEditorState(
     initialWorkflow: WorkflowDefinition? = null,
     private val canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
@@ -66,9 +69,24 @@ class GraphynEditorState(
         selectedNodeId = nodeId
     }
 
+    fun deleteSelectedNode() {
+        val nodeId = selectedNodeId ?: return
+        workflow = workflow?.copy(
+            nodes = workflow?.nodes.orEmpty().filterNot { it.id == nodeId },
+            connections = workflow?.connections.orEmpty().filterNot {
+                it.fromNodeId == nodeId || it.toNodeId == nodeId
+            },
+        )
+        nodePositionsByNodeId = nodePositionsByNodeId - nodeId
+        nodeOutputsByNodeId = nodeOutputsByNodeId - nodeId
+        selectedNodeId = null
+        pushDebugLog("Deleted node $nodeId")
+    }
+
     fun dispatch(intent: GraphynEditorIntent) {
         when (intent) {
             is GraphynEditorIntent.SelectNode -> selectNode(intent.nodeId)
+            GraphynEditorIntent.DeleteSelectedNode -> deleteSelectedNode()
             is GraphynEditorIntent.MoveNode -> moveNode(intent.nodeId, intent.delta)
             is GraphynEditorIntent.BeginConnection -> {
                 connectionDraft = GraphynConnectionDraft(

@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
@@ -16,6 +17,7 @@ import kotlin.math.absoluteValue
 fun GraphynConnectionLayer(
     workflow: WorkflowDefinition,
     state: GraphynEditorState,
+    nodeSpecs: NodeSpecRegistry,
     draft: GraphynConnectionDraft?,
     draftPointer: Offset?,
     modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
@@ -30,9 +32,17 @@ fun GraphynConnectionLayer(
             val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
             val toBounds = state.nodeBounds(toNode.id, toIndex)
 
+            val fromSpec = nodeSpecs.resolve(fromNode.type)
+            val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
+            val fromY = fromBounds.top + GraphynCanvasMetrics.portAnchorY(fromPortIndex)
+
+            val toSpec = nodeSpecs.resolve(toNode.type)
+            val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
+            val toY = toBounds.top + GraphynCanvasMetrics.portAnchorY(toPortIndex)
+
             drawBezier(
-                start = Offset(fromBounds.right, fromBounds.center.y),
-                end = Offset(toBounds.left, toBounds.center.y),
+                start = Offset(fromBounds.right, fromY),
+                end = Offset(toBounds.left, toY),
                 color = color,
                 strokeWidth = 4f,
             )
@@ -42,10 +52,10 @@ fun GraphynConnectionLayer(
         val fromNode = workflow.nodes.firstOrNull { it.id == draftConnection.fromNodeId } ?: return@Canvas
         val fromIndex = workflow.nodes.indexOf(fromNode)
         val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
-        val start = Offset(
-            x = fromBounds.right,
-            y = fromBounds.center.y,
-        )
+        val fromSpec = nodeSpecs.resolve(fromNode.type)
+        val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == draftConnection.fromPort }?.coerceAtLeast(0) ?: 0
+        val fromY = fromBounds.top + GraphynCanvasMetrics.portAnchorY(fromPortIndex)
+        val start = Offset(fromBounds.right, fromY)
         val end = draftPointer ?: Offset(start.x + 120f, start.y)
         drawBezier(
             start = start,

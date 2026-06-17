@@ -8,14 +8,12 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import com.github.takahirom.roborazzi.RoborazziOptions
-import com.ronjunevaldoz.graphyn.DemoApp
-import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
+import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.PortSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardFooter
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardHeader
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardPorts
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardSlots
-import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import io.github.takahirom.roborazzi.captureRoboImage
 import kotlin.test.Test
 
@@ -28,38 +26,18 @@ class GraphynNodeCardUiTest {
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun test() = runDesktopComposeUiTest {
+        val spec = NodeSpec(
+            type = "sample.logger",
+            label = "Logger",
+            inputs = listOf(PortSpec(name = "message", type = WorkflowType.StringType, required = false)),
+            outputs = listOf(PortSpec(name = "message", type = WorkflowType.StringType, required = false)),
+        )
         setContent {
             GraphynNodeCard(
-//                modifier = Modifier.offset { position },
-//                selected = state.selectedNodeId == node.id,
-//                onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
-                onMove = { delta ->
-
-                },
+                onMove = {},
                 slots = GraphynNodeCardSlots(
-                    header = {
-//                        GraphynNodeCardHeader(
-//                            node = node,
-//                            spec = spec,
-//                        )
-                    },
                     ports = {
-//                        GraphynNodeCardPorts(
-//                            spec = spec,
-//                            onBeginConnection = { port ->
-//                                state.dispatch(GraphynEditorIntent.BeginConnection(node.id, port))
-//                            },
-//                            onCompleteConnection = { port ->
-//
-//                            },
-//                        )
-                    },
-                    footer = {
-//                        GraphynNodeCardFooter(
-//                            outputs = state.outputsFor(node.id),
-//                            flattenedOutputs = state.flattenedOutputsFor(node.id),
-//                            isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
-//                        )
+                        GraphynNodeCardPorts(spec = spec)
                     },
                 )
             )
