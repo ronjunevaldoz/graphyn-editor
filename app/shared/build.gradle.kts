@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.roborazzi)
 }
 
 kotlin {
@@ -69,6 +70,7 @@ kotlin {
         jvmTest.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(compose.desktop.uiTestJUnit4)
+            implementation(libs.roborazzi.compose.desktop)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)

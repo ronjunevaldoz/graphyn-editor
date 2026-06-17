@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
@@ -38,9 +40,9 @@ private enum class PortSide {
 
 @Composable
 fun GraphynNodeCard(
-    modifier: Modifier,
-    selected: Boolean,
-    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    onClick: () -> Unit = {},
     onMove: (IntOffset) -> Unit,
     slots: GraphynNodeCardSlots = GraphynNodeCardSlots(),
 ) {
@@ -110,27 +112,32 @@ fun GraphynNodeCardPorts(
     onBeginConnection: (String) -> Unit,
     onCompleteConnection: (String) -> Unit,
 ) {
-    if (spec == null) {
-        Text(
-            text = "No node spec registered yet.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        return
-    }
+        if (spec == null) {
+            Text(
+                text = "No node spec registered yet.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return
+        }
 
-    GraphynPortSection(
-        title = "Inputs",
-        ports = spec.inputs.map { "${it.name}:${it.type}" },
-        side = PortSide.Input,
-        onPortClick = onCompleteConnection,
-    )
-    GraphynPortSection(
-        title = "Outputs",
-        ports = spec.outputs.map { "${it.name}:${it.type}" },
-        side = PortSide.Output,
-        onPortClick = onBeginConnection,
-    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        GraphynPortColumn(
+            title = "Inputs",
+            ports = spec.inputs.map { "${it.name}:${it.type}" },
+            side = PortSide.Input,
+            onPortClick = onCompleteConnection,
+        )
+        GraphynPortColumn(
+            title = "Outputs",
+            ports = spec.outputs.map { "${it.name}:${it.type}" },
+            side = PortSide.Output,
+            onPortClick = onBeginConnection,
+        )
+    }
 }
 
 @Composable
@@ -153,13 +160,16 @@ fun GraphynNodeCardFooter(
 }
 
 @Composable
-private fun GraphynPortSection(
+private fun GraphynPortColumn(
     title: String,
     ports: List<String>,
     side: PortSide,
     onPortClick: (String) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(
+        modifier = Modifier.width(122.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         Text(
             text = title,
             style = MaterialTheme.typography.labelMedium,
@@ -208,24 +218,41 @@ private fun GraphynPortBubble(
     val background = accent.copy(alpha = 0.14f)
 
     Row(
-        modifier = Modifier
-            .background(background, RoundedCornerShape(999.dp))
-            .border(1.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+        modifier = Modifier.clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        if (side == PortSide.Input) {
+            GraphynPortDot(accent = accent)
+        }
         Box(
             modifier = Modifier
-                .size(8.dp)
-                .background(accent, CircleShape),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-        )
+                .background(background, RoundedCornerShape(999.dp))
+                .border(1.5.dp, accent.copy(alpha = 0.65f), RoundedCornerShape(999.dp))
+                .padding(horizontal = 12.dp, vertical = 9.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        if (side == PortSide.Output) {
+            GraphynPortDot(accent = accent)
+        }
     }
+}
+
+@Composable
+private fun GraphynPortDot(
+    accent: androidx.compose.ui.graphics.Color,
+) {
+    Box(
+        modifier = Modifier
+            .size(12.dp)
+            .border(2.dp, accent, CircleShape)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surface),
+    )
 }
 
 @Composable
