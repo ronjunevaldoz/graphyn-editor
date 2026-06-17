@@ -192,6 +192,48 @@ fun GraphynCanvasSurface(
                 )
             }
 
+            // Connection midpoint hit targets — select a connection by clicking the midpoint dot
+            if (state.connectionDraft == null) {
+                val connectionColor = MaterialTheme.colorScheme.primary
+                val connectionSelectedColor = MaterialTheme.colorScheme.error
+                val surfaceColor = MaterialTheme.colorScheme.surface
+                workflow.connections.forEach { connection ->
+                    val fromNode = workflow.nodes.firstOrNull { it.id == connection.fromNodeId }
+                    val toNode = workflow.nodes.firstOrNull { it.id == connection.toNodeId }
+                    if (fromNode == null || toNode == null) return@forEach
+                    val fromIndex = workflow.nodes.indexOf(fromNode)
+                    val toIndex = workflow.nodes.indexOf(toNode)
+                    val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
+                    val toBounds = state.nodeBounds(toNode.id, toIndex)
+                    val fromSpec = nodeSpecs.resolve(fromNode.type)
+                    val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
+                    val toSpec = nodeSpecs.resolve(toNode.type)
+                    val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
+                    val fromY = fromBounds.top + GraphynCanvasMetrics.portAnchorY(fromPortIndex)
+                    val toY = toBounds.top + GraphynCanvasMetrics.portAnchorY(toPortIndex)
+                    val midX = ((fromBounds.right + toBounds.left) / 2).toInt()
+                    val midY = ((fromY + toY) / 2).toInt()
+                    val isSelected = state.selectedConnection == connection
+                    val dotColor = if (isSelected) connectionSelectedColor else connectionColor
+                    val dotRadius = GraphynCanvasMetrics.PortDotRadius
+                    Box(
+                        modifier = Modifier
+                            .offset { IntOffset(midX - dotRadius, midY - dotRadius) }
+                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) dotColor.copy(alpha = 0.15f) else surfaceColor)
+                            .border(2.dp, dotColor, CircleShape)
+                            .clickable {
+                                state.dispatch(
+                                    GraphynEditorIntent.SelectConnection(
+                                        if (isSelected) null else connection,
+                                    ),
+                                )
+                            },
+                    )
+                }
+            }
+
             // Edge port dots — rendered outside card clip so they straddle the card border
             workflow.nodes.forEachIndexed { index, node ->
                 val spec = nodeSpecs.resolve(node.type) ?: return@forEachIndexed

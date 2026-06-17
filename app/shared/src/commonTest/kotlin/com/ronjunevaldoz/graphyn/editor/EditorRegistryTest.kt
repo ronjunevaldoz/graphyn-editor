@@ -23,6 +23,7 @@ import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class EditorRegistryTest {
@@ -150,6 +151,35 @@ class EditorRegistryTest {
             state.workflow?.connections,
         )
         assertEquals(null, state.connectionDraft)
+    }
+
+    @Test
+    fun editorStateDeletesSelectedConnection() {
+        val connection = ConnectionRef(
+            fromNodeId = "source",
+            fromPort = "on",
+            toNodeId = "target",
+            toPort = "enabled",
+        )
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-delete-conn",
+                name = "DeleteConn",
+                nodes = listOf(
+                    NodeRef(id = "source", type = "switch"),
+                    NodeRef(id = "target", type = "display"),
+                ),
+                connections = listOf(connection),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.SelectConnection(connection))
+        assertEquals(connection, state.selectedConnection)
+
+        state.dispatch(GraphynEditorIntent.DeleteSelectedConnection)
+
+        assertNull(state.selectedConnection)
+        assertEquals(emptyList(), state.workflow?.connections)
     }
 
     @Test
