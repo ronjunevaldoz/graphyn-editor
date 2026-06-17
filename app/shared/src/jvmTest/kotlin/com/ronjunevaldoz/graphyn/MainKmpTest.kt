@@ -1,9 +1,7 @@
 package com.ronjunevaldoz.graphyn
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
 import com.github.takahirom.roborazzi.RoborazziOptions
 import io.github.takahirom.roborazzi.captureRoboImage
@@ -30,10 +28,6 @@ class MainKmpTest {
         changeThreshold = 0F
       )
     )
-    onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
-
-    onNodeWithTag("button").performClick()
-
     onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
   }
 }

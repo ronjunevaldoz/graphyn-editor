@@ -32,6 +32,9 @@ import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynLogPanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynMinimapDebugger
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynPalettePanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
+import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynZoomControls
+import com.ronjunevaldoz.graphyn.editor.shell.components.ZoomOutStep
+import com.ronjunevaldoz.graphyn.editor.shell.components.ZoomStep
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
@@ -105,11 +108,33 @@ fun GraphynEditorShell(
                             .align(androidx.compose.ui.Alignment.TopStart)
                             .padding(12.dp),
                     )
+                    GraphynZoomControls(
+                        modifier = Modifier.align(androidx.compose.ui.Alignment.BottomStart),
+                        onZoomIn = {
+                            state.dispatch(
+                                GraphynEditorIntent.UpdateViewportTransform(
+                                    pan = androidx.compose.ui.geometry.Offset.Zero,
+                                    zoom = ZoomStep,
+                                    focus = androidx.compose.ui.geometry.Offset.Zero,
+                                ),
+                            )
+                        },
+                        onZoomOut = {
+                            state.dispatch(
+                                GraphynEditorIntent.UpdateViewportTransform(
+                                    pan = androidx.compose.ui.geometry.Offset.Zero,
+                                    zoom = ZoomOutStep,
+                                    focus = androidx.compose.ui.geometry.Offset.Zero,
+                                ),
+                            )
+                        },
+                    )
                     GraphynMinimapDebugger(
                         state = state,
                         modifier = Modifier
                             .align(androidx.compose.ui.Alignment.BottomEnd)
                             .size(width = 240.dp, height = 160.dp)
+                            .testTag("minimap")
                             .graphicsLayer {
                                 alpha = 0.96f
                                 clip = true
