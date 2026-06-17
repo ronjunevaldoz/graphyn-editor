@@ -24,4 +24,5 @@ Related:
 - [Editor Panel Host](./editor-panels.md)
 - [Preview-Driven Development](./previews.md)
 - [Test Coverage Matrix](./test-coverage.md)
+- [Code Audit — File Size](./code-audit.md)
 - [Plans](../plans/README.md)

@@ -1,6 +1,6 @@
 # Test Coverage Matrix
 
-All tests are green as of the port-positioning / Phase 4 commits.
+All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 
 ## Legend
 
@@ -30,6 +30,7 @@ All tests are green as of the port-positioning / Phase 4 commits.
 | **Editor — state tracks node positions + fallback layout** | ✅ | | | |
 | **Editor — draft connection → workflow connection** | ✅ | | | |
 | **Editor — execution result applied to state** | ✅ | | | |
+| **Editor — delete selected connection** | ✅ | | | |
 | **Viewport — panBy moves offset** | ✅ | | | |
 | **Viewport — zoomAt keeps focus stable** | ✅ | | | |
 | **Viewport — minimap layout + viewport rect bounded** | ✅ | | | |
@@ -45,23 +46,29 @@ All tests are green as of the port-positioning / Phase 4 commits.
 | **Shell — registered panel renders for selected node** | | ✅ | ✅ | |
 | **Shell — minimap viewport border visible (pixel assert)** | | ✅ | ✅ | 🖼 |
 | **Canvas — dragging node does not pan viewport** | | ✅ | | |
+| **Canvas — output port dot visible for node with spec** | | ✅ | | |
+| **Canvas — input port dot visible for node with spec** | | ✅ | | |
+| **Canvas — clicking output port starts connection draft** | | ✅ | | |
+| **Canvas — connection midpoint dot visible when connection exists** | | ✅ | | |
+| **Canvas — clicking midpoint dot selects connection** | | ✅ | | |
 | **Canvas — node card renders (screenshot baseline)** | | | | 🖼 |
+| **Canvas — port dots + connection midpoint (screenshot baseline)** | | | | 🖼 |
 | **Canvas — full demo app renders (screenshot baseline)** | | | | 🖼 |
 | **Plugin — SampleLogger installs and executes** | ✅ | | | |
 | **Plugin — SampleLoggerUI registers panel** | ✅ | | | |
 
 ---
 
-## Coverage gaps (Phase 4 targets)
+## Coverage gaps
 
 | Feature | Status |
 |---------|--------|
-| Delete selected node via intent | ✅ state logic exists, ⬜ no UI test |
-| Delete selected connection | ⬜ not implemented |
+| Delete selected node (UI flow) | ⬜ state logic covered, no UI test |
 | Reconnect existing connection | ⬜ not implemented |
-| Port type validation rejection (UI flow) | ⬜ unit covered, UI flow untested |
+| Port type validation rejection (UI click-through) | ⬜ unit covered, UI flow untested |
 | Empty canvas hint renders | ⬜ |
 | Port drag hover states | ⬜ |
+| Canvas — wasmJs port dot tests | ⬜ JVM only so far |
 
 ---
 
@@ -77,6 +84,7 @@ All tests are green as of the port-positioning / Phase 4 commits.
 | `app/shared/.../MainKmpTest.kt` | `jvmTest` | Screenshot |
 | `app/shared/.../GraphynNodeCardUiTest.kt` | `jvmTest` | Screenshot |
 | `app/shared/.../GraphynNodeDragUiTest.kt` | `jvmTest` | UI |
+| `app/shared/.../GraphynCanvasSurfaceUiTest.kt` | `jvmTest` | UI + Screenshot |
 | `app/shared/.../GraphynEditorShellUiTest.kt` | `jvmTest` + `wasmJsTest` | UI |
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
