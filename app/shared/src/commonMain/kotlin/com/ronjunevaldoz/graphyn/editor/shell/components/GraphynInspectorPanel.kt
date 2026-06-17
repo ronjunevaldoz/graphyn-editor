@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +39,11 @@ internal fun GraphynInspectorPanel(
         ) {
             Text("Inspector", style = MaterialTheme.typography.titleMedium)
             GraphynValidationSummary(validationErrors = validationErrors)
+            if (selectedNode != null) {
+                Button(onClick = { state.dispatch(com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent.DeleteSelectedNode) }) {
+                    Text("Delete node")
+                }
+            }
             if (panelFactory != null) {
                 panelFactory.Content(
                     com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext(

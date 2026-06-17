@@ -1,22 +1,26 @@
 package com.ronjunevaldoz.graphyn.editor.canvas
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
@@ -145,6 +149,7 @@ fun GraphynCanvasSurface(
             GraphynConnectionLayer(
                 workflow = workflow,
                 state = state,
+                nodeSpecs = nodeSpecs,
                 draft = state.connectionDraft,
                 draftPointer = state.connectionDraftPosition,
                 modifier = Modifier.fillMaxSize(),
@@ -174,36 +179,7 @@ fun GraphynCanvasSurface(
                             )
                         },
                         ports = {
-                            GraphynNodeCardPorts(
-                                spec = spec,
-                                onBeginConnection = { port ->
-                                    state.dispatch(GraphynEditorIntent.BeginConnection(node.id, port))
-                                },
-                                onCompleteConnection = { port ->
-                                    val draft = state.connectionDraft
-                                    val sourceNode = draft?.let { workflow.nodes.firstOrNull { nodeRef -> nodeRef.id == it.fromNodeId } }
-                                    val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
-                                    val sourcePort = draft?.let { draftConnection ->
-                                        sourceSpec?.outputs?.firstOrNull { it.name == draftConnection.fromPort }
-                                    }
-                                    val targetSpec = spec
-                                    val targetPort = targetSpec?.inputs?.firstOrNull { it.name == port }
-
-                                    if (draft == null || sourceNode == null || sourceSpec == null || sourcePort == null || targetPort == null) {
-                                        state.addDebugLog("Rejected connection: unknown port")
-                                        state.dispatch(GraphynEditorIntent.CancelConnection)
-                                    } else {
-                                        if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
-                                            state.addDebugLog(
-                                                "Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:$port",
-                                            )
-                                            state.dispatch(GraphynEditorIntent.CancelConnection)
-                                        } else {
-                                            state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, port))
-                                        }
-                                    }
-                                },
-                            )
+                            GraphynNodeCardPorts(spec = spec)
                         },
                         footer = {
                             GraphynNodeCardFooter(
@@ -214,6 +190,69 @@ fun GraphynCanvasSurface(
                         },
                     ),
                 )
+            }
+
+            // Edge port dots — rendered outside card clip so they straddle the card border
+            workflow.nodes.forEachIndexed { index, node ->
+                val spec = nodeSpecs.resolve(node.type) ?: return@forEachIndexed
+                val position = state.nodePosition(node.id, index)
+                val outputColor = MaterialTheme.colorScheme.primary
+                val inputColor = MaterialTheme.colorScheme.secondary
+                val surfaceColor = MaterialTheme.colorScheme.surface
+
+                spec.outputs.forEachIndexed { portIndex, outputPort ->
+                    val anchorY = GraphynCanvasMetrics.portAnchorY(portIndex)
+                    Box(
+                        modifier = Modifier
+                            .offset {
+                                IntOffset(
+                                    x = position.x + GraphynCanvasMetrics.NodeSize.width - GraphynCanvasMetrics.PortDotRadius,
+                                    y = position.y + anchorY - GraphynCanvasMetrics.PortDotRadius,
+                                )
+                            }
+                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
+                            .clip(CircleShape)
+                            .background(surfaceColor)
+                            .border(2.dp, outputColor, CircleShape)
+                            .clickable {
+                                state.dispatch(GraphynEditorIntent.BeginConnection(node.id, outputPort.name))
+                            },
+                    )
+                }
+
+                spec.inputs.forEachIndexed { portIndex, inputPort ->
+                    val anchorY = GraphynCanvasMetrics.portAnchorY(portIndex)
+                    Box(
+                        modifier = Modifier
+                            .offset {
+                                IntOffset(
+                                    x = position.x - GraphynCanvasMetrics.PortDotRadius,
+                                    y = position.y + anchorY - GraphynCanvasMetrics.PortDotRadius,
+                                )
+                            }
+                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
+                            .clip(CircleShape)
+                            .background(surfaceColor)
+                            .border(2.dp, inputColor, CircleShape)
+                            .clickable {
+                                val draft = state.connectionDraft ?: return@clickable
+                                val sourceNode = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
+                                val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
+                                val sourcePort = sourceSpec?.outputs?.firstOrNull { it.name == draft.fromPort }
+                                val targetPort = spec.inputs.firstOrNull { it.name == inputPort.name }
+
+                                if (sourcePort == null || targetPort == null) {
+                                    state.addDebugLog("Rejected connection: unknown port")
+                                    state.dispatch(GraphynEditorIntent.CancelConnection)
+                                } else if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
+                                    state.addDebugLog("Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:${inputPort.name}")
+                                    state.dispatch(GraphynEditorIntent.CancelConnection)
+                                } else {
+                                    state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, inputPort.name))
+                                }
+                            },
+                    )
+                }
             }
         }
     }
