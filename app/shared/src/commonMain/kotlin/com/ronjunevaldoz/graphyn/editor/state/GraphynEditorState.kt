@@ -7,63 +7,86 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import kotlin.math.roundToInt
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 
-/**
- * TODO for optimization, too complex, find a cleaner way, must be readable, maintainable
- */
 class GraphynEditorState(
     initialWorkflow: WorkflowDefinition? = null,
     private val canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
 ) {
-    private companion object {
-        const val MinViewportScale = 0.45f
-        const val MaxViewportScale = 5.0f
-        const val MaxDebugLogEntries = 12
-    }
+    // Sub-states
+    private val viewportState = GraphynViewportState(canvasBounds)
+    private val layout = GraphynNodeLayoutState(canvasBounds, viewportScale = { viewportState.viewport.scale })
+    private val log = GraphynDebugLogState()
+    private val dataStore = WorkflowDataStore(initialWorkflow)
 
+    // Workflow
     private val workflowState = mutableStateOf(initialWorkflow)
     var workflow: WorkflowDefinition?
         get() = workflowState.value
         set(value) {
             workflowState.value = value
             dataStore.updateWorkflow(value)
-            val currentNodeIds = value?.nodes?.mapTo(mutableSetOf()) { it.id }.orEmpty()
-            if (currentNodeIds != minimapBoundNodeIds) {
-                minimapBoundNodeIds = currentNodeIds
-                refreshGraphWorldBounds()
-            }
+            viewportState.refresh(value?.nodes?.mapTo(mutableSetOf()) { it.id }.orEmpty())
         }
 
+    // Selection
     var selectedNodeId by mutableStateOf<String?>(null)
     var selectedConnection by mutableStateOf<ConnectionRef?>(null)
-    var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
-    var nodePositionsByNodeId by mutableStateOf<Map<String, IntOffset>>(emptyMap())
-    var graphWorldBounds by mutableStateOf<Rect?>(null)
-    var debugLogEntries by mutableStateOf<List<String>>(emptyList())
+
+    // Connection draft
     var connectionDraft by mutableStateOf<GraphynConnectionDraft?>(null)
     var connectionDraftPosition by mutableStateOf<Offset?>(null)
-    var viewport by mutableStateOf(GraphynViewport())
-    var canvasSize by mutableStateOf(IntSize.Zero)
-    private val dataStore = WorkflowDataStore(initialWorkflow)
-    private var minimapBoundNodeIds: Set<String> = initialWorkflow?.nodes?.mapTo(mutableSetOf()) { it.id }.orEmpty()
-    private val nodeDragRemaindersByNodeId = mutableMapOf<String, Offset>()
+
+    // Node outputs
+    var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
+
+    // Delegated viewport reads (viewport is settable so minimap can reposition directly)
+    var viewport: GraphynViewport
+        get() = viewportState.viewport
+        set(value) { viewportState.viewport = value }
+    val canvasSize get() = viewportState.canvasSize
+    val graphWorldBounds get() = viewportState.graphWorldBounds
+    val debugLogEntries get() = log.entries
+
+    // Delegated layout reads
+    val nodePositionsByNodeId get() = layout.nodePositionsByNodeId
 
     init {
-        refreshGraphWorldBounds()
+        viewportState.refresh(initialWorkflow?.nodes?.mapTo(mutableSetOf()) { it.id }.orEmpty())
+    }
+
+    fun dispatch(intent: GraphynEditorIntent) {
+        when (intent) {
+            is GraphynEditorIntent.SelectNode -> selectNode(intent.nodeId)
+            GraphynEditorIntent.DeleteSelectedNode -> deleteSelectedNode()
+            is GraphynEditorIntent.SelectConnection -> selectConnection(intent.connection)
+            GraphynEditorIntent.DeleteSelectedConnection -> deleteSelectedConnection()
+            is GraphynEditorIntent.MoveNode -> layout.moveNode(intent.nodeId, intent.delta)
+            is GraphynEditorIntent.BeginConnection -> {
+                connectionDraft = GraphynConnectionDraft(intent.fromNodeId, intent.fromPort)
+                connectionDraftPosition = null
+            }
+            is GraphynEditorIntent.CompleteConnection -> completeConnection(intent.toNodeId, intent.toPort)
+            is GraphynEditorIntent.AddNode -> addNode(intent.spec)
+            is GraphynEditorIntent.UpdateConnectionDraftPosition -> connectionDraftPosition = intent.position
+            is GraphynEditorIntent.UpdateViewportTransform ->
+                viewportState.updateTransform(intent.pan, intent.zoom, intent.focus)
+            GraphynEditorIntent.CancelConnection -> {
+                connectionDraft = null
+                connectionDraftPosition = null
+            }
+        }
     }
 
     fun selectNode(nodeId: String?) {
@@ -76,101 +99,38 @@ class GraphynEditorState(
         selectedNodeId = null
     }
 
-    fun deleteSelectedConnection() {
-        val conn = selectedConnection ?: return
-        workflow = workflow?.copy(
-            connections = workflow?.connections.orEmpty().filterNot { it == conn },
-        )
-        selectedConnection = null
-        pushDebugLog("Deleted connection ${conn.fromNodeId}:${conn.fromPort} -> ${conn.toNodeId}:${conn.toPort}")
-    }
-
     fun deleteSelectedNode() {
         val nodeId = selectedNodeId ?: return
         workflow = workflow?.copy(
             nodes = workflow?.nodes.orEmpty().filterNot { it.id == nodeId },
-            connections = workflow?.connections.orEmpty().filterNot {
-                it.fromNodeId == nodeId || it.toNodeId == nodeId
-            },
+            connections = workflow?.connections.orEmpty().filterNot { it.fromNodeId == nodeId || it.toNodeId == nodeId },
         )
-        nodePositionsByNodeId = nodePositionsByNodeId - nodeId
+        layout.removeNode(nodeId)
         nodeOutputsByNodeId = nodeOutputsByNodeId - nodeId
         selectedNodeId = null
         if (selectedConnection?.fromNodeId == nodeId || selectedConnection?.toNodeId == nodeId) {
             selectedConnection = null
         }
-        pushDebugLog("Deleted node $nodeId")
+        log.push("Deleted node $nodeId")
     }
 
-    fun dispatch(intent: GraphynEditorIntent) {
-        when (intent) {
-            is GraphynEditorIntent.SelectNode -> selectNode(intent.nodeId)
-            GraphynEditorIntent.DeleteSelectedNode -> deleteSelectedNode()
-            is GraphynEditorIntent.SelectConnection -> selectConnection(intent.connection)
-            GraphynEditorIntent.DeleteSelectedConnection -> deleteSelectedConnection()
-            is GraphynEditorIntent.MoveNode -> moveNode(intent.nodeId, intent.delta)
-            is GraphynEditorIntent.BeginConnection -> {
-                connectionDraft = GraphynConnectionDraft(
-                    fromNodeId = intent.fromNodeId,
-                    fromPort = intent.fromPort,
-                )
-                connectionDraftPosition = null
-            }
-            is GraphynEditorIntent.CompleteConnection -> {
-                val draft = connectionDraft ?: return
-                val currentWorkflow = workflow ?: return
-                workflow = currentWorkflow.copy(
-                    connections = currentWorkflow.connections + ConnectionRef(
-                        fromNodeId = draft.fromNodeId,
-                        fromPort = draft.fromPort,
-                        toNodeId = intent.toNodeId,
-                        toPort = intent.toPort,
-                    ),
-                )
-                connectionDraft = null
-                connectionDraftPosition = null
-                pushDebugLog("Connected ${draft.fromNodeId}:${draft.fromPort} -> ${intent.toNodeId}:${intent.toPort}")
-            }
-            is GraphynEditorIntent.AddNode -> {
-                addNode(intent.spec)
-            }
-            is GraphynEditorIntent.UpdateConnectionDraftPosition -> {
-                connectionDraftPosition = intent.position
-            }
-            is GraphynEditorIntent.UpdateViewportTransform -> {
-                updateViewportTransform(
-                    pan = intent.pan,
-                    zoom = intent.zoom,
-                    focus = intent.focus,
-                )
-            }
-            GraphynEditorIntent.CancelConnection -> {
-                connectionDraft = null
-                connectionDraftPosition = null
-            }
-        }
+    fun deleteSelectedConnection() {
+        val conn = selectedConnection ?: return
+        workflow = workflow?.copy(connections = workflow?.connections.orEmpty().filterNot { it == conn })
+        selectedConnection = null
+        log.push("Deleted connection ${conn.fromNodeId}:${conn.fromPort} -> ${conn.toNodeId}:${conn.toPort}")
     }
 
     fun addNode(spec: NodeSpec) {
-        val currentWorkflow = workflow ?: WorkflowDefinition(
-            id = "workflow",
-            name = "Untitled Workflow",
-            nodes = emptyList(),
-            connections = emptyList(),
-        )
-        val nodeId = buildNodeId(spec, currentWorkflow.nodes)
-        val node = NodeRef(
-            id = nodeId,
-            type = spec.type,
-            config = spec.defaultValues,
-        )
-        val nextWorkflow = currentWorkflow.copy(nodes = currentWorkflow.nodes + node)
-        workflow = nextWorkflow
+        val current = workflow ?: WorkflowDefinition("workflow", "Untitled Workflow", emptyList(), emptyList())
+        val nodeId = buildNodeId(spec, current.nodes)
+        val next = current.copy(nodes = current.nodes + NodeRef(nodeId, spec.type, spec.defaultValues))
+        workflow = next
         selectedNodeId = nodeId
         connectionDraft = null
         connectionDraftPosition = null
-        setNodePosition(nodeId, GraphynCanvasLayout.fallbackPosition(nextWorkflow.nodes.lastIndex))
-        pushDebugLog("Added node $nodeId (${spec.label})")
+        layout.setNodePosition(nodeId, GraphynCanvasLayout.fallbackPosition(next.nodes.lastIndex))
+        log.push("Added node $nodeId (${spec.label})")
     }
 
     fun updateNodeOutputs(nodeId: String, outputs: Map<String, WorkflowValue>) {
@@ -180,182 +140,57 @@ class GraphynEditorState(
 
     fun applyExecutionResult(result: WorkflowExecutionResult) {
         nodeOutputsByNodeId = result.nodeOutputsByNodeId
-        result.nodeOutputsByNodeId.forEach { (nodeId, outputs) ->
-            dataStore.updateNodeOutputs(nodeId, outputs)
-        }
-        pushDebugLog("Execution completed: ${result.nodeOutputsByNodeId.size} node outputs updated")
+        result.nodeOutputsByNodeId.forEach { (id, outputs) -> dataStore.updateNodeOutputs(id, outputs) }
+        log.push("Execution completed: ${result.nodeOutputsByNodeId.size} node outputs updated")
     }
 
     fun execute(engine: WorkflowExecutionEngine) {
-        val currentWorkflow = workflow ?: return
-        applyExecutionResult(engine.execute(currentWorkflow))
+        val w = workflow ?: return
+        applyExecutionResult(engine.execute(w))
     }
 
-    fun setNodePosition(
-        nodeId: String,
-        position: IntOffset,
-        clearDragRemainder: Boolean = true,
-    ) {
-        nodePositionsByNodeId = nodePositionsByNodeId + (nodeId to clampNodePosition(nodeId, position))
-        if (clearDragRemainder) {
-            nodeDragRemaindersByNodeId.remove(nodeId)
-        }
-    }
+    // Layout delegation
+    fun setNodePosition(nodeId: String, position: IntOffset, clearDragRemainder: Boolean = true) =
+        layout.setNodePosition(nodeId, position, clearDragRemainder)
 
-    fun moveNode(nodeId: String, delta: IntOffset) {
-        val currentPosition = nodePositionsByNodeId[nodeId] ?: IntOffset.Zero
-        val previousRemainder = nodeDragRemaindersByNodeId[nodeId] ?: Offset.Zero
-        val worldDelta = if (viewport.scale != 0f) {
-            Offset(
-                x = (delta.x / viewport.scale) + previousRemainder.x,
-                y = (delta.y / viewport.scale) + previousRemainder.y,
-            )
-        } else {
-            Offset(
-                x = delta.x.toFloat() + previousRemainder.x,
-                y = delta.y.toFloat() + previousRemainder.y,
-            )
-        }
-        val appliedDelta = IntOffset(
-            x = worldDelta.x.roundToInt(),
-            y = worldDelta.y.roundToInt(),
-        )
-        nodeDragRemaindersByNodeId[nodeId] = Offset(
-            x = worldDelta.x - appliedDelta.x,
-            y = worldDelta.y - appliedDelta.y,
-        )
-        setNodePosition(
-            nodeId = nodeId,
-            position = IntOffset(
-                x = currentPosition.x + appliedDelta.x,
-                y = currentPosition.y + appliedDelta.y,
-            ),
-            clearDragRemainder = false,
-        )
-    }
-
-    fun nodePosition(nodeId: String, index: Int): IntOffset =
-        nodePositionsByNodeId[nodeId] ?: GraphynCanvasLayout.fallbackPosition(index)
-
-    fun nodeSize(nodeId: String): IntSize =
-        GraphynCanvasMetrics.NodeSize
-
-    fun nodeBounds(nodeId: String, index: Int): Rect {
-        val position = nodePosition(nodeId, index)
-        val size = nodeSize(nodeId)
-        return Rect(
-            left = position.x.toFloat(),
-            top = position.y.toFloat(),
-            right = position.x.toFloat() + size.width,
-            bottom = position.y.toFloat() + size.height,
-        )
-    }
-
-    fun screenToWorld(position: Offset): Offset = viewport.screenToWorld(position)
-
-    fun worldToScreen(position: Offset): Offset = viewport.worldToScreen(position)
+    fun moveNode(nodeId: String, delta: IntOffset) = layout.moveNode(nodeId, delta)
+    fun nodePosition(nodeId: String, index: Int): IntOffset = layout.nodePosition(nodeId, index)
+    fun nodeSize(nodeId: String): IntSize = layout.nodeSize()
+    fun nodeBounds(nodeId: String, index: Int): Rect = layout.nodeBounds(nodeId, index)
 
     fun isWorldPositionOverNode(position: Offset): Boolean {
-        val currentWorkflow = workflow ?: return false
-        return currentWorkflow.nodes.anyIndexed { index, node ->
-            nodeBounds(node.id, index).contains(position)
-        }
+        val nodes = workflow?.nodes ?: return false
+        return layout.isOverNode(position, nodes.mapIndexed { i, n -> n.id to i })
     }
 
-    fun updateViewportTransform(
-        pan: Offset,
-        zoom: Float,
-        focus: Offset,
-    ) {
-        viewport = viewport.zoomAt(
-            focus = focus,
-            factor = zoom,
-            minScale = MinViewportScale,
-            maxScale = MaxViewportScale,
-        )
-        if (pan != Offset.Zero) {
-            viewport = viewport.panBy(pan)
-        }
-        viewport = viewport.constrainTo(graphWorldBounds, canvasSize)
-    }
+    // Viewport delegation
+    fun updateViewportTransform(pan: Offset, zoom: Float, focus: Offset) =
+        viewportState.updateTransform(pan, zoom, focus)
 
-    fun resetViewport() {
-        viewport = GraphynViewport()
-        viewport = viewport.constrainTo(graphWorldBounds, canvasSize)
-        pushDebugLog("Viewport reset")
-    }
+    fun updateCanvasSize(size: IntSize) = viewportState.updateCanvasSize(size)
+    fun resetViewport() { viewportState.reset(); log.push("Viewport reset") }
+    fun screenToWorld(position: Offset): Offset = viewportState.screenToWorld(position)
+    fun worldToScreen(position: Offset): Offset = viewportState.worldToScreen(position)
 
-    fun updateCanvasSize(size: IntSize) {
-        canvasSize = size
-    }
-
+    // Query helpers
+    fun selectedNode(): NodeRef? = workflow?.nodes?.firstOrNull { it.id == selectedNodeId }
     fun outputsFor(nodeId: String): Map<String, WorkflowValue> = nodeOutputsByNodeId[nodeId].orEmpty()
+    fun flattenedOutputsFor(nodeId: String): Map<String, WorkflowValue> = dataStore.flattenedOutputsFor(nodeId)
+    fun affectedNodeIds(nodeId: String): Set<String> = workflow?.let {
+        dataStore.updateWorkflow(it); dataStore.affectedNodeIds(nodeId)
+    }.orEmpty()
 
-    fun flattenedOutputsFor(nodeId: String): Map<String, WorkflowValue> =
-        dataStore.flattenedOutputsFor(nodeId)
+    fun addDebugLog(message: String) = log.push(message)
 
-    fun affectedNodeIds(nodeId: String): Set<String> =
-        workflow?.let {
-            dataStore.updateWorkflow(it)
-            dataStore.affectedNodeIds(nodeId)
-        }.orEmpty()
-
-    fun selectedNode(): NodeRef? {
-        val currentWorkflow = workflow ?: return null
-        val selectedId = selectedNodeId ?: return null
-        return currentWorkflow.nodes.firstOrNull { it.id == selectedId }
-    }
-
-    fun addDebugLog(message: String) {
-        pushDebugLog(message)
-    }
-
-    private fun buildNodeId(spec: NodeSpec, nodes: List<NodeRef>): String {
-        val prefix = spec.type.substringAfterLast('.').ifBlank { "node" }
-        var suffix = 1
-        val existingIds = nodes.mapTo(mutableSetOf()) { it.id }
-        while (true) {
-            val candidate = "$prefix-$suffix"
-            if (candidate !in existingIds) {
-                return candidate
-            }
-            suffix += 1
-        }
-    }
-
-    private fun refreshGraphWorldBounds() {
-        val currentWorkflow = workflow ?: run {
-            graphWorldBounds = null
-            minimapBoundNodeIds = emptySet()
-            return
-        }
-        val currentNodeIds = currentWorkflow.nodes.mapTo(mutableSetOf()) { it.id }
-        minimapBoundNodeIds = currentNodeIds
-        graphWorldBounds = GraphynCanvasLayout.logicalCanvasBounds(canvasBounds)
-        viewport = viewport.constrainTo(graphWorldBounds, canvasSize)
-    }
-
-    private fun pushDebugLog(message: String) {
-        debugLogEntries = (debugLogEntries + message).takeLast(MaxDebugLogEntries)
-    }
-
-    private fun clampNodePosition(nodeId: String, position: IntOffset): IntOffset {
-        val size = nodeSize(nodeId)
-        val maxX = (canvasBounds.width - size.width).coerceAtLeast(0)
-        val maxY = (canvasBounds.height - size.height).coerceAtLeast(0)
-        return IntOffset(
-            x = position.x.coerceIn(0, maxX),
-            y = position.y.coerceIn(0, maxY),
+    private fun completeConnection(toNodeId: String, toPort: String) {
+        val draft = connectionDraft ?: return
+        val w = workflow ?: return
+        workflow = w.copy(
+            connections = w.connections + ConnectionRef(draft.fromNodeId, draft.fromPort, toNodeId, toPort),
         )
+        connectionDraft = null
+        connectionDraftPosition = null
+        log.push("Connected ${draft.fromNodeId}:${draft.fromPort} -> $toNodeId:$toPort")
     }
 
-}
-
-private inline fun <T> List<T>.anyIndexed(predicate: (index: Int, item: T) -> Boolean): Boolean {
-    for (index in indices) {
-        if (predicate(index, this[index])) {
-            return true
-        }
-    }
-    return false
 }
