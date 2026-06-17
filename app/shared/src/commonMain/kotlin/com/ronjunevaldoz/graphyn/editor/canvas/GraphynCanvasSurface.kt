@@ -3,6 +3,8 @@ package com.ronjunevaldoz.graphyn.editor.canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -156,6 +158,57 @@ fun GraphynCanvasSurface(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
             )
 
+            val outputColor = MaterialTheme.colorScheme.primary
+            val inputColor = MaterialTheme.colorScheme.secondary
+            val surfaceColor = MaterialTheme.colorScheme.surface
+
+            // Connection midpoint dots — rendered before node cards so nodes always paint on top.
+            if (state.connectionDraft == null) {
+                val connectionColor = MaterialTheme.colorScheme.primary
+                val connectionSelectedColor = MaterialTheme.colorScheme.error
+                workflow.connections.forEach { connection ->
+                    val fromNode = workflow.nodes.firstOrNull { it.id == connection.fromNodeId }
+                    val toNode = workflow.nodes.firstOrNull { it.id == connection.toNodeId }
+                    if (fromNode == null || toNode == null) return@forEach
+                    val fromIndex = workflow.nodes.indexOf(fromNode)
+                    val toIndex = workflow.nodes.indexOf(toNode)
+                    val fromPos = state.nodePosition(fromNode.id, fromIndex)
+                    val toPos = state.nodePosition(toNode.id, toIndex)
+                    val fromSpec = nodeSpecs.resolve(fromNode.type)
+                    val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
+                    val toSpec = nodeSpecs.resolve(toNode.type)
+                    val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
+                    val isSelected = state.selectedConnection == connection
+                    val dotColor = if (isSelected) connectionSelectedColor else connectionColor
+                    Box(
+                        modifier = Modifier
+                            .testTag("connection-midpoint-${connection.fromNodeId}-${connection.fromPort}")
+                            .offset {
+                                val nodeWidthPx = GraphynCanvasMetrics.NodeSize.width.dp.roundToPx()
+                                val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
+                                val fromY = fromPos.y + GraphynCanvasMetrics.portAnchorY(fromPortIndex).dp.roundToPx()
+                                val toY = toPos.y + GraphynCanvasMetrics.portAnchorY(toPortIndex).dp.roundToPx()
+                                val midX = (fromPos.x + nodeWidthPx + toPos.x) / 2
+                                val midY = (fromY + toY) / 2
+                                IntOffset(midX - dotRadiusPx, midY - dotRadiusPx)
+                            }
+                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) dotColor.copy(alpha = 0.15f) else surfaceColor)
+                            .border(2.dp, dotColor, CircleShape)
+                            .clickable {
+                                state.dispatch(
+                                    GraphynEditorIntent.SelectConnection(
+                                        if (isSelected) null else connection,
+                                    ),
+                                )
+                            },
+                    )
+                }
+            }
+
+            // Render each node card immediately followed by its own port dots so that
+            // later nodes (higher z-order) naturally cover earlier nodes' dots.
             workflow.nodes.forEachIndexed { index, node ->
                 val spec = nodeSpecs.resolve(node.type)
                 val position = state.nodePosition(node.id, index)
@@ -190,110 +243,66 @@ fun GraphynCanvasSurface(
                         },
                     ),
                 )
-            }
 
-            // Connection midpoint hit targets — select a connection by clicking the midpoint dot
-            if (state.connectionDraft == null) {
-                val connectionColor = MaterialTheme.colorScheme.primary
-                val connectionSelectedColor = MaterialTheme.colorScheme.error
-                val surfaceColor = MaterialTheme.colorScheme.surface
-                workflow.connections.forEach { connection ->
-                    val fromNode = workflow.nodes.firstOrNull { it.id == connection.fromNodeId }
-                    val toNode = workflow.nodes.firstOrNull { it.id == connection.toNodeId }
-                    if (fromNode == null || toNode == null) return@forEach
-                    val fromIndex = workflow.nodes.indexOf(fromNode)
-                    val toIndex = workflow.nodes.indexOf(toNode)
-                    val fromBounds = state.nodeBounds(fromNode.id, fromIndex)
-                    val toBounds = state.nodeBounds(toNode.id, toIndex)
-                    val fromSpec = nodeSpecs.resolve(fromNode.type)
-                    val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
-                    val toSpec = nodeSpecs.resolve(toNode.type)
-                    val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
-                    val fromY = fromBounds.top + GraphynCanvasMetrics.portAnchorY(fromPortIndex)
-                    val toY = toBounds.top + GraphynCanvasMetrics.portAnchorY(toPortIndex)
-                    val midX = ((fromBounds.right + toBounds.left) / 2).toInt()
-                    val midY = ((fromY + toY) / 2).toInt()
-                    val isSelected = state.selectedConnection == connection
-                    val dotColor = if (isSelected) connectionSelectedColor else connectionColor
-                    val dotRadius = GraphynCanvasMetrics.PortDotRadius
-                    Box(
-                        modifier = Modifier
-                            .offset { IntOffset(midX - dotRadius, midY - dotRadius) }
-                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
-                            .clip(CircleShape)
-                            .background(if (isSelected) dotColor.copy(alpha = 0.15f) else surfaceColor)
-                            .border(2.dp, dotColor, CircleShape)
-                            .clickable {
-                                state.dispatch(
-                                    GraphynEditorIntent.SelectConnection(
-                                        if (isSelected) null else connection,
-                                    ),
-                                )
-                            },
-                    )
-                }
-            }
-
-            // Edge port dots — rendered outside card clip so they straddle the card border
-            workflow.nodes.forEachIndexed { index, node ->
-                val spec = nodeSpecs.resolve(node.type) ?: return@forEachIndexed
-                val position = state.nodePosition(node.id, index)
-                val outputColor = MaterialTheme.colorScheme.primary
-                val inputColor = MaterialTheme.colorScheme.secondary
-                val surfaceColor = MaterialTheme.colorScheme.surface
-
-                spec.outputs.forEachIndexed { portIndex, outputPort ->
-                    val anchorY = GraphynCanvasMetrics.portAnchorY(portIndex)
-                    Box(
-                        modifier = Modifier
-                            .offset {
-                                IntOffset(
-                                    x = position.x + GraphynCanvasMetrics.NodeSize.width - GraphynCanvasMetrics.PortDotRadius,
-                                    y = position.y + anchorY - GraphynCanvasMetrics.PortDotRadius,
-                                )
-                            }
-                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
-                            .clip(CircleShape)
-                            .background(surfaceColor)
-                            .border(2.dp, outputColor, CircleShape)
-                            .clickable {
-                                state.dispatch(GraphynEditorIntent.BeginConnection(node.id, outputPort.name))
-                            },
-                    )
-                }
-
-                spec.inputs.forEachIndexed { portIndex, inputPort ->
-                    val anchorY = GraphynCanvasMetrics.portAnchorY(portIndex)
-                    Box(
-                        modifier = Modifier
-                            .offset {
-                                IntOffset(
-                                    x = position.x - GraphynCanvasMetrics.PortDotRadius,
-                                    y = position.y + anchorY - GraphynCanvasMetrics.PortDotRadius,
-                                )
-                            }
-                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
-                            .clip(CircleShape)
-                            .background(surfaceColor)
-                            .border(2.dp, inputColor, CircleShape)
-                            .clickable {
-                                val draft = state.connectionDraft ?: return@clickable
-                                val sourceNode = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
-                                val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
-                                val sourcePort = sourceSpec?.outputs?.firstOrNull { it.name == draft.fromPort }
-                                val targetPort = spec.inputs.firstOrNull { it.name == inputPort.name }
-
-                                if (sourcePort == null || targetPort == null) {
-                                    state.addDebugLog("Rejected connection: unknown port")
-                                    state.dispatch(GraphynEditorIntent.CancelConnection)
-                                } else if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
-                                    state.addDebugLog("Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:${inputPort.name}")
-                                    state.dispatch(GraphynEditorIntent.CancelConnection)
-                                } else {
-                                    state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, inputPort.name))
+                if (spec != null) {
+                    spec.outputs.forEachIndexed { portIndex, outputPort ->
+                        Box(
+                            modifier = Modifier
+                                .testTag("output-port-${node.id}-${outputPort.name}")
+                                .offset {
+                                    val nodeWidthPx = GraphynCanvasMetrics.NodeSize.width.dp.roundToPx()
+                                    val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
+                                    val anchorYPx = GraphynCanvasMetrics.portAnchorY(portIndex).dp.roundToPx()
+                                    IntOffset(
+                                        x = position.x + nodeWidthPx - dotRadiusPx,
+                                        y = position.y + anchorYPx - dotRadiusPx,
+                                    )
                                 }
-                            },
-                    )
+                                .size(GraphynCanvasMetrics.PortDotDiameter.dp)
+                                .clip(CircleShape)
+                                .background(surfaceColor)
+                                .border(2.dp, outputColor, CircleShape)
+                                .clickable {
+                                    state.dispatch(GraphynEditorIntent.BeginConnection(node.id, outputPort.name))
+                                },
+                        )
+                    }
+
+                    spec.inputs.forEachIndexed { portIndex, inputPort ->
+                        Box(
+                            modifier = Modifier
+                                .testTag("input-port-${node.id}-${inputPort.name}")
+                                .offset {
+                                    val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
+                                    val anchorYPx = GraphynCanvasMetrics.portAnchorY(portIndex).dp.roundToPx()
+                                    IntOffset(
+                                        x = position.x - dotRadiusPx,
+                                        y = position.y + anchorYPx - dotRadiusPx,
+                                    )
+                                }
+                                .size(GraphynCanvasMetrics.PortDotDiameter.dp)
+                                .clip(CircleShape)
+                                .background(surfaceColor)
+                                .border(2.dp, inputColor, CircleShape)
+                                .clickable {
+                                    val draft = state.connectionDraft ?: return@clickable
+                                    val sourceNode = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
+                                    val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
+                                    val sourcePort = sourceSpec?.outputs?.firstOrNull { it.name == draft.fromPort }
+                                    val targetPort = spec.inputs.firstOrNull { it.name == inputPort.name }
+
+                                    if (sourcePort == null || targetPort == null) {
+                                        state.addDebugLog("Rejected connection: unknown port")
+                                        state.dispatch(GraphynEditorIntent.CancelConnection)
+                                    } else if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
+                                        state.addDebugLog("Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:${inputPort.name}")
+                                        state.dispatch(GraphynEditorIntent.CancelConnection)
+                                    } else {
+                                        state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, inputPort.name))
+                                    }
+                                },
+                        )
+                    }
                 }
             }
         }
