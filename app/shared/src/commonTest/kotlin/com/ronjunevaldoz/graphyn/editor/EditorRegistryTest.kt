@@ -183,6 +183,249 @@ class EditorRegistryTest {
     }
 
     @Test
+    fun beginConnectionFromInputPortSetsDraftIsFromInput() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(NodeRef(id = "n1", type = "switch")),
+                connections = emptyList(),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("n1", "enabled", isFromInput = true))
+
+        val draft = state.connectionDraft
+        assertNotNull(draft)
+        assertEquals("n1", draft!!.fromNodeId)
+        assertEquals("enabled", draft.fromPort)
+        assertEquals(true, draft.isFromInput)
+    }
+
+    @Test
+    fun completeConnectionFromInputSwapsEndpointOrder() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(
+                    NodeRef(id = "source", type = "switch"),
+                    NodeRef(id = "target", type = "display"),
+                ),
+                connections = emptyList(),
+            ),
+        )
+
+        // Start from input port of "target"
+        state.dispatch(GraphynEditorIntent.BeginConnection("target", "enabled", isFromInput = true))
+        // Complete on output port of "source"
+        state.dispatch(GraphynEditorIntent.CompleteConnection("source", "on"))
+
+        val conn = state.workflow?.connections?.firstOrNull()
+        assertNotNull(conn)
+        assertEquals("source", conn!!.fromNodeId)
+        assertEquals("on", conn.fromPort)
+        assertEquals("target", conn.toNodeId)
+        assertEquals("enabled", conn.toPort)
+    }
+
+    @Test
+    fun cancelConnectionOnEmptyCanvasDispatchCancelsActiveDraft() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(NodeRef(id = "n1", type = "switch")),
+                connections = emptyList(),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("n1", "on"))
+        assertNotNull(state.connectionDraft)
+
+        state.dispatch(GraphynEditorIntent.CancelConnection)
+
+        assertNull(state.connectionDraft)
+        assertNull(state.connectionDraftPosition)
+    }
+
+    @Test
+    fun deleteKeyDeletesSelectedNode() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(NodeRef(id = "n1", type = "switch")),
+                connections = emptyList(),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.SelectNode("n1"))
+        assertNotNull(state.selectedNodeId)
+
+        state.dispatch(GraphynEditorIntent.DeleteSelectedNode)
+
+        assertNull(state.selectedNodeId)
+        assertTrue(state.workflow?.nodes.isNullOrEmpty())
+    }
+
+    @Test
+    fun deleteKeyDeletesSelectedConnection() {
+        val conn = ConnectionRef("source", "on", "target", "enabled")
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(
+                    NodeRef(id = "source", type = "switch"),
+                    NodeRef(id = "target", type = "display"),
+                ),
+                connections = listOf(conn),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.SelectConnection(conn))
+        state.dispatch(GraphynEditorIntent.DeleteSelectedConnection)
+
+        assertNull(state.selectedConnection)
+        assertEquals(emptyList(), state.workflow?.connections)
+    }
+
+    @Test
+    fun reconnectSelectedConnectionReplacesTarget() {
+        val original = ConnectionRef(
+            fromNodeId = "source",
+            fromPort = "on",
+            toNodeId = "target-a",
+            toPort = "enabled",
+        )
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-reconnect",
+                name = "Reconnect",
+                nodes = listOf(
+                    NodeRef(id = "source", type = "switch"),
+                    NodeRef(id = "target-a", type = "display"),
+                    NodeRef(id = "target-b", type = "display"),
+                ),
+                connections = listOf(original),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.SelectConnection(original))
+        state.dispatch(GraphynEditorIntent.ReconnectSelectedConnection("target-b", "enabled"))
+
+        val expected = original.copy(toNodeId = "target-b", toPort = "enabled")
+        assertEquals(listOf(expected), state.workflow?.connections)
+        assertEquals(expected, state.selectedConnection)
+    }
+
+    @Test
+    fun reconnectSelectedConnectionNoOpWhenNoneSelected() {
+        val conn = ConnectionRef("source", "on", "target", "enabled")
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-noop",
+                name = "Noop",
+                nodes = listOf(
+                    NodeRef(id = "source", type = "switch"),
+                    NodeRef(id = "target", type = "display"),
+                ),
+                connections = listOf(conn),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.ReconnectSelectedConnection("other", "enabled"))
+
+        assertEquals(listOf(conn), state.workflow?.connections)
+    }
+
+    @Test
+    fun showNodePickerStoresPickerState() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(NodeRef(id = "n1", type = "switch")),
+                connections = emptyList(),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("n1", "on"))
+        state.dispatch(GraphynEditorIntent.ShowNodePicker(
+            screenPosition = androidx.compose.ui.geometry.Offset(100f, 200f),
+            worldPosition = androidx.compose.ui.geometry.Offset(50f, 80f),
+        ))
+
+        assertNotNull(state.nodePickerState)
+        assertEquals(androidx.compose.ui.geometry.Offset(100f, 200f), state.nodePickerState!!.screenPosition)
+        assertEquals(androidx.compose.ui.geometry.Offset(50f, 80f), state.nodePickerState!!.worldPosition)
+        assertNotNull(state.connectionDraft)
+    }
+
+    @Test
+    fun dismissNodePickerClearsDraftAndPickerState() {
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(NodeRef(id = "n1", type = "switch")),
+                connections = emptyList(),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("n1", "on"))
+        state.dispatch(GraphynEditorIntent.ShowNodePicker(
+            screenPosition = androidx.compose.ui.geometry.Offset(100f, 200f),
+            worldPosition = androidx.compose.ui.geometry.Offset(50f, 80f),
+        ))
+        state.dispatch(GraphynEditorIntent.DismissNodePicker)
+
+        assertNull(state.nodePickerState)
+        assertNull(state.connectionDraft)
+    }
+
+    @Test
+    fun addNodeAndConnectCreatesNodeAndConnection() {
+        val switchSpec = NodeSpec(
+            type = "switch",
+            label = "Switch",
+            inputs = listOf(PortSpec(name = "enabled", type = WorkflowType.BooleanType, required = false)),
+            outputs = listOf(PortSpec(name = "on", type = WorkflowType.BooleanType)),
+        )
+        val displaySpec = NodeSpec(
+            type = "display",
+            label = "Display",
+            inputs = listOf(PortSpec(name = "value", type = WorkflowType.BooleanType, required = false)),
+            outputs = emptyList(),
+        )
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "w",
+                name = "W",
+                nodes = listOf(NodeRef(id = "switch-1", type = "switch")),
+                connections = emptyList(),
+            ),
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("switch-1", "on"))
+        state.dispatch(GraphynEditorIntent.AddNodeAndConnect(
+            spec = displaySpec,
+            toPort = "value",
+            worldPosition = androidx.compose.ui.geometry.Offset(400f, 100f),
+        ))
+
+        assertNull(state.connectionDraft)
+        assertNull(state.nodePickerState)
+        assertEquals(2, state.workflow?.nodes?.size)
+        val conn = state.workflow?.connections?.firstOrNull()
+        assertNotNull(conn)
+        assertEquals("switch-1", conn!!.fromNodeId)
+        assertEquals("on", conn.fromPort)
+        assertEquals("value", conn.toPort)
+    }
+
+    @Test
     fun editorStateAppliesExecutionResults() {
         val specs = DefaultNodeSpecRegistry().apply {
             register(

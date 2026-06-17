@@ -1,39 +1,36 @@
 package com.ronjunevaldoz.graphyn.editor.canvas
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
+import androidx.compose.ui.platform.testTag
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynCanvasBackdrop
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionLayer
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionMidpoints
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyCanvasHint
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyNodesHint
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardFooter
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardHeader
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardSlots
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardPorts
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardSlots
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodePickerPopup
+import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodePortDots
+import com.ronjunevaldoz.graphyn.editor.canvas.components.compatiblePickerSpecs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
@@ -43,91 +40,42 @@ fun GraphynCanvasSurface(
     nodeSpecs: NodeSpecRegistry,
     modifier: Modifier = Modifier,
 ) {
+    val focusRequester = remember { FocusRequester() }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
             .onSizeChanged { state.updateCanvasSize(it) }
             .graphicsLayer { clip = true }
-            .pointerInput(state.connectionDraft?.fromNodeId, state.viewport) {
-                if (state.connectionDraft == null) return@pointerInput
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val position = event.changes.firstOrNull()?.position
-                        if (position != null) {
-                            state.dispatch(
-                                GraphynEditorIntent.UpdateConnectionDraftPosition(
-                                    state.screenToWorld(position),
-                                ),
-                            )
-                        }
-                    }
-                }
-            }
-            .pointerInput(state.viewport) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val scrollDelta = event.changes.firstOrNull()?.scrollDelta ?: Offset.Zero
-                        if (scrollDelta != Offset.Zero) {
-                            val focus = event.changes.firstOrNull()?.position ?: Offset.Zero
-                            val zoomFactor = (1f - scrollDelta.y * 0.0045f).coerceIn(0.7f, 1.35f)
-                            state.dispatch(
-                                GraphynEditorIntent.UpdateViewportTransform(
-                                    pan = Offset.Zero,
-                                    zoom = zoomFactor,
-                                    focus = focus,
-                                ),
-                            )
-                        }
-                    }
-                }
-            },
+            .focusRequester(focusRequester)
+            .focusable()
+            .graphynKeyboardShortcuts(state)
+            .graphynDraftTrackingGesture(state)
+            .graphynScrollZoomGesture(state),
         contentAlignment = Alignment.TopStart,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(state.workflow, state.nodePositionsByNodeId) {
-                    awaitEachGesture {
-                        val firstDown = awaitFirstDown(requireUnconsumed = false)
-                        val startWorld = state.screenToWorld(firstDown.position)
-                        if (state.isWorldPositionOverNode(startWorld)) return@awaitEachGesture
+        LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-                        var accumulatedDrag = Offset.Zero
-                        var dragging = false
+        Box(modifier = Modifier.fillMaxSize().testTag("canvas-background").graphynPanGesture(state))
 
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull() ?: continue
-                            if (!change.pressed) break
+        state.nodePickerState?.let { picker ->
+            val wf = state.workflow
+            if (wf != null) {
+                GraphynNodePickerPopup(
+                    screenPosition = picker.screenPosition,
+                    compatibleSpecs = compatiblePickerSpecs(picker.draft, wf, nodeSpecs),
+                    onPick = { spec, port ->
+                        state.dispatch(GraphynEditorIntent.AddNodeAndConnect(spec, port, picker.worldPosition))
+                    },
+                    onDismiss = { state.dispatch(GraphynEditorIntent.DismissNodePicker) },
+                )
+            }
+        }
 
-                            val delta = change.position - change.previousPosition
-                            if (delta != Offset.Zero) {
-                                accumulatedDrag += delta
-                                if (!dragging && accumulatedDrag.getDistance() <= viewConfiguration.touchSlop) {
-                                    continue
-                                }
-                                dragging = true
-                                change.consume()
-                                state.dispatch(
-                                    GraphynEditorIntent.UpdateViewportTransform(
-                                        pan = delta,
-                                        zoom = 1f,
-                                        focus = change.position,
-                                    ),
-                                )
-                            }
-                        }
-                    }
-                },
-        )
-
-        val dotColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         GraphynCanvasBackdrop(
             modifier = Modifier.fillMaxSize(),
-            dotColor = dotColor,
+            dotColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
             viewport = state.viewport,
         )
 
@@ -136,6 +84,14 @@ fun GraphynCanvasSurface(
             GraphynEmptyCanvasHint()
             return
         }
+
+        if (workflow.nodes.isEmpty()) {
+            GraphynEmptyNodesHint()
+        }
+
+        val outputColor = MaterialTheme.colorScheme.primary
+        val inputColor = MaterialTheme.colorScheme.secondary
+        val surfaceColor = MaterialTheme.colorScheme.surface
 
         Box(
             modifier = Modifier
@@ -155,60 +111,18 @@ fun GraphynCanvasSurface(
                 draft = state.connectionDraft,
                 draftPointer = state.connectionDraftPosition,
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                color = outputColor.copy(alpha = 0.6f),
             )
 
-            val outputColor = MaterialTheme.colorScheme.primary
-            val inputColor = MaterialTheme.colorScheme.secondary
-            val surfaceColor = MaterialTheme.colorScheme.surface
+            GraphynConnectionMidpoints(
+                workflow = workflow,
+                state = state,
+                nodeSpecs = nodeSpecs,
+                connectionColor = outputColor,
+                selectedColor = MaterialTheme.colorScheme.error,
+                surfaceColor = surfaceColor,
+            )
 
-            // Connection midpoint dots — rendered before node cards so nodes always paint on top.
-            if (state.connectionDraft == null) {
-                val connectionColor = MaterialTheme.colorScheme.primary
-                val connectionSelectedColor = MaterialTheme.colorScheme.error
-                workflow.connections.forEach { connection ->
-                    val fromNode = workflow.nodes.firstOrNull { it.id == connection.fromNodeId }
-                    val toNode = workflow.nodes.firstOrNull { it.id == connection.toNodeId }
-                    if (fromNode == null || toNode == null) return@forEach
-                    val fromIndex = workflow.nodes.indexOf(fromNode)
-                    val toIndex = workflow.nodes.indexOf(toNode)
-                    val fromPos = state.nodePosition(fromNode.id, fromIndex)
-                    val toPos = state.nodePosition(toNode.id, toIndex)
-                    val fromSpec = nodeSpecs.resolve(fromNode.type)
-                    val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
-                    val toSpec = nodeSpecs.resolve(toNode.type)
-                    val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
-                    val isSelected = state.selectedConnection == connection
-                    val dotColor = if (isSelected) connectionSelectedColor else connectionColor
-                    Box(
-                        modifier = Modifier
-                            .testTag("connection-midpoint-${connection.fromNodeId}-${connection.fromPort}")
-                            .offset {
-                                val nodeWidthPx = GraphynCanvasMetrics.NodeSize.width.dp.roundToPx()
-                                val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
-                                val fromY = fromPos.y + GraphynCanvasMetrics.portAnchorY(fromPortIndex).dp.roundToPx()
-                                val toY = toPos.y + GraphynCanvasMetrics.portAnchorY(toPortIndex).dp.roundToPx()
-                                val midX = (fromPos.x + nodeWidthPx + toPos.x) / 2
-                                val midY = (fromY + toY) / 2
-                                IntOffset(midX - dotRadiusPx, midY - dotRadiusPx)
-                            }
-                            .size(GraphynCanvasMetrics.PortDotDiameter.dp)
-                            .clip(CircleShape)
-                            .background(if (isSelected) dotColor.copy(alpha = 0.15f) else surfaceColor)
-                            .border(2.dp, dotColor, CircleShape)
-                            .clickable {
-                                state.dispatch(
-                                    GraphynEditorIntent.SelectConnection(
-                                        if (isSelected) null else connection,
-                                    ),
-                                )
-                            },
-                    )
-                }
-            }
-
-            // Render each node card immediately followed by its own port dots so that
-            // later nodes (higher z-order) naturally cover earlier nodes' dots.
             workflow.nodes.forEachIndexed { index, node ->
                 val spec = nodeSpecs.resolve(node.type)
                 val position = state.nodePosition(node.id, index)
@@ -217,23 +131,11 @@ fun GraphynCanvasSurface(
                     selected = state.selectedNodeId == node.id,
                     onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
                     onMove = { delta ->
-                        state.dispatch(
-                            GraphynEditorIntent.MoveNode(
-                                nodeId = node.id,
-                                delta = delta,
-                            ),
-                        )
+                        state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta))
                     },
                     slots = GraphynNodeCardSlots(
-                        header = {
-                            GraphynNodeCardHeader(
-                                node = node,
-                                spec = spec,
-                            )
-                        },
-                        ports = {
-                            GraphynNodeCardPorts(spec = spec)
-                        },
+                        header = { GraphynNodeCardHeader(node = node, spec = spec) },
+                        ports = { GraphynNodeCardPorts(spec = spec) },
                         footer = {
                             GraphynNodeCardFooter(
                                 outputs = state.outputsFor(node.id),
@@ -243,66 +145,18 @@ fun GraphynCanvasSurface(
                         },
                     ),
                 )
-
                 if (spec != null) {
-                    spec.outputs.forEachIndexed { portIndex, outputPort ->
-                        Box(
-                            modifier = Modifier
-                                .testTag("output-port-${node.id}-${outputPort.name}")
-                                .offset {
-                                    val nodeWidthPx = GraphynCanvasMetrics.NodeSize.width.dp.roundToPx()
-                                    val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
-                                    val anchorYPx = GraphynCanvasMetrics.portAnchorY(portIndex).dp.roundToPx()
-                                    IntOffset(
-                                        x = position.x + nodeWidthPx - dotRadiusPx,
-                                        y = position.y + anchorYPx - dotRadiusPx,
-                                    )
-                                }
-                                .size(GraphynCanvasMetrics.PortDotDiameter.dp)
-                                .clip(CircleShape)
-                                .background(surfaceColor)
-                                .border(2.dp, outputColor, CircleShape)
-                                .clickable {
-                                    state.dispatch(GraphynEditorIntent.BeginConnection(node.id, outputPort.name))
-                                },
-                        )
-                    }
-
-                    spec.inputs.forEachIndexed { portIndex, inputPort ->
-                        Box(
-                            modifier = Modifier
-                                .testTag("input-port-${node.id}-${inputPort.name}")
-                                .offset {
-                                    val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
-                                    val anchorYPx = GraphynCanvasMetrics.portAnchorY(portIndex).dp.roundToPx()
-                                    IntOffset(
-                                        x = position.x - dotRadiusPx,
-                                        y = position.y + anchorYPx - dotRadiusPx,
-                                    )
-                                }
-                                .size(GraphynCanvasMetrics.PortDotDiameter.dp)
-                                .clip(CircleShape)
-                                .background(surfaceColor)
-                                .border(2.dp, inputColor, CircleShape)
-                                .clickable {
-                                    val draft = state.connectionDraft ?: return@clickable
-                                    val sourceNode = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
-                                    val sourceSpec = sourceNode?.let { nodeSpecs.resolve(it.type) }
-                                    val sourcePort = sourceSpec?.outputs?.firstOrNull { it.name == draft.fromPort }
-                                    val targetPort = spec.inputs.firstOrNull { it.name == inputPort.name }
-
-                                    if (sourcePort == null || targetPort == null) {
-                                        state.addDebugLog("Rejected connection: unknown port")
-                                        state.dispatch(GraphynEditorIntent.CancelConnection)
-                                    } else if (!WorkflowTypeCompatibility.isCompatible(targetPort.type, sourcePort.type)) {
-                                        state.addDebugLog("Rejected connection ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:${inputPort.name}")
-                                        state.dispatch(GraphynEditorIntent.CancelConnection)
-                                    } else {
-                                        state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, inputPort.name))
-                                    }
-                                },
-                        )
-                    }
+                    GraphynNodePortDots(
+                        node = node,
+                        position = position,
+                        spec = spec,
+                        state = state,
+                        workflow = workflow,
+                        nodeSpecs = nodeSpecs,
+                        outputColor = outputColor,
+                        inputColor = inputColor,
+                        surfaceColor = surfaceColor,
+                    )
                 }
             }
         }

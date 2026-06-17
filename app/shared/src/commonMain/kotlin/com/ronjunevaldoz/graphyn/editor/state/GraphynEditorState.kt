@@ -19,6 +19,7 @@ import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynNodePickerState
 
 class GraphynEditorState(
     initialWorkflow: WorkflowDefinition? = null,
@@ -48,6 +49,9 @@ class GraphynEditorState(
     var connectionDraft by mutableStateOf<GraphynConnectionDraft?>(null)
     var connectionDraftPosition by mutableStateOf<Offset?>(null)
 
+    // Node picker (shown on draft-drop to empty canvas)
+    var nodePickerState by mutableStateOf<GraphynNodePickerState?>(null)
+
     // Node outputs
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
 
@@ -74,15 +78,28 @@ class GraphynEditorState(
             GraphynEditorIntent.DeleteSelectedConnection -> deleteSelectedConnection()
             is GraphynEditorIntent.MoveNode -> layout.moveNode(intent.nodeId, intent.delta)
             is GraphynEditorIntent.BeginConnection -> {
-                connectionDraft = GraphynConnectionDraft(intent.fromNodeId, intent.fromPort)
+                connectionDraft = GraphynConnectionDraft(intent.fromNodeId, intent.fromPort, intent.isFromInput)
                 connectionDraftPosition = null
             }
             is GraphynEditorIntent.CompleteConnection -> completeConnection(intent.toNodeId, intent.toPort)
             is GraphynEditorIntent.AddNode -> addNode(intent.spec)
+            is GraphynEditorIntent.AddNodeAndConnect -> addNodeAndConnect(intent.spec, intent.toPort, intent.worldPosition)
             is GraphynEditorIntent.UpdateConnectionDraftPosition -> connectionDraftPosition = intent.position
             is GraphynEditorIntent.UpdateViewportTransform ->
                 viewportState.updateTransform(intent.pan, intent.zoom, intent.focus)
             GraphynEditorIntent.CancelConnection -> {
+                connectionDraft = null
+                connectionDraftPosition = null
+                nodePickerState = null
+            }
+            is GraphynEditorIntent.ReconnectSelectedConnection ->
+                reconnectSelectedConnection(intent.toNodeId, intent.toPort)
+            is GraphynEditorIntent.ShowNodePicker -> {
+                val draft = connectionDraft ?: return
+                nodePickerState = GraphynNodePickerState(intent.screenPosition, intent.worldPosition, draft)
+            }
+            GraphynEditorIntent.DismissNodePicker -> {
+                nodePickerState = null
                 connectionDraft = null
                 connectionDraftPosition = null
             }
@@ -131,6 +148,25 @@ class GraphynEditorState(
         connectionDraftPosition = null
         layout.setNodePosition(nodeId, GraphynCanvasLayout.fallbackPosition(next.nodes.lastIndex))
         log.push("Added node $nodeId (${spec.label})")
+    }
+
+    private fun addNodeAndConnect(spec: NodeSpec, toPort: String, worldPosition: Offset) {
+        val draft = connectionDraft ?: return
+        val current = workflow ?: WorkflowDefinition("workflow", "Untitled Workflow", emptyList(), emptyList())
+        val nodeId = buildNodeId(spec, current.nodes)
+        val node = NodeRef(nodeId, spec.type, spec.defaultValues)
+        val connection = if (draft.isFromInput) {
+            ConnectionRef(fromNodeId = nodeId, fromPort = toPort, toNodeId = draft.fromNodeId, toPort = draft.fromPort)
+        } else {
+            ConnectionRef(fromNodeId = draft.fromNodeId, fromPort = draft.fromPort, toNodeId = nodeId, toPort = toPort)
+        }
+        workflow = current.copy(nodes = current.nodes + node, connections = current.connections + connection)
+        connectionDraft = null
+        connectionDraftPosition = null
+        nodePickerState = null
+        selectedNodeId = nodeId
+        layout.setNodePosition(nodeId, IntOffset(worldPosition.x.toInt(), worldPosition.y.toInt()))
+        log.push("Added $nodeId and connected ${connection.fromNodeId}:${connection.fromPort} -> ${connection.toNodeId}:${connection.toPort}")
     }
 
     fun updateNodeOutputs(nodeId: String, outputs: Map<String, WorkflowValue>) {
@@ -182,15 +218,28 @@ class GraphynEditorState(
 
     fun addDebugLog(message: String) = log.push(message)
 
+    private fun reconnectSelectedConnection(toNodeId: String, toPort: String) {
+        val conn = selectedConnection ?: return
+        val w = workflow ?: return
+        val updated = conn.copy(toNodeId = toNodeId, toPort = toPort)
+        workflow = w.copy(connections = w.connections.map { if (it == conn) updated else it })
+        selectedConnection = updated
+        log.push("Reconnected ${conn.fromNodeId}:${conn.fromPort} -> $toNodeId:$toPort")
+    }
+
     private fun completeConnection(toNodeId: String, toPort: String) {
         val draft = connectionDraft ?: return
         val w = workflow ?: return
-        workflow = w.copy(
-            connections = w.connections + ConnectionRef(draft.fromNodeId, draft.fromPort, toNodeId, toPort),
-        )
+        val connection = if (draft.isFromInput) {
+            // draft started at an input port; toNodeId:toPort is the output end
+            ConnectionRef(fromNodeId = toNodeId, fromPort = toPort, toNodeId = draft.fromNodeId, toPort = draft.fromPort)
+        } else {
+            ConnectionRef(fromNodeId = draft.fromNodeId, fromPort = draft.fromPort, toNodeId = toNodeId, toPort = toPort)
+        }
+        workflow = w.copy(connections = w.connections + connection)
         connectionDraft = null
         connectionDraftPosition = null
-        log.push("Connected ${draft.fromNodeId}:${draft.fromPort} -> $toNodeId:$toPort")
+        log.push("Connected ${connection.fromNodeId}:${connection.fromPort} -> ${connection.toNodeId}:${connection.toPort}")
     }
 
 }

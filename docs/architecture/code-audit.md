@@ -5,7 +5,7 @@ Files exceeding the 150-line ceiling defined in `CLAUDE.md`. Ordered by size des
 | File | Lines | Primary concern | Suggested split |
 |------|------:|-----------------|-----------------|
 | `editor/state/GraphynEditorState.kt` | 196 ✅ split done | Coordinator: workflow mutations, selection, dispatch | Sub-states extracted: `GraphynNodeLayoutState` (82L), `GraphynViewportState` (49L), `GraphynDebugLogState` (17L) |
-| `editor/canvas/GraphynCanvasSurface.kt` | 310 | Canvas backdrop + pan/zoom gestures + node cards + port dot overlays + connection midpoints | Extract port overlay loop → `GraphynPortOverlayLayer`; extract pan/zoom gesture modifiers → `graphynCanvasGestures()` extension |
+| `editor/canvas/GraphynCanvasSurface.kt` | 113 ✅ split done | Canvas orchestrator | Extracted: `GraphynCanvasGestures` (gestures), `GraphynConnectionMidpoints`, `GraphynNodePortDots` (port dots with hover + reconnect) |
 | `editor/theme/GraphynTheme.kt` | 262 | Color schemes, typography, palette presets, appearance state | Split into `GraphynPalette.kt`, `GraphynColorScheme.kt`, `GraphynTypography.kt`, `GraphynAppearanceState.kt` |
 | `editor/canvas/components/GraphynNodeCard.kt` | 237 | Card shell + drag + port columns + port bubbles + summary section | Extract `GraphynPortColumn` + `GraphynPortBubble` → `GraphynNodeCardPorts.kt`; extract `GraphynSummarySection` → `GraphynNodeCardSummary.kt` |
 | `editor/shell/components/GraphynMinimapDebugger.kt` | 175 | Minimap draw + viewport rect + node rects + telemetry overlay | Split minimap Canvas draw logic into `GraphynMinimapCanvas.kt` |
