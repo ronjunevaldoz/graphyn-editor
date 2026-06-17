@@ -20,6 +20,8 @@ import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginRegistrar
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
+import com.ronjunevaldoz.graphyn.editor.state.execute
+import com.ronjunevaldoz.graphyn.editor.state.updateNodeOutputs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
