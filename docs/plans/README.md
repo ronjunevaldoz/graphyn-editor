@@ -54,26 +54,30 @@ Gaps found by comparing with the stable old Graphyn codebase.
 - [x] Unify the three separate `pointerInput` blocks in the canvas into a single gesture coordinator (pan, node drag, connection drag — one `ActiveDrag` state, one modifier).
 - [x] Start connections from input ports as well as output ports (drag backward from input → find compatible output).
 
-### Phase 5: Plugin Ecosystem
+### Phase 5: Plugin Ecosystem ✓
 
-- [ ] Document the external plugin module layout.
-- [ ] Add a sample third-party plugin example.
-- [ ] Define a simple plugin packaging and distribution story.
-- [ ] Decide whether discovery stays explicit only or later supports registry loading.
+- [x] Document the external plugin module layout (`docs/architecture/plugins.md`).
+- [x] Add a sample third-party plugin example (`plugins/sample-math` — Add, Subtract, Multiply nodes using DoubleType ports).
+- [x] Define a simple plugin packaging and distribution story (explicit host registration; see plugins.md §Loading Model).
+- [x] Decide whether discovery stays explicit only or later supports registry loading → explicit only for MVP, ServiceLoader reserved for future JVM extension.
 
-### Phase 6: Server Runtime
+### Phase 6: Server Runtime ✓
 
-- [ ] Wire the server host to the runtime plugin registry.
-- [ ] Add a workflow execution endpoint.
-- [ ] Serialize workflow input/output payloads for server use.
-- [ ] Keep execution synchronous for the MVP.
+- [x] Wire the server host to the runtime plugin registry (`GraphynServerRuntime.kt`).
+- [x] Add a workflow execution endpoint (`POST /execute` in `Application.kt`).
+- [x] Serialize workflow input/output payloads for server use (`DefaultWorkflowJsonCodec`).
+- [x] Keep execution synchronous for the MVP.
+
+### Known Issues (post-MVP)
+
+- [ ] Node drag blink: initial drag frame jumps by slop distance (~8–18 dp). Root cause not fully eliminated by current `awaitTouchSlopOrCancellation` fix. Needs investigation with a mid-gesture Roborazzi capture or pointer-event trace.
 
 Tasking style:
 - Keep tasks small and outcome-based.
 - Reference architecture docs instead of duplicating rules here.
 - Update the plan when a phase changes, not for every tiny implementation detail.
 
-Current focus: Phase 5 — plugin ecosystem.
+Current focus: **MVP complete** — all phases 1–6 done. Next: post-MVP polish (drag blink, wasmJs port-dot tests, plugin ServiceLoader for JVM).
 
 Implementation notes:
 - Phase 2–4.5 complete. Port dots at card edges (n8n-style), reconnect via midpoint click, hover states on ports, gesture/keyboard polish.
