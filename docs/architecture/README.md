@@ -23,4 +23,5 @@ Related:
 - [Plugin API Draft](./plugins.md)
 - [Editor Panel Host](./editor-panels.md)
 - [Preview-Driven Development](./previews.md)
+- [Test Coverage Matrix](./test-coverage.md)
 - [Plans](../plans/README.md)
