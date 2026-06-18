@@ -21,8 +21,6 @@ internal fun GraphynNodeLayer(
     workflow: WorkflowDefinition,
     state: GraphynEditorState,
     nodeSpecs: NodeSpecRegistry,
-    outputColor: Color,
-    inputColor: Color,
     surfaceColor: Color,
 ) {
     workflow.nodes.forEachIndexed { index, node ->
@@ -54,8 +52,6 @@ internal fun GraphynNodeLayer(
                 state = state,
                 workflow = workflow,
                 nodeSpecs = nodeSpecs,
-                outputColor = outputColor,
-                inputColor = inputColor,
                 surfaceColor = surfaceColor,
             )
         }

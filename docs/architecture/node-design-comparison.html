@@ -2,96 +2,161 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Node Design Comparison</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0f1117; font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #e0e0e6; }
-  h1 { font-size: 12px; font-weight: 600; letter-spacing: 1.5px; color: #9b9ba5; text-transform: uppercase; margin-bottom: 20px; text-align: center; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
-  .col { display: flex; flex-direction: column; gap: 12px; }
-  .col-header { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #9b9ba5; text-align: center; padding-bottom: 8px; border-bottom: 1px solid #2d2e3d; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1117; font-family: system-ui, -apple-system, sans-serif; color: #e0e0e6; padding: 20px 16px; }
 
-  /* Canvas preview area */
-  .preview { background: #0a0b10; border: 1px solid #2d2e3d; border-radius: 8px; padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 180px; position: relative; }
+/* ── Layout ── */
+.page-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #9b9ba5; text-align: center; margin-bottom: 18px; }
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab { padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid #2d2e3d; color: #9b9ba5; background: transparent; transition: all .15s; }
+.tab.active, .tab:hover { background: #1e1f2e; color: #e0e0e6; border-color: #3d3e52; }
+.tab.active { border-color: #7aa2ff; color: #7aa2ff; }
 
-  /* Graphyn current */
-  .gnode { width: 200px; background: #1e1f2e; border: 1px solid #3d3e52; border-radius: 8px; position: relative; overflow: visible; }
-  .gnode-accent { position: absolute; left: 0; top: 0; width: 4px; height: 100%; background: #ff6d5a; border-radius: 2px 0 0 2px; }
-  .gnode-body { padding: 10px 12px; }
-  .gnode-title { font-size: 12px; font-weight: 600; color: #e0e0e6; }
-  .gnode-sub { font-size: 9px; color: #9b9ba5; margin-top: 2px; }
-  .gnode-divider { height: 1px; background: #2d2e40; margin: 8px 0; }
-  .gnode-ports { display: flex; justify-content: space-between; }
-  .gnode-port-col { font-size: 9px; }
-  .gnode-port-label { color: #9b9ba5; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; }
-  .port-badge-in { display: inline-block; background: #7aa2ff22; border: 1px solid #7aa2ff88; border-radius: 3px; padding: 1px 6px; font-size: 8px; color: #7aa2ff; margin-top: 2px; }
-  .port-badge-out { display: inline-block; background: #ff6d5a22; border: 1px solid #ff6d5a88; border-radius: 3px; padding: 1px 6px; font-size: 8px; color: #ff6d5a; margin-top: 2px; }
-  .gdot-l { position: absolute; left: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #7aa2ff; }
-  .gdot-r { position: absolute; right: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #ff6d5a; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.col { display: flex; flex-direction: column; gap: 10px; }
+.col-header { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #9b9ba5; text-align: center; padding-bottom: 7px; border-bottom: 1px solid #2d2e3d; }
+.preview { background: #080a10; border: 1px solid #2d2e3d; border-radius: 8px; padding: 14px; display: flex; justify-content: center; align-items: center; min-height: 170px; }
 
-  /* Blender */
-  .bnode { width: 190px; background: #2a2a2a; border: 1px solid #444; border-radius: 5px; font-size: 10px; position: relative; }
-  .bnode-header { background: #4a6a8a; padding: 4px 8px; border-radius: 4px 4px 0 0; font-size: 10px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 5px; }
-  .bnode-header-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
-  .bnode-row { display: flex; align-items: center; padding: 3px 6px; gap: 4px; }
-  .bnode-row.right { justify-content: flex-end; }
-  .bdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .bdot-geo { background: #00cc76; }
-  .bdot-vec { background: #6363c7; }
-  .bdot-flt { background: #a0a0a0; }
-  .bnode-field { background: #1a1a1a; border: 1px solid #555; border-radius: 3px; padding: 2px 6px; font-size: 9px; color: #e0e0e6; width: 70px; text-align: right; }
-  .bport-name { font-size: 9px; color: #ccc; }
+/* ── Shared tag/pill atoms ── */
+.section-title { font-size: 9px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #9b9ba5; margin-bottom: 3px; }
+.tag { display: flex; align-items: baseline; gap: 4px; font-size: 10px; color: #9b9ba5; line-height: 1.6; }
+.tag.y::before { content:'✓'; color:#4ade80; font-size:9px; }
+.tag.n::before { content:'✗'; color:#f87171; font-size:9px; }
+.tag.h::before { content:'◐'; color:#facc15; font-size:9px; }
+.pill { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 9px; display: inline-block; margin-top: 3px; }
+.green  { background: rgba(74,222,128,.12);  color:#4ade80; border:1px solid rgba(74,222,128,.3); }
+.yellow { background: rgba(250,204,21,.12);  color:#facc15; border:1px solid rgba(250,204,21,.3); }
+.red    { background: rgba(248,113,113,.12); color:#f87171; border:1px solid rgba(248,113,113,.3); }
+.blue   { background: rgba(122,162,255,.12); color:#7aa2ff; border:1px solid rgba(122,162,255,.3); }
 
-  /* ComfyUI */
-  .cnode { width: 190px; background: #1a1a1a; border: 1px solid #444; border-radius: 6px; position: relative; }
-  .cnode-header { background: #3d2a6b; padding: 5px 10px; border-radius: 5px 5px 0 0; font-size: 11px; font-weight: 700; color: #e8e0ff; }
-  .cnode-body { padding: 4px 0; }
-  .cnode-row { display: flex; align-items: center; padding: 3px 0; position: relative; }
-  .cdot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; position: absolute; }
-  .cdot-l { left: -6px; }
-  .cdot-r { right: -6px; }
-  .cdot-latent { background: #8b5cf6; }
-  .cdot-model  { background: #3b82f6; }
-  .cdot-cond   { background: #f97316; }
-  .cport-name { font-size: 9px; color: #aaa; padding: 0 14px; }
-  .cwidget { background: #2a2a2a; border: 1px solid #555; border-radius: 3px; padding: 2px 8px; font-size: 9px; color: #ccc; margin: 2px 8px; width: calc(100% - 16px); display: block; }
+.legend { display: flex; gap: 7px; flex-wrap: wrap; }
+.ld { display: flex; align-items: center; gap: 3px; font-size: 8px; color: #9b9ba5; }
+.ldd { width: 7px; height: 7px; border-radius: 50%; }
 
-  /* n8n monolithic */
-  .nnode { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .ncircle { width: 70px; height: 70px; border-radius: 50%; background: #1e1f2e; border: 1.5px solid #3d3e52; display: flex; align-items: center; justify-content: center; position: relative; font-size: 26px; }
-  .ndot-l { position: absolute; left: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #7aa2ff; }
-  .ndot-r { position: absolute; right: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #ff6d5a; }
-  .nlabel { font-size: 12px; font-weight: 600; color: #e0e0e6; }
-  .nsub { font-size: 9px; color: #9b9ba5; }
+/* ── Summary / decision bar ── */
+.summary { margin-top: 20px; padding: 14px 16px; background: #1e1f2e; border: 1px solid #2d2e3d; border-radius: 8px; }
+.summary-title { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #9b9ba5; margin-bottom: 10px; }
+.steps { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.step { font-size: 10px; }
 
-  /* Info rows */
-  .section { display: flex; flex-direction: column; gap: 4px; }
-  .section-title { font-size: 10px; font-weight: 700; color: #9b9ba5; text-transform: uppercase; letter-spacing: 0.8px; }
-  .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #9b9ba5; line-height: 1.6; }
-  .tag.yes::before { content: '✓'; color: #4ade80; }
-  .tag.no::before  { content: '✗'; color: #f87171; }
-  .tag.mid::before { content: '◐'; color: #facc15; }
-  .pill { font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 9px; display: inline-block; margin-top: 2px; }
-  .pill-green  { background: rgba(74,222,128,.13); color: #4ade80; border: 1px solid rgba(74,222,128,.33); }
-  .pill-yellow { background: rgba(250,204,21,.13); color: #facc15; border: 1px solid rgba(250,204,21,.33); }
-  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #9b9ba5; }
-  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* ── Plugin panel ── */
+.plugin-panel { margin-top: 16px; background: #1e1f2e; border: 1px solid #2d2e3d; border-radius: 8px; overflow: hidden; }
+.plugin-header { background: #16172a; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
+.plugin-header h2 { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #9b9ba5; }
+.plugin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.plugin-cell { padding: 12px 16px; border-top: 1px solid #2d2e3d; }
+.plugin-cell:nth-child(odd) { border-right: 1px solid #2d2e3d; }
+.plugin-cell h3 { font-size: 10px; font-weight: 700; color: #e0e0e6; margin-bottom: 6px; }
+.plugin-cell p { font-size: 10px; color: #9b9ba5; line-height: 1.6; }
+code { font-family: monospace; font-size: 9px; background: #0f1117; padding: 1px 5px; border-radius: 3px; color: #7aa2ff; }
 
-  /* Summary bar */
-  .summary { margin-top: 20px; padding: 14px 16px; background: #1e1f2e; border: 1px solid #2d2e3d; border-radius: 8px; }
-  .summary-title { font-size: 10px; font-weight: 700; color: #9b9ba5; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; }
-  .next-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .step { font-size: 10px; }
-  .step-high   { color: #4ade80; }
-  .step-medium { color: #facc15; }
-  .step-low    { color: #9b9ba5; }
+/* ── Node mockups ── */
+
+/* Graphyn */
+.gnode { width: 185px; background: #1e1f2e; border: 1px solid #3d3e52; border-radius: 8px; position: relative; }
+.g-accent { position: absolute; left:0; top:0; width:4px; height:100%; background:#ff6d5a; border-radius:2px 0 0 2px; }
+.g-dot-l { position:absolute; left:-5px; top:50%; transform:translateY(-50%); width:10px; height:10px; border-radius:50%; background:#1e1f2e; border:2px solid #7aa2ff; }
+.g-dot-r { position:absolute; right:-5px; top:50%; transform:translateY(-50%); width:10px; height:10px; border-radius:50%; background:#1e1f2e; border:2px solid #ff6d5a; }
+.g-body { padding: 9px 11px; }
+.g-title { font-size:12px; font-weight:600; color:#e0e0e6; }
+.g-sub { font-size:9px; color:#9b9ba5; margin-top:2px; }
+.g-div { height:1px; background:#2d2e40; margin:7px 0; }
+.g-ports { display:flex; justify-content:space-between; }
+.g-col { font-size:9px; }
+.g-col-title { color:#9b9ba5; font-weight:600; letter-spacing:.5px; margin-bottom:3px; }
+.pb-in  { display:inline-block; background:#7aa2ff22; border:1px solid #7aa2ff88; border-radius:3px; padding:1px 5px; font-size:8px; color:#7aa2ff; margin-top:2px; }
+.pb-out { display:inline-block; background:#ff6d5a22; border:1px solid #ff6d5a88; border-radius:3px; padding:1px 5px; font-size:8px; color:#ff6d5a; margin-top:2px; }
+
+/* ComfyUI */
+.cnode { width:175px; background:#1a1a1a; border:1px solid #444; border-radius:6px; position:relative; }
+.c-head { background:#3d2a6b; padding:5px 10px; border-radius:5px 5px 0 0; font-size:11px; font-weight:700; color:#e8e0ff; }
+.c-body { padding:4px 0; }
+.c-row  { display:flex; align-items:center; padding:3px 0; position:relative; min-height:18px; }
+.cdot { width:11px; height:11px; border-radius:50%; flex-shrink:0; position:absolute; }
+.cdot-l { left:-6px; }
+.cdot-r { right:-6px; }
+.c-lat { background:#8b5cf6; }
+.c-mod { background:#3b82f6; }
+.c-cnd { background:#f97316; }
+.c-img { background:#22c55e; }
+.c-clp { background:#eab308; }
+.c-vae { background:#ec4899; }
+.cpn { font-size:9px; color:#aaa; padding:0 14px; }
+.cwig { background:#2a2a2a; border:1px solid #555; border-radius:3px; padding:2px 8px; font-size:9px; color:#ccc; margin:2px 8px; display:block; width:calc(100% - 16px); font-family:monospace; }
+
+/* Blender */
+.bnode { width:180px; background:#2a2a2a; border:1px solid #444; border-radius:5px; }
+.b-head { background:#4a6a8a; padding:4px 8px; border-radius:4px 4px 0 0; font-size:10px; font-weight:700; color:#fff; display:flex; align-items:center; gap:5px; }
+.b-hdot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.2); }
+.b-row { display:flex; align-items:center; padding:3px 6px; gap:4px; }
+.b-row.r { justify-content:flex-end; }
+.bdot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.bg { background:#00cc76; } .bv { background:#6363c7; } .bf { background:#a0a0a0; } .bb { background:#cda0dc; } .bi { background:#e7794c; }
+.bfld { background:#1a1a1a; border:1px solid #555; border-radius:3px; padding:2px 5px; font-size:9px; color:#e0e0e6; width:65px; text-align:right; font-family:monospace; }
+.bpn { font-size:9px; color:#ccc; }
+
+/* n8n */
+.nnode { display:flex; flex-direction:column; align-items:center; gap:5px; }
+.ncirc { width:64px; height:64px; border-radius:50%; background:#1e1f2e; border:1.5px solid #3d3e52; display:flex; align-items:center; justify-content:center; position:relative; font-size:24px; }
+.nd-l { position:absolute; left:-5px; top:50%; transform:translateY(-50%); width:10px; height:10px; border-radius:50%; background:#1e1f2e; border:2px solid #7aa2ff; }
+.nd-r { position:absolute; right:-5px; top:50%; transform:translateY(-50%); width:10px; height:10px; border-radius:50%; background:#1e1f2e; border:2px solid #ff6d5a; }
+.nlbl { font-size:12px; font-weight:600; color:#e0e0e6; }
+.nsub { font-size:9px; color:#9b9ba5; }
+
+/* ReactFlow / XYFlow */
+.rfnode { width:175px; background:#fff; border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.15); }
+.rf-head { background:#4f46e5; padding:6px 10px; border-radius:7px 7px 0 0; font-size:11px; font-weight:700; color:#fff; }
+.rf-body { padding:8px 10px; }
+.rf-row { display:flex; align-items:center; gap:6px; padding:2px 0; position:relative; }
+.rfdot { width:10px; height:10px; border-radius:50%; border:2px solid #4f46e5; background:#fff; position:absolute; }
+.rfdot-l { left:-15px; }
+.rfdot-r { right:-15px; }
+.rfpn { font-size:9px; color:#374151; }
+
+/* Node-RED */
+.nrnode { width:130px; background:#eaeaea; border:2px solid #aaa; border-radius:5px; position:relative; }
+.nr-head { background:#c0392b; padding:5px 8px; border-radius:3px 3px 0 0; font-size:10px; font-weight:700; color:#fff; text-align:center; }
+.nr-dot-l { position:absolute; left:-7px; top:50%; transform:translateY(-50%); width:12px; height:12px; border-radius:50%; background:#c0392b; border:2px solid #fff; }
+.nr-dot-r { position:absolute; right:-7px; top:50%; transform:translateY(-50%); width:12px; height:12px; border-radius:50%; background:#c0392b; border:2px solid #fff; }
+.nr-body { padding:6px 8px; font-size:9px; color:#444; text-align:center; }
+
+/* LiteGraph */
+.lgnode { width:175px; background:#2d2d2d; border:1px solid #555; border-radius:4px; }
+.lg-head { background:#5a5a5a; padding:4px 8px; border-radius:3px 3px 0 0; font-size:10px; font-weight:700; color:#ddd; display:flex; justify-content:space-between; }
+.lg-body { padding:4px 0; }
+.lg-row { display:flex; align-items:center; padding:2px 0; position:relative; min-height:18px; }
+.lgdot { width:8px; height:8px; border-radius:50%; flex-shrink:0; position:absolute; }
+.lgdot-l { left:-5px; }
+.lgdot-r { right:-5px; }
+.lg-y { background:#d4a017; } .lg-r { background:#c0392b; } .lg-g { background:#27ae60; } .lg-b { background:#2980b9; }
+.lgpn { font-size:9px; color:#bbb; padding:0 12px; }
+.lgwid { background:#1a1a1a; border:1px solid #444; margin:2px 8px; padding:2px 6px; font-size:9px; color:#ccc; border-radius:3px; display:block; font-family:monospace; }
+
+/* Cables.gl / Patch editors (generic) */
+.pgnode { display:flex; flex-direction:column; gap:0; }
+.pg-row { display:flex; align-items:center; gap:0; }
+.pg-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.pg-in  { background:#5c9eff; }
+.pg-out { background:#ff8c5c; }
+.pg-label { font-size:9px; color:#ccc; padding:2px 6px; background:#222; border:1px solid #444; flex:1; white-space:nowrap; }
+.pg-name { font-size:10px; font-weight:700; color:#eee; background:#333; padding:4px 8px; border:1px solid #555; text-align:center; }
 </style>
 </head>
 <body>
-<h1>Node Design Comparison — Graphyn · ComfyUI · Blender · n8n</h1>
 
+<p class="page-title">Node Design Comparison — 7 Editors</p>
+
+<!-- Tabs to switch view -->
+<div class="tabs">
+  <button class="tab active" onclick="showView('all')">All Editors</button>
+  <button class="tab" onclick="showView('plugin')">Plugin Customization</button>
+  <button class="tab" onclick="showView('decision')">Design Decision</button>
+</div>
+
+<!-- ══════════════════ ALL EDITORS ══════════════════ -->
+<div id="view-all">
 <div class="grid">
 
   <!-- Graphyn current -->
@@ -99,45 +164,38 @@
     <div class="col-header">Graphyn (current)</div>
     <div class="preview">
       <div class="gnode">
-        <div class="gnode-accent"></div>
-        <div class="gdot-l"></div>
-        <div class="gdot-r"></div>
-        <div class="gnode-body">
-          <div class="gnode-title">Add Numbers</div>
-          <div class="gnode-sub">node-001</div>
-          <div class="gnode-divider"></div>
-          <div class="gnode-ports">
-            <div class="gnode-port-col">
-              <div class="gnode-port-label">INPUTS</div>
-              <div><span class="port-badge-in">a</span></div>
-              <div><span class="port-badge-in">b</span></div>
+        <div class="g-accent"></div>
+        <div class="g-dot-l"></div>
+        <div class="g-dot-r"></div>
+        <div class="g-body">
+          <div class="g-title">Add Numbers</div>
+          <div class="g-sub">node-001</div>
+          <div class="g-div"></div>
+          <div class="g-ports">
+            <div class="g-col">
+              <div class="g-col-title">INPUTS</div>
+              <div><span class="pb-in">a</span></div>
+              <div><span class="pb-in">b</span></div>
             </div>
-            <div class="gnode-port-col" style="text-align:right">
-              <div class="gnode-port-label">OUTPUTS</div>
-              <div><span class="port-badge-out">result</span></div>
+            <div class="g-col" style="text-align:right">
+              <div class="g-col-title">OUTPUTS</div>
+              <div><span class="pb-out">result</span></div>
             </div>
           </div>
-          <div class="gnode-divider"></div>
+          <div class="g-div"></div>
           <div style="font-size:9px;color:#9b9ba5">Connecting…</div>
         </div>
       </div>
     </div>
-    <div class="section">
-      <div class="section-title">Traits</div>
-      <span class="tag yes">Port names always visible</span>
-      <span class="tag yes">Execution badge</span>
-      <span class="tag yes">Live output preview</span>
-      <span class="tag no">Port dots not on edges</span>
-      <span class="tag no">No port type colour</span>
-      <span class="tag no">No inline widgets</span>
-      <span class="tag no">Fixed 280×180 — can't grow</span>
-    </div>
-    <div class="section">
-      <div class="section-title">Best for</div>
-      <span class="tag mid">Variable-port pipelines</span>
-      <span class="tag mid">Data-centric workflows</span>
-    </div>
-    <span class="pill pill-yellow">Needs port-edge dots + type colours</span>
+    <div class="section-title">Traits</div>
+    <span class="tag y">Port names visible</span>
+    <span class="tag y">Execution badge</span>
+    <span class="tag y">Live output preview</span>
+    <span class="tag n">Dots not on edges</span>
+    <span class="tag n">No port type colour</span>
+    <span class="tag n">No inline widgets</span>
+    <span class="tag n">Fixed 280×180</span>
+    <span class="pill yellow">Needs edge dots + colours</span>
   </div>
 
   <!-- ComfyUI -->
@@ -145,55 +203,36 @@
     <div class="col-header">ComfyUI</div>
     <div class="preview">
       <div class="cnode">
-        <div class="cnode-header">KSampler</div>
-        <div class="cnode-body">
-          <div class="cnode-row">
-            <div class="cdot cdot-l cdot-model"></div>
-            <span class="cport-name">model</span>
-          </div>
-          <div class="cnode-row">
-            <div class="cdot cdot-l cdot-cond"></div>
-            <span class="cport-name">positive</span>
-          </div>
-          <div class="cnode-row">
-            <div class="cdot cdot-l cdot-cond"></div>
-            <span class="cport-name">negative</span>
-          </div>
-          <div class="cnode-row">
-            <div class="cdot cdot-l cdot-latent"></div>
-            <span class="cport-name">latent</span>
-          </div>
-          <input class="cwidget" value="steps: 20" readonly>
-          <input class="cwidget" value="cfg: 7.0" readonly>
-          <div class="cnode-row" style="margin-top:3px">
+        <div class="c-head">KSampler</div>
+        <div class="c-body">
+          <div class="c-row"><div class="cdot cdot-l c-mod"></div><span class="cpn">model</span></div>
+          <div class="c-row"><div class="cdot cdot-l c-cnd"></div><span class="cpn">positive</span></div>
+          <div class="c-row"><div class="cdot cdot-l c-cnd"></div><span class="cpn">negative</span></div>
+          <div class="c-row"><div class="cdot cdot-l c-lat"></div><span class="cpn">latent_image</span></div>
+          <input class="cwig" value="steps: 20" readonly>
+          <input class="cwig" value="cfg: 7.0" readonly>
+          <div class="c-row" style="margin-top:3px">
             <div style="flex:1"></div>
-            <span class="cport-name" style="padding-right:14px">latent</span>
-            <div class="cdot cdot-r cdot-latent"></div>
+            <span class="cpn" style="padding-right:14px">LATENT</span>
+            <div class="cdot cdot-r c-lat"></div>
           </div>
         </div>
       </div>
     </div>
-    <div class="section">
-      <div class="section-title">Traits</div>
-      <span class="tag yes">Port dots on card edges</span>
-      <span class="tag yes">Port colour = data type</span>
-      <span class="tag yes">Inline widgets (no inspector)</span>
-      <span class="tag yes">Widget disappears on connect</span>
-      <span class="tag yes">Content-driven height</span>
-      <span class="tag no">No execution state UI</span>
-      <span class="tag no">No live output preview</span>
+    <div class="section-title">Traits</div>
+    <span class="tag y">Dots on card edges</span>
+    <span class="tag y">Port colour = type</span>
+    <span class="tag y">Inline widgets</span>
+    <span class="tag y">Widget hides on connect</span>
+    <span class="tag y">Content-driven height</span>
+    <span class="tag n">No execution state</span>
+    <div class="legend" style="margin-top:4px">
+      <div class="ld"><div class="ldd" style="background:#8b5cf6"></div>latent</div>
+      <div class="ld"><div class="ldd" style="background:#3b82f6"></div>model</div>
+      <div class="ld"><div class="ldd" style="background:#f97316"></div>cond</div>
+      <div class="ld"><div class="ldd" style="background:#22c55e"></div>image</div>
     </div>
-    <div class="section">
-      <div class="section-title">Best for</div>
-      <span class="tag mid">AI / diffusion pipelines</span>
-      <span class="tag mid">Typed data flows</span>
-    </div>
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>latent</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>model</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>cond</div>
-    </div>
-    <span class="pill pill-green">Strongest type UX studied</span>
+    <span class="pill green">Best type UX</span>
   </div>
 
   <!-- Blender -->
@@ -201,102 +240,319 @@
     <div class="col-header">Blender Geo Nodes</div>
     <div class="preview">
       <div class="bnode">
-        <div class="bnode-header">
-          <div class="bnode-header-dot"></div>
-          Distribute Points
-        </div>
+        <div class="b-head"><div class="b-hdot"></div>Distribute Points</div>
         <div style="padding:4px 0">
-          <div class="bnode-row">
-            <div class="bdot bdot-geo"></div>
-            <span class="bport-name">Mesh</span>
-          </div>
-          <div class="bnode-row">
-            <div class="bdot bdot-flt"></div>
-            <span class="bport-name">Density</span>
-            <div style="flex:1"></div>
-            <div class="bnode-field">0.002</div>
-          </div>
-          <div class="bnode-row">
-            <div class="bdot bdot-flt"></div>
-            <span class="bport-name">Seed</span>
-            <div style="flex:1"></div>
-            <div class="bnode-field">5</div>
-          </div>
-          <div class="bnode-row right" style="border-top:1px solid #333;margin-top:4px;padding-top:4px">
-            <span class="bport-name">Points</span>
-            <div class="bdot bdot-geo" style="margin-left:4px"></div>
+          <div class="b-row"><div class="bdot bg"></div><span class="bpn">Mesh</span></div>
+          <div class="b-row"><div class="bdot bf"></div><span class="bpn">Density</span><div style="flex:1"></div><div class="bfld">0.002</div></div>
+          <div class="b-row"><div class="bdot bf"></div><span class="bpn">Seed</span><div style="flex:1"></div><div class="bfld">5</div></div>
+          <div class="b-row r" style="border-top:1px solid #333;margin-top:4px;padding-top:4px">
+            <span class="bpn">Points</span>
+            <div class="bdot bg" style="margin-left:4px"></div>
           </div>
         </div>
       </div>
     </div>
-    <div class="section">
-      <div class="section-title">Traits</div>
-      <span class="tag yes">Port dots on edges</span>
-      <span class="tag yes">Port colour = data type</span>
-      <span class="tag yes">Inline editable fields</span>
-      <span class="tag yes">Content-driven size</span>
-      <span class="tag yes">Category header colour</span>
-      <span class="tag yes">Collapse mode</span>
-      <span class="tag no">No execution state</span>
+    <div class="section-title">Traits</div>
+    <span class="tag y">Dots on edges</span>
+    <span class="tag y">Port colour = type</span>
+    <span class="tag y">Editable inline fields</span>
+    <span class="tag y">Content-driven size</span>
+    <span class="tag y">Category header colour</span>
+    <span class="tag y">Collapse mode</span>
+    <span class="tag n">No execution state</span>
+    <div class="legend" style="margin-top:4px">
+      <div class="ld"><div class="ldd" style="background:#00cc76"></div>geo</div>
+      <div class="ld"><div class="ldd" style="background:#6363c7"></div>vec</div>
+      <div class="ld"><div class="ldd" style="background:#a0a0a0"></div>float</div>
+      <div class="ld"><div class="ldd" style="background:#cda0dc"></div>bool</div>
     </div>
-    <div class="section">
-      <div class="section-title">Best for</div>
-      <span class="tag mid">Procedural pipelines</span>
-      <span class="tag mid">Mixed port + scalar inputs</span>
+    <span class="pill green">Best field-on-node UX</span>
+  </div>
+
+  <!-- ReactFlow -->
+  <div class="col">
+    <div class="col-header">ReactFlow / XYFlow</div>
+    <div class="preview" style="background:#f8fafc">
+      <div class="rfnode">
+        <div class="rf-head">Transform Node</div>
+        <div class="rf-body">
+          <div class="rf-row">
+            <div class="rfdot rfdot-l"></div>
+            <span class="rfpn">input</span>
+          </div>
+          <div class="rf-row" style="justify-content:flex-end">
+            <span class="rfpn">output</span>
+            <div class="rfdot rfdot-r" style="border-color:#10b981;"></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#00cc76"></div>geometry</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#6363c7"></div>vector</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#a0a0a0"></div>float</div>
+    <div class="section-title">Traits</div>
+    <span class="tag y">Dots on edges</span>
+    <span class="tag y">Fully custom card UI</span>
+    <span class="tag y">Any React component</span>
+    <span class="tag y">Light theme default</span>
+    <span class="tag n">No type colour system</span>
+    <span class="tag n">No built-in widgets</span>
+    <span class="tag h">Port names optional</span>
+    <span class="pill blue">Most flexible (web only)</span>
+  </div>
+
+  <!-- Node-RED -->
+  <div class="col">
+    <div class="col-header">Node-RED</div>
+    <div class="preview">
+      <div style="display:flex;gap:16px;align-items:center">
+        <div class="nrnode">
+          <div class="nr-head">http in</div>
+          <div class="nr-dot-r"></div>
+          <div class="nr-body">GET /api</div>
+        </div>
+        <div style="color:#555;font-size:18px">→</div>
+        <div class="nrnode" style="border-color:#888">
+          <div class="nr-head" style="background:#2980b9">function</div>
+          <div class="nr-dot-l"></div>
+          <div class="nr-dot-r"></div>
+          <div class="nr-body">msg.payload</div>
+        </div>
+      </div>
     </div>
-    <span class="pill pill-green">Best field-on-node UX</span>
+    <div class="section-title">Traits</div>
+    <span class="tag y">Simple, one config value</span>
+    <span class="tag y">Category colour on node</span>
+    <span class="tag y">Very low learning curve</span>
+    <span class="tag n">No port names</span>
+    <span class="tag n">No type colour</span>
+    <span class="tag n">1-in / 1-out only</span>
+    <span class="tag n">Not suitable for typed graphs</span>
+    <span class="pill red">Too simple for Graphyn</span>
+  </div>
+
+  <!-- LiteGraph -->
+  <div class="col">
+    <div class="col-header">LiteGraph.js</div>
+    <div class="preview">
+      <div class="lgnode">
+        <div class="lg-head"><span>Math/Multiply</span><span style="font-size:9px;color:#aaa">▼</span></div>
+        <div class="lg-body">
+          <div class="lg-row"><div class="lgdot lgdot-l lg-b"></div><span class="lgpn">A</span></div>
+          <div class="lg-row"><div class="lgdot lgdot-l lg-b"></div><span class="lgpn">B</span></div>
+          <input class="lgwid" value="1.000" readonly>
+          <div class="lg-row"><div style="flex:1"></div><span class="lgpn" style="padding-right:12px">result</span><div class="lgdot lgdot-r lg-b"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">Traits</div>
+    <span class="tag y">Dots on edges</span>
+    <span class="tag y">Port type colour</span>
+    <span class="tag y">Inline widgets</span>
+    <span class="tag y">Powers ComfyUI canvas</span>
+    <span class="tag n">Canvas-only (no DOM)</span>
+    <span class="tag n">JS / web only</span>
+    <span class="tag h">Spartan visual style</span>
+    <span class="pill yellow">ComfyUI's engine</span>
   </div>
 
   <!-- n8n icon -->
   <div class="col">
-    <div class="col-header">n8n — Icon Node</div>
+    <div class="col-header">n8n — Compact</div>
     <div class="preview">
       <div class="nnode">
-        <div class="ncircle">
-          🎙️
-          <div class="ndot-l"></div>
-          <div class="ndot-r"></div>
-        </div>
-        <div class="nlabel">Whisper STT</div>
+        <div class="ncirc">🎙️<div class="nd-l"></div><div class="nd-r"></div></div>
+        <div class="nlbl">Whisper STT</div>
         <div class="nsub">transcription: audio</div>
       </div>
     </div>
-    <div class="section">
-      <div class="section-title">Traits</div>
-      <span class="tag yes">Minimal canvas footprint</span>
-      <span class="tag yes">Icon = instant recognition</span>
-      <span class="tag yes">Works for 1-in / 1-out</span>
-      <span class="tag no">No port names visible</span>
-      <span class="tag no">No type colour</span>
-      <span class="tag no">Config only in inspector</span>
-      <span class="tag no">Opaque for multi-port nodes</span>
-    </div>
-    <div class="section">
-      <div class="section-title">Best for</div>
-      <span class="tag mid">Service / action nodes</span>
-      <span class="tag mid">Fixed single in/out</span>
-    </div>
-    <span class="pill pill-yellow">Good as optional compact mode</span>
+    <div class="section-title">Traits</div>
+    <span class="tag y">Minimal footprint</span>
+    <span class="tag y">Icon = instant read</span>
+    <span class="tag y">Great for 1-in/1-out</span>
+    <span class="tag n">No port names</span>
+    <span class="tag n">No type colour</span>
+    <span class="tag n">Config in inspector only</span>
+    <span class="pill yellow">Optional compact mode</span>
   </div>
 
-</div>
+</div><!-- end .grid -->
 
+<!-- Summary -->
 <div class="summary">
-  <div class="summary-title">Graphyn next steps — priority order</div>
-  <div class="next-steps">
-    <span class="step step-high">① Port dots on card edges + named connections</span>
-    <span class="step step-high">② Port dot colour by WorkflowType</span>
-    <span class="step step-medium">③ compact: Boolean in NodeSpec → icon-circle</span>
-    <span class="step step-medium">④ Content-driven card height</span>
-    <span class="step step-medium">⑤ Inline widgets for unconnected scalar inputs</span>
-    <span class="step step-low">⑥ Category colour on header bar</span>
+  <div class="summary-title">Verdict — recommended design for Graphyn</div>
+  <p style="font-size:10px;color:#9b9ba5;margin-bottom:10px;line-height:1.7">
+    Take <strong style="color:#e0e0e6">ComfyUI's port system</strong> (edge dots + type colour + inline widgets) and combine it with
+    <strong style="color:#e0e0e6">Blender's category header</strong> (coloured bar = node family) and keep
+    <strong style="color:#e0e0e6">Graphyn's execution badge + output preview</strong> — nothing else does that.
+    Add a <strong style="color:#e0e0e6">compact flag</strong> on NodeSpec to opt into the n8n circle for simple service nodes.
+  </p>
+  <div class="steps">
+    <span class="step" style="color:#4ade80">① Port dots on card edges (High)</span>
+    <span class="step" style="color:#4ade80">② Dot colour by WorkflowType (High)</span>
+    <span class="step" style="color:#facc15">③ Content-driven card height (Medium)</span>
+    <span class="step" style="color:#facc15">④ compact flag → icon-circle variant (Medium)</span>
+    <span class="step" style="color:#facc15">⑤ Inline widget for unconnected scalars (Medium)</span>
+    <span class="step" style="color:#9b9ba5">⑥ Category colour on header bar (Low)</span>
+  </div>
+</div>
+</div><!-- end #view-all -->
+
+<!-- ══════════════════ PLUGIN CUSTOMIZATION ══════════════════ -->
+<div id="view-plugin" style="display:none">
+<div class="plugin-panel">
+  <div class="plugin-header">
+    <h2>Plugin customization — what works today vs. what's missing</h2>
+    <span class="pill yellow">Partial</span>
+  </div>
+  <div class="plugin-grid">
+
+    <div class="plugin-cell">
+      <h3>✓ NodeSpec registration <span class="pill green">works</span></h3>
+      <p>A plugin calls <code>registerNodeSpec(spec)</code> to declare port names, port types, and default values. The palette and inspector both react automatically.</p>
+    </div>
+
+    <div class="plugin-cell">
+      <h3>✓ Executor registration <span class="pill green">works</span></h3>
+      <p>A plugin calls <code>registerExecutor(type, fn)</code>. The engine resolves it at runtime. No coupling between the canvas and execution logic.</p>
+    </div>
+
+    <div class="plugin-cell">
+      <h3>✓ Custom inspector panel <span class="pill green">works</span></h3>
+      <p>A plugin registers an <code>EditorPanelFactory</code> for a node type. When that node is selected, the inspector renders the plugin's <code>@Composable</code> instead of the default panel.</p>
+    </div>
+
+    <div class="plugin-cell">
+      <h3>✗ Custom canvas card <span class="pill red">missing</span></h3>
+      <p><code>GraphynNodeLayer</code> hardcodes <code>GraphynNodeCard</code> for every node. Plugins cannot supply a custom <code>@Composable</code> for how their node looks on the canvas.</p>
+    </div>
+
+    <div class="plugin-cell">
+      <h3>✗ Node icon <span class="pill red">missing</span></h3>
+      <p><code>NodeSpec</code> has no <code>icon</code> field. The palette shows label text only. Plugins cannot attach a painter/vector to their node type.</p>
+    </div>
+
+    <div class="plugin-cell">
+      <h3>✗ Node category / colour <span class="pill red">missing</span></h3>
+      <p><code>NodeSpec</code> has no <code>category</code> or <code>color</code> field. Every node renders with the same accent bar colour. Blender/ComfyUI both use this to group families visually.</p>
+    </div>
+
+    <div class="plugin-cell">
+      <h3>What to add — <code>NodeSpec</code> fields</h3>
+      <p style="font-family:monospace;font-size:9px;line-height:2;color:#7aa2ff">
+        icon: Painter? = null<br>
+        category: String = "general"<br>
+        color: Color? = null<br>
+        compact: Boolean = false
+      </p>
+    </div>
+
+    <div class="plugin-cell">
+      <h3>What to add — canvas factory</h3>
+      <p>Add <code>NodeCanvasFactory</code> to <code>editor-api</code> (mirrors <code>EditorPanelFactory</code>). Register in <code>GraphynEditorPlugin</code>. <code>GraphynNodeLayer</code> resolves it and falls back to <code>GraphynNodeCard</code> when absent.</p>
+    </div>
+
   </div>
 </div>
 
+<!-- Code snippet -->
+<div style="margin-top:14px;background:#1e1f2e;border:1px solid #2d2e3d;border-radius:8px;padding:14px">
+  <div class="section-title" style="margin-bottom:8px">Plugin that customizes its canvas card — target API</div>
+  <pre style="font-size:9px;color:#7aa2ff;line-height:1.8;overflow-x:auto">
+object MyPlugin : GraphynPlugin {
+    override fun register(registrar: GraphynPluginRegistrar) {
+        registrar.registerNodeSpec(NodeSpec(
+            type     = "my.node",
+            label    = "My Node",
+            icon     = MyIcons.spark,       // NEW
+            category = "AI",               // NEW
+            color    = Color(0xFF6D5AFF),  // NEW
+            compact  = false,              // NEW
+            inputs   = listOf(...),
+            outputs  = listOf(...),
+        ))
+        registrar.registerCanvasCard("my.node") { ctx ->   // NEW
+            MyCustomNodeCard(ctx.node, ctx.spec, ctx.state)
+        }
+        registrar.registerPanel("my.node") { ctx ->
+            MyInspectorPanel(ctx)
+        }
+    }
+}</pre>
+</div>
+</div><!-- end #view-plugin -->
+
+<!-- ══════════════════ DESIGN DECISION ══════════════════ -->
+<div id="view-decision" style="display:none">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+  <div style="background:#1e1f2e;border:1px solid #2d2e3d;border-radius:8px;padding:14px">
+    <div class="section-title" style="margin-bottom:10px">What each editor does best</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:10px;font-weight:700;color:#8b5cf6;width:72px;flex-shrink:0">ComfyUI</span>
+        <span style="font-size:10px;color:#9b9ba5">Port colour system + inline widget that disappears on connect</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:10px;font-weight:700;color:#4a6a8a;width:72px;flex-shrink:0">Blender</span>
+        <span style="font-size:10px;color:#9b9ba5">Editable fields on the canvas, category header colour, collapse mode</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:10px;font-weight:700;color:#4f46e5;width:72px;flex-shrink:0">ReactFlow</span>
+        <span style="font-size:10px;color:#9b9ba5">Maximum flexibility — any React component is a node card</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:10px;font-weight:700;color:#c0392b;width:72px;flex-shrink:0">Node-RED</span>
+        <span style="font-size:10px;color:#9b9ba5">Lowest friction for non-developers; colour = category identity</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:10px;font-weight:700;color:#888;width:72px;flex-shrink:0">n8n</span>
+        <span style="font-size:10px;color:#9b9ba5">Two-tier system (detail card + icon circle) scales to 100+ node types</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:10px;font-weight:700;color:#d4a017;width:72px;flex-shrink:0">LiteGraph</span>
+        <span style="font-size:10px;color:#9b9ba5">Proven at scale (ComfyUI), typed ports, widget-on-canvas pattern</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#1e1f2e;border:1px solid #2d2e3d;border-radius:8px;padding:14px">
+    <div class="section-title" style="margin-bottom:10px">Recommended Graphyn design — steal the best</div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <div class="tag y" style="font-size:10px">From ComfyUI — edge dots, port type colour, widget-on-unconnected-port</div>
+      <div class="tag y" style="font-size:10px">From Blender — category colour bar, content-driven height, collapse toggle</div>
+      <div class="tag y" style="font-size:10px">From ReactFlow — NodeCanvasFactory so plugins own their card UI</div>
+      <div class="tag y" style="font-size:10px">From n8n — compact (icon-circle) flag for simple service nodes</div>
+      <div class="tag y" style="font-size:10px">Keep from Graphyn — execution badge, live output preview (nobody else has this)</div>
+      <div style="height:1px;background:#2d2e3d;margin:4px 0"></div>
+      <div style="font-size:10px;color:#9b9ba5">Add to <code style="font-size:9px;background:#0f1117;padding:1px 4px;border-radius:3px;color:#7aa2ff">NodeSpec</code>: icon · category · color · compact</div>
+      <div style="font-size:10px;color:#9b9ba5">Add to editor-api: <code style="font-size:9px;background:#0f1117;padding:1px 4px;border-radius:3px;color:#7aa2ff">NodeCanvasFactory</code></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="summary" style="margin-top:14px">
+  <div class="summary-title">Implementation order</div>
+  <div class="steps">
+    <span class="step" style="color:#4ade80">① Add icon/category/color/compact to NodeSpec</span>
+    <span class="step" style="color:#4ade80">② Move port dots to card edges</span>
+    <span class="step" style="color:#4ade80">③ Port dot colour by WorkflowType</span>
+    <span class="step" style="color:#facc15">④ NodeCanvasFactory in editor-api</span>
+    <span class="step" style="color:#facc15">⑤ Content-driven card height</span>
+    <span class="step" style="color:#facc15">⑥ compact flag → icon-circle renderer</span>
+    <span class="step" style="color:#9b9ba5">⑦ Inline widget for unconnected scalar ports</span>
+    <span class="step" style="color:#9b9ba5">⑧ Collapse mode</span>
+  </div>
+</div>
+</div><!-- end #view-decision -->
+
+<script>
+function showView(id) {
+  ['all','plugin','decision'].forEach(v => {
+    document.getElementById('view-'+v).style.display = v===id ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['all','plugin','decision'][i] === id);
+  });
+}
+</script>
 </body>
 </html>

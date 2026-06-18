@@ -69,6 +69,45 @@ Living reference for the Graphyn node card design. Updated as new editors are st
 
 ---
 
+### ReactFlow / XYFlow (studied 2026-06-18)
+
+- React library, not a standalone tool — the canvas is just a React component
+- Port dots (called "handles") on any edge (top, bottom, left, right) — developer chooses
+- Each node is a **completely custom React component** registered by type string — you own every pixel
+- No built-in type colour system; type safety and visual encoding are the developer's responsibility
+- Very popular in open-source tooling (Windsurf, Retool, many AI workflow UIs)
+- Light theme by default; dark mode requires manual CSS override
+
+**Verdict:** The most flexible framework studied. Its strength — arbitrary React components — is also its weakness for Graphyn: we need a Kotlin/Compose equivalent, not web. The key insight is its `NodeCanvasFactory` pattern: per-type canvas render function registered at setup time.
+
+---
+
+### Node-RED (studied 2026-06-18)
+
+- IBM's open-source IoT/automation flow editor
+- Nodes are simple rectangles with a **category colour header** and a single config label
+- Single connection point on left (input) and right (output) — no named ports
+- All config lives in a separate drawer panel
+- Extremely approachable for non-developers; used in home-automation and simple ETL
+- No type colour, no inline widgets, no multi-port named connections
+
+**Verdict:** Too simple for Graphyn's typed graph model. Not suitable when nodes have multiple named ports with different types. Useful reference only for the "category colour = identity" pattern used in the header.
+
+---
+
+### LiteGraph.js (studied 2026-06-18)
+
+- The canvas engine powering ComfyUI under the hood
+- Canvas-drawn (not DOM) — extremely high performance with hundreds of nodes
+- Port type colour system: each type gets a registered colour; incompatible ports refuse connection
+- Inline widget support: sliders, combos, text inputs rendered directly on the canvas
+- Nodes are registered by type string with a constructor; full canvas customization available
+- Collapse mode built-in; nodes shrink to title bar only
+
+**Verdict:** Confirms that ComfyUI's UX quality is not an accident — it is built on a well-designed typed canvas engine. The port type registry and inline widget patterns are battle-tested at scale.
+
+---
+
 ## Graphyn current design (as of 0.1.0)
 
 - Fixed 280×180 card
@@ -92,10 +131,12 @@ Living reference for the Graphyn node card design. Updated as new editors are st
 
 | Priority | Change | Reference |
 |---|---|---|
-| High | Move port dots to card edges (left for inputs, right for outputs) | Blender, ComfyUI |
-| High | Colour-code port dots by `WorkflowType` | ComfyUI |
-| Medium | Add `compact: Boolean` to `NodeSpec` → render icon-circle variant | n8n sub-nodes |
+| High | Move port dots to card edges (left for inputs, right for outputs) | Blender, ComfyUI, LiteGraph |
+| High | Colour-code port dots by `WorkflowType` | ComfyUI, LiteGraph |
+| High | Add `NodeCanvasFactory` to `editor-api` for per-type canvas customization | ReactFlow pattern |
+| High | Add `icon`, `category`, `color`, `compact` fields to `NodeSpec` | All editors |
 | Medium | Content-driven card height (min 80 dp, grows with port count) | Blender, ComfyUI |
-| Medium | Inline widget for unconnected scalar inputs (`WorkflowType.NumberType`, `StringType`) | ComfyUI |
-| Low | Category colour on header bar instead of single accent | Blender, ComfyUI |
-| Low | Collapsed mode (hides unconnected ports) | Blender |
+| Medium | Add `compact: Boolean` to `NodeSpec` → render icon-circle variant | n8n sub-nodes |
+| Medium | Inline widget for unconnected scalar inputs (`WorkflowType.NumberType`, `StringType`) | ComfyUI, LiteGraph |
+| Low | Category colour on header bar instead of single accent | Blender, Node-RED |
+| Low | Collapsed mode (hides unconnected ports) | Blender, LiteGraph |
