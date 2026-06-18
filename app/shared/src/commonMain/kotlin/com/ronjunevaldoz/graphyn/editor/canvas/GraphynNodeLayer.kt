@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
@@ -30,6 +31,7 @@ internal fun GraphynNodeLayer(
         GraphynNodeCard(
             modifier = Modifier.offset { position },
             selected = state.selectedNodeId == node.id,
+            executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
             onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
             onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
             slots = GraphynNodeCardSlots(

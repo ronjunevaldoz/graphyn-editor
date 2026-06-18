@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.editor.state
 
+import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
@@ -12,10 +13,21 @@ fun GraphynEditorState.updateNodeOutputs(nodeId: String, outputs: Map<String, Wo
 fun GraphynEditorState.applyExecutionResult(result: WorkflowExecutionResult) {
     nodeOutputsByNodeId = result.nodeOutputsByNodeId
     result.nodeOutputsByNodeId.forEach { (id, outputs) -> dataStore.updateNodeOutputs(id, outputs) }
-    log.push("Execution completed: ${result.nodeOutputsByNodeId.size} node outputs updated")
+    val succeeded = result.executionOrder.toSet()
+    val allNodeIds = workflow?.nodes?.map { it.id }.orEmpty()
+    executionStatusByNodeId = allNodeIds.associateWith { id ->
+        if (id in succeeded) NodeExecutionStatus.Success else NodeExecutionStatus.Error
+    }
+    log.push("Execution completed: ${result.executionOrder.size} nodes succeeded")
 }
 
 fun GraphynEditorState.execute(engine: WorkflowExecutionEngine) {
     val w = workflow ?: return
-    applyExecutionResult(engine.execute(w))
+    executionStatusByNodeId = w.nodes.associate { it.id to NodeExecutionStatus.Running }
+    try {
+        applyExecutionResult(engine.execute(w))
+    } catch (e: Exception) {
+        executionStatusByNodeId = w.nodes.associate { it.id to NodeExecutionStatus.Error }
+        log.push("Execution failed: ${e.message}")
+    }
 }

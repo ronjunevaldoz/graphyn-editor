@@ -58,9 +58,10 @@ fun GraphynEditorShell(
     dependencies: GraphynEditorShellDependencies,
     branding: GraphynBranding = GraphynBranding(),
     appearanceState: GraphynAppearanceState = rememberGraphynAppearanceState(),
-    state: GraphynEditorState = rememberGraphynEditorState(),
+    state: GraphynEditorState? = null,
     canvas: (@Composable () -> Unit)? = null,
 ) {
+    val resolvedState = state ?: rememberGraphynEditorState(nodeSpecs = dependencies.nodeSpecs)
     val systemDark = isSystemInDarkTheme()
     val isDark = appearanceState.resolvedDarkTheme(systemDark)
     val palette = appearanceState.resolvePalette(isDark)
@@ -71,7 +72,7 @@ fun GraphynEditorShell(
             dependencies = dependencies,
             branding = branding,
             appearanceState = appearanceState,
-            state = state,
+            state = resolvedState,
             canvas = canvas,
         )
     }
