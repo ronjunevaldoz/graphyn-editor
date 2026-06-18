@@ -27,7 +27,7 @@ import kotlin.math.roundToInt
 
 internal const val HEADER_DP = 28
 internal const val ROW_DP = 22
-private const val FOOTER_DIVIDER_DP = 9
+internal const val FOOTER_DIVIDER_DP = 9
 
 class FieldCardFactory(
     val theme: FieldNodeTheme = FieldNodeTheme(),
