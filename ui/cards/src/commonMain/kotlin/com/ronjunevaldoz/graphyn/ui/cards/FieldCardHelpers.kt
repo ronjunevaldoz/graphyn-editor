@@ -58,6 +58,7 @@ internal fun FieldBody(
             is WorkflowType.EnumType -> SingleSelectRow(input, value, type.values, onChange, theme)
             is WorkflowType.MultiEnumType -> MultiSelectRow(input, value, type.values, onChange, theme)
             is WorkflowType.ListType -> ListRow(input, value, type.elementType, onChange, theme)
+            is WorkflowType.RecordType -> RecordRow(input, value, type.fields, onChange, theme)
             WorkflowType.IntType, WorkflowType.DoubleType -> NumericRow(input, value, onChange, theme)
             else -> InputRow(input, value, onChange, theme)
         }
