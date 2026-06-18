@@ -21,19 +21,28 @@ data class NodeCanvasContext(
     val contentColor: Color = Color.Unspecified,
 )
 
+enum class NodeShape { Rectangle, Circle }
+
 private const val DEFAULT_PORT_SECTION_TOP = 70
 private const val DEFAULT_PORT_LABEL_H = 16
 private const val DEFAULT_PORT_LABEL_GAP = 6
 private const val DEFAULT_PORT_BUBBLE_H = 32
 private const val DEFAULT_PORT_BUBBLE_GAP = 8
 private const val DEFAULT_NODE_WIDTH = 280
+private const val DEFAULT_NODE_HEIGHT = 180
 
 interface NodeCanvasFactory {
     @Composable
     fun NodeCanvas(context: NodeCanvasContext)
 
-    /** Node card width in dp — used to position the right-edge output dots. */
+    /** Node card width in dp — used to position the right-edge output dots and minimap. */
     val nodeWidth: Int get() = DEFAULT_NODE_WIDTH
+
+    /** Node card height in dp — used by the minimap for accurate dot sizing. */
+    val nodeHeight: Int get() = DEFAULT_NODE_HEIGHT
+
+    /** Node shape — Rectangle or Circle. Used by the minimap renderer. */
+    val nodeShape: NodeShape get() = NodeShape.Rectangle
 
     /**
      * Y offset in dp from the node's top-left corner to the centre of the

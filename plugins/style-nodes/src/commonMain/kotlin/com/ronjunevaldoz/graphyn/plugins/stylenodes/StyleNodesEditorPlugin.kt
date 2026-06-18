@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeShape
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -32,6 +33,7 @@ private object DarkHeaderCardFactory : NodeCanvasFactory {
     private const val ROW_H = 19
 
     override val nodeWidth: Int = 200
+    override val nodeHeight: Int = 120
 
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) = DarkHeaderCard(context)
@@ -49,6 +51,7 @@ private object FieldCardFactory : NodeCanvasFactory {
     private const val ROW_H = 19
 
     override val nodeWidth: Int = 220
+    override val nodeHeight: Int = 120
 
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) = FieldCard(context)
@@ -62,6 +65,8 @@ private object FieldCardFactory : NodeCanvasFactory {
 private object CircleCardFactory : NodeCanvasFactory {
     // Circle 64dp, center at 32dp
     override val nodeWidth: Int = 64
+    override val nodeHeight: Int = 64
+    override val nodeShape: NodeShape = NodeShape.Circle
 
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) = CircleCard(context)
