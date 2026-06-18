@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.plugins.stylenodes
+package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color

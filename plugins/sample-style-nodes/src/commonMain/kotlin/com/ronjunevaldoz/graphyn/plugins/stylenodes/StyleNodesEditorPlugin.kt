@@ -9,6 +9,8 @@ import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSIO
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginRegistrar
+import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.ShapeCardFactory
 
 object StyleNodesEditorPlugin : GraphynEditorPlugin {
     override val metadata = GraphynEditorPluginMetadata(
@@ -41,4 +43,3 @@ private object DarkHeaderCardFactory : NodeCanvasFactory {
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
         TOP + portIndex * ROW_H
 }
-

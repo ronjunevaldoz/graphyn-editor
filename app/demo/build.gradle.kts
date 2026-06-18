@@ -35,7 +35,7 @@ kotlin {
             api(projects.app.shared)
             implementation(projects.plugins.sampleLogger)
             implementation(projects.plugins.sampleLoggerUi)
-            implementation(projects.plugins.styleNodes)
+            implementation(projects.plugins.sampleStyleNodes)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
         }
