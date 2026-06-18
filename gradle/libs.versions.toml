@@ -19,6 +19,7 @@ logback = "1.5.34"
 material3 = "1.11.0-alpha07"
 kotlinx-serialization = "1.9.0"
 roborazzi = "1.64.0"
+vanniktech-publish = "0.30.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -62,3 +63,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-publish" }

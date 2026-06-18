@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
+    alias(libs.plugins.mavenPublish)
 }
 
 kotlin {
@@ -44,5 +45,13 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+    }
+}
+
+mavenPublishing {
+    coordinates("io.github.ronjunevaldoz", "graphyn-plugin-api", "0.1.0")
+    pom {
+        name = "Graphyn Plugin API"
+        description = "Contract for Graphyn runtime node plugins — register node specs and executors"
     }
 }

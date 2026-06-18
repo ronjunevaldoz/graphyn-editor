@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.mavenPublish)
 }
 
 kotlin {
@@ -47,5 +48,13 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+    }
+}
+
+mavenPublishing {
+    coordinates("io.github.ronjunevaldoz", "graphyn-editor-api", "0.1.0")
+    pom {
+        name = "Graphyn Editor API"
+        description = "Contract for Graphyn editor panel plugins — register custom inspector UI"
     }
 }
