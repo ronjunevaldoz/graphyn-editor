@@ -8,28 +8,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-
-internal val PORT_DOT = 6.dp
-internal val PORT_GAP = 4.dp
-
-internal fun PortSpec.portColor(): Color = portColor?.let { Color(it) } ?: NODE_MUTED
 
 @Composable
 internal fun FieldHeader(label: String, theme: FieldNodeTheme) {
@@ -53,7 +44,7 @@ internal fun FieldBody(inputs: List<PortSpec>, defaults: Map<String, WorkflowVal
 @Composable
 internal fun FieldFooter(outputs: List<PortSpec>, theme: FieldNodeTheme) {
     Spacer(Modifier.height(4.dp))
-    Box(Modifier.fillMaxWidth().padding(horizontal = 10.dp).height(1.dp).background(theme.divider()))
+    Box(Modifier.fillMaxWidth().height(1.dp).background(theme.divider()))
     Spacer(Modifier.height(4.dp))
     Column(modifier = Modifier.padding(vertical = 2.dp)) {
         outputs.forEach { output -> OutputRow(output = output, theme = theme) }
@@ -66,8 +57,6 @@ private fun InputRow(input: PortSpec, defaultVal: String?, theme: FieldNodeTheme
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(PORT_DOT).clip(CircleShape).background(input.portColor()))
-        Spacer(Modifier.width(PORT_GAP))
         BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
         if (defaultVal != null) {
             Spacer(Modifier.weight(1f))
@@ -88,8 +77,6 @@ private fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
     ) {
         Spacer(Modifier.weight(1f))
         BasicText(output.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
-        Spacer(Modifier.width(PORT_GAP))
-        Box(Modifier.size(PORT_DOT).clip(CircleShape).background(output.portColor()))
     }
 }
 
