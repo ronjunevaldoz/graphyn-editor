@@ -30,6 +30,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.editorApi)
+            api(projects.core.designsystem)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
