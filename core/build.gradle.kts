@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.mavenPublish)
 }
 
 kotlin {
@@ -46,6 +47,14 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+    }
+}
+
+mavenPublishing {
+    coordinates("io.github.ronjunevaldoz", "graphyn-core", "0.1.0")
+    pom {
+        name = "Graphyn Core"
+        description = "Workflow model, types, validation, and execution engine — no Compose dependency"
     }
 }
 
