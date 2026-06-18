@@ -19,12 +19,15 @@ import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynNodePickerState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class GraphynEditorState(
     initialWorkflow: WorkflowDefinition? = null,
     private val canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
     internal val nodeSpecs: NodeSpecRegistry? = null,
-) {
+) : GraphynEditorStateView {
     internal val viewportState = GraphynViewportState(canvasBounds)
     internal val layout = GraphynNodeLayoutState(canvasBounds, viewportScale = { viewportState.viewport.scale })
     internal val log = GraphynDebugLogState()
@@ -33,15 +36,19 @@ class GraphynEditorState(
     internal val clipboard = GraphynClipboardState()
 
     private val workflowState = mutableStateOf(initialWorkflow)
-    var workflow: WorkflowDefinition?
+    private val _workflowFlow = MutableStateFlow(initialWorkflow)
+    override val workflowFlow: StateFlow<WorkflowDefinition?> = _workflowFlow.asStateFlow()
+
+    override var workflow: WorkflowDefinition?
         get() = workflowState.value
         set(value) {
             workflowState.value = value
+            _workflowFlow.value = value
             dataStore.updateWorkflow(value)
             viewportState.refresh(value?.nodes?.mapTo(mutableSetOf()) { it.id }.orEmpty())
         }
 
-    var selectedNodeId by mutableStateOf<String?>(null)
+    override var selectedNodeId by mutableStateOf<String?>(null)
     var selectedNodeIds by mutableStateOf<Set<String>>(emptySet())
     var selectedConnection by mutableStateOf<ConnectionRef?>(null)
     var connectionDraft by mutableStateOf<GraphynConnectionDraft?>(null)
@@ -71,51 +78,7 @@ class GraphynEditorState(
         viewportState.refresh(nodes.mapTo(mutableSetOf()) { it.id })
     }
 
-    fun dispatch(intent: GraphynEditorIntent) {
-        when (intent) {
-            is GraphynEditorIntent.SelectNode -> selectNode(intent.nodeId)
-            is GraphynEditorIntent.ToggleNodeSelection -> toggleNodeSelection(intent.nodeId)
-            GraphynEditorIntent.SelectAll -> selectAllNodes()
-            GraphynEditorIntent.DeleteSelectedNode -> withHistory { deleteSelectedNode() }
-            is GraphynEditorIntent.SelectConnection -> selectConnection(intent.connection)
-            GraphynEditorIntent.DeleteSelectedConnection -> withHistory { deleteSelectedConnection() }
-            is GraphynEditorIntent.MoveNode -> layout.moveNode(intent.nodeId, intent.delta)
-            is GraphynEditorIntent.MoveSelectedNodes -> moveSelectedNodes(intent.delta)
-            GraphynEditorIntent.Undo -> restoreSnapshot(history.undo(snapshot()))
-            GraphynEditorIntent.Redo -> restoreSnapshot(history.redo(snapshot()))
-            GraphynEditorIntent.CopySelection -> copySelection()
-            GraphynEditorIntent.Paste -> withHistory { pasteNodes() }
-            GraphynEditorIntent.DuplicateSelection -> withHistory { duplicateSelection() }
-            is GraphynEditorIntent.BeginConnection -> {
-                connectionDraft = GraphynConnectionDraft(intent.fromNodeId, intent.fromPort, intent.isFromInput)
-                connectionDraftPosition = null
-            }
-            is GraphynEditorIntent.CompleteConnection -> withHistory { completeConnection(intent.toNodeId, intent.toPort) }
-            is GraphynEditorIntent.AddNode -> withHistory { addNode(intent.spec) }
-            is GraphynEditorIntent.AddNodeAndConnect -> withHistory { addNodeAndConnect(intent.spec, intent.toPort, intent.worldPosition) }
-            is GraphynEditorIntent.UpdateConnectionDraftPosition -> {
-                if (nodePickerState == null) connectionDraftPosition = intent.position
-            }
-            is GraphynEditorIntent.UpdateViewportTransform -> viewportState.updateTransform(intent.pan, intent.zoom, intent.focus)
-            GraphynEditorIntent.CancelConnection -> { connectionDraft = null; connectionDraftPosition = null; nodePickerState = null }
-            is GraphynEditorIntent.ReconnectSelectedConnection -> withHistory { reconnectSelectedConnection(intent.toNodeId, intent.toPort) }
-            is GraphynEditorIntent.ShowNodePicker -> {
-                val draft = connectionDraft ?: return
-                connectionDraftPosition = intent.worldPosition
-                nodePickerState = GraphynNodePickerState(intent.screenPosition, intent.worldPosition, draft)
-            }
-            GraphynEditorIntent.DismissNodePicker -> { nodePickerState = null; connectionDraft = null; connectionDraftPosition = null }
-            is GraphynEditorIntent.UpdateNodeExecutionStatus -> executionStatusByNodeId = executionStatusByNodeId + (intent.nodeId to intent.status)
-            GraphynEditorIntent.AutoLayout -> performAutoLayout()
-        }
-    }
-
-    private fun performAutoLayout() {
-        val wf = workflow ?: return
-        val positions = GraphynAutoLayout.computePositions(wf.nodes, wf.connections)
-        positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
-        viewportState.fitToPositions(positions)
-    }
+    fun dispatch(intent: GraphynEditorIntent) = handleDispatch(intent)
 
     internal fun snapshot() = GraphynEditorSnapshot(workflow, layout.nodePositionsByNodeId.toMap())
     internal fun withHistory(block: () -> Unit) { history.push(snapshot()); block() }

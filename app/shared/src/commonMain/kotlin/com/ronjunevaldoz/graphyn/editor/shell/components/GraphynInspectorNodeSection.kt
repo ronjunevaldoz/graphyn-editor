@@ -55,6 +55,9 @@ internal fun GraphynInspectorNodeSection(
                     validationErrors = validationErrors,
                     selectedNodeOutputs = outputs,
                     flattenedSelectedNodeOutputs = flattenedOutputs,
+                    onConfigChange = { key, value ->
+                        state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value))
+                    },
                 ),
             )
         }

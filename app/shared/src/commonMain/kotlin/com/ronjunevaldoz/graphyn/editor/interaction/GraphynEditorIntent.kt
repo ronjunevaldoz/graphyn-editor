@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 sealed interface GraphynEditorIntent {
     // Selection
@@ -38,6 +39,7 @@ sealed interface GraphynEditorIntent {
     // Nodes
     data class AddNode(val spec: NodeSpec) : GraphynEditorIntent
     data class AddNodeAndConnect(val spec: NodeSpec, val toPort: String, val worldPosition: Offset) : GraphynEditorIntent
+    data class UpdateNodeConfig(val nodeId: String, val key: String, val value: WorkflowValue) : GraphynEditorIntent
 
     // Viewport
     data class UpdateViewportTransform(val pan: Offset, val zoom: Float, val focus: Offset) : GraphynEditorIntent
