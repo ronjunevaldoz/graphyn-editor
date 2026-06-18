@@ -38,3 +38,12 @@ internal fun GraphynEditorState.addNodeAndConnect(spec: NodeSpec, toPort: String
     layout.setNodePosition(nodeId, IntOffset(worldPosition.x.toInt(), worldPosition.y.toInt()))
     log.push("Added $nodeId and connected ${connection.fromNodeId}:${connection.fromPort} -> ${connection.toNodeId}:${connection.toPort}")
 }
+
+internal fun GraphynEditorState.updateNodeConfig(nodeId: String, key: String, value: com.ronjunevaldoz.graphyn.core.model.WorkflowValue) {
+    val wf = workflow ?: return
+    workflow = wf.copy(
+        nodes = wf.nodes.map { node ->
+            if (node.id == nodeId) node.copy(config = node.config + (key to value)) else node
+        },
+    )
+}

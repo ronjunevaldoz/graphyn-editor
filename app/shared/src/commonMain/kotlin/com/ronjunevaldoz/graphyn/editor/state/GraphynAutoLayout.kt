@@ -53,3 +53,10 @@ internal object GraphynAutoLayout {
         }
     }
 }
+
+internal fun GraphynEditorState.performAutoLayout() {
+    val wf = workflow ?: return
+    val positions = GraphynAutoLayout.computePositions(wf.nodes, wf.connections)
+    positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
+    viewportState.fitToPositions(positions)
+}

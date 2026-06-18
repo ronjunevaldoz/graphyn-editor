@@ -17,6 +17,7 @@ data class EditorPanelContext(
     val validationErrors: List<ValidationError>,
     val selectedNodeOutputs: Map<String, WorkflowValue>,
     val flattenedSelectedNodeOutputs: Map<String, WorkflowValue>,
+    val onConfigChange: (key: String, value: WorkflowValue) -> Unit = { _, _ -> },
 )
 
 fun interface EditorPanelFactory {
