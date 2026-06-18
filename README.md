@@ -217,6 +217,42 @@ object MyEditorPlugin : GraphynEditorPlugin {
 
 `ShapeCardFactory` accepts any Compose `Shape` — `CircleShape`, `RoundedCornerShape(12.dp)`, etc. Theme colors use `@Composable` lambdas so they can read from any `CompositionLocal` at render time. If no `avatar` is provided, the card shows the first letter of the node label.
 
+#### FieldCard — supported input types
+
+`FieldCardFactory` renders each input port as an inline editable row. The widget depends on the port's `WorkflowType`:
+
+| `WorkflowType` | Widget | Interaction |
+|---|---|---|
+| `IntType` | Stepper | `−` / `+` buttons step by 1; click value to type; only digits and `−` accepted |
+| `DoubleType` | Stepper | `−` / `+` buttons step by 0.1; click value to type; digits, `.`, `−` accepted |
+| `StringType` | Text field | Click to edit inline; any text accepted |
+| `BooleanType` | Text field | Click to type `true` or `false` |
+| `EnumType(values)` | Single-select dropdown | Click chip → popup list; one option selected |
+| `MultiEnumType(values)` | Multi-select dropdown | Click chip → popup with checkboxes; multiple options |
+
+Non-editable port types (`OpaqueType`, `RecordType`, etc.) show the port label only — no input widget is rendered.
+
+```kotlin
+val myNode = NodeSpec(
+    type = "com.example.sampler",
+    label = "Sampler",
+    inputs = listOf(
+        PortSpec("steps",    WorkflowType.IntType),
+        PortSpec("cfg",      WorkflowType.DoubleType),
+        PortSpec("prompt",   WorkflowType.StringType),
+        PortSpec("mode",     WorkflowType.EnumType(listOf("fast", "quality", "balanced"))),
+        PortSpec("outputs",  WorkflowType.MultiEnumType(listOf("image", "latent", "preview"))),
+    ),
+    defaultValues = mapOf(
+        "steps"   to WorkflowValue.IntValue(20),
+        "cfg"     to WorkflowValue.DoubleValue(7.0),
+        "prompt"  to WorkflowValue.StringValue(""),
+        "mode"    to WorkflowValue.StringValue("quality"),
+        "outputs" to WorkflowValue.ListValue(listOf(WorkflowValue.StringValue("image"))),
+    ),
+)
+```
+
 ### Step 3 — Wire into the editor shell
 
 ```kotlin
