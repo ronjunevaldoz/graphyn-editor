@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -27,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 import kotlin.math.roundToInt
@@ -37,6 +40,8 @@ private val BorderColor  = Color(0xFF444444)
 private val TextColor    = Color(0xFFE0E0E0)
 private val MutedColor   = Color(0xFF9B9BA5)
 private val SelectBorder = Color(0xFF8B5CF6)
+
+private fun PortSpec.color() = portColor?.let { Color(it) } ?: Color(0xFF9B9BA5)
 
 @Composable
 fun DarkHeaderCard(ctx: NodeCanvasContext) {
@@ -71,10 +76,10 @@ fun DarkHeaderCard(ctx: NodeCanvasContext) {
             }
             Row(modifier = Modifier.padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
-                    ctx.spec.inputs.forEach { DarkHeaderInputRow(it.name) }
+                    ctx.spec.inputs.forEach { DarkHeaderInputRow(it) }
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    ctx.spec.outputs.forEach { DarkHeaderOutputRow(it.name) }
+                    ctx.spec.outputs.forEach { DarkHeaderOutputRow(it) }
                 }
             }
         }
@@ -87,18 +92,22 @@ fun DarkHeaderCard(ctx: NodeCanvasContext) {
 }
 
 @Composable
-private fun DarkHeaderInputRow(name: String) {
+private fun DarkHeaderInputRow(port: PortSpec) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        Spacer(Modifier.width(16.dp))
-        BasicText(name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
+        Spacer(Modifier.width(8.dp))
+        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(port.color()))
+        Spacer(Modifier.width(5.dp))
+        BasicText(port.name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
     }
 }
 
 @Composable
-private fun DarkHeaderOutputRow(name: String) {
+private fun DarkHeaderOutputRow(port: PortSpec) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
         Spacer(Modifier.weight(1f))
-        BasicText(name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
-        Spacer(Modifier.width(16.dp))
+        BasicText(port.name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
+        Spacer(Modifier.width(5.dp))
+        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(port.color()))
+        Spacer(Modifier.width(8.dp))
     }
 }

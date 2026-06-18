@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -28,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
@@ -76,12 +79,12 @@ fun FieldCard(ctx: NodeCanvasContext) {
             Column(modifier = Modifier.padding(vertical = 2.dp)) {
                 ctx.spec.inputs.forEach { port ->
                     FieldInputRow(
-                        name = port.name,
+                        port = port,
                         defaultVal = ctx.spec.defaultValues[port.name]?.let { fieldValueLabel(it) },
                     )
                 }
                 ctx.spec.outputs.forEach { port ->
-                    FieldOutputRow(port.name)
+                    FieldOutputRow(port)
                 }
             }
         }
@@ -93,19 +96,24 @@ fun FieldCard(ctx: NodeCanvasContext) {
     }
 }
 
+private fun PortSpec.color() = portColor?.let { Color(it) } ?: Color(0xFFAAAAAA)
+
 @Composable
-private fun FieldInputRow(name: String, defaultVal: String?) {
+private fun FieldInputRow(port: PortSpec, defaultVal: String?) {
+    val dotColor = port.color()
     Row(
         modifier = Modifier.fillMaxWidth()
-            .padding(start = 12.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicText(name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
+        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dotColor))
+        Spacer(Modifier.width(5.dp))
+        BasicText(port.name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
         Spacer(Modifier.weight(1f))
         if (defaultVal != null) {
             Box(
                 modifier = Modifier
-                    .widthIn(min = 60.dp)
+                    .widthIn(min = 50.dp)
                     .clip(RoundedCornerShape(3.dp))
                     .background(FieldBg)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
@@ -118,14 +126,17 @@ private fun FieldInputRow(name: String, defaultVal: String?) {
 }
 
 @Composable
-private fun FieldOutputRow(name: String) {
+private fun FieldOutputRow(port: PortSpec) {
+    val dotColor = port.color()
     Row(
         modifier = Modifier.fillMaxWidth()
-            .padding(start = 8.dp, end = 12.dp, top = 3.dp, bottom = 3.dp),
+            .padding(start = 8.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))
-        BasicText(name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
+        BasicText(port.name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
+        Spacer(Modifier.width(5.dp))
+        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dotColor))
     }
 }
 
