@@ -310,4 +310,4 @@ Or in `Package.swift`:
 
 ## License
 
-MIT © [Ron June Valdoz](https://github.com/ronjunevaldoz)
+Apache 2.0 © [Ron June Valdoz](https://github.com/ronjunevaldoz)
