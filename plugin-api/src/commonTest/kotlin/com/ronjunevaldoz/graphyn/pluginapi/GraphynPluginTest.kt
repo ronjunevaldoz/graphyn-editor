@@ -1,3 +1,5 @@
+@file:OptIn(com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi::class)
+
 package com.ronjunevaldoz.graphyn.pluginapi
 
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec

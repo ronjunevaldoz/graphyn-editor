@@ -1,3 +1,5 @@
+@file:OptIn(com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi::class)
+
 package com.ronjunevaldoz.graphyn.plugins.sampleloggerui
 
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry

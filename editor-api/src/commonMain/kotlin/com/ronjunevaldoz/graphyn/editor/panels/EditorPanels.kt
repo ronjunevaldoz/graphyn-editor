@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.editor.panels
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
@@ -28,6 +29,7 @@ interface EditorPanelRegistry {
     fun register(nodeType: String, factory: EditorPanelFactory)
 }
 
+@GraphynExperimentalApi
 class DefaultEditorPanelRegistry : EditorPanelRegistry {
     private val panels = mutableMapOf<String, EditorPanelFactory>()
 

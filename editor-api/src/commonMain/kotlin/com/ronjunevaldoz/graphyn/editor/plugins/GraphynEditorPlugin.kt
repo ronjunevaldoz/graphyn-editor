@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.editor.plugins
 
+import com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelFactory
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
@@ -39,6 +40,7 @@ interface GraphynEditorPluginRegistry : GraphynEditorPluginRegistrar {
     }
 }
 
+@GraphynExperimentalApi
 class DefaultGraphynEditorPluginRegistry(
     override val panels: EditorPanelRegistry = DefaultEditorPanelRegistry(),
 ) : GraphynEditorPluginRegistry {

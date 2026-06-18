@@ -1,3 +1,5 @@
+@file:OptIn(com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi::class)
+
 package com.ronjunevaldoz.graphyn
 
 import androidx.compose.runtime.Composable
