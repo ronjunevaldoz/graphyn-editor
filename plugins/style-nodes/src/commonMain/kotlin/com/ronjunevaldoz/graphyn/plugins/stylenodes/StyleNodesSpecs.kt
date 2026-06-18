@@ -5,28 +5,31 @@ import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
-// Dark-header card port colors (ComfyUI-inspired palette)
-private const val DARK_HEADER_MODEL       = 0xFF6B6BF7L  // blue-purple (model type)
-private const val DARK_HEADER_CONDITIONING = 0xFFFF9900L  // orange (conditioning type)
-private const val DARK_HEADER_LATENT      = 0xFF9C27B0L  // purple (latent type)
+// Port and category colours — internal so StyleNodesEditorPlugin can reference them
+internal const val COLOR_MODEL        = 0xFF6B6BF7L
+internal const val COLOR_CONDITIONING = 0xFFFF9900L
+internal const val COLOR_LATENT       = 0xFF9C27B0L
+internal const val COLOR_GEOMETRY     = 0xFF3DC95AL
+private const val COLOR_FLOAT         = 0xFFAAAAAAL
+private const val COLOR_INT           = 0xFF909090L
 
-// Field card port colors (Blender-inspired palette)
-private const val FIELD_GEOMETRY  = 0xFF3DC95AL  // bright green (geometry)
-private const val FIELD_FLOAT     = 0xFFAAAAAAL  // gray (float / value)
-private const val FIELD_INT       = 0xFF909090L  // slightly darker gray (int)
+const val CATEGORY_AI = "stylenodes.ai"
+const val CATEGORY_GEOMETRY = "stylenodes.geometry"
+const val CATEGORY_AUTOMATION = "stylenodes.automation"
 
 object StyleNodesSpecs {
     val kSampler = NodeSpec(
         type = "stylenodes.ksampler",
         label = "KSampler",
+        category = CATEGORY_AI,
         inputs = listOf(
-            PortSpec("model",    WorkflowType.OpaqueType, portColor = DARK_HEADER_MODEL),
-            PortSpec("positive", WorkflowType.StringType, portColor = DARK_HEADER_CONDITIONING),
-            PortSpec("negative", WorkflowType.StringType, portColor = DARK_HEADER_CONDITIONING),
-            PortSpec("latent",   WorkflowType.OpaqueType, portColor = DARK_HEADER_LATENT),
+            PortSpec("model",    WorkflowType.OpaqueType, portColor = COLOR_MODEL),
+            PortSpec("positive", WorkflowType.StringType, portColor = COLOR_CONDITIONING),
+            PortSpec("negative", WorkflowType.StringType, portColor = COLOR_CONDITIONING),
+            PortSpec("latent",   WorkflowType.OpaqueType, portColor = COLOR_LATENT),
         ),
         outputs = listOf(
-            PortSpec("latent", WorkflowType.OpaqueType, portColor = DARK_HEADER_LATENT),
+            PortSpec("latent", WorkflowType.OpaqueType, portColor = COLOR_LATENT),
         ),
         defaultValues = mapOf(
             "steps" to WorkflowValue.IntValue(20),
@@ -37,13 +40,14 @@ object StyleNodesSpecs {
     val distributePoints = NodeSpec(
         type = "stylenodes.distribute_points",
         label = "Distribute Points",
+        category = CATEGORY_GEOMETRY,
         inputs = listOf(
-            PortSpec("mesh",    WorkflowType.OpaqueType, portColor = FIELD_GEOMETRY),
-            PortSpec("density", WorkflowType.DoubleType, portColor = FIELD_FLOAT),
-            PortSpec("seed",    WorkflowType.IntType,    portColor = FIELD_INT),
+            PortSpec("mesh",    WorkflowType.OpaqueType, portColor = COLOR_GEOMETRY),
+            PortSpec("density", WorkflowType.DoubleType, portColor = COLOR_FLOAT),
+            PortSpec("seed",    WorkflowType.IntType,    portColor = COLOR_INT),
         ),
         outputs = listOf(
-            PortSpec("points", WorkflowType.OpaqueType, portColor = FIELD_GEOMETRY),
+            PortSpec("points", WorkflowType.OpaqueType, portColor = COLOR_GEOMETRY),
         ),
         defaultValues = mapOf(
             "density" to WorkflowValue.DoubleValue(0.002),
@@ -54,6 +58,7 @@ object StyleNodesSpecs {
     val webhook = NodeSpec(
         type = "stylenodes.webhook",
         label = "Webhook",
+        category = CATEGORY_AUTOMATION,
         inputs = emptyList(),
         outputs = listOf(
             PortSpec("body", WorkflowType.RecordType(emptyMap())),

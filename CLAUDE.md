@@ -30,6 +30,22 @@ Files currently over the limit are tracked in `docs/architecture/code-audit.md`.
 - Previews live in `jvmMain`, import `androidx.compose.ui.tooling.preview.Preview` (not the `org.jetbrains` alias)
 - No comments unless the WHY is non-obvious
 
+## style-nodes plugin
+
+`plugins/style-nodes` contains exactly **3 node specs** — one per card style — and must stay that way:
+
+| Spec | Card | Purpose |
+|---|---|---|
+| `kSampler` | `DarkHeaderCard` | Multi-port, coloured header |
+| `distributePoints` | `FieldCard` | Labelled field rows |
+| `webhook` | `CircleCard` | Compact trigger/sink |
+
+**Do not add domain-specific nodes here.** If a demo needs more nodes, define them as local `WorkflowDefinition` data in `app/demo` — not as registered plugin specs. The plugin's job is to demonstrate card shapes, not to model real workflows.
+
+## Documenting learnings
+
+When a session uncovers something non-obvious — a hidden constraint, a tricky bug root cause, a Kotlin/Compose gotcha, a module dependency surprise — write it up in `docs/architecture/lessons.md` before finishing. One bullet per finding: what the problem was, why it happened, and what the fix or rule is. This prevents the same issue from being rediscovered in future sessions.
+
 ## Testing
 
 - Common unit tests → `commonTest`

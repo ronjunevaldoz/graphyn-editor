@@ -10,6 +10,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
@@ -45,12 +46,13 @@ internal fun Modifier.graphynScrollZoomGesture(state: GraphynEditorState): Modif
         }
     }
 
-internal fun Modifier.graphynPanGesture(state: GraphynEditorState): Modifier =
+internal fun Modifier.graphynPanGesture(
+    state: GraphynEditorState,
+    canvasCards: NodeCanvasRegistry? = null,
+): Modifier =
     pointerInput(state.workflow) {
         awaitEachGesture {
             val firstDown = awaitFirstDown(requireUnconsumed = false)
-            val startWorld = state.screenToWorld(firstDown.position)
-            if (state.isWorldPositionOverNode(startWorld)) return@awaitEachGesture
 
             if (state.connectionDraft != null) {
                 var releasePos = firstDown.position
@@ -64,6 +66,17 @@ internal fun Modifier.graphynPanGesture(state: GraphynEditorState): Modifier =
                 state.dispatch(GraphynEditorIntent.ShowNodePicker(releasePos, worldPos))
                 return@awaitEachGesture
             }
+
+            val startWorld = state.screenToWorld(firstDown.position)
+            val overNode = state.workflow?.nodes?.withIndex()?.any { (index, node) ->
+                val pos = state.nodePosition(node.id, index)
+                val factory = canvasCards?.resolve(node.type)
+                val w = (factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width).toFloat()
+                val h = (factory?.nodeHeight ?: GraphynCanvasMetrics.NodeSize.height).toFloat()
+                startWorld.x >= pos.x && startWorld.x <= pos.x + w &&
+                    startWorld.y >= pos.y && startWorld.y <= pos.y + h
+            } ?: false
+            if (overNode) return@awaitEachGesture
 
             var accumulatedDrag = Offset.Zero
             var dragging = false
@@ -92,6 +105,7 @@ internal fun Modifier.graphynKeyboardShortcuts(state: GraphynEditorState): Modif
             GraphynShortcuts.isPaste(event) -> { state.dispatch(GraphynEditorIntent.Paste); true }
             GraphynShortcuts.isDuplicate(event) -> { state.dispatch(GraphynEditorIntent.DuplicateSelection); true }
             GraphynShortcuts.isSelectAll(event) -> { state.dispatch(GraphynEditorIntent.SelectAll); true }
+            GraphynShortcuts.isAutoLayout(event) -> { state.dispatch(GraphynEditorIntent.AutoLayout); true }
             event.key == Key.Escape -> {
                 if (state.connectionDraft != null) state.dispatch(GraphynEditorIntent.CancelConnection)
                 else { state.selectedNodeId = null; state.selectedNodeIds = emptySet(); state.selectedConnection = null }

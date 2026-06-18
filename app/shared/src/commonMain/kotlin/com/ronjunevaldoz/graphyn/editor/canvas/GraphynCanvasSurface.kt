@@ -52,7 +52,7 @@ fun GraphynCanvasSurface(
     ) {
         LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-        Box(modifier = Modifier.fillMaxSize().testTag("canvas-background").graphynPanGesture(state))
+        Box(modifier = Modifier.fillMaxSize().testTag("canvas-background").graphynPanGesture(state, canvasCards))
 
         state.nodePickerState?.let { picker ->
             val wf = state.workflow

@@ -48,4 +48,7 @@ sealed interface GraphynEditorIntent {
 
     // Execution
     data class UpdateNodeExecutionStatus(val nodeId: String, val status: NodeExecutionStatus) : GraphynEditorIntent
+
+    // Layout
+    data object AutoLayout : GraphynEditorIntent
 }

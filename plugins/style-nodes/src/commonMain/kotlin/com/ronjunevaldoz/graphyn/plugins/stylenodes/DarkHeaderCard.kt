@@ -34,24 +34,17 @@ import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 import kotlin.math.roundToInt
 
-private val BgColor      = Color(0xFF1A1A1A)
-private val HeaderColor  = Color(0xFF3D2A6B)
-private val BorderColor  = Color(0xFF444444)
-private val TextColor    = Color(0xFFE0E0E0)
-private val MutedColor   = Color(0xFF9B9BA5)
-private val SelectBorder = Color(0xFF8B5CF6)
-
-private fun PortSpec.color() = portColor?.let { Color(it) } ?: Color(0xFF9B9BA5)
+private fun PortSpec.color() = portColor?.let { Color(it) } ?: NODE_MUTED
 
 @Composable
 fun DarkHeaderCard(ctx: NodeCanvasContext) {
-    val shape = RoundedCornerShape(6.dp)
-    val border = if (ctx.selected) SelectBorder else BorderColor
+    val shape = RoundedCornerShape(CORNER_RADIUS.dp)
+    val border = if (ctx.selected) NODE_SELECT else NODE_BORDER
     Box(
         modifier = Modifier
             .width(200.dp)
             .clip(shape)
-            .background(BgColor)
+            .background(NODE_BG)
             .border(1.dp, border, shape)
             .clickable { ctx.onSelect() }
             .pointerInput(Unit) {
@@ -69,45 +62,42 @@ fun DarkHeaderCard(ctx: NodeCanvasContext) {
     ) {
         Column {
             Box(
-                modifier = Modifier.fillMaxWidth().background(HeaderColor)
+                modifier = Modifier.fillMaxWidth().background(DARK_HEADER_BG)
                     .padding(horizontal = 10.dp, vertical = 6.dp),
             ) {
-                BasicText(ctx.spec.label, style = TextStyle(color = TextColor, fontSize = 12.sp, fontWeight = FontWeight.Bold))
+                BasicText(ctx.spec.label, style = TextStyle(color = NODE_TEXT, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
             }
             Row(modifier = Modifier.padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
-                    ctx.spec.inputs.forEach { DarkHeaderInputRow(it) }
+                    ctx.spec.inputs.forEach { DarkHeaderPortRow(it, isInput = true) }
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    ctx.spec.outputs.forEach { DarkHeaderOutputRow(it) }
+                    ctx.spec.outputs.forEach { DarkHeaderPortRow(it, isInput = false) }
                 }
             }
         }
-        NodeStatusBadge(
-            status = ctx.executionStatus,
-            surfaceColor = BgColor,
-            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
-        )
+        NodeStatusBadge(status = ctx.executionStatus, surfaceColor = NODE_BG,
+            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp))
     }
 }
 
 @Composable
-private fun DarkHeaderInputRow(port: PortSpec) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        Spacer(Modifier.width(8.dp))
-        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(port.color()))
-        Spacer(Modifier.width(5.dp))
-        BasicText(port.name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
-    }
-}
-
-@Composable
-private fun DarkHeaderOutputRow(port: PortSpec) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        Spacer(Modifier.weight(1f))
-        BasicText(port.name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
-        Spacer(Modifier.width(5.dp))
-        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(port.color()))
-        Spacer(Modifier.width(8.dp))
+private fun DarkHeaderPortRow(port: PortSpec, isInput: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isInput) {
+            Spacer(Modifier.width(8.dp))
+            Box(Modifier.size(6.dp).clip(CircleShape).background(port.color()))
+            Spacer(Modifier.width(5.dp))
+            BasicText(port.name, style = TextStyle(color = NODE_MUTED, fontSize = 10.sp))
+        } else {
+            Spacer(Modifier.weight(1f))
+            BasicText(port.name, style = TextStyle(color = NODE_MUTED, fontSize = 10.sp))
+            Spacer(Modifier.width(5.dp))
+            Box(Modifier.size(6.dp).clip(CircleShape).background(port.color()))
+            Spacer(Modifier.width(8.dp))
+        }
     }
 }
