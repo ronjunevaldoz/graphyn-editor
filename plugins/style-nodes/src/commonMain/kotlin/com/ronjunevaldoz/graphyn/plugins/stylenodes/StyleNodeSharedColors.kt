@@ -12,7 +12,7 @@ internal val NODE_MUTED     = Color(0xFF8A8A8F)
 // Distinct header per card style (intentional, communicates domain)
 internal val DARK_HEADER_BG = Color(0xFF3D2A6B)  // purple  — AI / ComfyUI
 internal val FIELD_HEADER_BG = Color(0xFF1B3A5C)  // navy   — Geometry / Blender
-internal val CIRCLE_BG      = Color(0xFF6366F1)   // indigo — Automation / n8n
+internal val CIRCLE_BG      = Color(0xFF6366F1)   // indigo — CircleNodeTheme default
 
 // FieldCard value pill
 internal val FIELD_VALUE_BG = Color(0xFF2C2C2E)
