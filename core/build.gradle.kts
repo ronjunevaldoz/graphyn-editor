@@ -51,6 +51,8 @@ kotlin {
 }
 
 mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
     coordinates("io.github.ronjunevaldoz", "graphyn-core", "0.1.0")
     pom {
         name = "Graphyn Core"
