@@ -106,7 +106,15 @@ class GraphynEditorState(
             }
             GraphynEditorIntent.DismissNodePicker -> { nodePickerState = null; connectionDraft = null; connectionDraftPosition = null }
             is GraphynEditorIntent.UpdateNodeExecutionStatus -> executionStatusByNodeId = executionStatusByNodeId + (intent.nodeId to intent.status)
+            GraphynEditorIntent.AutoLayout -> performAutoLayout()
         }
+    }
+
+    private fun performAutoLayout() {
+        val wf = workflow ?: return
+        val positions = GraphynAutoLayout.computePositions(wf.nodes, wf.connections)
+        positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
+        viewportState.fitToPositions(positions)
     }
 
     internal fun snapshot() = GraphynEditorSnapshot(workflow, layout.nodePositionsByNodeId.toMap())

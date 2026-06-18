@@ -13,6 +13,7 @@ data class NodeSpec(
     val inputs: List<PortSpec>,
     val outputs: List<PortSpec>,
     val defaultValues: Map<String, WorkflowValue> = emptyMap(),
+    val category: String? = null,
 )
 
 data class NodeRef(

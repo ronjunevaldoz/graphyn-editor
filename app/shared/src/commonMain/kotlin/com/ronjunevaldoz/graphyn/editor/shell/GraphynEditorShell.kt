@@ -31,6 +31,7 @@ import com.ronjunevaldoz.graphyn.editor.design.fromPalette
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.canvas.DefaultNodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
@@ -53,6 +54,7 @@ data class GraphynEditorShellDependencies(
     val nodeSpecs: NodeSpecRegistry,
     val panels: EditorPanelRegistry = DefaultEditorPanelRegistry(),
     val canvasCards: NodeCanvasRegistry = DefaultNodeCanvasRegistry(),
+    val categoryRegistry: NodeCategoryRegistry? = null,
     val executionEngine: WorkflowExecutionEngine? = null,
 )
 
@@ -105,11 +107,13 @@ private fun GraphynEditorShellContent(
             appearanceState = appearanceState,
             canRun = executionEngine != null,
             onRun = { executionEngine?.let { state.execute(it) } },
+            onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },
         )
         Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
             GraphynPalettePanel(
                 modifier = Modifier.width(220.dp).fillMaxHeight(),
                 nodeSpecs = dependencies.nodeSpecs,
+                categoryRegistry = dependencies.categoryRegistry,
                 onAddNode = { spec -> state.dispatch(GraphynEditorIntent.AddNode(spec)) },
             )
             Column(modifier = Modifier.weight(1f).fillMaxHeight()) {

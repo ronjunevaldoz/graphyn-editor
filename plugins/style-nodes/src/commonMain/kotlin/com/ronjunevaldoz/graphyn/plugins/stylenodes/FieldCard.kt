@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,25 +36,18 @@ import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 import kotlin.math.roundToInt
 
-private val BgColor      = Color(0xFF2A2A2A)
-private val HeaderColor  = Color(0xFF4A6A8A)
-private val BorderColor  = Color(0xFF555555)
-private val TextColor    = Color(0xFFE8E8E8)
-private val LabelColor   = Color(0xFFAAAAAA)
-private val ValueColor   = Color(0xFFDDDDDD)
-private val FieldBg      = Color(0xFF0F0F0F)
-private val SelectBorder = Color(0xFF72A0D8)
+private fun PortSpec.color() = portColor?.let { Color(it) } ?: NODE_MUTED
 
 @Composable
 fun FieldCard(ctx: NodeCanvasContext) {
-    val shape = RoundedCornerShape(4.dp)
-    val borderCol = if (ctx.selected) SelectBorder else BorderColor
+    val shape = RoundedCornerShape(CORNER_RADIUS.dp)
+    val border = if (ctx.selected) NODE_SELECT else NODE_BORDER
     Box(
         modifier = Modifier
             .width(220.dp)
             .clip(shape)
-            .background(BgColor)
-            .border(1.dp, borderCol, shape)
+            .background(NODE_BG)
+            .border(1.dp, border, shape)
             .clickable { ctx.onSelect() }
             .pointerInput(Unit) {
                 awaitEachGesture {
@@ -71,55 +64,43 @@ fun FieldCard(ctx: NodeCanvasContext) {
     ) {
         Column {
             Box(
-                modifier = Modifier.fillMaxWidth().background(HeaderColor)
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                modifier = Modifier.fillMaxWidth().background(FIELD_HEADER_BG)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
             ) {
-                BasicText(ctx.spec.label, style = TextStyle(color = TextColor, fontSize = 11.sp, fontWeight = FontWeight.Bold))
+                BasicText(ctx.spec.label, style = TextStyle(color = NODE_TEXT, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
             }
             Column(modifier = Modifier.padding(vertical = 2.dp)) {
                 ctx.spec.inputs.forEach { port ->
-                    FieldInputRow(
-                        port = port,
-                        defaultVal = ctx.spec.defaultValues[port.name]?.let { fieldValueLabel(it) },
-                    )
+                    FieldInputRow(port, ctx.spec.defaultValues[port.name]?.let { fieldValueLabel(it) })
                 }
-                ctx.spec.outputs.forEach { port ->
-                    FieldOutputRow(port)
-                }
+                ctx.spec.outputs.forEach { FieldOutputRow(it) }
             }
         }
-        NodeStatusBadge(
-            status = ctx.executionStatus,
-            surfaceColor = BgColor,
-            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
-        )
+        NodeStatusBadge(status = ctx.executionStatus, surfaceColor = NODE_BG,
+            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp))
     }
 }
 
-private fun PortSpec.color() = portColor?.let { Color(it) } ?: Color(0xFFAAAAAA)
-
 @Composable
 private fun FieldInputRow(port: PortSpec, defaultVal: String?) {
-    val dotColor = port.color()
     Row(
-        modifier = Modifier.fillMaxWidth()
-            .padding(start = 8.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dotColor))
+        Box(Modifier.size(6.dp).clip(CircleShape).background(port.color()))
         Spacer(Modifier.width(5.dp))
-        BasicText(port.name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
+        BasicText(port.name, style = TextStyle(color = NODE_MUTED, fontSize = 10.sp))
         Spacer(Modifier.weight(1f))
         if (defaultVal != null) {
             Box(
                 modifier = Modifier
-                    .widthIn(min = 50.dp)
+                    .widthIn(min = 44.dp)
                     .clip(RoundedCornerShape(3.dp))
-                    .background(FieldBg)
+                    .background(FIELD_VALUE_BG)
                     .padding(horizontal = 6.dp, vertical = 2.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                BasicText(defaultVal, style = TextStyle(color = ValueColor, fontSize = 10.sp))
+                BasicText(defaultVal, style = TextStyle(color = NODE_TEXT, fontSize = 10.sp))
             }
         }
     }
@@ -127,23 +108,21 @@ private fun FieldInputRow(port: PortSpec, defaultVal: String?) {
 
 @Composable
 private fun FieldOutputRow(port: PortSpec) {
-    val dotColor = port.color()
     Row(
-        modifier = Modifier.fillMaxWidth()
-            .padding(start = 8.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))
-        BasicText(port.name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
+        BasicText(port.name, style = TextStyle(color = NODE_MUTED, fontSize = 10.sp))
         Spacer(Modifier.width(5.dp))
-        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dotColor))
+        Box(Modifier.size(6.dp).clip(CircleShape).background(port.color()))
     }
 }
 
-private fun fieldValueLabel(value: WorkflowValue): String = when (value) {
-    is WorkflowValue.IntValue     -> value.value.toString()
-    is WorkflowValue.DoubleValue  -> (kotlin.math.round(value.value * 1000) / 1000.0).toString()
-    is WorkflowValue.StringValue  -> value.value
-    is WorkflowValue.BooleanValue -> if (value.value) "true" else "false"
+private fun fieldValueLabel(v: WorkflowValue): String = when (v) {
+    is WorkflowValue.IntValue     -> v.value.toString()
+    is WorkflowValue.DoubleValue  -> (kotlin.math.round(v.value * 1000) / 1000.0).toString()
+    is WorkflowValue.StringValue  -> v.value
+    is WorkflowValue.BooleanValue -> if (v.value) "true" else "false"
     else -> ""
 }

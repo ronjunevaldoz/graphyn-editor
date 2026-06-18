@@ -34,6 +34,7 @@ internal fun GraphynTopToolbar(
     appearanceState: GraphynAppearanceState,
     canRun: Boolean,
     onRun: () -> Unit,
+    onAutoLayout: (() -> Unit)? = null,
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
@@ -60,6 +61,20 @@ internal fun GraphynTopToolbar(
         )
         Spacer(Modifier.weight(1f))
         ThemeControls(appearanceState = appearanceState)
+        if (onAutoLayout != null) {
+            val autoInteraction = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(colors.panelBackground)
+                    .border(width = 1.dp, color = colors.border, shape = RoundedCornerShape(6.dp))
+                    .clickable(interactionSource = autoInteraction, indication = null, onClick = onAutoLayout)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                BasicText(text = "Auto Layout", style = type.label.copy(color = colors.textSecondary))
+            }
+        }
         if (canRun) {
             val interactionSource = remember { MutableInteractionSource() }
             Box(

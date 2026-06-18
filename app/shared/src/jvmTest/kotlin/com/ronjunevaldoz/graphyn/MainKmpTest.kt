@@ -18,7 +18,7 @@ class MainKmpTest {
   @Test
   fun test() = runDesktopComposeUiTest {
     setContent {
-      DemoApp()
+      App()
     }
     val roborazziOptions = RoborazziOptions(
       recordOptions = RoborazziOptions.RecordOptions(

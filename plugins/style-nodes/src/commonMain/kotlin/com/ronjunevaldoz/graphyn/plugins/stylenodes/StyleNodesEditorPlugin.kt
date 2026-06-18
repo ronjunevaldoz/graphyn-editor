@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeShape
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
@@ -22,13 +23,13 @@ object StyleNodesEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(StyleNodesSpecs.kSampler.type, DarkHeaderCardFactory)
         registrar.registerCanvasCard(StyleNodesSpecs.distributePoints.type, FieldCardFactory)
         registrar.registerCanvasCard(StyleNodesSpecs.webhook.type, CircleCardFactory)
+        registrar.registerCategory(CATEGORY_AI, NodeCategoryMeta("AI", COLOR_MODEL))
+        registrar.registerCategory(CATEGORY_GEOMETRY, NodeCategoryMeta("Geometry", COLOR_GEOMETRY))
+        registrar.registerCategory(CATEGORY_AUTOMATION, NodeCategoryMeta("Automation", COLOR_CONDITIONING))
     }
 }
 
 private object DarkHeaderCardFactory : NodeCanvasFactory {
-    // Header: 12sp text (~15dp line height) + 6dp*2 padding = 27dp
-    // Port section: 4dp column top + 3dp row top + 10sp center (~6.5dp) = 13.5dp → total ~41dp
-    // Row stride: 3dp top + 13dp line height + 3dp bottom = 19dp
     private const val TOP = 41
     private const val ROW_H = 19
 
@@ -38,15 +39,11 @@ private object DarkHeaderCardFactory : NodeCanvasFactory {
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) = DarkHeaderCard(context)
 
-    // Inputs left column, outputs right column — both start at TOP independent of each other
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
         TOP + portIndex * ROW_H
 }
 
 private object FieldCardFactory : NodeCanvasFactory {
-    // Header: 11sp text (~14dp line height) + 5dp*2 padding = 24dp
-    // Port section: 2dp column top + 3dp row top + 10sp center (~6.5dp) = 11.5dp → total ~36dp
-    // Row stride: 3dp top + 13dp line height + 3dp bottom = 19dp
     private const val TOP = 36
     private const val ROW_H = 19
 
@@ -56,14 +53,12 @@ private object FieldCardFactory : NodeCanvasFactory {
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) = FieldCard(context)
 
-    // Inputs stacked first, outputs below — outputs offset by input count
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
         if (isInput) TOP + portIndex * ROW_H
         else TOP + spec.inputs.size * ROW_H + portIndex * ROW_H
 }
 
 private object CircleCardFactory : NodeCanvasFactory {
-    // Circle 64dp, center at 32dp
     override val nodeWidth: Int = 64
     override val nodeHeight: Int = 64
     override val nodeShape: NodeShape = NodeShape.Circle

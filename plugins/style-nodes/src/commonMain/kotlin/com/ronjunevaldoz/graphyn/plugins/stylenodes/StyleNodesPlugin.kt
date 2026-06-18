@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.plugins.stylenodes
 
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.pluginapi.GRAPHYN_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginMetadata
@@ -14,8 +15,19 @@ object StyleNodesPlugin : GraphynPlugin {
     )
 
     override fun register(registrar: GraphynPluginRegistrar) {
-        registrar.registerNodeSpec(StyleNodesSpecs.kSampler)
-        registrar.registerNodeSpec(StyleNodesSpecs.distributePoints)
-        registrar.registerNodeSpec(StyleNodesSpecs.webhook)
+        with(StyleNodesSpecs) {
+            registrar.registerNodeSpec(kSampler)
+            registrar.registerNodeSpec(distributePoints)
+            registrar.registerNodeSpec(webhook)
+        }
+        registrar.registerExecutor(StyleNodesSpecs.kSampler.type) { inputs ->
+            mapOf("latent" to (inputs["latent"] ?: WorkflowValue.NullValue))
+        }
+        registrar.registerExecutor(StyleNodesSpecs.distributePoints.type) { _ ->
+            mapOf("points" to WorkflowValue.NullValue)
+        }
+        registrar.registerExecutor(StyleNodesSpecs.webhook.type) { _ ->
+            mapOf("body" to WorkflowValue.RecordValue(emptyMap()))
+        }
     }
 }

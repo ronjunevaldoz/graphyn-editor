@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
@@ -42,6 +43,26 @@ internal class GraphynViewportState(
 
     fun updateCanvasSize(size: IntSize) {
         canvasSize = size
+    }
+
+    fun fitToPositions(positions: Map<String, IntOffset>, nodeWidth: Int = 280, nodeHeight: Int = 180) {
+        if (positions.isEmpty() || canvasSize.width <= 0 || canvasSize.height <= 0) return
+        val padding = 60f
+        val minX = positions.values.minOf { it.x.toFloat() }
+        val minY = positions.values.minOf { it.y.toFloat() }
+        val maxX = positions.values.maxOf { it.x.toFloat() } + nodeWidth
+        val maxY = positions.values.maxOf { it.y.toFloat() } + nodeHeight
+        val scale = minOf(
+            (canvasSize.width - padding * 2) / (maxX - minX),
+            (canvasSize.height - padding * 2) / (maxY - minY),
+            MaxScale,
+        ).coerceAtLeast(MinScale)
+        val cx = (minX + maxX) / 2f
+        val cy = (minY + maxY) / 2f
+        viewport = GraphynViewport(
+            offset = Offset(canvasSize.width / 2f - cx * scale, canvasSize.height / 2f - cy * scale),
+            scale = scale,
+        )
     }
 
     fun screenToWorld(position: Offset): Offset = viewport.screenToWorld(position)
