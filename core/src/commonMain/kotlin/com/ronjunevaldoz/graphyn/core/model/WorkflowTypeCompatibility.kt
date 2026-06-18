@@ -25,6 +25,6 @@ object WorkflowTypeCompatibility {
             actual is WorkflowType.EnumType && expected.values == actual.values
         is WorkflowType.MultiEnumType ->
             actual is WorkflowType.MultiEnumType && expected.values == actual.values
-        WorkflowType.OpaqueType -> actual is WorkflowType.OpaqueType
+        WorkflowType.OpaqueType -> true
     }
 }
