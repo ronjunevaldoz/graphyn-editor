@@ -34,3 +34,33 @@ jobs:
         if: github.event_name == 'release'
         with:
           files: app/shared/build/XCFrameworks/release/GraphynEditor.xcframework.zip
+
+      - name: Update Package.swift checksum
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          CHECKSUM=$(swift package compute-checksum \
+            app/shared/build/XCFrameworks/release/GraphynEditor.xcframework.zip)
+          export CHECKSUM VERSION
+          python3 - <<'EOF'
+          import re, os
+          version  = os.environ["VERSION"]
+          checksum = os.environ["CHECKSUM"]
+          path = "Package.swift"
+          text = open(path).read()
+          text = re.sub(
+              r'releases/download/[^/]+/GraphynEditor\.xcframework\.zip',
+              f'releases/download/{version}/GraphynEditor.xcframework.zip',
+              text,
+          )
+          text = re.sub(r'checksum: "[^"]*"', f'checksum: "{checksum}"', text)
+          open(path, "w").write(text)
+          print(f"Patched Package.swift: {version} / {checksum}")
+          EOF
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Package.swift
+          git commit -m "chore(spm): update XCFramework checksum for $VERSION [skip ci]"
+          git push origin HEAD:main
