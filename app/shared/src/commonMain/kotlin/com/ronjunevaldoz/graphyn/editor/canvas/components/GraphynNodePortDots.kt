@@ -17,8 +17,6 @@ internal fun GraphynNodePortDots(
     state: GraphynEditorState,
     workflow: WorkflowDefinition,
     nodeSpecs: NodeSpecRegistry,
-    outputColor: Color,
-    inputColor: Color,
     surfaceColor: Color,
 ) {
     val draft = state.connectionDraft
@@ -34,7 +32,6 @@ internal fun GraphynNodePortDots(
             workflow = workflow,
             nodeSpecs = nodeSpecs,
             state = state,
-            outputColor = outputColor,
             surfaceColor = surfaceColor,
         )
     }
@@ -50,7 +47,6 @@ internal fun GraphynNodePortDots(
             workflow = workflow,
             nodeSpecs = nodeSpecs,
             state = state,
-            inputColor = inputColor,
             surfaceColor = surfaceColor,
         )
     }

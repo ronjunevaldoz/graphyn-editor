@@ -39,9 +39,9 @@ internal fun GraphynOutputPortDot(
     workflow: WorkflowDefinition,
     nodeSpecs: NodeSpecRegistry,
     state: GraphynEditorState,
-    outputColor: Color,
     surfaceColor: Color,
 ) {
+    val outputColor = outputPort.type.portColor()
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isInputDraftTarget = draft != null && draft.isFromInput && run {

@@ -77,7 +77,6 @@ fun GraphynCanvasSurface(
         if (workflow.nodes.isEmpty()) GraphynEmptyNodesHint()
 
         val outputColor = GraphynDs.colors.connectionLine
-        val inputColor = GraphynDs.colors.portInput
         val surfaceColor = GraphynDs.colors.surfaceCard
 
         Box(
@@ -102,7 +101,7 @@ fun GraphynCanvasSurface(
             )
             GraphynNodeLayer(
                 workflow = workflow, state = state, nodeSpecs = nodeSpecs,
-                outputColor = outputColor, inputColor = inputColor, surfaceColor = surfaceColor,
+                surfaceColor = surfaceColor,
             )
         }
     }
