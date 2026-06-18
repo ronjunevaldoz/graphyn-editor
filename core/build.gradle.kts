@@ -58,9 +58,9 @@ mavenPublishing {
         url = "https://github.com/ronjunevaldoz/graphyn-editor"
         licenses {
             license {
-                name = "Apache License, Version 2.0"
-                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-                distribution = "repo"
+                name = "MIT License"
+                url = "https://opensource.org/licenses/MIT"
+                
             }
         }
         developers {
