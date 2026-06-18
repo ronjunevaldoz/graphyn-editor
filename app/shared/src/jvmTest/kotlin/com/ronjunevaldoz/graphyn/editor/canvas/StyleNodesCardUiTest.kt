@@ -12,9 +12,9 @@ import com.github.takahirom.roborazzi.RoborazziOptions
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
-import com.ronjunevaldoz.graphyn.plugins.stylenodes.BlenderNodeCard
-import com.ronjunevaldoz.graphyn.plugins.stylenodes.ComfyUiNodeCard
-import com.ronjunevaldoz.graphyn.plugins.stylenodes.N8nNodeCard
+import com.ronjunevaldoz.graphyn.plugins.stylenodes.CircleCard
+import com.ronjunevaldoz.graphyn.plugins.stylenodes.DarkHeaderCard
+import com.ronjunevaldoz.graphyn.plugins.stylenodes.FieldCard
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesSpecs
 import io.github.takahirom.roborazzi.captureRoboImage
 import kotlin.test.Test
@@ -26,27 +26,27 @@ class StyleNodesCardUiTest {
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0F),
     )
 
-    private fun comfyCtx(selected: Boolean = false) = NodeCanvasContext(
-        node = NodeRef(id = "ksampler-1", type = StyleNodesSpecs.comfyKSampler.type),
-        spec = StyleNodesSpecs.comfyKSampler,
+    private fun kSamplerCtx(selected: Boolean = false) = NodeCanvasContext(
+        node = NodeRef(id = "ksampler-1", type = StyleNodesSpecs.kSampler.type),
+        spec = StyleNodesSpecs.kSampler,
         selected = selected,
         executionStatus = NodeExecutionStatus.Idle,
         onSelect = {},
         onMove = {},
     )
 
-    private fun blenderCtx(selected: Boolean = false) = NodeCanvasContext(
-        node = NodeRef(id = "blender-1", type = StyleNodesSpecs.blenderDistribute.type),
-        spec = StyleNodesSpecs.blenderDistribute,
+    private fun distributeCtx(selected: Boolean = false) = NodeCanvasContext(
+        node = NodeRef(id = "distribute-1", type = StyleNodesSpecs.distributePoints.type),
+        spec = StyleNodesSpecs.distributePoints,
         selected = selected,
         executionStatus = NodeExecutionStatus.Idle,
         onSelect = {},
         onMove = {},
     )
 
-    private fun n8nCtx(selected: Boolean = false) = NodeCanvasContext(
-        node = NodeRef(id = "webhook-1", type = StyleNodesSpecs.n8nWebhook.type),
-        spec = StyleNodesSpecs.n8nWebhook,
+    private fun webhookCtx(selected: Boolean = false) = NodeCanvasContext(
+        node = NodeRef(id = "webhook-1", type = StyleNodesSpecs.webhook.type),
+        spec = StyleNodesSpecs.webhook,
         selected = selected,
         executionStatus = NodeExecutionStatus.Idle,
         onSelect = {},
@@ -55,67 +55,43 @@ class StyleNodesCardUiTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun comfyUiNodeCard_idle() = runDesktopComposeUiTest {
-        setContent {
-            Box(modifier = Modifier.padding(16.dp)) {
-                ComfyUiNodeCard(comfyCtx())
-            }
-        }
+    fun darkHeaderCard_idle() = runDesktopComposeUiTest {
+        setContent { Box(modifier = Modifier.padding(16.dp)) { DarkHeaderCard(kSamplerCtx()) } }
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun comfyUiNodeCard_selected() = runDesktopComposeUiTest {
-        setContent {
-            Box(modifier = Modifier.padding(16.dp)) {
-                ComfyUiNodeCard(comfyCtx(selected = true))
-            }
-        }
+    fun darkHeaderCard_selected() = runDesktopComposeUiTest {
+        setContent { Box(modifier = Modifier.padding(16.dp)) { DarkHeaderCard(kSamplerCtx(selected = true)) } }
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun blenderNodeCard_idle() = runDesktopComposeUiTest {
-        setContent {
-            Box(modifier = Modifier.padding(16.dp)) {
-                BlenderNodeCard(blenderCtx())
-            }
-        }
+    fun fieldCard_idle() = runDesktopComposeUiTest {
+        setContent { Box(modifier = Modifier.padding(16.dp)) { FieldCard(distributeCtx()) } }
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun blenderNodeCard_selected() = runDesktopComposeUiTest {
-        setContent {
-            Box(modifier = Modifier.padding(16.dp)) {
-                BlenderNodeCard(blenderCtx(selected = true))
-            }
-        }
+    fun fieldCard_selected() = runDesktopComposeUiTest {
+        setContent { Box(modifier = Modifier.padding(16.dp)) { FieldCard(distributeCtx(selected = true)) } }
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun n8nNodeCard_idle() = runDesktopComposeUiTest {
-        setContent {
-            Box(modifier = Modifier.padding(16.dp)) {
-                N8nNodeCard(n8nCtx())
-            }
-        }
+    fun circleCard_idle() = runDesktopComposeUiTest {
+        setContent { Box(modifier = Modifier.padding(16.dp)) { CircleCard(webhookCtx()) } }
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun n8nNodeCard_selected() = runDesktopComposeUiTest {
-        setContent {
-            Box(modifier = Modifier.padding(16.dp)) {
-                N8nNodeCard(n8nCtx(selected = true))
-            }
-        }
+    fun circleCard_selected() = runDesktopComposeUiTest {
+        setContent { Box(modifier = Modifier.padding(16.dp)) { CircleCard(webhookCtx(selected = true)) } }
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
     }
 }

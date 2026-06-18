@@ -18,13 +18,13 @@ object StyleNodesEditorPlugin : GraphynEditorPlugin {
     )
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
-        registrar.registerCanvasCard(StyleNodesSpecs.comfyKSampler.type, ComfyFactory)
-        registrar.registerCanvasCard(StyleNodesSpecs.blenderDistribute.type, BlenderFactory)
-        registrar.registerCanvasCard(StyleNodesSpecs.n8nWebhook.type, N8nFactory)
+        registrar.registerCanvasCard(StyleNodesSpecs.kSampler.type, DarkHeaderCardFactory)
+        registrar.registerCanvasCard(StyleNodesSpecs.distributePoints.type, FieldCardFactory)
+        registrar.registerCanvasCard(StyleNodesSpecs.webhook.type, CircleCardFactory)
     }
 }
 
-private object ComfyFactory : NodeCanvasFactory {
+private object DarkHeaderCardFactory : NodeCanvasFactory {
     // Header: 12sp text (~15dp line height) + 6dp*2 padding = 27dp
     // Port section: 4dp column top + 3dp row top + 10sp center (~6.5dp) = 13.5dp → total ~41dp
     // Row stride: 3dp top + 13dp line height + 3dp bottom = 19dp
@@ -34,17 +34,14 @@ private object ComfyFactory : NodeCanvasFactory {
     override val nodeWidth: Int = 200
 
     @Composable
-    override fun NodeCanvas(context: NodeCanvasContext) = ComfyUiNodeCard(context)
+    override fun NodeCanvas(context: NodeCanvasContext) = DarkHeaderCard(context)
 
+    // Inputs left column, outputs right column — both start at TOP independent of each other
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
-        if (isInput) {
-            TOP + portIndex * ROW_H
-        } else {
-            TOP + spec.inputs.size * ROW_H + portIndex * ROW_H
-        }
+        TOP + portIndex * ROW_H
 }
 
-private object BlenderFactory : NodeCanvasFactory {
+private object FieldCardFactory : NodeCanvasFactory {
     // Header: 11sp text (~14dp line height) + 5dp*2 padding = 24dp
     // Port section: 2dp column top + 3dp row top + 10sp center (~6.5dp) = 11.5dp → total ~36dp
     // Row stride: 3dp top + 13dp line height + 3dp bottom = 19dp
@@ -54,22 +51,20 @@ private object BlenderFactory : NodeCanvasFactory {
     override val nodeWidth: Int = 220
 
     @Composable
-    override fun NodeCanvas(context: NodeCanvasContext) = BlenderNodeCard(context)
+    override fun NodeCanvas(context: NodeCanvasContext) = FieldCard(context)
 
+    // Inputs stacked first, outputs below — outputs offset by input count
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
-        if (isInput) {
-            TOP + portIndex * ROW_H
-        } else {
-            TOP + spec.inputs.size * ROW_H + portIndex * ROW_H
-        }
+        if (isInput) TOP + portIndex * ROW_H
+        else TOP + spec.inputs.size * ROW_H + portIndex * ROW_H
 }
 
-private object N8nFactory : NodeCanvasFactory {
+private object CircleCardFactory : NodeCanvasFactory {
     // Circle 64dp, center at 32dp
     override val nodeWidth: Int = 64
 
     @Composable
-    override fun NodeCanvas(context: NodeCanvasContext) = N8nNodeCard(context)
+    override fun NodeCanvas(context: NodeCanvasContext) = CircleCard(context)
 
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int = 32
 }

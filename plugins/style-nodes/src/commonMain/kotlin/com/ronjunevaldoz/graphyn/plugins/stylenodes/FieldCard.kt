@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import kotlin.math.roundToInt
 
@@ -35,19 +37,20 @@ private val HeaderColor  = Color(0xFF4A6A8A)
 private val BorderColor  = Color(0xFF555555)
 private val TextColor    = Color(0xFFE8E8E8)
 private val LabelColor   = Color(0xFFAAAAAA)
-private val ValueColor   = Color(0xFF6DB3F2)
+private val ValueColor   = Color(0xFFDDDDDD)
+private val FieldBg      = Color(0xFF0F0F0F)
 private val SelectBorder = Color(0xFF72A0D8)
 
 @Composable
-fun BlenderNodeCard(ctx: NodeCanvasContext) {
+fun FieldCard(ctx: NodeCanvasContext) {
     val shape = RoundedCornerShape(4.dp)
-    val border = if (ctx.selected) SelectBorder else BorderColor
+    val borderCol = if (ctx.selected) SelectBorder else BorderColor
     Box(
         modifier = Modifier
             .width(220.dp)
             .clip(shape)
             .background(BgColor)
-            .border(1.dp, border, shape)
+            .border(1.dp, borderCol, shape)
             .clickable { ctx.onSelect() }
             .pointerInput(Unit) {
                 awaitEachGesture {
@@ -71,14 +74,13 @@ fun BlenderNodeCard(ctx: NodeCanvasContext) {
             }
             Column(modifier = Modifier.padding(vertical = 2.dp)) {
                 ctx.spec.inputs.forEach { port ->
-                    BlenderPortRow(
+                    FieldInputRow(
                         name = port.name,
-                        defaultVal = ctx.spec.defaultValues[port.name]?.let { blenderValueLabel(it) },
-                        isInput = true,
+                        defaultVal = ctx.spec.defaultValues[port.name]?.let { fieldValueLabel(it) },
                     )
                 }
                 ctx.spec.outputs.forEach { port ->
-                    BlenderPortRow(name = port.name, defaultVal = null, isInput = false)
+                    FieldOutputRow(port.name)
                 }
             }
         }
@@ -86,30 +88,45 @@ fun BlenderNodeCard(ctx: NodeCanvasContext) {
 }
 
 @Composable
-private fun BlenderPortRow(name: String, defaultVal: String?, isInput: Boolean) {
+private fun FieldInputRow(name: String, defaultVal: String?) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp, horizontal = 10.dp),
+        modifier = Modifier.fillMaxWidth()
+            .padding(start = 12.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (isInput) {
-            BasicText(name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
-            if (defaultVal != null) {
-                Spacer(Modifier.weight(1f))
+        BasicText(name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
+        Spacer(Modifier.weight(1f))
+        if (defaultVal != null) {
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 60.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(FieldBg)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
                 BasicText(defaultVal, style = TextStyle(color = ValueColor, fontSize = 10.sp))
-            } else {
-                Spacer(Modifier.weight(1f))
             }
-        } else {
-            Spacer(Modifier.weight(1f))
-            BasicText(name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
         }
     }
 }
 
-private fun blenderValueLabel(value: com.ronjunevaldoz.graphyn.core.model.WorkflowValue): String = when (value) {
-    is com.ronjunevaldoz.graphyn.core.model.WorkflowValue.IntValue    -> value.value.toString()
-    is com.ronjunevaldoz.graphyn.core.model.WorkflowValue.DoubleValue -> "%.3f".format(value.value)
-    is com.ronjunevaldoz.graphyn.core.model.WorkflowValue.StringValue -> value.value
-    is com.ronjunevaldoz.graphyn.core.model.WorkflowValue.BooleanValue -> if (value.value) "true" else "false"
+@Composable
+private fun FieldOutputRow(name: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .padding(start = 8.dp, end = 12.dp, top = 3.dp, bottom = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(Modifier.weight(1f))
+        BasicText(name, style = TextStyle(color = LabelColor, fontSize = 10.sp))
+    }
+}
+
+private fun fieldValueLabel(value: WorkflowValue): String = when (value) {
+    is WorkflowValue.IntValue     -> value.value.toString()
+    is WorkflowValue.DoubleValue  -> (kotlin.math.round(value.value * 1000) / 1000.0).toString()
+    is WorkflowValue.StringValue  -> value.value
+    is WorkflowValue.BooleanValue -> if (value.value) "true" else "false"
     else -> ""
 }

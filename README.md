@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Compose-Multiplatform-3DDC84?logo=jetpackcompose&logoColor=white" alt="Compose Multiplatform"/>
   <img src="https://img.shields.io/badge/platforms-Android%20·%20Desktop%20·%20Web%20·%20iOS-0095D5" alt="Platforms"/>
-  <img src="https://img.shields.io/badge/pre--release-local%20maven-orange" alt="Pre-release"/>
+  <img src="https://img.shields.io/badge/pre--release-0.1.0-orange" alt="Pre-release"/>
 </p>
 
 ---
@@ -24,10 +24,12 @@
 Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featured node-based canvas — the kind used in Unreal Blueprint, Blender shader editor, or n8n. Wire it up with plugins to define your own node types, connect them, and execute workflows.
 
 - **Library-first** — embed the canvas in your own app, not the other way around
-- **Plugin architecture** — runtime plugins define node specs and executors; editor plugins add custom inspector panels
+- **Plugin architecture** — runtime plugins define node specs and executors; editor plugins add custom card UI
 - **Compose Multiplatform UI** — one codebase for Android, Desktop (JVM), Web (Wasm/JS), and iOS
 - **MVI state model** — all canvas mutations go through typed intents; easy to test and replay
 - **Zero Material dependency** — custom design system, fully themeable
+
+**Docs site:** [ronjunevaldoz.github.io/graphyn-editor](https://ronjunevaldoz.github.io/graphyn-editor)
 
 ---
 
@@ -35,14 +37,14 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 
 | | |
 |---|---|
-| 🎨 | Pan & zoom canvas with minimap |
-| 🔌 | Connect nodes via port drag-and-drop |
-| 🧩 | Plugin system for runtime nodes and editor panels |
-| 🎛️ | Inspector panel with per-node custom UI |
-| 🌗 | Built-in light / dark mode + theme presets |
-| ✅ | Workflow validation with typed errors |
-| ⚡ | Workflow execution engine |
-| 🧪 | Screenshot tests via Roborazzi |
+| Pan & zoom canvas with minimap | |
+| Connect nodes via port drag-and-drop | |
+| Plugin system for runtime nodes and editor cards | |
+| Inspector panel with per-node custom UI | |
+| Built-in light / dark mode + theme presets | |
+| Workflow validation with typed errors | |
+| Workflow execution engine | |
+| Screenshot tests via Roborazzi | |
 
 ---
 
@@ -67,27 +69,92 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
          └────────────────────────┘
 ```
 
-| Module | Responsibility |
-|---|---|
-| `core` | Workflow model, types, validation, execution engine — no Compose |
-| `plugin-api` | `GraphynPlugin` contract — register node specs and executors |
-| `editor-api` | `GraphynEditorPlugin` contract — register inspector panel UI |
-| `app/shared` | Compose Multiplatform canvas and editor shell |
-| `server` | JVM runtime host |
-| `plugins/sample-math` | Reference math plugin |
-| `plugins/sample-logger` | Reference logger plugin |
+| Module | Artifact | Responsibility |
+|---|---|---|
+| `core` | `graphyn-core` | Workflow model, types, validation, execution engine — no Compose |
+| `plugin-api` | `graphyn-plugin-api` | `GraphynPlugin` contract — register node specs and executors |
+| `editor-api` | `graphyn-editor-api` | `GraphynEditorPlugin` contract — register canvas cards and inspector panels |
+| `app/shared` | `graphyn-editor` | Compose Multiplatform canvas and editor shell |
+| `server` | — | JVM runtime host |
+| `plugins/sample-math` | — | Reference math plugin |
+| `plugins/sample-logger` | — | Reference logger plugin |
+| `plugins/style-nodes` | — | Reference custom card plugin |
 
 ---
 
-## Quick Start
+## Installation
 
-> **Pre-1.0:** clone the repo and publish to local Maven until the first release is tagged.
+> **Pre-1.0:** artifacts are not yet published to Maven Central. Publish to local Maven first (see below), or depend on the source modules directly.
+
+### Publish to local Maven
 
 ```bash
 git clone https://github.com/ronjunevaldoz/graphyn-editor.git
 cd graphyn-editor
 ./gradlew publishToMavenLocal
 ```
+
+### Add to your project
+
+In your root `settings.gradle.kts`, make sure `mavenLocal()` is in your repositories:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+    }
+}
+```
+
+Then add the dependencies you need in your module's `build.gradle.kts`:
+
+```kotlin
+// Version catalog entry (gradle/libs.versions.toml)
+[versions]
+graphyn = "0.1.0"
+
+[libraries]
+graphyn-editor     = { module = "io.github.ronjunevaldoz:graphyn-editor",     version.ref = "graphyn" }
+graphyn-editor-api = { module = "io.github.ronjunevaldoz:graphyn-editor-api", version.ref = "graphyn" }
+graphyn-plugin-api = { module = "io.github.ronjunevaldoz:graphyn-plugin-api", version.ref = "graphyn" }
+graphyn-core       = { module = "io.github.ronjunevaldoz:graphyn-core",        version.ref = "graphyn" }
+```
+
+```kotlin
+// build.gradle.kts
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            // Full editor canvas (includes core, editor-api, plugin-api transitively)
+            implementation(libs.graphyn.editor)
+
+            // Only the plugin contract — no Compose dependency
+            implementation(libs.graphyn.plugin.api)
+
+            // Only the editor plugin contract (custom card UI)
+            implementation(libs.graphyn.editor.api)
+
+            // Only the core model — pure Kotlin, no Compose
+            implementation(libs.graphyn.core)
+        }
+    }
+}
+```
+
+**Dependency map:**
+
+| You want to… | Add |
+|---|---|
+| Embed the full canvas in your app | `graphyn-editor` |
+| Write a runtime plugin (node specs + executors) | `graphyn-plugin-api` |
+| Write an editor plugin (custom card UI) | `graphyn-editor-api` |
+| Use only the workflow model/types | `graphyn-core` |
+
+---
+
+## Quick Start
 
 ### Step 1 — Implement a runtime plugin
 
@@ -192,7 +259,7 @@ Graphyn separates runtime concerns from editor concerns — you can ship a runti
 | Desktop (JVM) | ✅ |
 | Web (Wasm) | ✅ |
 | Web (JS) | ✅ |
-| iOS | 🔜 |
+| iOS | coming soon |
 | Server (JVM) | ✅ runtime only |
 
 ---
@@ -225,6 +292,8 @@ Graphyn separates runtime concerns from editor concerns — you can ship a runti
 ---
 
 ## Docs
+
+Full documentation at [ronjunevaldoz.github.io/graphyn-editor](https://ronjunevaldoz.github.io/graphyn-editor).
 
 - [Architecture overview](./docs/architecture/README.md)
 - [Plugin API](./docs/architecture/plugins.md)

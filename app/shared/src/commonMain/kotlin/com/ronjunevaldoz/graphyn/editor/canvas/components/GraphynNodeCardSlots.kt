@@ -73,7 +73,7 @@ private fun GraphynPortColumn(ports: List<PortSpec>, side: PortSide) {
             BasicText("None", style = type.caption.copy(color = colors.textDisabled))
         } else {
             ports.take(4).forEach { port ->
-                val portColor = port.type.portColor()
+                val portColor = port.portColor()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = if (side == PortSide.Input) Arrangement.Start else Arrangement.End,

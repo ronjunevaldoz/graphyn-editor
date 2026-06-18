@@ -10,6 +10,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardFooter
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardHeader
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardPorts
@@ -39,6 +40,7 @@ internal fun GraphynNodeLayer(
                 executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
                 onSelect = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
                 onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
+                contentColor = GraphynDs.colors.textPrimary,
             )
             Box(modifier = Modifier.offset { position }) {
                 with(factory) { NodeCanvas(ctx) }

@@ -38,7 +38,7 @@ private val MutedColor   = Color(0xFF9B9BA5)
 private val SelectBorder = Color(0xFF8B5CF6)
 
 @Composable
-fun ComfyUiNodeCard(ctx: NodeCanvasContext) {
+fun DarkHeaderCard(ctx: NodeCanvasContext) {
     val shape = RoundedCornerShape(6.dp)
     val border = if (ctx.selected) SelectBorder else BorderColor
     Box(
@@ -68,12 +68,12 @@ fun ComfyUiNodeCard(ctx: NodeCanvasContext) {
             ) {
                 BasicText(ctx.spec.label, style = TextStyle(color = TextColor, fontSize = 12.sp, fontWeight = FontWeight.Bold))
             }
-            Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                ctx.spec.inputs.forEach { port ->
-                    ComfyPortRow(port.name, isInput = true)
+            Row(modifier = Modifier.padding(vertical = 4.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    ctx.spec.inputs.forEach { DarkHeaderInputRow(it.name) }
                 }
-                ctx.spec.outputs.forEach { port ->
-                    ComfyPortRow(port.name, isInput = false)
+                Column(modifier = Modifier.weight(1f)) {
+                    ctx.spec.outputs.forEach { DarkHeaderOutputRow(it.name) }
                 }
             }
         }
@@ -81,19 +81,18 @@ fun ComfyUiNodeCard(ctx: NodeCanvasContext) {
 }
 
 @Composable
-private fun ComfyPortRow(name: String, isInput: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (isInput) {
-            Spacer(Modifier.width(16.dp))
-            BasicText(name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
-            Spacer(Modifier.weight(1f))
-        } else {
-            Spacer(Modifier.weight(1f))
-            BasicText(name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
-            Spacer(Modifier.width(16.dp))
-        }
+private fun DarkHeaderInputRow(name: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.width(16.dp))
+        BasicText(name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
+    }
+}
+
+@Composable
+private fun DarkHeaderOutputRow(name: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.weight(1f))
+        BasicText(name, style = TextStyle(color = MutedColor, fontSize = 10.sp))
+        Spacer(Modifier.width(16.dp))
     }
 }
