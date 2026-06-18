@@ -76,6 +76,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(compose.desktop.uiTestJUnit4)
             implementation(libs.roborazzi.compose.desktop)
+            implementation(projects.plugins.sampleStyleNodes)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)
