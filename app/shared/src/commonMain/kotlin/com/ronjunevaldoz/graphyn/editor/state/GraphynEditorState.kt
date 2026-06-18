@@ -52,7 +52,13 @@ class GraphynEditorState(
     val nodePositionsByNodeId get() = layout.nodePositionsByNodeId
 
     init {
-        viewportState.refresh(initialWorkflow?.nodes?.mapTo(mutableSetOf()) { it.id }.orEmpty())
+        val nodes = initialWorkflow?.nodes.orEmpty()
+        // Seed positions so moveNode's `current = nodePositionsByNodeId[id] ?: Zero`
+        // finds the correct starting point instead of Zero, avoiding a drag-jump to x=0.
+        nodes.forEachIndexed { index, node ->
+            layout.setNodePosition(node.id, GraphynCanvasLayout.fallbackPosition(index))
+        }
+        viewportState.refresh(nodes.mapTo(mutableSetOf()) { it.id })
     }
 
     fun dispatch(intent: GraphynEditorIntent) {
