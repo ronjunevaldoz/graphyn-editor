@@ -20,7 +20,7 @@ object StyleNodesEditorPlugin : GraphynEditorPlugin {
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
         registrar.registerCanvasCard(StyleNodesSpecs.kSampler.type, DarkHeaderCardFactory)
-        registrar.registerCanvasCard(StyleNodesSpecs.distributePoints.type, FieldCardFactory)
+        registrar.registerCanvasCard(StyleNodesSpecs.distributePoints.type, FieldCardFactory())
         registrar.registerCanvasCard(StyleNodesSpecs.webhook.type, ShapeCardFactory())
         registrar.registerCategory(CATEGORY_AI, NodeCategoryMeta("AI", COLOR_MODEL))
         registrar.registerCategory(CATEGORY_GEOMETRY, NodeCategoryMeta("Geometry", COLOR_GEOMETRY))
@@ -42,17 +42,3 @@ private object DarkHeaderCardFactory : NodeCanvasFactory {
         TOP + portIndex * ROW_H
 }
 
-private object FieldCardFactory : NodeCanvasFactory {
-    private const val TOP = 36
-    private const val ROW_H = 19
-
-    override val nodeWidth: Int = 220
-    override val nodeHeight: Int = 120
-
-    @Composable
-    override fun NodeCanvas(context: NodeCanvasContext) = FieldCard(context)
-
-    override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
-        if (isInput) TOP + portIndex * ROW_H
-        else TOP + spec.inputs.size * ROW_H + portIndex * ROW_H
-}
