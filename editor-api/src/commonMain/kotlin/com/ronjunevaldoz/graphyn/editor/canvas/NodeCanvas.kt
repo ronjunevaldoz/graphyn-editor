@@ -10,6 +10,12 @@ import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
+/**
+ * All runtime data a card composable needs at render time.
+ *
+ * [onConfigChange] is called when the user edits a field value on the card.
+ * The editor dispatches [GraphynEditorIntent.UpdateNodeConfig] in response.
+ */
 @Stable
 data class NodeCanvasContext(
     val node: NodeRef,
@@ -33,23 +39,29 @@ private const val DEFAULT_PORT_BUBBLE_GAP = 8
 private const val DEFAULT_NODE_WIDTH = 280
 private const val DEFAULT_NODE_HEIGHT = 180
 
+/**
+ * Contract for a node card renderer. Implement this and register it via
+ * [GraphynEditorPluginRegistrar.registerCanvasCard] to give a node type a custom appearance.
+ *
+ * The canvas uses [nodeWidth], [nodeHeight], and [portAnchorY] to draw connection wires
+ * and render the minimap — override all three to match your card's actual layout.
+ */
 interface NodeCanvasFactory {
     @Composable
     fun NodeCanvas(context: NodeCanvasContext)
 
-    /** Node card width in dp — used to position the right-edge output dots and minimap. */
+    /** Card width in dp. */
     val nodeWidth: Int get() = DEFAULT_NODE_WIDTH
 
-    /** Node card height in dp — used by the minimap for accurate dot sizing. */
+    /** Card height in dp. */
     val nodeHeight: Int get() = DEFAULT_NODE_HEIGHT
 
-    /** Node shape — Rectangle or Circle. Used by the minimap renderer. */
+    /** Card shape used by the minimap renderer. */
     val nodeShape: NodeShape get() = NodeShape.Rectangle
 
     /**
-     * Y offset in dp from the node's top-left corner to the centre of the
-     * port dot for [portIndex] (input or output).  Override to match your
-     * card's actual layout.
+     * Y offset in dp from the card's top-left corner to the centre of the connection dot
+     * for [portIndex]. Override to align wires with your card's actual port row positions.
      */
     fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
         DEFAULT_PORT_SECTION_TOP + DEFAULT_PORT_LABEL_H + DEFAULT_PORT_LABEL_GAP +
