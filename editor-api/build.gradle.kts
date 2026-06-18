@@ -58,5 +58,25 @@ mavenPublishing {
     pom {
         name = "Graphyn Editor API"
         description = "Contract for Graphyn editor panel plugins — register custom inspector UI"
+        url = "https://github.com/ronjunevaldoz/graphyn-editor"
+        licenses {
+            license {
+                name = "Apache License, Version 2.0"
+                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                distribution = "repo"
+            }
+        }
+        developers {
+            developer {
+                id = "ronjunevaldoz"
+                name = "Ron June Valdoz"
+                email = "ronjune.lopez@gmail.com"
+            }
+        }
+        scm {
+            url = "https://github.com/ronjunevaldoz/graphyn-editor"
+            connection = "scm:git:git://github.com/ronjunevaldoz/graphyn-editor.git"
+            developerConnection = "scm:git:ssh://git@github.com/ronjunevaldoz/graphyn-editor.git"
+        }
     }
 }
