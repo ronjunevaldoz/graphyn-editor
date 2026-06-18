@@ -69,6 +69,9 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
          │  model · types · exec  │
          │  validation · registry │
          └────────────────────────┘
+
+ui/cards sits between editor-api and app/shared:
+implements NodeCanvasFactory with ready-to-use card shapes.
 ```
 
 | Module | Artifact | Responsibility |
@@ -76,10 +79,11 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | `core` | `graphyn-core` | Workflow model, types, validation, execution engine — no Compose |
 | `plugin-api` | `graphyn-plugin-api` | `GraphynPlugin` contract — register node specs and executors |
 | `editor-api` | `graphyn-editor-api` | `GraphynEditorPlugin` contract — register canvas cards and inspector panels |
+| `ui/cards` | `graphyn-ui-cards` | Reusable card factories — `ShapeCardFactory`, `FieldCardFactory` |
 | `app/shared` | `graphyn-editor` | Compose Multiplatform canvas and editor shell |
 | `plugins/sample-math` | — | Sample: math runtime plugin |
 | `plugins/sample-logger` | — | Sample: logger runtime + editor plugin |
-| `plugins/style-nodes` | — | Reusable card factories (`ShapeCardFactory`, `DarkHeaderCard`, `FieldCard`) |
+| `plugins/sample-style-nodes` | — | Sample: DarkHeaderCard demo, uses `ui/cards` factories |
 | `server` | — | Sample: JVM server runtime wiring |
 | `app/demo` | — | Sample: full editor app wiring |
 
@@ -108,12 +112,14 @@ graphyn-editor     = { module = "io.github.ronjunevaldoz:graphyn-editor",     ve
 graphyn-editor-api = { module = "io.github.ronjunevaldoz:graphyn-editor-api", version.ref = "graphyn" }
 graphyn-plugin-api = { module = "io.github.ronjunevaldoz:graphyn-plugin-api", version.ref = "graphyn" }
 graphyn-core       = { module = "io.github.ronjunevaldoz:graphyn-core",        version.ref = "graphyn" }
+graphyn-ui-cards   = { module = "io.github.ronjunevaldoz:graphyn-ui-cards",   version.ref = "graphyn" }
 ```
 
 ```kotlin
 // build.gradle.kts
 commonMain.dependencies {
     implementation(libs.graphyn.editor)      // full canvas — includes core, editor-api, plugin-api
+    implementation(libs.graphyn.ui.cards)    // ShapeCardFactory + FieldCardFactory (optional)
     implementation(libs.graphyn.plugin.api)  // runtime plugin contract only (no Compose)
     implementation(libs.graphyn.editor.api)  // editor plugin contract only
     implementation(libs.graphyn.core)        // workflow model only (pure Kotlin)
@@ -123,6 +129,7 @@ commonMain.dependencies {
 | You want to… | Add |
 |---|---|
 | Embed the full canvas | `graphyn-editor` |
+| Use ready-made card shapes | `graphyn-ui-cards` |
 | Write a runtime plugin | `graphyn-plugin-api` |
 | Write an editor plugin (custom card UI) | `graphyn-editor-api` |
 | Use only the workflow model/types | `graphyn-core` |
@@ -171,7 +178,8 @@ object MyEditorPlugin : GraphynEditorPlugin {
     )
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
-        // Custom canvas card using ShapeCardFactory (circle, rounded square, or any Compose Shape)
+        // Custom canvas card using ShapeCardFactory from graphyn-ui-cards
+        // (circle, rounded square, or any Compose Shape)
         registrar.registerCanvasCard(
             "my.transform",
             ShapeCardFactory(
