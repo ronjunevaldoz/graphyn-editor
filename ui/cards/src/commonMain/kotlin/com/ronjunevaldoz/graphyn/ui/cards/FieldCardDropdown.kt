@@ -88,7 +88,7 @@ internal fun MultiSelectRow(
 
 @Composable
 private fun ValueChip(label: String, theme: FieldNodeTheme, onClick: () -> Unit) =
-    Box(Modifier.widthIn(min = 40.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable(onClick = onClick).padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) {
+    Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable(onClick = onClick).padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) {
         BasicText(label, style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
     }
 

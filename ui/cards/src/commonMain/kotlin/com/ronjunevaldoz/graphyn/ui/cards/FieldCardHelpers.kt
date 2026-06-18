@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.BasicText
@@ -98,7 +98,7 @@ private fun InputRow(
                 BasicTextField(
                     value = editText!!,
                     onValueChange = { editText = it },
-                    modifier = Modifier.widthIn(min = 40.dp)
+                    modifier = Modifier.width(VALUE_DP.dp)
                         .focusRequester(focusRequester)
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                     textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp, textAlign = TextAlign.Center),
@@ -112,7 +112,7 @@ private fun InputRow(
                 )
             } else {
                 Box(
-                    modifier = Modifier.widthIn(min = 40.dp).clip(RoundedCornerShape(3.dp))
+                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp))
                         .background(theme.valueBg())
                         .clickable { focusGranted = false; editText = currentValue.label() }
                         .padding(horizontal = 5.dp, vertical = 2.dp),

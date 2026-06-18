@@ -63,7 +63,7 @@ internal fun NumericRow(
                 BasicTextField(
                     value = editText!!,
                     onValueChange = { if (isValidIntermediate(input.type, it)) editText = it },
-                    modifier = Modifier.widthIn(min = 52.dp).focusRequester(focusRequester)
+                    modifier = Modifier.width(VALUE_DP.dp).focusRequester(focusRequester)
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                     textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp, textAlign = TextAlign.Center),
                     decorationBox = { inner ->
@@ -90,7 +90,7 @@ private fun StepperChip(
     onPlus: () -> Unit,
 ) {
     Row(
-        Modifier.clip(RoundedCornerShape(3.dp)).background(theme.valueBg()),
+        Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.clickable(onClick = onMinus).padding(horizontal = 5.dp, vertical = 2.dp)) {
