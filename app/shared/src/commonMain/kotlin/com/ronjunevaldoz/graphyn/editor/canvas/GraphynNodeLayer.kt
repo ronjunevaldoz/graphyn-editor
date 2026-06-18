@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.editor.canvas
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -7,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardFooter
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardHeader
@@ -21,37 +23,61 @@ internal fun GraphynNodeLayer(
     workflow: WorkflowDefinition,
     state: GraphynEditorState,
     nodeSpecs: NodeSpecRegistry,
+    canvasCards: NodeCanvasRegistry?,
     surfaceColor: Color,
 ) {
     workflow.nodes.forEachIndexed { index, node ->
         val spec = nodeSpecs.resolve(node.type)
         val position = state.nodePosition(node.id, index)
-        GraphynNodeCard(
-            modifier = Modifier.offset { position },
-            selected = state.selectedNodeId == node.id,
-            executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
-            onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
-            onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
-            slots = GraphynNodeCardSlots(
-                header = { GraphynNodeCardHeader(node = node, spec = spec) },
-                ports = { GraphynNodeCardPorts(spec = spec) },
-                footer = {
-                    GraphynNodeCardFooter(
-                        outputs = state.outputsFor(node.id),
-                        flattenedOutputs = state.flattenedOutputsFor(node.id),
-                        isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
-                    )
-                },
-            ),
-        )
-        if (spec != null) {
-            GraphynNodePortDots(
+        val factory = spec?.let { canvasCards?.resolve(node.type) }
+
+        if (factory != null && spec != null) {
+            val ctx = NodeCanvasContext(
                 node = node,
-                position = position,
                 spec = spec,
-                state = state,
-                workflow = workflow,
-                nodeSpecs = nodeSpecs,
+                selected = state.selectedNodeId == node.id,
+                executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
+                onSelect = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
+                onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
+            )
+            Box(modifier = Modifier.offset { position }) {
+                with(factory) { NodeCanvas(ctx) }
+            }
+        } else {
+            GraphynNodeCard(
+                modifier = Modifier.offset { position },
+                selected = state.selectedNodeId == node.id,
+                executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
+                onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
+                onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
+                slots = GraphynNodeCardSlots(
+                    header = { GraphynNodeCardHeader(node = node, spec = spec) },
+                    ports = { GraphynNodeCardPorts(spec = spec) },
+                    footer = {
+                        GraphynNodeCardFooter(
+                            outputs = state.outputsFor(node.id),
+                            flattenedOutputs = state.flattenedOutputsFor(node.id),
+                            isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
+                        )
+                    },
+                ),
+            )
+        }
+
+        if (spec != null) {
+            val nodeWidthDp = factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width
+            val inputAnchorYs = spec.inputs.mapIndexed { i, _ ->
+                factory?.portAnchorY(i, true, spec) ?: GraphynCanvasMetrics.portAnchorY(i)
+            }
+            val outputAnchorYs = spec.outputs.mapIndexed { i, _ ->
+                factory?.portAnchorY(i, false, spec) ?: GraphynCanvasMetrics.portAnchorY(i)
+            }
+            GraphynNodePortDots(
+                node = node, position = position, spec = spec,
+                inputAnchorYs = inputAnchorYs,
+                outputAnchorYs = outputAnchorYs,
+                nodeWidthDp = nodeWidthDp,
+                state = state, workflow = workflow, nodeSpecs = nodeSpecs,
                 surfaceColor = surfaceColor,
             )
         }

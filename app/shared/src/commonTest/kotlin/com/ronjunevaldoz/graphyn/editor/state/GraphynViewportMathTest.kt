@@ -7,6 +7,7 @@ import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
+import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -135,7 +136,7 @@ class GraphynViewportMathTest {
         state.setNodePosition("logger-1", IntOffset(100, 120))
         state.viewport = GraphynViewport(scale = 0.5f, offset = Offset(0f, 0f))
 
-        state.moveNode("logger-1", IntOffset(10, 20))
+        state.dispatch(GraphynEditorIntent.MoveNode("logger-1", IntOffset(10, 20)))
 
         assertEquals(IntOffset(120, 160), state.nodePosition("logger-1", 0))
     }
@@ -156,7 +157,7 @@ class GraphynViewportMathTest {
         state.viewport = GraphynViewport(scale = 0.75f, offset = Offset(0f, 0f))
 
         repeat(3) {
-            state.moveNode("logger-1", IntOffset(1, 1))
+            state.dispatch(GraphynEditorIntent.MoveNode("logger-1", IntOffset(1, 1)))
         }
 
         assertEquals(IntOffset(104, 124), state.nodePosition("logger-1", 0))
@@ -191,7 +192,7 @@ class GraphynViewportMathTest {
             layout = initialLayout,
         )
 
-        state.moveNode("logger-1", IntOffset(8, 6))
+        state.dispatch(GraphynEditorIntent.MoveNode("logger-1", IntOffset(8, 6)))
 
         assertEquals(initialBounds, state.graphWorldBounds)
 
@@ -241,11 +242,11 @@ class GraphynViewportMathTest {
         state.updateCanvasSize(IntSize(960, 720))
         state.viewport = GraphynViewport(offset = Offset(1200f, 800f), scale = 1f)
 
-        state.updateViewportTransform(
+        state.dispatch(GraphynEditorIntent.UpdateViewportTransform(
             pan = Offset.Zero,
             zoom = 1f,
             focus = Offset.Zero,
-        )
+        ))
 
         assertTrue(state.viewport.offset.x <= 0f)
         assertTrue(state.viewport.offset.y <= 0f)

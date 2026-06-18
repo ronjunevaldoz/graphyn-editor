@@ -35,6 +35,8 @@ internal fun GraphynOutputPortDot(
     portIndex: Int,
     outputPort: PortSpec,
     position: IntOffset,
+    anchorYDp: Int,
+    nodeWidthDp: Int,
     draft: GraphynConnectionDraft?,
     workflow: WorkflowDefinition,
     nodeSpecs: NodeSpecRegistry,
@@ -55,11 +57,11 @@ internal fun GraphynOutputPortDot(
             .testTag("output-port-${node.id}-${outputPort.name}")
             .hoverable(interactionSource)
             .offset {
-                val nodeWidthPx = GraphynCanvasMetrics.NodeSize.width.dp.roundToPx()
+                val nodeWidthPx = nodeWidthDp.dp.roundToPx()
                 val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
                 IntOffset(
                     x = position.x + nodeWidthPx - dotRadiusPx,
-                    y = position.y + GraphynCanvasMetrics.portAnchorY(portIndex).dp.roundToPx() - dotRadiusPx,
+                    y = position.y + anchorYDp.dp.roundToPx() - dotRadiusPx,
                 )
             }
             .size(GraphynCanvasMetrics.PortDotDiameter.dp)

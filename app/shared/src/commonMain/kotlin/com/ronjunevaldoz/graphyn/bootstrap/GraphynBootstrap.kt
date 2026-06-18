@@ -15,10 +15,12 @@ import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.plugins.samplelogger.SampleLoggerPlugin
 import com.ronjunevaldoz.graphyn.plugins.sampleloggerui.SampleLoggerEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesPlugin
 
 object GraphynDemoPlugins {
-    val runtime: List<GraphynPlugin> = listOf(SampleLoggerPlugin)
-    val editor: List<GraphynEditorPlugin> = listOf(SampleLoggerEditorPlugin)
+    val runtime: List<GraphynPlugin> = listOf(SampleLoggerPlugin, StyleNodesPlugin)
+    val editor: List<GraphynEditorPlugin> = listOf(SampleLoggerEditorPlugin, StyleNodesEditorPlugin)
 }
 
 object GraphynDemoWorkflow {
