@@ -83,6 +83,9 @@ fun DemoApp(
     val pluginRegistry = remember(runtimePlugins) {
         DefaultGraphynPluginRegistry().apply { installAll(runtimePlugins) }
     }
+    val engine = remember(pluginRegistry) {
+        WorkflowExecutionEngine(pluginRegistry.nodeExecutors, pluginRegistry.nodeSpecs)
+    }
     val state = rememberGraphynEditorState(
         initialWorkflow = GraphynDemoWorkflow.initial,
         canvasBounds = canvasBounds,
@@ -102,7 +105,7 @@ fun DemoApp(
                 nodeSpecs = pluginRegistry.nodeSpecs,
                 panels = editorRegistry.panels,
                 canvasCards = editorRegistry.canvasCards,
-                executionEngine = executionEngine,
+                executionEngine = executionEngine ?: engine,
             ),
             appearanceState = appearanceState,
             state = state,
