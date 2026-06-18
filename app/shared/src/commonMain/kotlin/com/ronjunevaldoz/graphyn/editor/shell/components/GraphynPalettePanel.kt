@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
@@ -67,6 +68,7 @@ internal fun GraphynPalettePanel(
             BasicTextField(
                 value = query,
                 onValueChange = { query = it },
+                modifier = Modifier.testTag("palette-search"),
                 textStyle = type.bodySmall.copy(color = colors.textPrimary),
                 singleLine = true,
                 decorationBox = { inner ->
@@ -77,15 +79,18 @@ internal fun GraphynPalettePanel(
                 },
             )
         }
-        val specs = nodeSpecs.all()
-            .let { all -> if (query.isBlank()) all else all.filter { it.label.contains(query, ignoreCase = true) } }
+        val allSpecs = nodeSpecs.all()
+        val specs = if (query.isBlank()) allSpecs else allSpecs.filter {
+            it.label.contains(query, ignoreCase = true) || it.type.contains(query, ignoreCase = true)
+        }
         if (specs.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
+                val emptyText = if (allSpecs.isEmpty()) "No nodes\nregistered yet." else "No results for\n\"$query\""
                 BasicText(
-                    text = "No nodes\nregistered yet.",
+                    text = emptyText,
                     style = type.bodySmall.copy(color = colors.textDisabled),
                 )
             }
