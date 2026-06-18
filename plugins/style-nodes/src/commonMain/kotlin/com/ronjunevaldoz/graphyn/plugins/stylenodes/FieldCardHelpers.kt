@@ -2,7 +2,6 @@ package com.ronjunevaldoz.graphyn.plugins.stylenodes
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,8 +24,9 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 @Composable
 internal fun FieldHeader(label: String, theme: FieldNodeTheme) {
     Box(
-        modifier = Modifier.fillMaxWidth().background(theme.headerBackground())
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().height(HEADER_DP.dp).background(theme.headerBackground())
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.CenterStart,
     ) {
         BasicText(label, style = TextStyle(color = theme.titleColor(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
     }
@@ -34,27 +34,23 @@ internal fun FieldHeader(label: String, theme: FieldNodeTheme) {
 
 @Composable
 internal fun FieldBody(inputs: List<PortSpec>, defaults: Map<String, WorkflowValue>, theme: FieldNodeTheme) {
-    Column(modifier = Modifier.padding(vertical = 2.dp)) {
-        inputs.forEach { input ->
-            InputRow(input = input, defaultVal = defaults[input.name]?.label(), theme = theme)
-        }
+    inputs.forEach { input ->
+        InputRow(input = input, defaultVal = defaults[input.name]?.label(), theme = theme)
     }
 }
 
 @Composable
 internal fun FieldFooter(outputs: List<PortSpec>, theme: FieldNodeTheme) {
-    Spacer(Modifier.height(4.dp))
-    Box(Modifier.fillMaxWidth().height(1.dp).background(theme.divider()))
-    Spacer(Modifier.height(4.dp))
-    Column(modifier = Modifier.padding(vertical = 2.dp)) {
-        outputs.forEach { output -> OutputRow(output = output, theme = theme) }
+    Box(Modifier.fillMaxWidth().height(FOOTER_DIVIDER_DP.dp), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(theme.divider()))
     }
+    outputs.forEach { output -> OutputRow(output = output, theme = theme) }
 }
 
 @Composable
 private fun InputRow(input: PortSpec, defaultVal: String?, theme: FieldNodeTheme) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
@@ -72,7 +68,7 @@ private fun InputRow(input: PortSpec, defaultVal: String?, theme: FieldNodeTheme
 @Composable
 private fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))
