@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -7,16 +8,19 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.mavenPublish)
 }
 
 kotlin {
+    val xcf = XCFramework("GraphynEditor")
     listOf(
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "Shared"
+            baseName = "GraphynEditor"
             isStatic = true
+            xcf.add(this)
         }
     }
     
@@ -84,4 +88,13 @@ kotlin {
 
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+}
+
+mavenPublishing {
+    coordinates("io.github.ronjunevaldoz", "graphyn-editor", "0.1.0")
+
+    pom {
+        name = "Graphyn Editor"
+        description = "Compose Multiplatform workflow editor canvas — canvas, palette, inspector, and gesture handling."
+    }
 }
