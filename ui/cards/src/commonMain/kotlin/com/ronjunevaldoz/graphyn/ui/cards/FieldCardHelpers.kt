@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 @Composable
@@ -51,12 +52,13 @@ internal fun FieldBody(
     theme: FieldNodeTheme,
 ) {
     inputs.forEach { input ->
-        InputRow(
-            input = input,
-            currentValue = values[input.name],
-            onValueChange = { v -> onValueChange(input.name, v) },
-            theme = theme,
-        )
+        val value = values[input.name]
+        val onChange: (WorkflowValue) -> Unit = { onValueChange(input.name, it) }
+        when (val type = input.type) {
+            is WorkflowType.EnumType -> SingleSelectRow(input, value, type.values, onChange, theme)
+            is WorkflowType.MultiEnumType -> MultiSelectRow(input, value, type.values, onChange, theme)
+            else -> InputRow(input, value, onChange, theme)
+        }
     }
 }
 
