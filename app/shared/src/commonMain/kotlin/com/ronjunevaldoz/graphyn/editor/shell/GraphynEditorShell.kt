@@ -29,6 +29,8 @@ import com.ronjunevaldoz.graphyn.editor.design.GraphynDsTheme
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDsTypography
 import com.ronjunevaldoz.graphyn.editor.design.fromPalette
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
+import com.ronjunevaldoz.graphyn.editor.canvas.DefaultNodeCanvasRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
@@ -50,6 +52,7 @@ import androidx.compose.ui.geometry.Offset
 data class GraphynEditorShellDependencies(
     val nodeSpecs: NodeSpecRegistry,
     val panels: EditorPanelRegistry = DefaultEditorPanelRegistry(),
+    val canvasCards: NodeCanvasRegistry = DefaultNodeCanvasRegistry(),
     val executionEngine: WorkflowExecutionEngine? = null,
 )
 
@@ -93,7 +96,7 @@ private fun GraphynEditorShellContent(
         state.workflow?.let(validator::validate).orEmpty()
     }
     val canvasContent: @Composable () -> Unit = canvas ?: {
-        GraphynCanvasSurface(state = state, nodeSpecs = dependencies.nodeSpecs)
+        GraphynCanvasSurface(state = state, nodeSpecs = dependencies.nodeSpecs, canvasCards = dependencies.canvasCards)
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.canvasBackground)) {

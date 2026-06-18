@@ -36,6 +36,7 @@ internal fun GraphynInputPortDot(
     portIndex: Int,
     inputPort: PortSpec,
     position: IntOffset,
+    anchorYDp: Int,
     draft: GraphynConnectionDraft?,
     selectedConn: ConnectionRef?,
     workflow: WorkflowDefinition,
@@ -61,7 +62,7 @@ internal fun GraphynInputPortDot(
                 val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
                 IntOffset(
                     x = position.x - dotRadiusPx,
-                    y = position.y + GraphynCanvasMetrics.portAnchorY(portIndex).dp.roundToPx() - dotRadiusPx,
+                    y = position.y + anchorYDp.dp.roundToPx() - dotRadiusPx,
                 )
             }
             .size(GraphynCanvasMetrics.PortDotDiameter.dp)

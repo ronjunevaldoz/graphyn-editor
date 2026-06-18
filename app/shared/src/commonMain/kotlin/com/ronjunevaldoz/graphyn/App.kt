@@ -11,6 +11,8 @@ import com.ronjunevaldoz.graphyn.bootstrap.GraphynDemoWorkflow
 import com.ronjunevaldoz.graphyn.bootstrap.rememberGraphynDemoPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
 import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
+import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
@@ -75,14 +77,35 @@ fun DemoApp(
     executionEngine: WorkflowExecutionEngine? = null,
     canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
 ) {
-    val editorPanels = rememberGraphynDemoPanelRegistry(editorPlugins)
-    App(
-        branding = branding,
-        plugins = runtimePlugins,
-        panels = editorPanels,
-        executionEngine = executionEngine,
+    val editorRegistry = remember(editorPlugins) {
+        DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
+    }
+    val pluginRegistry = remember(runtimePlugins) {
+        DefaultGraphynPluginRegistry().apply { installAll(runtimePlugins) }
+    }
+    val state = rememberGraphynEditorState(
         initialWorkflow = GraphynDemoWorkflow.initial,
         canvasBounds = canvasBounds,
-        appearanceState = rememberGraphynAppearanceState(),
     )
+    val systemDarkTheme = isSystemInDarkTheme()
+    val appearanceState = rememberGraphynAppearanceState()
+    val darkTheme = appearanceState.resolvedDarkTheme(systemDarkTheme)
+    val activePalette = appearanceState.resolvePalette(darkTheme)
+
+    GraphynTheme(
+        branding = branding.copy(palette = activePalette),
+        darkTheme = darkTheme,
+    ) {
+        GraphynEditorShell(
+            branding = branding,
+            dependencies = GraphynEditorShellDependencies(
+                nodeSpecs = pluginRegistry.nodeSpecs,
+                panels = editorRegistry.panels,
+                canvasCards = editorRegistry.canvasCards,
+                executionEngine = executionEngine,
+            ),
+            appearanceState = appearanceState,
+            state = state,
+        )
+    }
 }

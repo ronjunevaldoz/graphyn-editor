@@ -121,7 +121,7 @@ class EditorRegistryTest {
         assertEquals(IntOffset(304, 0), state.nodePosition("second", 1))
 
         state.setNodePosition("first", IntOffset(120, 80))
-        state.moveNode("first", IntOffset(10, 20))
+        state.dispatch(GraphynEditorIntent.MoveNode("first", IntOffset(10, 20)))
 
         assertEquals(IntOffset(130, 100), state.nodePosition("first", 0))
     }

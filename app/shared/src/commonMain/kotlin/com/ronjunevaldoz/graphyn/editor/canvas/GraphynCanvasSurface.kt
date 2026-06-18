@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynCanvasBackdrop
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionLayer
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynConnectionMidpoints
@@ -32,6 +33,7 @@ fun GraphynCanvasSurface(
     state: GraphynEditorState,
     nodeSpecs: NodeSpecRegistry,
     modifier: Modifier = Modifier,
+    canvasCards: NodeCanvasRegistry? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -92,16 +94,18 @@ fun GraphynCanvasSurface(
         ) {
             GraphynConnectionLayer(
                 workflow = workflow, state = state, nodeSpecs = nodeSpecs,
+                canvasCards = canvasCards,
                 draft = state.connectionDraft, draftPointer = state.connectionDraftPosition,
                 modifier = Modifier.fillMaxSize(), color = outputColor.copy(alpha = 0.6f),
             )
             GraphynConnectionMidpoints(
                 workflow = workflow, state = state, nodeSpecs = nodeSpecs,
+                canvasCards = canvasCards,
                 connectionColor = outputColor, selectedColor = GraphynDs.colors.danger, surfaceColor = surfaceColor,
             )
             GraphynNodeLayer(
                 workflow = workflow, state = state, nodeSpecs = nodeSpecs,
-                surfaceColor = surfaceColor,
+                canvasCards = canvasCards, surfaceColor = surfaceColor,
             )
         }
     }

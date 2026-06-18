@@ -1,6 +1,9 @@
 package com.ronjunevaldoz.graphyn.editor.plugins
 
 import com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi
+import com.ronjunevaldoz.graphyn.editor.canvas.DefaultNodeCanvasRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelFactory
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
@@ -22,10 +25,10 @@ interface GraphynEditorPlugin {
 
 interface GraphynEditorPluginRegistrar {
     val panels: EditorPanelRegistry
+    val canvasCards: NodeCanvasRegistry
 
-    fun registerPanel(nodeType: String, factory: EditorPanelFactory) {
-        panels.register(nodeType, factory)
-    }
+    fun registerPanel(nodeType: String, factory: EditorPanelFactory) = panels.register(nodeType, factory)
+    fun registerCanvasCard(nodeType: String, factory: NodeCanvasFactory) = canvasCards.register(nodeType, factory)
 }
 
 interface GraphynEditorPluginRegistry : GraphynEditorPluginRegistrar {
@@ -43,6 +46,7 @@ interface GraphynEditorPluginRegistry : GraphynEditorPluginRegistrar {
 @GraphynExperimentalApi
 class DefaultGraphynEditorPluginRegistry(
     override val panels: EditorPanelRegistry = DefaultEditorPanelRegistry(),
+    override val canvasCards: NodeCanvasRegistry = DefaultNodeCanvasRegistry(),
 ) : GraphynEditorPluginRegistry {
     private val installedPluginsById = linkedMapOf<String, GraphynEditorPlugin>()
 
