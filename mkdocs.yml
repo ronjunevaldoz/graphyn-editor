@@ -1,0 +1,50 @@
+site_name: Graphyn
+site_description: Kotlin Multiplatform workflow editor library
+site_url: https://ronjunevaldoz.github.io/graphyn-editor
+repo_url: https://github.com/ronjunevaldoz/graphyn-editor
+repo_name: graphyn-editor
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.instant
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Quickstart: getting-started/quickstart.md
+      - Installation: getting-started/installation.md
+  - Architecture:
+      - Overview: architecture/README.md
+      - Core API: architecture/core-api.md
+      - Editor Panels: architecture/editor-panels.md
+      - Plugins: architecture/plugins.md
+      - Type System: architecture/types.md
+  - Testing: architecture/test-coverage.md
+  - Changelog: changelog.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
