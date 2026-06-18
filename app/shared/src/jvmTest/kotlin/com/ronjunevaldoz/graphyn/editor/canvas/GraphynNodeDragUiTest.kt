@@ -71,7 +71,7 @@ class GraphynNodeDragUiTest {
 
         rule.onNodeWithText("logger-1").performTouchInput {
             down(center)
-            moveBy(Offset(120f, 0f))
+            repeat(12) { moveBy(Offset(10f, 0f)) }
             up()
         }
 

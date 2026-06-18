@@ -49,7 +49,7 @@ internal fun Modifier.graphynScrollZoomGesture(state: GraphynEditorState): Modif
     }
 
 internal fun Modifier.graphynPanGesture(state: GraphynEditorState): Modifier =
-    pointerInput(state.workflow, state.nodePositionsByNodeId) {
+    pointerInput(state.workflow) {
         awaitEachGesture {
             val firstDown = awaitFirstDown(requireUnconsumed = false)
             val startWorld = state.screenToWorld(firstDown.position)
