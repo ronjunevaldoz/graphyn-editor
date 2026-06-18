@@ -27,15 +27,22 @@ import kotlin.math.roundToInt
 
 internal const val HEADER_DP = 28
 internal const val ROW_DP = 22
+private const val FOOTER_DIVIDER_DP = 9
 
 class FieldCardFactory(
     val theme: FieldNodeTheme = FieldNodeTheme(),
+    val inputRows: Int = 3,
+    val outputRows: Int = 3,
 ) : NodeCanvasFactory {
     override val nodeWidth = 220
-    override val nodeHeight = 120
+    override val nodeHeight = HEADER_DP + inputRows * ROW_DP + FOOTER_DIVIDER_DP + outputRows * ROW_DP
 
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
-        HEADER_DP + portIndex * ROW_DP + ROW_DP / 2
+        if (isInput) {
+            HEADER_DP + portIndex * ROW_DP + ROW_DP / 2
+        } else {
+            HEADER_DP + spec.inputs.size * ROW_DP + FOOTER_DIVIDER_DP + portIndex * ROW_DP + ROW_DP / 2
+        }
 
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) = FieldCard(context, theme)
@@ -65,8 +72,8 @@ private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
     ) {
         Column {
             FieldHeader(ctx.spec.label, theme)
-            FieldBody(ctx.spec, ctx.spec.defaultValues, theme)
-            FieldFooter(theme)
+            FieldBody(ctx.spec.inputs, ctx.spec.defaultValues, theme)
+            FieldFooter(ctx.spec.outputs, theme)
         }
         NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(4.dp), bg)
     }
