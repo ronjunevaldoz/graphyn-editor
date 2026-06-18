@@ -29,12 +29,10 @@ internal class GraphynNodeLayoutState(
     fun moveNode(nodeId: String, delta: IntOffset) {
         val current = nodePositionsByNodeId[nodeId] ?: IntOffset.Zero
         val remainder = nodeDragRemaindersByNodeId[nodeId] ?: Offset.Zero
-        val scale = viewportScale()
-        val worldDelta = if (scale != 0f) {
-            Offset(delta.x / scale + remainder.x, delta.y / scale + remainder.y)
-        } else {
-            Offset(delta.x.toFloat() + remainder.x, delta.y.toFloat() + remainder.y)
-        }
+        // delta is already in world space — the graphicsLayer viewport transform maps
+        // screen pixels to local coordinates before the drag handler fires, so dividing
+        // by scale here would apply the correction twice.
+        val worldDelta = Offset(delta.x.toFloat() + remainder.x, delta.y.toFloat() + remainder.y)
         val applied = IntOffset(worldDelta.x.roundToInt(), worldDelta.y.roundToInt())
         nodeDragRemaindersByNodeId[nodeId] = Offset(worldDelta.x - applied.x, worldDelta.y - applied.y)
         setNodePosition(
