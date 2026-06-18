@@ -11,7 +11,7 @@ const val GRAPHYN_WORKFLOW_FORMAT_VERSION = 1
 
 @Serializable
 data class WorkflowDocument(
-    val version: Int = GRAPHYN_WORKFLOW_FORMAT_VERSION,
+    val version: Int,
     val workflow: WorkflowDocumentWorkflow,
 )
 
@@ -60,6 +60,7 @@ object GraphynWorkflowJson {
 object DefaultWorkflowDocumentCodec : WorkflowDocumentCodec {
     override fun encode(workflow: WorkflowDefinition): WorkflowDocument {
         return WorkflowDocument(
+            version = GRAPHYN_WORKFLOW_FORMAT_VERSION,
             workflow = WorkflowDocumentWorkflow(
                 id = workflow.id,
                 name = workflow.name,

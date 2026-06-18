@@ -12,6 +12,7 @@ import kotlin.system.measureNanoTime
 private const val WARMUP_ITERATIONS = 10
 private const val SAMPLE_ITERATIONS = 50
 private const val WORKFLOW_SAMPLE_NODES = 96
+private const val WORKFLOW_LARGE_NODES = 500
 private const val FLATTEN_SAMPLE_WIDTH = 24
 
 data class BenchmarkResult(
@@ -23,28 +24,26 @@ data class BenchmarkResult(
 
 fun main() {
     val workflow = sampleWorkflow()
+    val largeWorkflow = sampleWorkflow(WORKFLOW_LARGE_NODES)
     val nestedValues = sampleNestedValues()
+    val encodedWorkflow = DefaultWorkflowJsonCodec.encodeToString(workflow)
+    val encodedLarge = DefaultWorkflowJsonCodec.encodeToString(largeWorkflow)
 
-    val results = listOf(
-        benchmark("json_roundtrip") {
-            val encoded = DefaultWorkflowJsonCodec.encodeToString(workflow)
-            DefaultWorkflowJsonCodec.decodeFromString(encoded)
-        },
-        benchmark("flatten_outputs") {
-            WorkflowValueFlattener.flattenMap(nestedValues)
-        },
-        benchmark("graph_impact") {
-            WorkflowGraphImpact.affectedNodeIds(workflow, "node-1")
-        },
+    data class Row(val result: BenchmarkResult, val nodes: Int)
+
+    val rows = listOf(
+        Row(benchmark("json_encode")        { DefaultWorkflowJsonCodec.encodeToString(workflow) },        WORKFLOW_SAMPLE_NODES),
+        Row(benchmark("json_decode")        { DefaultWorkflowJsonCodec.decodeFromString(encodedWorkflow) }, WORKFLOW_SAMPLE_NODES),
+        Row(benchmark("json_encode_large")  { DefaultWorkflowJsonCodec.encodeToString(largeWorkflow) },   WORKFLOW_LARGE_NODES),
+        Row(benchmark("json_decode_large")  { DefaultWorkflowJsonCodec.decodeFromString(encodedLarge) },  WORKFLOW_LARGE_NODES),
+        Row(benchmark("flatten_outputs")    { WorkflowValueFlattener.flattenMap(nestedValues) },           FLATTEN_SAMPLE_WIDTH),
+        Row(benchmark("graph_impact")       { WorkflowGraphImpact.affectedNodeIds(workflow, "node-1") },  WORKFLOW_SAMPLE_NODES),
     )
 
     println("Graphyn core benchmark snapshot")
     println("workload,nodes,average_us,min_us,max_us")
-    results.forEach { result ->
-        println(
-            "${result.name},${WORKFLOW_SAMPLE_NODES},${format(result.averageMicros)}," +
-                "${format(result.minMicros)},${format(result.maxMicros)}",
-        )
+    rows.forEach { (result, nodes) ->
+        println("${result.name},$nodes,${format(result.averageMicros)},${format(result.minMicros)},${format(result.maxMicros)}")
     }
     println("note,These are local snapshot measurements from the current workspace machine.")
 }
@@ -66,8 +65,8 @@ private fun benchmark(name: String, action: () -> Unit): BenchmarkResult {
     )
 }
 
-private fun sampleWorkflow(): WorkflowDefinition {
-    val nodes = (1..WORKFLOW_SAMPLE_NODES).map { index ->
+private fun sampleWorkflow(nodeCount: Int = WORKFLOW_SAMPLE_NODES): WorkflowDefinition {
+    val nodes = (1..nodeCount).map { index ->
         NodeRef(
             id = "node-$index",
             type = if (index % 2 == 0) "math.add" else "value.constant",
@@ -78,7 +77,7 @@ private fun sampleWorkflow(): WorkflowDefinition {
             ),
         )
     }
-    val connections = (1 until WORKFLOW_SAMPLE_NODES).map { index ->
+    val connections = (1 until nodeCount).map { index ->
         ConnectionRef(
             fromNodeId = "node-$index",
             fromPort = "out",
