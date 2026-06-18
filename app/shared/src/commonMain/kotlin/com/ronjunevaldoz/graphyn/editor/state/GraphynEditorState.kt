@@ -93,12 +93,15 @@ class GraphynEditorState(
             is GraphynEditorIntent.CompleteConnection -> withHistory { completeConnection(intent.toNodeId, intent.toPort) }
             is GraphynEditorIntent.AddNode -> withHistory { addNode(intent.spec) }
             is GraphynEditorIntent.AddNodeAndConnect -> withHistory { addNodeAndConnect(intent.spec, intent.toPort, intent.worldPosition) }
-            is GraphynEditorIntent.UpdateConnectionDraftPosition -> connectionDraftPosition = intent.position
+            is GraphynEditorIntent.UpdateConnectionDraftPosition -> {
+                if (nodePickerState == null) connectionDraftPosition = intent.position
+            }
             is GraphynEditorIntent.UpdateViewportTransform -> viewportState.updateTransform(intent.pan, intent.zoom, intent.focus)
             GraphynEditorIntent.CancelConnection -> { connectionDraft = null; connectionDraftPosition = null; nodePickerState = null }
             is GraphynEditorIntent.ReconnectSelectedConnection -> withHistory { reconnectSelectedConnection(intent.toNodeId, intent.toPort) }
             is GraphynEditorIntent.ShowNodePicker -> {
                 val draft = connectionDraft ?: return
+                connectionDraftPosition = intent.worldPosition
                 nodePickerState = GraphynNodePickerState(intent.screenPosition, intent.worldPosition, draft)
             }
             GraphynEditorIntent.DismissNodePicker -> { nodePickerState = null; connectionDraft = null; connectionDraftPosition = null }

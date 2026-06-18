@@ -43,7 +43,7 @@ internal fun GraphynOutputPortDot(
     state: GraphynEditorState,
     surfaceColor: Color,
 ) {
-    val outputColor = outputPort.type.portColor()
+    val outputColor = outputPort.portColor()
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isInputDraftTarget = draft != null && draft.isFromInput && run {

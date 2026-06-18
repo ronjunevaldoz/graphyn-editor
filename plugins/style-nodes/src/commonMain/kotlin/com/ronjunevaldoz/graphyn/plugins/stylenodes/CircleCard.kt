@@ -26,20 +26,19 @@ import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import kotlin.math.roundToInt
 
-private val CircleBg     = Color(0xFF1A82E2)
-private val SelectBorder = Color(0xFF5BA0EA)
-private val LabelColor   = Color(0xFFE8E8E8)
+private val CircleBg     = Color(0xFF6366F1)  // neutral indigo
+private val SelectBorder = Color(0xFF818CF8)
 
 @Composable
-fun N8nNodeCard(ctx: NodeCanvasContext) {
-    val borderColor = if (ctx.selected) SelectBorder else Color.Transparent
+fun CircleCard(ctx: NodeCanvasContext) {
+    val labelColor = if (ctx.contentColor == Color.Unspecified) Color(0xFF333333) else ctx.contentColor
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape)
                 .background(CircleBg)
-                .border(2.dp, borderColor, CircleShape)
+                .then(if (ctx.selected) Modifier.border(2.dp, SelectBorder, CircleShape) else Modifier)
                 .clickable { ctx.onSelect() }
                 .pointerInput(Unit) {
                     awaitEachGesture {
@@ -56,20 +55,13 @@ fun N8nNodeCard(ctx: NodeCanvasContext) {
             contentAlignment = Alignment.Center,
         ) {
             BasicText(
-                nodeIcon(ctx.spec.type),
-                style = TextStyle(color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold),
+                ctx.spec.label.take(1).uppercase(),
+                style = TextStyle(color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold),
             )
         }
         BasicText(
             ctx.spec.label,
-            style = TextStyle(color = LabelColor, fontSize = 10.sp, fontWeight = FontWeight.Medium),
+            style = TextStyle(color = labelColor, fontSize = 10.sp, fontWeight = FontWeight.Medium),
         )
     }
-}
-
-private fun nodeIcon(type: String): String = when {
-    type.contains("webhook") -> "⚡"
-    type.contains("http")    -> "🌐"
-    type.contains("trigger") -> "▶"
-    else -> type.take(1).uppercase()
 }

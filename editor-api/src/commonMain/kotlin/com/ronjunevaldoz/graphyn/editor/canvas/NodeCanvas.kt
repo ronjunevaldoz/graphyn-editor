@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.editor.canvas
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
@@ -16,6 +17,8 @@ data class NodeCanvasContext(
     val executionStatus: NodeExecutionStatus,
     val onSelect: () -> Unit,
     val onMove: (IntOffset) -> Unit,
+    /** Canvas surface text color — use for labels drawn on the canvas background, not on the card itself. */
+    val contentColor: Color = Color.Unspecified,
 )
 
 private const val DEFAULT_PORT_SECTION_TOP = 70

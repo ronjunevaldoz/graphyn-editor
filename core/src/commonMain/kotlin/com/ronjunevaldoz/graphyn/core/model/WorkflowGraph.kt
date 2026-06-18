@@ -4,6 +4,7 @@ data class PortSpec(
     val name: String,
     val type: WorkflowType,
     val required: Boolean = true,
+    val portColor: Long? = null,
 )
 
 data class NodeSpec(

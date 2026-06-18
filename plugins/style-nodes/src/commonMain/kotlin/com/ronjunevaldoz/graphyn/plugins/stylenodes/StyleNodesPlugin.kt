@@ -14,8 +14,8 @@ object StyleNodesPlugin : GraphynPlugin {
     )
 
     override fun register(registrar: GraphynPluginRegistrar) {
-        registrar.registerNodeSpec(StyleNodesSpecs.comfyKSampler)
-        registrar.registerNodeSpec(StyleNodesSpecs.blenderDistribute)
-        registrar.registerNodeSpec(StyleNodesSpecs.n8nWebhook)
+        registrar.registerNodeSpec(StyleNodesSpecs.kSampler)
+        registrar.registerNodeSpec(StyleNodesSpecs.distributePoints)
+        registrar.registerNodeSpec(StyleNodesSpecs.webhook)
     }
 }

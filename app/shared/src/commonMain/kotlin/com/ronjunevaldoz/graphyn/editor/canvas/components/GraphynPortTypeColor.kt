@@ -1,7 +1,10 @@
 package com.ronjunevaldoz.graphyn.editor.canvas.components
 
 import androidx.compose.ui.graphics.Color
+import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
+
+fun PortSpec.portColor(): Color = portColor?.let { Color(it) } ?: type.portColor()
 
 fun WorkflowType.portColor(): Color = when (this) {
     is WorkflowType.StringType  -> Color(0xFFA8CC8C)
