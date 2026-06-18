@@ -84,34 +84,23 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 
 ## Installation
 
-> **Pre-1.0:** artifacts are not yet published to Maven Central. Publish to local Maven first (see below), or depend on the source modules directly.
-
-### Publish to local Maven
-
-```bash
-git clone https://github.com/ronjunevaldoz/graphyn-editor.git
-cd graphyn-editor
-./gradlew publishToMavenLocal
-```
-
 ### Add to your project
 
-In your root `settings.gradle.kts`, make sure `mavenLocal()` is in your repositories:
+In your root `settings.gradle.kts`:
 
 ```kotlin
 dependencyResolutionManagement {
     repositories {
-        mavenLocal()
         mavenCentral()
         google()
     }
 }
 ```
 
-Then add the dependencies you need in your module's `build.gradle.kts`:
+Add the dependencies you need:
 
 ```kotlin
-// Version catalog entry (gradle/libs.versions.toml)
+// gradle/libs.versions.toml
 [versions]
 graphyn = "0.1.0"
 
@@ -259,7 +248,7 @@ Graphyn separates runtime concerns from editor concerns — you can ship a runti
 | Desktop (JVM) | ✅ |
 | Web (Wasm) | ✅ |
 | Web (JS) | ✅ |
-| iOS | coming soon |
+| iOS | ✅ XCFramework (SPM) |
 | Server (JVM) | ✅ runtime only |
 
 ---
@@ -300,6 +289,22 @@ Full documentation at [ronjunevaldoz.github.io/graphyn-editor](https://ronjuneva
 - [Core API](./docs/architecture/core-api.md)
 - [Engineering lessons](./docs/architecture/lessons.md)
 - [Test coverage](./docs/architecture/test-coverage.md)
+
+---
+
+## iOS (SPM)
+
+Add the package in Xcode → **File → Add Package Dependencies**:
+
+```
+https://github.com/ronjunevaldoz/graphyn-editor
+```
+
+Or in `Package.swift`:
+
+```swift
+.package(url: "https://github.com/ronjunevaldoz/graphyn-editor", from: "0.1.0")
+```
 
 ---
 
