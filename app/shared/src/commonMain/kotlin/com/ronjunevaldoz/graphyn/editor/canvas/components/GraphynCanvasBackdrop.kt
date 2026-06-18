@@ -23,9 +23,8 @@ fun GraphynCanvasBackdrop(
     val backdropEnd = GraphynDs.colors.panelBackground.copy(alpha = 0.06f)
 
     Canvas(modifier = modifier) {
-        val worldSpacing = 28.dp.toPx()
-        val majorWorldSpacing = worldSpacing * 4f
-        val dotRadius = (1.15.dp.toPx() + (1f / viewport.scale) * 0.35f).coerceIn(1.15f, 2.6f)
+        val minorSpacing = 28.dp.toPx()
+        val majorSpacing = minorSpacing * 4f
         val screenTopLeft = viewport.screenToWorld(Offset.Zero)
         val screenBottomRight = viewport.screenToWorld(Offset(size.width, size.height))
         val worldLeft = min(screenTopLeft.x, screenBottomRight.x)
@@ -33,59 +32,34 @@ fun GraphynCanvasBackdrop(
         val worldRight = max(screenTopLeft.x, screenBottomRight.x)
         val worldBottom = max(screenTopLeft.y, screenBottomRight.y)
 
-        val startX = floor(worldLeft / worldSpacing) * worldSpacing
-        val startY = floor(worldTop / worldSpacing) * worldSpacing
-        val majorStartX = floor(worldLeft / majorWorldSpacing) * majorWorldSpacing
-        val majorStartY = floor(worldTop / majorWorldSpacing) * majorWorldSpacing
+        drawRect(brush = Brush.verticalGradient(colors = listOf(backdropStart, backdropEnd)))
 
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(backdropStart, backdropEnd),
-            ),
-        )
-
-        var columnIndex = 0
-        var worldX = startX
-        while (worldX <= worldRight + worldSpacing) {
-            var rowIndex = 0
-            var worldY = startY
-            while (worldY <= worldBottom + worldSpacing) {
-                val screenPoint = viewport.worldToScreen(Offset(worldX, worldY))
-                val isMajor = columnIndex % 4 == 0 && rowIndex % 4 == 0
-                drawCircle(
-                    color = dotColor.copy(alpha = if (isMajor) 0.75f else 0.35f),
-                    radius = if (isMajor) dotRadius * 1.35f else dotRadius,
-                    center = screenPoint,
-                )
-                worldY += worldSpacing
-                rowIndex += 1
-            }
-            worldX += worldSpacing
-            columnIndex += 1
+        // Minor lines — subdivision, drawn first so major lines paint over them
+        var worldX = floor(worldLeft / minorSpacing) * minorSpacing
+        while (worldX <= worldRight + minorSpacing) {
+            val screenX = viewport.worldToScreen(Offset(worldX, 0f)).x
+            drawLine(dotColor.copy(alpha = 0.18f), Offset(screenX, 0f), Offset(screenX, size.height), strokeWidth = 1f)
+            worldX += minorSpacing
+        }
+        var worldY = floor(worldTop / minorSpacing) * minorSpacing
+        while (worldY <= worldBottom + minorSpacing) {
+            val screenY = viewport.worldToScreen(Offset(0f, worldY)).y
+            drawLine(dotColor.copy(alpha = 0.18f), Offset(0f, screenY), Offset(size.width, screenY), strokeWidth = 1f)
+            worldY += minorSpacing
         }
 
-        var worldMajorX = majorStartX
-        while (worldMajorX <= worldRight + majorWorldSpacing) {
-            val screenMajorX = viewport.worldToScreen(Offset(worldMajorX, 0f)).x
-            drawLine(
-                color = dotColor.copy(alpha = 0.05f),
-                start = Offset(screenMajorX, 0f),
-                end = Offset(screenMajorX, size.height),
-                strokeWidth = 1f,
-            )
-            worldMajorX += majorWorldSpacing
+        // Major lines — cell boundaries, painted on top
+        var worldMajorX = floor(worldLeft / majorSpacing) * majorSpacing
+        while (worldMajorX <= worldRight + majorSpacing) {
+            val screenX = viewport.worldToScreen(Offset(worldMajorX, 0f)).x
+            drawLine(dotColor.copy(alpha = 0.45f), Offset(screenX, 0f), Offset(screenX, size.height), strokeWidth = 1f)
+            worldMajorX += majorSpacing
         }
-
-        var worldMajorY = majorStartY
-        while (worldMajorY <= worldBottom + majorWorldSpacing) {
-            val screenMajorY = viewport.worldToScreen(Offset(0f, worldMajorY)).y
-            drawLine(
-                color = dotColor.copy(alpha = 0.05f),
-                start = Offset(0f, screenMajorY),
-                end = Offset(size.width, screenMajorY),
-                strokeWidth = 1f,
-            )
-            worldMajorY += majorWorldSpacing
+        var worldMajorY = floor(worldTop / majorSpacing) * majorSpacing
+        while (worldMajorY <= worldBottom + majorSpacing) {
+            val screenY = viewport.worldToScreen(Offset(0f, worldMajorY)).y
+            drawLine(dotColor.copy(alpha = 0.45f), Offset(0f, screenY), Offset(size.width, screenY), strokeWidth = 1f)
+            worldMajorY += majorSpacing
         }
     }
 }
