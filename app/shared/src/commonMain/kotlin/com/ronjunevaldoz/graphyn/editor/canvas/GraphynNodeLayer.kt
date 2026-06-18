@@ -40,6 +40,7 @@ internal fun GraphynNodeLayer(
                 executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
                 onSelect = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
                 onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
+                onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
                 contentColor = GraphynDs.colors.textPrimary,
             )
             Box(modifier = Modifier.offset { position }) {

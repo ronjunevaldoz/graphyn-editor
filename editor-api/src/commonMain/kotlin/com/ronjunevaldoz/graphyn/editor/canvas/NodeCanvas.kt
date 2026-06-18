@@ -8,6 +8,7 @@ import com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 @Stable
 data class NodeCanvasContext(
@@ -17,6 +18,7 @@ data class NodeCanvasContext(
     val executionStatus: NodeExecutionStatus,
     val onSelect: () -> Unit,
     val onMove: (IntOffset) -> Unit,
+    val onConfigChange: (key: String, value: WorkflowValue) -> Unit = { _, _ -> },
     /** Canvas surface text color — use for labels drawn on the canvas background, not on the card itself. */
     val contentColor: Color = Color.Unspecified,
 )

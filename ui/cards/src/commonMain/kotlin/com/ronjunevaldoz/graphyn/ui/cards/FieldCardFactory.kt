@@ -73,7 +73,12 @@ private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
     ) {
         Column {
             FieldHeader(ctx.spec.label, theme)
-            FieldBody(ctx.spec.inputs, ctx.spec.defaultValues, theme)
+            FieldBody(
+                inputs = ctx.spec.inputs,
+                values = ctx.spec.defaultValues + ctx.node.config,
+                onValueChange = { key, value -> ctx.onConfigChange(key, value) },
+                theme = theme,
+            )
             FieldFooter(ctx.spec.outputs, theme)
         }
         NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(4.dp), bg)
