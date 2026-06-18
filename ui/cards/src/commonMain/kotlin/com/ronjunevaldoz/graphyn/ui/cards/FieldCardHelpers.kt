@@ -76,17 +76,15 @@ private fun InputRow(
     theme: FieldNodeTheme,
 ) {
     var editText by remember { mutableStateOf<String?>(null) }
+    var focusGranted by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-
     fun commit() {
         val raw = editText ?: return
         editText = null
         val parsed = parseValue(currentValue, raw) ?: return
         onValueChange(parsed)
     }
-
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
-
     Row(
         modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -100,7 +98,7 @@ private fun InputRow(
                     onValueChange = { editText = it },
                     modifier = Modifier.widthIn(min = 40.dp)
                         .focusRequester(focusRequester)
-                        .onFocusChanged { if (!it.isFocused) commit() },
+                        .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                     textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp, textAlign = TextAlign.Center),
                     decorationBox = { inner ->
                         Box(
@@ -114,7 +112,7 @@ private fun InputRow(
                 Box(
                     modifier = Modifier.widthIn(min = 40.dp).clip(RoundedCornerShape(3.dp))
                         .background(theme.valueBg())
-                        .clickable { editText = currentValue.label() }
+                        .clickable { focusGranted = false; editText = currentValue.label() }
                         .padding(horizontal = 5.dp, vertical = 2.dp),
                     contentAlignment = Alignment.Center,
                 ) { BasicText(currentValue.label(), style = TextStyle(color = theme.valueText(), fontSize = 10.sp)) }
