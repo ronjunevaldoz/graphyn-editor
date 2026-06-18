@@ -24,7 +24,7 @@ kotlin {
     }
 
     androidLibrary {
-        namespace = "com.ronjunevaldoz.graphyn.plugins.stylenodes"
+        namespace = "com.ronjunevaldoz.graphyn.plugins.samplestylenodes"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -42,7 +42,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.pluginApi)
-            api(projects.editorApi)
+            api(projects.ui.cards)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)

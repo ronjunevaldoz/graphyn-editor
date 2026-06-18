@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.plugins.stylenodes
+package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -101,7 +101,10 @@ private fun ShapeCard(
                 style = TextStyle(color = theme.labelColor(), fontSize = 10.sp, fontWeight = FontWeight.Medium),
             )
         }
-        NodeStatusBadge(status = ctx.executionStatus, surfaceColor = bg,
-            modifier = Modifier.align(Alignment.TopEnd))
+        NodeStatusBadge(
+            status = ctx.executionStatus,
+            surfaceColor = bg,
+            modifier = Modifier.align(Alignment.TopEnd),
+        )
     }
 }

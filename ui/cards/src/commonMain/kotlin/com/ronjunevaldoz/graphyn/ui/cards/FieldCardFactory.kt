@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.plugins.stylenodes
+package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
