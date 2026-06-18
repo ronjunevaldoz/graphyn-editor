@@ -94,10 +94,10 @@ private fun ValueChip(label: String, theme: FieldNodeTheme, onClick: () -> Unit)
 
 @Composable
 private fun DropdownMenu(options: List<String>, theme: FieldNodeTheme, onSelect: (String) -> Unit) {
-    Column(Modifier.widthIn(min = 80.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
+    Column(Modifier.widthIn(min = 80.dp, max = 160.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
         options.forEach { option ->
             Box(Modifier.fillMaxWidth().clickable { onSelect(option) }.padding(horizontal = 8.dp, vertical = 5.dp)) {
-                BasicText(option, style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+                BasicText(option, style = TextStyle(color = theme.valueText(), fontSize = 10.sp), maxLines = 1)
             }
         }
     }
@@ -105,12 +105,12 @@ private fun DropdownMenu(options: List<String>, theme: FieldNodeTheme, onSelect:
 
 @Composable
 private fun MultiDropdownMenu(options: List<String>, selected: Set<String>, theme: FieldNodeTheme, onToggle: (String) -> Unit) {
-    Column(Modifier.widthIn(min = 80.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
+    Column(Modifier.widthIn(min = 80.dp, max = 160.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
         options.forEach { option ->
             Row(Modifier.fillMaxWidth().clickable { onToggle(option) }.padding(horizontal = 8.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(if (option in selected) theme.selectedBorder() else theme.valueBg()).border(1.dp, theme.border(), RoundedCornerShape(2.dp)))
                 Spacer(Modifier.width(6.dp))
-                BasicText(option, style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+                BasicText(option, style = TextStyle(color = theme.valueText(), fontSize = 10.sp), maxLines = 1)
             }
         }
     }
