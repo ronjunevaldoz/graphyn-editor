@@ -5,8 +5,8 @@ import androidx.compose.ui.graphics.Color
 object GraphynThemePresets {
     val defaults: List<GraphynThemePreset> = listOf(
         GraphynThemePreset(
-            id = "n8n",
-            label = "n8n",
+            id = "coral",
+            label = "Coral",
             lightPalette = GraphynPalette(
                 primary = Color(0xFFF55A4A),
                 background = Color(0xFFEEF0F5),
