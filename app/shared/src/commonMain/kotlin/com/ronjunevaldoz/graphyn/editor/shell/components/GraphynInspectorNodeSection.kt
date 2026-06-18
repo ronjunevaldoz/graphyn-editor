@@ -42,6 +42,7 @@ internal fun GraphynInspectorNodeSection(
                     spec?.label ?: node.type,
                     style = type.nodeTitle.copy(color = colors.textPrimary),
                 )
+                spec?.description?.let { BasicText(it, style = type.bodySmall.copy(color = colors.textSecondary)) }
                 BasicText(node.type, style = type.bodySmall.copy(color = colors.textSecondary))
                 BasicText(node.id, style = type.mono.copy(color = colors.textDisabled))
             }

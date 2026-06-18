@@ -21,6 +21,7 @@ object StyleNodesSpecs {
     val kSampler = NodeSpec(
         type = "stylenodes.ksampler",
         label = "KSampler",
+        description = "Runs the diffusion sampling loop using a model, conditioning, and latent image.",
         category = CATEGORY_AI,
         inputs = listOf(
             PortSpec("model",    WorkflowType.OpaqueType, portColor = COLOR_MODEL),
@@ -40,6 +41,7 @@ object StyleNodesSpecs {
     val distributePoints = NodeSpec(
         type = "stylenodes.distribute_points",
         label = "Distribute Points",
+        description = "Scatters points across a mesh surface using the chosen density and distribution mode.",
         category = CATEGORY_GEOMETRY,
         inputs = listOf(
             PortSpec("mesh",     WorkflowType.OpaqueType,                                          portColor = COLOR_GEOMETRY),
@@ -62,6 +64,7 @@ object StyleNodesSpecs {
     val webhook = NodeSpec(
         type = "stylenodes.webhook",
         label = "Webhook",
+        description = "Receives an incoming HTTP request and emits its body as a record into the workflow.",
         category = CATEGORY_AUTOMATION,
         inputs = emptyList(),
         outputs = listOf(
