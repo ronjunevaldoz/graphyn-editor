@@ -2,15 +2,16 @@ package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 
 class FieldNodeTheme(
-    val background: @Composable () -> Color = { NODE_BG },
-    val headerBackground: @Composable () -> Color = { FIELD_HEADER_BG },
-    val border: @Composable () -> Color = { NODE_BORDER },
-    val selectedBorder: @Composable () -> Color = { NODE_SELECT },
-    val titleColor: @Composable () -> Color = { NODE_TEXT },
-    val labelColor: @Composable () -> Color = { NODE_MUTED },
-    val valueBg: @Composable () -> Color = { FIELD_VALUE_BG },
-    val valueText: @Composable () -> Color = { NODE_TEXT },
-    val divider: @Composable () -> Color = { NODE_BORDER },
+    val background: @Composable () -> Color = { appTheme.colors.surface },
+    val headerBackground: @Composable () -> Color = { appTheme.colors.surfaceVariant },
+    val border: @Composable () -> Color = { appTheme.colors.border },
+    val selectedBorder: @Composable () -> Color = { appTheme.colors.borderFocus },
+    val titleColor: @Composable () -> Color = { appTheme.colors.onSurface },
+    val labelColor: @Composable () -> Color = { appTheme.colors.onSurfaceVariant },
+    val valueBg: @Composable () -> Color = { appTheme.colors.muted },
+    val valueText: @Composable () -> Color = { appTheme.colors.onSurface },
+    val divider: @Composable () -> Color = { appTheme.colors.border },
 )

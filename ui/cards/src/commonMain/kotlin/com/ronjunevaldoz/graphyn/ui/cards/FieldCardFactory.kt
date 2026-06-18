@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
@@ -52,7 +53,7 @@ class FieldCardFactory(
 private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
     val bg = theme.background()
     val borderColor = if (ctx.selected) theme.selectedBorder() else theme.border()
-    val shape = RoundedCornerShape(CORNER_RADIUS.dp)
+    val shape = RoundedCornerShape(appTheme.shapes.md)
     Box(
         modifier = Modifier
             .width(220.dp).clip(shape).background(bg).border(1.dp, borderColor, shape)
