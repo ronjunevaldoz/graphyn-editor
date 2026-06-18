@@ -122,7 +122,10 @@ class GraphynViewportMathTest {
     }
 
     @Test
-    fun moveNodeNormalizesDragDeltaByViewportScale() {
+    fun moveNodeAppliesDeltaDirectlyAsWorldSpaceOffset() {
+        // graphicsLayer already normalises screen deltas by viewport scale before
+        // the drag handler fires, so MoveNode receives world-space deltas and
+        // moveNode must NOT divide again.
         val state = GraphynEditorState(
             WorkflowDefinition(
                 id = "workflow-move",
@@ -138,7 +141,7 @@ class GraphynViewportMathTest {
 
         state.dispatch(GraphynEditorIntent.MoveNode("logger-1", IntOffset(10, 20)))
 
-        assertEquals(IntOffset(120, 160), state.nodePosition("logger-1", 0))
+        assertEquals(IntOffset(110, 140), state.nodePosition("logger-1", 0))
     }
 
     @Test
@@ -160,7 +163,7 @@ class GraphynViewportMathTest {
             state.dispatch(GraphynEditorIntent.MoveNode("logger-1", IntOffset(1, 1)))
         }
 
-        assertEquals(IntOffset(104, 124), state.nodePosition("logger-1", 0))
+        assertEquals(IntOffset(103, 123), state.nodePosition("logger-1", 0))
     }
 
     @Test

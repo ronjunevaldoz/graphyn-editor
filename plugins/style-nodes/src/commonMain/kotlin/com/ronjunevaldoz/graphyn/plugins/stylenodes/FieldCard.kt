@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 import kotlin.math.roundToInt
 
 private val BgColor      = Color(0xFF2A2A2A)
@@ -84,6 +85,11 @@ fun FieldCard(ctx: NodeCanvasContext) {
                 }
             }
         }
+        NodeStatusBadge(
+            status = ctx.executionStatus,
+            surfaceColor = BgColor,
+            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+        )
     }
 }
 

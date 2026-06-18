@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 import kotlin.math.roundToInt
 
 private val BgColor      = Color(0xFF1A1A1A)
@@ -77,6 +78,11 @@ fun DarkHeaderCard(ctx: NodeCanvasContext) {
                 }
             }
         }
+        NodeStatusBadge(
+            status = ctx.executionStatus,
+            surfaceColor = BgColor,
+            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+        )
     }
 }
 
