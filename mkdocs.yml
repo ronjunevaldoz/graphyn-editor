@@ -36,6 +36,7 @@ nav:
       - Editor Panels: architecture/editor-panels.md
       - Plugins: architecture/plugins.md
       - Type System: architecture/types.md
+      - Node Design Research: architecture/node-design-research.md
   - Testing: architecture/test-coverage.md
   - Changelog: changelog.md
 
