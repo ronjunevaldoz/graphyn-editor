@@ -40,10 +40,12 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | Pan & zoom canvas with minimap | |
 | Connect nodes via port drag-and-drop | |
 | Plugin system for runtime nodes and editor cards | |
-| Inspector panel with per-node custom UI | |
+| Inspector panel with per-node custom UI + write-back | |
 | Built-in light / dark mode + theme presets | |
 | Workflow validation with typed errors | |
 | Workflow execution engine | |
+| Observable workflow state (`StateFlow`) | |
+| Auto-layout (topological sort, Cmd+Shift+L) | |
 | Screenshot tests via Roborazzi | |
 
 ---
@@ -59,7 +61,7 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
      ┌───────▼──────┐  ┌──────▼───────┐
      │  editor-api  │  │  plugin-api  │
      │ panel slots  │  │ node specs   │
-     │ editor plugs │  │ executors    │
+     │ canvas cards │  │ executors    │
      └───────┬──────┘  └──────┬───────┘
              │                │
          ┌───▼────────────────▼───┐
@@ -75,16 +77,15 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | `plugin-api` | `graphyn-plugin-api` | `GraphynPlugin` contract — register node specs and executors |
 | `editor-api` | `graphyn-editor-api` | `GraphynEditorPlugin` contract — register canvas cards and inspector panels |
 | `app/shared` | `graphyn-editor` | Compose Multiplatform canvas and editor shell |
-| `server` | — | JVM runtime host |
-| `plugins/sample-math` | — | Reference math plugin |
-| `plugins/sample-logger` | — | Reference logger plugin |
-| `plugins/style-nodes` | — | Reference custom card plugin |
+| `plugins/sample-math` | — | Sample: math runtime plugin |
+| `plugins/sample-logger` | — | Sample: logger runtime + editor plugin |
+| `plugins/style-nodes` | — | Reusable card factories (`ShapeCardFactory`, `DarkHeaderCard`, `FieldCard`) |
+| `server` | — | Sample: JVM server runtime wiring |
+| `app/demo` | — | Sample: full editor app wiring |
 
 ---
 
 ## Installation
-
-### Add to your project
 
 In your root `settings.gradle.kts`:
 
@@ -96,8 +97,6 @@ dependencyResolutionManagement {
     }
 }
 ```
-
-Add the dependencies you need:
 
 ```kotlin
 // gradle/libs.versions.toml
@@ -113,31 +112,18 @@ graphyn-core       = { module = "io.github.ronjunevaldoz:graphyn-core",        v
 
 ```kotlin
 // build.gradle.kts
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            // Full editor canvas (includes core, editor-api, plugin-api transitively)
-            implementation(libs.graphyn.editor)
-
-            // Only the plugin contract — no Compose dependency
-            implementation(libs.graphyn.plugin.api)
-
-            // Only the editor plugin contract (custom card UI)
-            implementation(libs.graphyn.editor.api)
-
-            // Only the core model — pure Kotlin, no Compose
-            implementation(libs.graphyn.core)
-        }
-    }
+commonMain.dependencies {
+    implementation(libs.graphyn.editor)      // full canvas — includes core, editor-api, plugin-api
+    implementation(libs.graphyn.plugin.api)  // runtime plugin contract only (no Compose)
+    implementation(libs.graphyn.editor.api)  // editor plugin contract only
+    implementation(libs.graphyn.core)        // workflow model only (pure Kotlin)
 }
 ```
 
-**Dependency map:**
-
 | You want to… | Add |
 |---|---|
-| Embed the full canvas in your app | `graphyn-editor` |
-| Write a runtime plugin (node specs + executors) | `graphyn-plugin-api` |
+| Embed the full canvas | `graphyn-editor` |
+| Write a runtime plugin | `graphyn-plugin-api` |
 | Write an editor plugin (custom card UI) | `graphyn-editor-api` |
 | Use only the workflow model/types | `graphyn-core` |
 
@@ -145,85 +131,117 @@ kotlin {
 
 ## Quick Start
 
-### Step 1 — Implement a runtime plugin
-
-A runtime plugin registers node specs (what nodes look like and their ports) and executors (what they do).
+### Step 1 — Runtime plugin (node specs + executors)
 
 ```kotlin
-object MathPlugin : GraphynPlugin {
+object MyPlugin : GraphynPlugin {
     override val metadata = GraphynPluginMetadata(
-        id = "com.example.math",
-        displayName = "Math",
+        id = "com.example.my",
+        displayName = "My Plugin",
         version = "1.0.0",
     )
 
     override fun register(registrar: GraphynPluginRegistrar) {
         registrar.registerNodeSpec(
             NodeSpec(
-                type = "math.add",
-                label = "Add",
-                inputs = listOf(
-                    PortSpec(name = "left",  type = WorkflowType.DoubleType),
-                    PortSpec(name = "right", type = WorkflowType.DoubleType),
-                ),
-                outputs = listOf(
-                    PortSpec(name = "result", type = WorkflowType.DoubleType),
-                ),
-                defaultValues = mapOf(
-                    "left"  to WorkflowValue.DoubleValue(0.0),
-                    "right" to WorkflowValue.DoubleValue(0.0),
-                ),
+                type = "my.transform",
+                label = "Transform",
+                category = "com.example.text",
+                inputs  = listOf(PortSpec("input",  WorkflowType.String)),
+                outputs = listOf(PortSpec("output", WorkflowType.String)),
+                defaultValues = mapOf("input" to WorkflowValue.StringValue("hello")),
             )
         )
-        registrar.registerExecutor("math.add") { inputs ->
-            val left  = (inputs["left"]  as? WorkflowValue.DoubleValue)?.value ?: 0.0
-            val right = (inputs["right"] as? WorkflowValue.DoubleValue)?.value ?: 0.0
-            mapOf("result" to WorkflowValue.DoubleValue(left + right))
+        registrar.registerExecutor("my.transform") { inputs ->
+            val value = (inputs["input"] as? WorkflowValue.StringValue)?.value ?: ""
+            mapOf("output" to WorkflowValue.StringValue(value.uppercase()))
         }
     }
 }
 ```
 
-### Step 2 — Implement an editor panel plugin (optional)
-
-An editor panel plugin adds a custom inspector UI for a node type.
+### Step 2 — Editor plugin (canvas card + inspector panel)
 
 ```kotlin
-object MathEditorPlugin : GraphynEditorPlugin {
+object MyEditorPlugin : GraphynEditorPlugin {
     override val metadata = GraphynEditorPluginMetadata(
-        id = "com.example.math.editor",
-        displayName = "Math Editor",
+        id = "com.example.my.editor",
+        displayName = "My Editor Plugin",
         version = "1.0.0",
     )
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
-        registrar.registerPanel("math.add", EditorPanelFactory { context ->
-            BasicText("Result: ${context.selectedNodeOutputs["result"]}")
+        // Custom canvas card using ShapeCardFactory (circle, rounded square, or any Compose Shape)
+        registrar.registerCanvasCard(
+            "my.transform",
+            ShapeCardFactory(
+                shape = CircleShape,
+                theme = ShapeNodeTheme(
+                    background     = { Color(0xFF6366F1) },
+                    selectedBorder = { Color(0xFF8B5CF6) },
+                ),
+                // Optional: replace initials with a custom avatar composable
+                avatar = { node, spec ->
+                    AsyncImage(
+                        url = (node.config["avatar_url"] as? WorkflowValue.StringValue)?.value,
+                    )
+                }
+            )
+        )
+
+        // Custom inspector panel with editable node config
+        registrar.registerPanel("my.transform", EditorPanelFactory { ctx ->
+            val input = (ctx.selectedNode?.config?.get("input") as? WorkflowValue.StringValue)?.value ?: ""
+            BasicTextField(
+                value = input,
+                onValueChange = { ctx.onConfigChange("input", WorkflowValue.StringValue(it)) },
+            )
         })
+
+        // Node category (groups nodes in the palette)
+        registrar.registerCategory(
+            "com.example.text",
+            NodeCategoryMeta(label = "Text", color = 0xFF6366F1L),
+        )
     }
 }
 ```
+
+`ShapeCardFactory` accepts any Compose `Shape` — `CircleShape`, `RoundedCornerShape(12.dp)`, etc. Theme colors use `@Composable` lambdas so they can read from any `CompositionLocal` at render time. If no `avatar` is provided, the card shows the first letter of the node label.
 
 ### Step 3 — Wire into the editor shell
 
 ```kotlin
 @OptIn(GraphynExperimentalApi::class)
-val runtimeRegistry = DefaultGraphynPluginRegistry().apply {
-    install(MathPlugin)
-}
-
 @Composable
 fun App() {
+    val runtimeRegistry = remember {
+        DefaultGraphynPluginRegistry().apply { install(MyPlugin) }
+    }
+    val editorRegistry = remember {
+        DefaultGraphynEditorPluginRegistry().apply { install(MyEditorPlugin) }
+    }
+    val state = rememberGraphynEditorState()
+
+    // Observe workflow changes outside Compose (e.g. save to database)
+    LaunchedEffect(state) {
+        state.workflowFlow.collect { workflow ->
+            database.save(workflow)
+        }
+    }
+
     GraphynEditorShell(
+        state = state,
         dependencies = GraphynEditorShellDependencies(
-            nodeSpecs = runtimeRegistry.nodeSpecs,
+            nodeSpecs      = runtimeRegistry.nodeSpecs,
+            canvasCards    = editorRegistry.canvasCards,
+            panels         = editorRegistry.panels,
+            categoryRegistry = editorRegistry.categories,
         ),
         branding = GraphynBranding(appName = "My Studio"),
     )
 }
 ```
-
-A full working reference is in [`plugins/sample-math`](./plugins/sample-math).
 
 ---
 
@@ -233,10 +251,12 @@ Graphyn separates runtime concerns from editor concerns — you can ship a runti
 
 | Layer | Module | Stable contract |
 |---|---|---|
-| Runtime | `plugin-api` | `GraphynPlugin`, `GraphynPluginRegistrar`, `GraphynPluginRegistry` |
-| Editor | `editor-api` | `GraphynEditorPlugin`, `GraphynEditorPluginRegistrar`, `EditorPanelFactory` |
+| Runtime | `plugin-api` | `GraphynPlugin`, `GraphynPluginRegistrar`, `NodeSpec`, `NodeExecutor` |
+| Editor cards | `editor-api` | `NodeCanvasFactory`, `GraphynEditorPluginRegistrar` |
+| Editor panels | `editor-api` | `EditorPanelFactory`, `EditorPanelContext` (includes `onConfigChange`) |
+| State observation | `editor-api` | `GraphynEditorStateView` — `workflow`, `workflowFlow: StateFlow`, `selectedNodeId` |
 
-`Default*` implementations (`DefaultGraphynPluginRegistry`, `DefaultEditorPanelRegistry`, etc.) are marked `@GraphynExperimentalApi` — their signatures may evolve. The interfaces above are the stable contract.
+`Default*` implementations are marked `@GraphynExperimentalApi` — their signatures may evolve. The interfaces above are stable.
 
 ---
 
@@ -256,17 +276,10 @@ Graphyn separates runtime concerns from editor concerns — you can ship a runti
 ## Running
 
 ```bash
-# Desktop
-./gradlew :app:desktopApp:run
-
-# Android
-./gradlew :app:androidApp:assembleDebug
-
-# Web (Wasm)
-./gradlew :app:webApp:wasmJsBrowserDevelopmentRun
-
-# Web (JS)
-./gradlew :app:webApp:jsBrowserDevelopmentRun
+./gradlew :app:desktopApp:run                          # Desktop
+./gradlew :app:androidApp:assembleDebug                # Android
+./gradlew :app:webApp:wasmJsBrowserDevelopmentRun      # Web (Wasm)
+./gradlew :app:webApp:jsBrowserDevelopmentRun          # Web (JS)
 ```
 
 ---
