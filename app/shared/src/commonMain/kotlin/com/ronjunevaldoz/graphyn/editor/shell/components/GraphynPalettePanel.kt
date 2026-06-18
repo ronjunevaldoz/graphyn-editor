@@ -15,9 +15,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +38,7 @@ internal fun GraphynPalettePanel(
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
+    var query by remember { mutableStateOf("") }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -59,12 +64,21 @@ internal fun GraphynPalettePanel(
                 .border(1.dp, colors.border, RoundedCornerShape(4.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            BasicText(
-                text = "Search nodes…",
-                style = type.bodySmall.copy(color = colors.textDisabled),
+            BasicTextField(
+                value = query,
+                onValueChange = { query = it },
+                textStyle = type.bodySmall.copy(color = colors.textPrimary),
+                singleLine = true,
+                decorationBox = { inner ->
+                    if (query.isEmpty()) {
+                        BasicText("Search nodes…", style = type.bodySmall.copy(color = colors.textDisabled))
+                    }
+                    inner()
+                },
             )
         }
         val specs = nodeSpecs.all()
+            .let { all -> if (query.isBlank()) all else all.filter { it.label.contains(query, ignoreCase = true) } }
         if (specs.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),

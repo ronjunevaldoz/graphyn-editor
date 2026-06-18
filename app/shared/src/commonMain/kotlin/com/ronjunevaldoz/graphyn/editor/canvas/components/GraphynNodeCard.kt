@@ -27,19 +27,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
-import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import kotlin.math.roundToInt
-
-private enum class PortSide { Input, Output }
 
 @Composable
 fun GraphynNodeCard(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
+    executionStatus: NodeExecutionStatus = NodeExecutionStatus.Idle,
     onClick: () -> Unit = {},
     onMove: (IntOffset) -> Unit,
     slots: GraphynNodeCardSlots = GraphynNodeCardSlots(),
@@ -78,6 +77,10 @@ fun GraphynNodeCard(
                 with(slots) { header(); body(); ports(); footer() }
             }
         }
+        GraphynNodeStatusBadge(
+            status = executionStatus,
+            modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+        )
     }
 }
 
@@ -91,58 +94,3 @@ fun GraphynNodeCardHeader(node: NodeRef, spec: NodeSpec?) {
     }
 }
 
-@Composable
-fun GraphynNodeCardPorts(spec: NodeSpec?) {
-    val colors = GraphynDs.colors
-    val type = GraphynDs.type
-    if (spec == null) {
-        BasicText("No node spec registered yet.", style = type.bodySmall.copy(color = colors.textDisabled))
-        return
-    }
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        GraphynPortColumn("Inputs", spec.inputs.map { it.name }, PortSide.Input)
-        GraphynPortColumn("Outputs", spec.outputs.map { it.name }, PortSide.Output)
-    }
-}
-
-@Composable
-fun GraphynNodeCardFooter(
-    outputs: Map<String, WorkflowValue>,
-    flattenedOutputs: Map<String, WorkflowValue>,
-    isConnectingFrom: Boolean,
-) {
-    val type = GraphynDs.type
-    val colors = GraphynDs.colors
-    if (outputs.isNotEmpty()) {
-        BasicText("Outputs: ${outputs.keys.joinToString()}", style = type.caption.copy(color = colors.textDisabled))
-    }
-    if (isConnectingFrom) {
-        BasicText("Connecting…", style = type.caption.copy(color = colors.accent))
-    }
-}
-
-@Composable
-private fun GraphynPortColumn(title: String, ports: List<String>, side: PortSide) {
-    val colors = GraphynDs.colors
-    val type = GraphynDs.type
-    Column(modifier = Modifier.width(110.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        BasicText(title, style = type.labelSmall.copy(color = colors.textSecondary))
-        if (ports.isEmpty()) {
-            BasicText("None", style = type.caption.copy(color = colors.textDisabled))
-        } else {
-            ports.take(4).forEach { port ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = if (side == PortSide.Input) Arrangement.Start else Arrangement.End,
-                ) {
-                    val accent = if (side == PortSide.Input) colors.portInput else colors.portOutput
-                    Box(modifier = Modifier.clip(RoundedCornerShape(3.dp)).background(accent.copy(alpha = 0.15f))
-                        .border(1.dp, accent.copy(alpha = 0.5f), RoundedCornerShape(3.dp))
-                        .padding(horizontal = 8.dp, vertical = 4.dp)) {
-                        BasicText(port, style = type.caption.copy(color = accent))
-                    }
-                }
-            }
-        }
-    }
-}

@@ -34,16 +34,13 @@ internal fun Modifier.graphynScrollZoomGesture(state: GraphynEditorState): Modif
                 val event = awaitPointerEvent()
                 val scrollDelta = event.changes.firstOrNull()?.scrollDelta ?: Offset.Zero
                 if (scrollDelta == Offset.Zero) continue
-                // Two-finger pinch / scroll while connecting → cancel the draft
                 if (state.connectionDraft != null) {
                     state.dispatch(GraphynEditorIntent.CancelConnection)
                     continue
                 }
                 val focus = event.changes.firstOrNull()?.position ?: Offset.Zero
                 val zoom = (1f - scrollDelta.y * 0.0045f).coerceIn(0.7f, 1.35f)
-                state.dispatch(
-                    GraphynEditorIntent.UpdateViewportTransform(pan = Offset.Zero, zoom = zoom, focus = focus),
-                )
+                state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, zoom, focus))
             }
         }
     }
@@ -55,7 +52,6 @@ internal fun Modifier.graphynPanGesture(state: GraphynEditorState): Modifier =
             val startWorld = state.screenToWorld(firstDown.position)
             if (state.isWorldPositionOverNode(startWorld)) return@awaitEachGesture
 
-            // Empty-canvas release while a draft is active → show node picker at drop position
             if (state.connectionDraft != null) {
                 var releasePos = firstDown.position
                 while (true) {
@@ -81,9 +77,7 @@ internal fun Modifier.graphynPanGesture(state: GraphynEditorState): Modifier =
                 if (!dragging && accumulatedDrag.getDistance() <= viewConfiguration.touchSlop) continue
                 dragging = true
                 change.consume()
-                state.dispatch(
-                    GraphynEditorIntent.UpdateViewportTransform(pan = delta, zoom = 1f, focus = change.position),
-                )
+                state.dispatch(GraphynEditorIntent.UpdateViewportTransform(delta, 1f, change.position))
             }
         }
     }
@@ -91,26 +85,22 @@ internal fun Modifier.graphynPanGesture(state: GraphynEditorState): Modifier =
 internal fun Modifier.graphynKeyboardShortcuts(state: GraphynEditorState): Modifier =
     onKeyEvent { event ->
         if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
-        when (event.key) {
-            Key.Escape -> {
-                if (state.connectionDraft != null) {
-                    state.dispatch(GraphynEditorIntent.CancelConnection)
-                    true
-                } else false
+        when {
+            GraphynShortcuts.isUndo(event) -> { state.dispatch(GraphynEditorIntent.Undo); true }
+            GraphynShortcuts.isRedo(event) -> { state.dispatch(GraphynEditorIntent.Redo); true }
+            GraphynShortcuts.isCopy(event) -> { state.dispatch(GraphynEditorIntent.CopySelection); true }
+            GraphynShortcuts.isPaste(event) -> { state.dispatch(GraphynEditorIntent.Paste); true }
+            GraphynShortcuts.isDuplicate(event) -> { state.dispatch(GraphynEditorIntent.DuplicateSelection); true }
+            GraphynShortcuts.isSelectAll(event) -> { state.dispatch(GraphynEditorIntent.SelectAll); true }
+            event.key == Key.Escape -> {
+                if (state.connectionDraft != null) state.dispatch(GraphynEditorIntent.CancelConnection)
+                else { state.selectedNodeId = null; state.selectedNodeIds = emptySet(); state.selectedConnection = null }
+                true
             }
-            Key.Backspace, Key.Delete -> when {
-                state.connectionDraft != null -> {
-                    state.dispatch(GraphynEditorIntent.CancelConnection)
-                    true
-                }
-                state.selectedNodeId != null -> {
-                    state.dispatch(GraphynEditorIntent.DeleteSelectedNode)
-                    true
-                }
-                state.selectedConnection != null -> {
-                    state.dispatch(GraphynEditorIntent.DeleteSelectedConnection)
-                    true
-                }
+            event.key == Key.Backspace || event.key == Key.Delete -> when {
+                state.connectionDraft != null -> { state.dispatch(GraphynEditorIntent.CancelConnection); true }
+                state.effectiveSelectedNodeIds.isNotEmpty() -> { state.dispatch(GraphynEditorIntent.DeleteSelectedNode); true }
+                state.selectedConnection != null -> { state.dispatch(GraphynEditorIntent.DeleteSelectedConnection); true }
                 else -> false
             }
             else -> false
