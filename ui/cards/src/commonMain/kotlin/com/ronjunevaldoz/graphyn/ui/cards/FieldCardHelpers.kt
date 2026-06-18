@@ -57,6 +57,7 @@ internal fun FieldBody(
         when (val type = input.type) {
             is WorkflowType.EnumType -> SingleSelectRow(input, value, type.values, onChange, theme)
             is WorkflowType.MultiEnumType -> MultiSelectRow(input, value, type.values, onChange, theme)
+            WorkflowType.IntType, WorkflowType.DoubleType -> NumericRow(input, value, onChange, theme)
             else -> InputRow(input, value, onChange, theme)
         }
     }
@@ -69,7 +70,6 @@ internal fun FieldFooter(outputs: List<PortSpec>, theme: FieldNodeTheme) {
     }
     outputs.forEach { output -> OutputRow(output = output, theme = theme) }
 }
-
 @Composable
 private fun InputRow(
     input: PortSpec,

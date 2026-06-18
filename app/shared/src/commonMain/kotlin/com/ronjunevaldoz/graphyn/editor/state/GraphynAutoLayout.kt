@@ -8,11 +8,13 @@ internal object GraphynAutoLayout {
     private const val COL_GAP = 300
     private const val ROW_GAP = 200
 
+    private const val MAX_NODES = 20
+
     fun computePositions(
         nodes: List<NodeRef>,
         connections: List<ConnectionRef>,
     ): Map<String, IntOffset> {
-        if (nodes.isEmpty()) return emptyMap()
+        if (nodes.isEmpty() || nodes.size > MAX_NODES) return emptyMap()
         val nodeIds = nodes.mapTo(mutableSetOf()) { it.id }
 
         val inEdges = nodes.associate { it.id to mutableListOf<String>() }
