@@ -14,6 +14,10 @@ Living reference for the Graphyn node card design. Updated as new editors are st
 | **Type encoding** | None · Accent colour · Port dot colour · Header colour |
 | **Connection model** | Port-to-port labels · Positional (top/bottom/left/right) |
 
+## Visual comparison
+
+<iframe src="node-design-comparison.html" width="100%" height="620" style="border:none;border-radius:8px;"></iframe>
+
 ---
 
 ## Editor survey

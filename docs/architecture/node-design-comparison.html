@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node Design Comparison</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; font-family: system-ui, -apple-system, sans-serif; padding: 20px; color: #e0e0e6; }
+  h1 { font-size: 12px; font-weight: 600; letter-spacing: 1.5px; color: #9b9ba5; text-transform: uppercase; margin-bottom: 20px; text-align: center; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+  .col-header { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #9b9ba5; text-align: center; padding-bottom: 8px; border-bottom: 1px solid #2d2e3d; }
+
+  /* Canvas preview area */
+  .preview { background: #0a0b10; border: 1px solid #2d2e3d; border-radius: 8px; padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 180px; position: relative; }
+
+  /* Graphyn current */
+  .gnode { width: 200px; background: #1e1f2e; border: 1px solid #3d3e52; border-radius: 8px; position: relative; overflow: visible; }
+  .gnode-accent { position: absolute; left: 0; top: 0; width: 4px; height: 100%; background: #ff6d5a; border-radius: 2px 0 0 2px; }
+  .gnode-body { padding: 10px 12px; }
+  .gnode-title { font-size: 12px; font-weight: 600; color: #e0e0e6; }
+  .gnode-sub { font-size: 9px; color: #9b9ba5; margin-top: 2px; }
+  .gnode-divider { height: 1px; background: #2d2e40; margin: 8px 0; }
+  .gnode-ports { display: flex; justify-content: space-between; }
+  .gnode-port-col { font-size: 9px; }
+  .gnode-port-label { color: #9b9ba5; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .port-badge-in { display: inline-block; background: #7aa2ff22; border: 1px solid #7aa2ff88; border-radius: 3px; padding: 1px 6px; font-size: 8px; color: #7aa2ff; margin-top: 2px; }
+  .port-badge-out { display: inline-block; background: #ff6d5a22; border: 1px solid #ff6d5a88; border-radius: 3px; padding: 1px 6px; font-size: 8px; color: #ff6d5a; margin-top: 2px; }
+  .gdot-l { position: absolute; left: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #7aa2ff; }
+  .gdot-r { position: absolute; right: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #ff6d5a; }
+
+  /* Blender */
+  .bnode { width: 190px; background: #2a2a2a; border: 1px solid #444; border-radius: 5px; font-size: 10px; position: relative; }
+  .bnode-header { background: #4a6a8a; padding: 4px 8px; border-radius: 4px 4px 0 0; font-size: 10px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 5px; }
+  .bnode-header-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+  .bnode-row { display: flex; align-items: center; padding: 3px 6px; gap: 4px; }
+  .bnode-row.right { justify-content: flex-end; }
+  .bdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .bdot-geo { background: #00cc76; }
+  .bdot-vec { background: #6363c7; }
+  .bdot-flt { background: #a0a0a0; }
+  .bnode-field { background: #1a1a1a; border: 1px solid #555; border-radius: 3px; padding: 2px 6px; font-size: 9px; color: #e0e0e6; width: 70px; text-align: right; }
+  .bport-name { font-size: 9px; color: #ccc; }
+
+  /* ComfyUI */
+  .cnode { width: 190px; background: #1a1a1a; border: 1px solid #444; border-radius: 6px; position: relative; }
+  .cnode-header { background: #3d2a6b; padding: 5px 10px; border-radius: 5px 5px 0 0; font-size: 11px; font-weight: 700; color: #e8e0ff; }
+  .cnode-body { padding: 4px 0; }
+  .cnode-row { display: flex; align-items: center; padding: 3px 0; position: relative; }
+  .cdot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; position: absolute; }
+  .cdot-l { left: -6px; }
+  .cdot-r { right: -6px; }
+  .cdot-latent { background: #8b5cf6; }
+  .cdot-model  { background: #3b82f6; }
+  .cdot-cond   { background: #f97316; }
+  .cport-name { font-size: 9px; color: #aaa; padding: 0 14px; }
+  .cwidget { background: #2a2a2a; border: 1px solid #555; border-radius: 3px; padding: 2px 8px; font-size: 9px; color: #ccc; margin: 2px 8px; width: calc(100% - 16px); display: block; }
+
+  /* n8n monolithic */
+  .nnode { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ncircle { width: 70px; height: 70px; border-radius: 50%; background: #1e1f2e; border: 1.5px solid #3d3e52; display: flex; align-items: center; justify-content: center; position: relative; font-size: 26px; }
+  .ndot-l { position: absolute; left: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #7aa2ff; }
+  .ndot-r { position: absolute; right: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #1e1f2e; border: 2px solid #ff6d5a; }
+  .nlabel { font-size: 12px; font-weight: 600; color: #e0e0e6; }
+  .nsub { font-size: 9px; color: #9b9ba5; }
+
+  /* Info rows */
+  .section { display: flex; flex-direction: column; gap: 4px; }
+  .section-title { font-size: 10px; font-weight: 700; color: #9b9ba5; text-transform: uppercase; letter-spacing: 0.8px; }
+  .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #9b9ba5; line-height: 1.6; }
+  .tag.yes::before { content: '✓'; color: #4ade80; }
+  .tag.no::before  { content: '✗'; color: #f87171; }
+  .tag.mid::before { content: '◐'; color: #facc15; }
+  .pill { font-size: 9px; font-weight: 600; padding: 2px 7px; border-radius: 9px; display: inline-block; margin-top: 2px; }
+  .pill-green  { background: rgba(74,222,128,.13); color: #4ade80; border: 1px solid rgba(74,222,128,.33); }
+  .pill-yellow { background: rgba(250,204,21,.13); color: #facc15; border: 1px solid rgba(250,204,21,.33); }
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 9px; color: #9b9ba5; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Summary bar */
+  .summary { margin-top: 20px; padding: 14px 16px; background: #1e1f2e; border: 1px solid #2d2e3d; border-radius: 8px; }
+  .summary-title { font-size: 10px; font-weight: 700; color: #9b9ba5; letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 10px; }
+  .next-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .step { font-size: 10px; }
+  .step-high   { color: #4ade80; }
+  .step-medium { color: #facc15; }
+  .step-low    { color: #9b9ba5; }
+</style>
+</head>
+<body>
+<h1>Node Design Comparison — Graphyn · ComfyUI · Blender · n8n</h1>
+
+<div class="grid">
+
+  <!-- Graphyn current -->
+  <div class="col">
+    <div class="col-header">Graphyn (current)</div>
+    <div class="preview">
+      <div class="gnode">
+        <div class="gnode-accent"></div>
+        <div class="gdot-l"></div>
+        <div class="gdot-r"></div>
+        <div class="gnode-body">
+          <div class="gnode-title">Add Numbers</div>
+          <div class="gnode-sub">node-001</div>
+          <div class="gnode-divider"></div>
+          <div class="gnode-ports">
+            <div class="gnode-port-col">
+              <div class="gnode-port-label">INPUTS</div>
+              <div><span class="port-badge-in">a</span></div>
+              <div><span class="port-badge-in">b</span></div>
+            </div>
+            <div class="gnode-port-col" style="text-align:right">
+              <div class="gnode-port-label">OUTPUTS</div>
+              <div><span class="port-badge-out">result</span></div>
+            </div>
+          </div>
+          <div class="gnode-divider"></div>
+          <div style="font-size:9px;color:#9b9ba5">Connecting…</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Traits</div>
+      <span class="tag yes">Port names always visible</span>
+      <span class="tag yes">Execution badge</span>
+      <span class="tag yes">Live output preview</span>
+      <span class="tag no">Port dots not on edges</span>
+      <span class="tag no">No port type colour</span>
+      <span class="tag no">No inline widgets</span>
+      <span class="tag no">Fixed 280×180 — can't grow</span>
+    </div>
+    <div class="section">
+      <div class="section-title">Best for</div>
+      <span class="tag mid">Variable-port pipelines</span>
+      <span class="tag mid">Data-centric workflows</span>
+    </div>
+    <span class="pill pill-yellow">Needs port-edge dots + type colours</span>
+  </div>
+
+  <!-- ComfyUI -->
+  <div class="col">
+    <div class="col-header">ComfyUI</div>
+    <div class="preview">
+      <div class="cnode">
+        <div class="cnode-header">KSampler</div>
+        <div class="cnode-body">
+          <div class="cnode-row">
+            <div class="cdot cdot-l cdot-model"></div>
+            <span class="cport-name">model</span>
+          </div>
+          <div class="cnode-row">
+            <div class="cdot cdot-l cdot-cond"></div>
+            <span class="cport-name">positive</span>
+          </div>
+          <div class="cnode-row">
+            <div class="cdot cdot-l cdot-cond"></div>
+            <span class="cport-name">negative</span>
+          </div>
+          <div class="cnode-row">
+            <div class="cdot cdot-l cdot-latent"></div>
+            <span class="cport-name">latent</span>
+          </div>
+          <input class="cwidget" value="steps: 20" readonly>
+          <input class="cwidget" value="cfg: 7.0" readonly>
+          <div class="cnode-row" style="margin-top:3px">
+            <div style="flex:1"></div>
+            <span class="cport-name" style="padding-right:14px">latent</span>
+            <div class="cdot cdot-r cdot-latent"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Traits</div>
+      <span class="tag yes">Port dots on card edges</span>
+      <span class="tag yes">Port colour = data type</span>
+      <span class="tag yes">Inline widgets (no inspector)</span>
+      <span class="tag yes">Widget disappears on connect</span>
+      <span class="tag yes">Content-driven height</span>
+      <span class="tag no">No execution state UI</span>
+      <span class="tag no">No live output preview</span>
+    </div>
+    <div class="section">
+      <div class="section-title">Best for</div>
+      <span class="tag mid">AI / diffusion pipelines</span>
+      <span class="tag mid">Typed data flows</span>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>latent</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>model</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>cond</div>
+    </div>
+    <span class="pill pill-green">Strongest type UX studied</span>
+  </div>
+
+  <!-- Blender -->
+  <div class="col">
+    <div class="col-header">Blender Geo Nodes</div>
+    <div class="preview">
+      <div class="bnode">
+        <div class="bnode-header">
+          <div class="bnode-header-dot"></div>
+          Distribute Points
+        </div>
+        <div style="padding:4px 0">
+          <div class="bnode-row">
+            <div class="bdot bdot-geo"></div>
+            <span class="bport-name">Mesh</span>
+          </div>
+          <div class="bnode-row">
+            <div class="bdot bdot-flt"></div>
+            <span class="bport-name">Density</span>
+            <div style="flex:1"></div>
+            <div class="bnode-field">0.002</div>
+          </div>
+          <div class="bnode-row">
+            <div class="bdot bdot-flt"></div>
+            <span class="bport-name">Seed</span>
+            <div style="flex:1"></div>
+            <div class="bnode-field">5</div>
+          </div>
+          <div class="bnode-row right" style="border-top:1px solid #333;margin-top:4px;padding-top:4px">
+            <span class="bport-name">Points</span>
+            <div class="bdot bdot-geo" style="margin-left:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Traits</div>
+      <span class="tag yes">Port dots on edges</span>
+      <span class="tag yes">Port colour = data type</span>
+      <span class="tag yes">Inline editable fields</span>
+      <span class="tag yes">Content-driven size</span>
+      <span class="tag yes">Category header colour</span>
+      <span class="tag yes">Collapse mode</span>
+      <span class="tag no">No execution state</span>
+    </div>
+    <div class="section">
+      <div class="section-title">Best for</div>
+      <span class="tag mid">Procedural pipelines</span>
+      <span class="tag mid">Mixed port + scalar inputs</span>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#00cc76"></div>geometry</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6363c7"></div>vector</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a0a0a0"></div>float</div>
+    </div>
+    <span class="pill pill-green">Best field-on-node UX</span>
+  </div>
+
+  <!-- n8n icon -->
+  <div class="col">
+    <div class="col-header">n8n — Icon Node</div>
+    <div class="preview">
+      <div class="nnode">
+        <div class="ncircle">
+          🎙️
+          <div class="ndot-l"></div>
+          <div class="ndot-r"></div>
+        </div>
+        <div class="nlabel">Whisper STT</div>
+        <div class="nsub">transcription: audio</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Traits</div>
+      <span class="tag yes">Minimal canvas footprint</span>
+      <span class="tag yes">Icon = instant recognition</span>
+      <span class="tag yes">Works for 1-in / 1-out</span>
+      <span class="tag no">No port names visible</span>
+      <span class="tag no">No type colour</span>
+      <span class="tag no">Config only in inspector</span>
+      <span class="tag no">Opaque for multi-port nodes</span>
+    </div>
+    <div class="section">
+      <div class="section-title">Best for</div>
+      <span class="tag mid">Service / action nodes</span>
+      <span class="tag mid">Fixed single in/out</span>
+    </div>
+    <span class="pill pill-yellow">Good as optional compact mode</span>
+  </div>
+
+</div>
+
+<div class="summary">
+  <div class="summary-title">Graphyn next steps — priority order</div>
+  <div class="next-steps">
+    <span class="step step-high">① Port dots on card edges + named connections</span>
+    <span class="step step-high">② Port dot colour by WorkflowType</span>
+    <span class="step step-medium">③ compact: Boolean in NodeSpec → icon-circle</span>
+    <span class="step step-medium">④ Content-driven card height</span>
+    <span class="step step-medium">⑤ Inline widgets for unconnected scalar inputs</span>
+    <span class="step step-low">⑥ Category colour on header bar</span>
+  </div>
+</div>
+
+</body>
+</html>
