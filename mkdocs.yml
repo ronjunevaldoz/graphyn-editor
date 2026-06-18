@@ -49,3 +49,8 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
+
+extra_css: []
+
+# Ensure the standalone HTML comparison widget is copied into the built site
+extra_javascript: []
