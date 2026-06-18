@@ -70,7 +70,7 @@ Gaps found by comparing with the stable old Graphyn codebase.
 
 ### Known Issues (post-MVP)
 
-- [ ] Node drag blink: initial drag frame jumps by slop distance (~8–18 dp). Root cause not fully eliminated by current `awaitTouchSlopOrCancellation` fix. Needs investigation with a mid-gesture Roborazzi capture or pointer-event trace.
+- [x] Node drag blink: resolved. Two fixes applied: (1) `pointerInput(Unit)` prevents gesture restart on selection change; (2) slop overshoot is no longer applied as the first delta — the node tracks incrementally after slop is silently consumed. Also fixed `graphynPanGesture` key to exclude `nodePositionsByNodeId` (was restarting the coroutine on every node move).
 
 Tasking style:
 - Keep tasks small and outcome-based.

@@ -18,3 +18,6 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 /.gemini/
+/.playwright-mcp/
+/kotlin-js-store/
+/core/designsystem/

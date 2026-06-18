@@ -1,19 +1,29 @@
 package com.ronjunevaldoz.graphyn.editor.shell.components
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
+import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
@@ -25,7 +35,8 @@ internal fun GraphynInspectorPanel(
     panels: EditorPanelRegistry,
     validationErrors: List<ValidationError>,
 ) {
-    val selectedConnection = state.selectedConnection
+    val colors = GraphynDs.colors
+    val type = GraphynDs.type
     val selectedNode = remember(state.workflow, state.selectedNodeId) { state.selectedNode() }
     val selectedNodeSpec = remember(selectedNode, nodeSpecs) {
         selectedNode?.let { nodeSpecs.resolve(it.type) }
@@ -33,101 +44,84 @@ internal fun GraphynInspectorPanel(
     val panelFactory = selectedNode?.let { panels.resolve(it.type) }
     val selectedNodeOutputs = selectedNode?.let { state.outputsFor(it.id) }.orEmpty()
     val flattenedOutputs = selectedNode?.let { state.flattenedOutputsFor(it.id) }.orEmpty()
+    val selectedConnection = state.selectedConnection
 
-    GraphynChromePanel(modifier = modifier.fillMaxSize().padding(12.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.panelBackground)
+            .border(width = 1.dp, color = colors.border),
+    ) {
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp)) {
+            BasicText("INSPECTOR", style = type.panelTitle.copy(color = colors.textSecondary))
+        }
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Inspector", style = MaterialTheme.typography.titleMedium)
-            GraphynValidationSummary(validationErrors = validationErrors)
+            if (validationErrors.isNotEmpty()) {
+                GraphynValidationSummary(errors = validationErrors)
+            }
             if (selectedNode != null) {
-                Button(onClick = { state.dispatch(GraphynEditorIntent.DeleteSelectedNode) }) {
-                    Text("Delete node")
+                BasicText(selectedNode.id, style = type.nodeTitle.copy(color = colors.textPrimary))
+                BasicText(selectedNode.type, style = type.bodySmall.copy(color = colors.textSecondary))
+                DangerButton(label = "Delete node") {
+                    state.dispatch(GraphynEditorIntent.DeleteSelectedNode)
                 }
             }
             if (selectedConnection != null) {
-                Text(
-                    text = "${selectedConnection.fromNodeId}:${selectedConnection.fromPort} → ${selectedConnection.toNodeId}:${selectedConnection.toPort}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                BasicText(
+                    "${selectedConnection.fromNodeId}:${selectedConnection.fromPort} → ${selectedConnection.toNodeId}:${selectedConnection.toPort}",
+                    style = type.mono.copy(color = colors.textSecondary),
                 )
-                Text(
-                    text = "Click an input port to reconnect.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(onClick = { state.dispatch(GraphynEditorIntent.DeleteSelectedConnection) }) {
-                    Text("Delete connection")
+                BasicText("Click an input port to reconnect.", style = type.caption.copy(color = colors.textDisabled))
+                DangerButton(label = "Delete connection") {
+                    state.dispatch(GraphynEditorIntent.DeleteSelectedConnection)
                 }
             }
+            if (selectedNode == null && selectedConnection == null) {
+                BasicText("Select a node to inspect it.", style = type.bodySmall.copy(color = colors.textDisabled))
+            }
             if (panelFactory != null) {
-                panelFactory.Content(
-                    com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext(
-                        workflow = state.workflow,
-                        selectedNode = selectedNode,
-                        selectedNodeSpec = selectedNodeSpec,
-                        validationErrors = validationErrors,
-                        selectedNodeOutputs = selectedNodeOutputs,
-                        flattenedSelectedNodeOutputs = flattenedOutputs,
-                    ),
-                )
-            } else {
-                Text(
-                    text = if (selectedNode == null) {
-                        "Select a node to inspect it."
-                    } else {
-                        "No custom panel registered for '${selectedNode.type}'."
-                    },
-                    modifier = Modifier.padding(top = 12.dp),
-                )
-                if (selectedNodeOutputs.isNotEmpty()) {
-                    Text(
-                        text = "Outputs: ${selectedNodeOutputs.keys.joinToString()}",
-                        modifier = Modifier.padding(top = 12.dp),
-                    )
-                    Text(
-                        text = "Flattened: ${flattenedOutputs.keys.joinToString()}",
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
+                panelFactory.Content(EditorPanelContext(
+                    workflow = state.workflow,
+                    selectedNode = selectedNode,
+                    selectedNodeSpec = selectedNodeSpec,
+                    validationErrors = validationErrors,
+                    selectedNodeOutputs = selectedNodeOutputs,
+                    flattenedSelectedNodeOutputs = flattenedOutputs,
+                ))
             }
         }
     }
 }
 
 @Composable
-internal fun GraphynValidationSummary(
-    validationErrors: List<ValidationError>,
-) {
-    if (validationErrors.isEmpty()) {
-        Text(
-            text = "Workflow valid.",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.secondary,
-        )
-        return
+private fun DangerButton(label: String, onClick: () -> Unit) {
+    val colors = GraphynDs.colors
+    val type = GraphynDs.type
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .border(1.dp, colors.danger.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        BasicText(label, style = type.label.copy(color = colors.danger))
     }
+}
 
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = "${validationErrors.size} validation issue(s)",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.error,
-        )
-        validationErrors.take(4).forEach { error ->
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = error.code,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-                Text(
-                    text = error.message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+@Composable
+internal fun GraphynValidationSummary(errors: List<ValidationError>) {
+    val colors = GraphynDs.colors
+    val type = GraphynDs.type
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        BasicText("${errors.size} validation issue(s)", style = type.label.copy(color = colors.danger))
+        errors.take(4).forEach { error ->
+            BasicText(error.code, style = type.labelSmall.copy(color = colors.danger))
+            BasicText(error.message, style = type.bodySmall.copy(color = colors.textSecondary))
         }
     }
 }

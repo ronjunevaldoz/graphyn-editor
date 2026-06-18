@@ -1,49 +1,45 @@
 package com.ronjunevaldoz.graphyn.editor.shell.components
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
 @Composable
 internal fun GraphynLogPanel(
     modifier: Modifier = Modifier,
-    state: GraphynEditorState
+    state: GraphynEditorState,
 ) {
-    GraphynChromePanel(
-        modifier = modifier.fillMaxWidth(),
-        tonalElevation = 3.dp,
+    val colors = GraphynDs.colors
+    val type = GraphynDs.type
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(colors.panelBackground)
+            .border(width = 1.dp, color = colors.border)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = "Logs",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            val logs = state.debugLogEntries
-            if (logs.isEmpty()) {
-                Text(
-                    text = "No log entries yet.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    logs.takeLast(8).forEach { entry ->
-                        Text(
-                            text = "• $entry",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+        BasicText("OUTPUT", style = type.panelTitle.copy(color = colors.textSecondary))
+        val logs = state.debugLogEntries
+        if (logs.isEmpty()) {
+            BasicText("No log entries yet.", style = type.mono.copy(color = colors.textDisabled))
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                logs.takeLast(8).forEach { entry ->
+                    BasicText(
+                        text = "> $entry",
+                        style = type.mono.copy(color = colors.textSecondary),
+                    )
                 }
             }
         }
