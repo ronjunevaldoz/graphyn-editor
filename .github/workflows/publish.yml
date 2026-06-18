@@ -28,13 +28,13 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Publish core
-        run: ./gradlew :core:publishAllPublicationsToMavenCentralRepository --no-daemon
+        run: ./gradlew :core:publishAllPublicationsToMavenCentralRepository --no-daemon --no-configuration-cache
 
       - name: Publish plugin-api
-        run: ./gradlew :plugin-api:publishAllPublicationsToMavenCentralRepository --no-daemon
+        run: ./gradlew :plugin-api:publishAllPublicationsToMavenCentralRepository --no-daemon --no-configuration-cache
 
       - name: Publish editor-api
-        run: ./gradlew :editor-api:publishAllPublicationsToMavenCentralRepository --no-daemon
+        run: ./gradlew :editor-api:publishAllPublicationsToMavenCentralRepository --no-daemon --no-configuration-cache
 
       - name: Publish graphyn-editor (app/shared)
-        run: ./gradlew :app:shared:publishAllPublicationsToMavenCentralRepository --no-daemon
+        run: ./gradlew :app:shared:publishAllPublicationsToMavenCentralRepository --no-daemon --no-configuration-cache
