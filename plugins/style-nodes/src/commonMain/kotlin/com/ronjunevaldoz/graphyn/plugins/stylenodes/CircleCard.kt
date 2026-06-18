@@ -16,9 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,36 +32,46 @@ import com.ronjunevaldoz.graphyn.editor.canvas.NodeShape
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 import kotlin.math.roundToInt
 
-class CircleCardFactory(
-    val theme: CircleNodeTheme = CircleNodeTheme(),
+private const val LABEL_HEIGHT_DP = 18
+
+class ShapeCardFactory(
+    val shape: Shape = CircleShape,
+    val size: Dp = 64.dp,
+    val theme: ShapeNodeTheme = ShapeNodeTheme(),
+    val minimapShape: NodeShape = NodeShape.Circle,
     val avatar: (@Composable (node: NodeRef, spec: NodeSpec) -> Unit)? = null,
 ) : NodeCanvasFactory {
-    override val nodeWidth = 80
-    override val nodeHeight = 100
-    override val nodeShape = NodeShape.Circle
+    override val nodeWidth = size.value.toInt()
+    override val nodeHeight = size.value.toInt() + LABEL_HEIGHT_DP
+    override val nodeShape = minimapShape
+
+    override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
+        size.value.toInt() / 2
 
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) {
-        CircleCard(context, theme, avatar)
+        ShapeCard(context, shape, size, theme, avatar)
     }
 }
 
 @Composable
-private fun CircleCard(
+private fun ShapeCard(
     ctx: NodeCanvasContext,
-    theme: CircleNodeTheme,
+    shape: Shape,
+    size: Dp,
+    theme: ShapeNodeTheme,
     avatar: (@Composable (NodeRef, NodeSpec) -> Unit)?,
 ) {
     val bg = theme.background()
-    val border = if (ctx.selected) theme.selectedBorder() else bg
+    val borderColor = if (ctx.selected) theme.selectedBorder() else bg
     Box {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
+                    .size(size)
+                    .clip(shape)
                     .background(bg)
-                    .then(if (ctx.selected) Modifier.border(2.dp, border, CircleShape) else Modifier)
+                    .then(if (ctx.selected) Modifier.border(2.dp, borderColor, shape) else Modifier)
                     .clickable { ctx.onSelect() }
                     .pointerInput(Unit) {
                         awaitEachGesture {
@@ -89,10 +101,7 @@ private fun CircleCard(
                 style = TextStyle(color = theme.labelColor(), fontSize = 10.sp, fontWeight = FontWeight.Medium),
             )
         }
-        NodeStatusBadge(
-            status = ctx.executionStatus,
-            surfaceColor = bg,
-            modifier = Modifier.align(Alignment.TopEnd),
-        )
+        NodeStatusBadge(status = ctx.executionStatus, surfaceColor = bg,
+            modifier = Modifier.align(Alignment.TopEnd))
     }
 }

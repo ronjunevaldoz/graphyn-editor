@@ -21,7 +21,7 @@ object StyleNodesEditorPlugin : GraphynEditorPlugin {
     override fun register(registrar: GraphynEditorPluginRegistrar) {
         registrar.registerCanvasCard(StyleNodesSpecs.kSampler.type, DarkHeaderCardFactory)
         registrar.registerCanvasCard(StyleNodesSpecs.distributePoints.type, FieldCardFactory)
-        registrar.registerCanvasCard(StyleNodesSpecs.webhook.type, CircleCardFactory())
+        registrar.registerCanvasCard(StyleNodesSpecs.webhook.type, ShapeCardFactory())
         registrar.registerCategory(CATEGORY_AI, NodeCategoryMeta("AI", COLOR_MODEL))
         registrar.registerCategory(CATEGORY_GEOMETRY, NodeCategoryMeta("Geometry", COLOR_GEOMETRY))
         registrar.registerCategory(CATEGORY_AUTOMATION, NodeCategoryMeta("Automation", COLOR_CONDITIONING))
