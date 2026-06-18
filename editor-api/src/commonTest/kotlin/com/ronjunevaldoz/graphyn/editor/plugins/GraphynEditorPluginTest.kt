@@ -1,3 +1,5 @@
+@file:OptIn(com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi::class)
+
 package com.ronjunevaldoz.graphyn.editor.plugins
 
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry

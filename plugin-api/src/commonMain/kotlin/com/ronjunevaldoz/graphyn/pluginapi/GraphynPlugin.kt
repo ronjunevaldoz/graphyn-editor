@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.pluginapi
 
+import com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi
 import com.ronjunevaldoz.graphyn.core.execution.DefaultNodeExecutorRegistry
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutor
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutorRegistry
@@ -47,6 +48,7 @@ interface GraphynPluginRegistry : GraphynPluginRegistrar {
     }
 }
 
+@GraphynExperimentalApi
 class DefaultGraphynPluginRegistry(
     override val nodeSpecs: NodeSpecRegistry = DefaultNodeSpecRegistry(),
     override val nodeExecutors: NodeExecutorRegistry = DefaultNodeExecutorRegistry(),
