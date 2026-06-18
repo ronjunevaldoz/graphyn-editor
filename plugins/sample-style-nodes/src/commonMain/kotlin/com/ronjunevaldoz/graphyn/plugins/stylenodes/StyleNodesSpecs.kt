@@ -42,16 +42,20 @@ object StyleNodesSpecs {
         label = "Distribute Points",
         category = CATEGORY_GEOMETRY,
         inputs = listOf(
-            PortSpec("mesh",    WorkflowType.OpaqueType, portColor = COLOR_GEOMETRY),
-            PortSpec("density", WorkflowType.DoubleType, portColor = COLOR_FLOAT),
-            PortSpec("seed",    WorkflowType.IntType,    portColor = COLOR_INT),
+            PortSpec("mesh",     WorkflowType.OpaqueType,                                          portColor = COLOR_GEOMETRY),
+            PortSpec("density",  WorkflowType.DoubleType,                                          portColor = COLOR_FLOAT),
+            PortSpec("seed",     WorkflowType.IntType,                                             portColor = COLOR_INT),
+            PortSpec("mode",     WorkflowType.EnumType(listOf("uniform", "random", "poisson")),    portColor = COLOR_INT),
+            PortSpec("channels", WorkflowType.MultiEnumType(listOf("R", "G", "B", "A")),           portColor = COLOR_INT),
         ),
         outputs = listOf(
             PortSpec("points", WorkflowType.OpaqueType, portColor = COLOR_GEOMETRY),
         ),
         defaultValues = mapOf(
-            "density" to WorkflowValue.DoubleValue(0.002),
-            "seed"    to WorkflowValue.IntValue(5),
+            "density"  to WorkflowValue.DoubleValue(0.002),
+            "seed"     to WorkflowValue.IntValue(5),
+            "mode"     to WorkflowValue.StringValue("uniform"),
+            "channels" to WorkflowValue.ListValue(listOf(WorkflowValue.StringValue("R"), WorkflowValue.StringValue("G"), WorkflowValue.StringValue("B"))),
         ),
     )
 

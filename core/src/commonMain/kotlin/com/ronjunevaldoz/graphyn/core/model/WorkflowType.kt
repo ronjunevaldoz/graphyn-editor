@@ -38,6 +38,10 @@ sealed interface WorkflowType {
     data class EnumType(val values: List<String>) : WorkflowType
 
     @Serializable
+    @SerialName("multi-enum")
+    data class MultiEnumType(val values: List<String>) : WorkflowType
+
+    @Serializable
     @SerialName("opaque")
     data object OpaqueType : WorkflowType
 }
