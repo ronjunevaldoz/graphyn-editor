@@ -9,11 +9,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeShape
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.calculateMinimapLayout
 import com.ronjunevaldoz.graphyn.editor.state.calculateViewportRectInMinimap
@@ -24,6 +27,7 @@ import com.ronjunevaldoz.graphyn.editor.state.viewportCenteredOnWorldPoint
 @Composable
 internal fun GraphynMinimapDebugger(
     state: GraphynEditorState,
+    canvasCards: NodeCanvasRegistry?,
     modifier: Modifier = Modifier,
 ) {
     val workflow = state.workflow
@@ -68,14 +72,32 @@ internal fun GraphynMinimapDebugger(
             return@Canvas
         }
 
-        nodePositions.forEach { position ->
+        val nodes = workflow?.nodes.orEmpty()
+        nodes.forEachIndexed { index, node ->
+            val position = nodePositions.getOrNull(index) ?: return@forEachIndexed
+            val factory = canvasCards?.resolve(node.type)
+            val nodeW = (factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width).toFloat()
+            val nodeH = (factory?.nodeHeight ?: GraphynCanvasMetrics.NodeSize.height).toFloat()
+            val shape = factory?.nodeShape ?: NodeShape.Rectangle
+
             val x = minimapLayout.insetX + ((position.x.toFloat() - minimapLayout.worldBounds.left) * minimapLayout.scale)
             val y = minimapLayout.insetY + ((position.y.toFloat() - minimapLayout.worldBounds.top) * minimapLayout.scale)
-            val width = GraphynCanvasMetrics.NodeSize.width * minimapLayout.scale * 2f
-            val height = GraphynCanvasMetrics.NodeSize.height * minimapLayout.scale * 2f
-            val nodeSize = androidx.compose.ui.geometry.Size(width, height)
-            drawRect(color = minimapColors.nodeFill, topLeft = Offset(x, y), size = nodeSize)
-            drawRect(color = minimapColors.nodeStroke, topLeft = Offset(x, y), size = nodeSize, style = Stroke(width = 1.5f))
+            val w = nodeW * minimapLayout.scale * 2f
+            val h = nodeH * minimapLayout.scale * 2f
+
+            when (shape) {
+                NodeShape.Circle -> {
+                    val radius = w / 2f
+                    val center = Offset(x + radius, y + radius)
+                    drawCircle(color = minimapColors.nodeFill, radius = radius, center = center)
+                    drawCircle(color = minimapColors.nodeStroke, radius = radius, center = center, style = Stroke(width = 1.5f))
+                }
+                NodeShape.Rectangle -> {
+                    val nodeSize = Size(w, h)
+                    drawRect(color = minimapColors.nodeFill, topLeft = Offset(x, y), size = nodeSize)
+                    drawRect(color = minimapColors.nodeStroke, topLeft = Offset(x, y), size = nodeSize, style = Stroke(width = 1.5f))
+                }
+            }
         }
 
         calculateViewportRectInMinimap(
@@ -84,7 +106,7 @@ internal fun GraphynMinimapDebugger(
             layout = minimapLayout,
         )?.let { viewportRect ->
             val topLeft = Offset(viewportRect.left, viewportRect.top)
-            val rectSize = androidx.compose.ui.geometry.Size(viewportRect.width, viewportRect.height)
+            val rectSize = Size(viewportRect.width, viewportRect.height)
             drawRect(color = minimapColors.viewportStroke, topLeft = topLeft, size = rectSize, style = Stroke(width = 2f))
             listOf(
                 topLeft,

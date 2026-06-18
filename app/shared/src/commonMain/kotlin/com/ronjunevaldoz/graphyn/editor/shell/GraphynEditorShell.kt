@@ -120,13 +120,20 @@ private fun GraphynEditorShellContent(
                         onZoomIn = { state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, ZoomStep, Offset.Zero)) },
                         onZoomOut = { state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, ZoomOutStep, Offset.Zero)) },
                     )
+                    val minimapWidth = 200.dp
+                    val cs = state.canvasSize
+                    val minimapHeight = if (cs.width > 0)
+                        (minimapWidth.value * cs.height.toFloat() / cs.width.toFloat())
+                            .coerceIn(80f, 200f).dp
+                    else 130.dp
                     GraphynMinimapDebugger(
                         state = state,
+                        canvasCards = dependencies.canvasCards,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .size(width = 200.dp, height = 130.dp)
+                            .size(width = minimapWidth, height = minimapHeight)
                             .testTag("minimap")
-                            .graphicsLayer { alpha = 0.9f; clip = true },
+                            .graphicsLayer { alpha = 0.9f },
                     )
                 }
                 GraphynLogPanel(modifier = Modifier.fillMaxWidth(), state = state)
