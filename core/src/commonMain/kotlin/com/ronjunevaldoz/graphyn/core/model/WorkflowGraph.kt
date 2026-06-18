@@ -20,6 +20,9 @@ data class PortSpec(
  * [defaultValues] seed the input map when no [NodeRef.config] entry and no connected
  * output exist for a given port. Priority order in execution:
  *   defaultValues < node.config < connected upstream output
+ *
+ * [description] is a short human-readable explanation of what the node does.
+ * Shown in the inspector panel and as a subtitle in the palette.
  */
 data class NodeSpec(
     val type: String,
@@ -28,6 +31,7 @@ data class NodeSpec(
     val outputs: List<PortSpec>,
     val defaultValues: Map<String, WorkflowValue> = emptyMap(),
     val category: String? = null,
+    val description: String? = null,
 )
 
 /**
