@@ -63,15 +63,20 @@ class DemoSceneWorkflowTest {
 
     // --- plugin registration ---
 
+    // script.eval is JVM-only and not in GraphynDemoPlugins — skip it in the KMP test
+    private val jvmOnlyTypes = setOf("script.eval")
+
     @Test
     fun allNodeTypesAreRegisteredInDemoPlugins() {
         DemoScene.entries.forEach { scene ->
-            scene.workflow.nodes.forEach { node ->
-                assertNotNull(
-                    plugins.nodeSpecs.resolve(node.type),
-                    "${scene.name}: node type '${node.type}' is not registered in GraphynDemoPlugins",
-                )
-            }
+            scene.workflow.nodes
+                .filter { it.type !in jvmOnlyTypes }
+                .forEach { node ->
+                    assertNotNull(
+                        plugins.nodeSpecs.resolve(node.type),
+                        "${scene.name}: node type '${node.type}' is not registered in GraphynDemoPlugins",
+                    )
+                }
         }
     }
 
@@ -84,8 +89,11 @@ class DemoSceneWorkflowTest {
         // - type_mismatch: Groups scene uses IO→list-ops connections for ETL story;
         //   no adapter node exists to bridge StringType↔ListType in the demo registry
         val ignoredCodes = setOf("missing_required_input", "type_mismatch")
+        // Script scene uses JVM-only nodes unregistered in the KMP test registry
+        val jvmOnlyScenes = setOf(DemoScene.Script)
         DemoScene.entries.forEach { scene ->
-            val errors = validator.validate(scene.workflow).filterNot { it.code in ignoredCodes }
+            val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes
+            val errors = validator.validate(scene.workflow).filterNot { it.code in sceneIgnored }
             assertTrue(errors.isEmpty(),
                 "${scene.name} has ${errors.size} structural error(s):\n" +
                     errors.joinToString("\n") { "  [${it.code}] ${it.message}" }

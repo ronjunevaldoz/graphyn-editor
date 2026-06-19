@@ -5,11 +5,15 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import javax.script.ScriptEngineManager
 
 /**
- * Evaluates Kotlin scripts via JSR-223. The engine is lazy so the first execution pays the
- * warm-up cost (~1-2 s); subsequent runs reuse the same engine instance.
+ * Evaluates Kotlin scripts via JSR-223. Engine is lazy — first call pays ~1-2 s warm-up.
  *
- * Script context: the `input` binding is a [WorkflowValue] available as a top-level variable.
- * The last expression of the script becomes `result`.
+ * `input` is unwrapped to its native Kotlin type before binding so scripts feel natural:
+ * - `StringValue("hi")` → `"hi"` (String)
+ * - `IntValue(3)` → `3` (Int)
+ * - `BooleanValue(true)` → `true` (Boolean)
+ * - `NullValue` → `null`
+ *
+ * The last expression of the script becomes `result` and is wrapped back automatically.
  */
 internal object ScriptExecutor : NodeExecutor {
 
@@ -20,15 +24,14 @@ internal object ScriptExecutor : NodeExecutor {
 
     override suspend fun execute(input: Map<String, WorkflowValue>): Map<String, WorkflowValue> {
         val code = (input["code"] as? WorkflowValue.StringValue)?.value
-            ?: return outputs(result = WorkflowValue.NullValue, error = "No code provided")
-
-        val inputValue = input["input"] ?: WorkflowValue.NullValue
+            ?: return outputs(WorkflowValue.NullValue, "No code provided")
+        val inputVal = input["input"] ?: WorkflowValue.NullValue
         return try {
-            engine.put("input", inputValue)
+            engine.put("input", inputVal.unwrap())
             val raw = engine.eval(code)
-            outputs(result = raw.toWorkflowValue(), error = "")
+            outputs(raw.toWorkflowValue(), "")
         } catch (e: Exception) {
-            outputs(result = WorkflowValue.NullValue, error = e.message ?: "Script error")
+            outputs(WorkflowValue.NullValue, e.message ?: "Script error")
         }
     }
 
@@ -36,6 +39,16 @@ internal object ScriptExecutor : NodeExecutor {
         "result" to result,
         "error"  to WorkflowValue.StringValue(error),
     )
+
+    private fun WorkflowValue.unwrap(): Any? = when (this) {
+        is WorkflowValue.StringValue  -> value
+        is WorkflowValue.IntValue     -> value
+        is WorkflowValue.DoubleValue  -> value
+        is WorkflowValue.BooleanValue -> value
+        is WorkflowValue.ListValue    -> items.map { it.unwrap() }
+        is WorkflowValue.RecordValue  -> fields.mapValues { it.value.unwrap() }
+        else                          -> null
+    }
 
     private fun Any?.toWorkflowValue(): WorkflowValue = when (this) {
         is WorkflowValue -> this
