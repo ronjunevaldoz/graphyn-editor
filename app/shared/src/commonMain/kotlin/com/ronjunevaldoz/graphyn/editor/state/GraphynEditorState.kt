@@ -8,6 +8,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
@@ -56,7 +57,7 @@ class GraphynEditorState(
     var nodePickerState by mutableStateOf<GraphynNodePickerState?>(null)
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
     var executionStatusByNodeId by mutableStateOf<Map<String, NodeExecutionStatus>>(emptyMap())
-    var lastExecutionOrder by mutableStateOf(emptyList<String>())
+    var lastExecutionResult by mutableStateOf<WorkflowExecutionResult?>(null)
     var rejectedConnectionPort by mutableStateOf<Pair<String, String>?>(null)
     var groups by mutableStateOf<List<NodeGroup>>(emptyList())
 

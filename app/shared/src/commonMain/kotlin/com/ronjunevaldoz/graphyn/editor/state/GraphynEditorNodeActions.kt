@@ -6,7 +6,6 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
 
 internal fun GraphynEditorState.addNode(spec: NodeSpec) {
     val current = workflow ?: WorkflowDefinition("workflow", "Untitled Workflow", emptyList(), emptyList())
@@ -16,7 +15,8 @@ internal fun GraphynEditorState.addNode(spec: NodeSpec) {
     selectedNodeId = nodeId
     connectionDraft = null
     connectionDraftPosition = null
-    layout.setNodePosition(nodeId, GraphynCanvasLayout.fallbackPosition(next.nodes.lastIndex))
+    val center = screenToWorld(Offset(canvasSize.width / 2f, canvasSize.height / 2f))
+    layout.setNodePosition(nodeId, IntOffset(center.x.toInt(), center.y.toInt()))
     log.push("Added node $nodeId (${spec.label})")
 }
 
