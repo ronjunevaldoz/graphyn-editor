@@ -19,10 +19,6 @@ import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginRegistrar
 
 const val SUBGRAPH_NODE_TYPE = "demo.subgraph"
 private const val SUBGRAPH_CATEGORY = "demo.composition"
-internal const val SUBGRAPH_LABEL_KEY = "label"
-internal const val SUBGRAPH_COUNT_KEY = "node_count"
-/** Comma-separated labels of the inner nodes, e.g. "zip, map, filter, reduce". */
-internal const val SUBGRAPH_CONTENTS_KEY = "contents"
 
 val SubgraphNodeSpec = NodeSpec(
     type = SUBGRAPH_NODE_TYPE,

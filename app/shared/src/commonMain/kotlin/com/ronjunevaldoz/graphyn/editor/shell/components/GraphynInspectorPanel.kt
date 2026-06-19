@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
@@ -29,6 +30,7 @@ internal fun GraphynInspectorPanel(
     nodeSpecs: NodeSpecRegistry,
     panels: EditorPanelRegistry,
     validationErrors: List<ValidationError>,
+    onEnterSubgraph: ((WorkflowDefinition) -> Unit)? = null,
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
@@ -66,6 +68,7 @@ internal fun GraphynInspectorPanel(
                     validationErrors = validationErrors,
                     outputs = state.outputsFor(selectedNode.id),
                     flattenedOutputs = state.flattenedOutputsFor(selectedNode.id),
+                    onEnterSubgraph = onEnterSubgraph,
                 )
                 selectedConnection != null -> GraphynInspectorConnectionSection(
                     connection = selectedConnection,

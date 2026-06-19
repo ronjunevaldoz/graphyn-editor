@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.core.validation.WorkflowGraphValidator
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
@@ -45,6 +46,8 @@ data class GraphynEditorShellDependencies(
     val canvasCards: NodeCanvasRegistry = DefaultNodeCanvasRegistry(),
     val categoryRegistry: NodeCategoryRegistry? = null,
     val executionEngine: WorkflowExecutionEngine? = null,
+    /** Called when the user selects "Enter →" on a subgraph node in the inspector. */
+    val onEnterSubgraph: ((label: String, inner: WorkflowDefinition) -> Unit)? = null,
 )
 
 @Composable
@@ -87,7 +90,12 @@ private fun GraphynEditorShellContent(
         state.workflow?.let(validator::validate).orEmpty()
     }
     val canvasContent: @Composable () -> Unit = canvas ?: {
-        GraphynCanvasSurface(state = state, nodeSpecs = dependencies.nodeSpecs, canvasCards = dependencies.canvasCards)
+        GraphynCanvasSurface(
+            state = state,
+            nodeSpecs = dependencies.nodeSpecs,
+            canvasCards = dependencies.canvasCards,
+            onEnterSubgraph = dependencies.onEnterSubgraph,
+        )
     }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.canvasBackground)) {
@@ -112,6 +120,14 @@ private fun GraphynEditorShellContent(
                 nodeSpecs = dependencies.nodeSpecs,
                 panels = dependencies.panels,
                 validationErrors = validationErrors,
+                onEnterSubgraph = dependencies.onEnterSubgraph?.let { callback ->
+                    { inner ->
+                        val selectedNode = state.selectedNode()
+                        val label = selectedNode?.let { dependencies.nodeSpecs.resolve(it.type)?.label ?: it.type }
+                            ?: inner.name
+                        callback(label, inner)
+                    }
+                },
             )
         }
     }

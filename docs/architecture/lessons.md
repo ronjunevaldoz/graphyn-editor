@@ -383,6 +383,46 @@ color, corner radius, font sizes) belong in a single shared file. Per-card ident
 
 ---
 
+## Real Subgraphs: Embed `WorkflowDefinition` on the Node, Not in Config Strings
+
+**Category:** Node model — subgraph pattern
+
+**Problem:** Encoding inner node names as a comma-separated config string (`"contents" → "zip, map, filter"`) is a display stub, not a real subgraph. It can't be executed, navigated into, or edited.
+
+**Fix and rule:** Add `subgraph: WorkflowDefinition? = null` directly to `NodeRef`. The execution engine checks `node.subgraph != null` before executor lookup and runs the inner workflow recursively. The inspector reads `node.subgraph` to show count/connection info and offer an "Enter →" button. The canvas card reads `node.subgraph?.nodes` for the bullet list. No config keys required.
+
+## Subgraph Navigation: Navigator Composable Wrapping the Shell
+
+**Category:** Compose — drill-in navigation without a NavHost
+
+**Problem:** `GraphynEditorShell` renders a single `GraphynEditorState`. To drill into a subgraph, you need a new state for the inner workflow and a way to pop back.
+
+**Fix and rule:** Create `GraphynSubgraphNavigator` that maintains a `var stack by remember { mutableStateOf(emptyList<SubgraphFrame>()) }`. Each `SubgraphFrame(label, state)` holds its own `GraphynEditorState`. The active state is `stack.lastOrNull()?.state ?: rootState`. Pass `dependencies.copy(onEnterSubgraph = { label, inner -> stack = stack + SubgraphFrame(...) })` to the inner shell. The `onEnterSubgraph` lambda reads/writes `stack` through the `MutableState` delegate at call time — capturing the property (not a snapshot) means it always sees the current list.
+
+## `remember(key)` Lambda Can Close Over MutableState Delegates Safely
+
+**Category:** Compose — remember + mutableStateOf interaction
+
+**Problem:** When a `remember { ... }` block creates a lambda that reads/writes a `var foo by remember { mutableStateOf(...) }` property, it's tempting to add `foo` as a remember key to "refresh" the lambda when state changes. But adding a `MutableState`-backed property as a key causes the entire remembered object to be recreated on every state change.
+
+**Fix and rule:** Omit the state from the remember key. The `by` delegate desugars to reading/writing `.value` on the `MutableState` at call time. The lambda always sees the current value without needing to be recreated. Only add a key when the lambda's behavior depends on a stable, non-state value (like a registry or a callback reference).
+
+## GraphynTheme Already Wraps Content in GraphynDsTheme — No Double Setup Needed
+
+**Category:** Design system — CompositionLocal layering
+
+**Problem:** It looks like `GraphynDs.colors` would only be available inside `GraphynDsTheme`. Composables placed above the shell (e.g., a launcher screen, a breadcrumb bar) seem to be outside `GraphynDsTheme` and thus might produce wrong colors or crash.
+
+**Fix and rule:** `GraphynTheme` (the outer, app-level theme) calls `GraphynDsTheme` internally. Anything rendered inside `GraphynTheme` already has access to `GraphynDs.colors` / `GraphynDs.type` with correct branding. The shell's own `GraphynDsTheme` nested inside is redundant but harmless. Do not add a second `GraphynDsTheme` to a composable that will always be called inside `GraphynTheme` — it adds needless complexity. The `LocalGraphynDsColors` also has a non-null default (`GraphynDsColors.Dark`), so accessing it without any theme set returns dark defaults rather than crashing.
+
+## Launcher + Navigator Pattern for Workflow Management
+
+**Category:** Compose — multi-screen flow without NavHost
+
+**Problem:** Need a home screen (templates, recents) that transitions into the workflow editor, with a way to return.
+
+**Fix and rule:** Use a simple `var openWorkflow: WorkflowDefinition?` in the host. When null, show `GraphynWorkflowLauncher`; otherwise show `GraphynSubgraphNavigator` inside `key(wf.id)`. Pass `onHome = { openWorkflow = null }` to the navigator so it shows a "⌂" home button in the nav bar. The navigator shows this bar whenever `onHome != null` or the user is inside a subgraph. Recents are a `mutableStateOf(emptyList<WorkflowTemplate>())` updated on each open, with dedup by workflow ID.
+
 ## Dynamically-Sized Cards Must Set Their Own Size via `Modifier.size()`
 
 **Category:** Compose layout — card sizing in unconstrained parents
@@ -390,4 +430,44 @@ color, corner radius, font sizes) belong in a single shared file. Per-card ident
 **Problem:** Sticky note cards placed in `Box(Modifier.offset { pos })` are in an unconstrained container. `fillMaxSize()` inside an unconstrained Box resolves to 0×0, making the card invisible or a single-line label.
 
 **Fix and rule:** Cards that need a fixed or user-controlled size must apply `Modifier.size(w.dp, h.dp)` explicitly. Store user-adjusted dimensions in node config (e.g., `__w` / `__h` keys); read them at render time and fall back to constants. Never rely on `fillMaxSize()` to fill an unconstrained canvas slot.
+
+---
+
+## Custom canvas cards are only draggable where `pointerInput` is applied
+
+**Category:** Compose gestures — custom node cards
+
+**Problem:** Placing `pointerInput` with the drag gesture only on the header `Row` means the card body is inert — dragging from the body does nothing.
+
+**Fix and rule:** Apply the `pointerInput` drag handler to the outermost container (`Column` or `Box`) of a custom card so every pixel is draggable. The header can still have its own `clickable` for selection — that handler fires on tap, while the drag handler activates only once the touch-slop threshold is exceeded, so they do not conflict.
+
+---
+
+## Threading callbacks into canvas cards via `NodeCanvasContext`
+
+**Category:** Architecture — editor extension points
+
+**Problem:** Custom canvas cards (registered via `NodeCanvasFactory`) have no way to trigger shell-level callbacks (like entering a subgraph) because `NodeCanvasContext` previously only contained data and movement/selection callbacks.
+
+**Fix and rule:** Add nullable callback fields to `NodeCanvasContext` for optional host-level actions. Thread them down: `GraphynEditorShellDependencies` → `GraphynCanvasSurface` → `GraphynNodeLayer` → per-node context creation. The context field is null when the host doesn't support the action, letting cards render without a footer button in that case.
+
+---
+
+## Floating breadcrumb overlay vs. layout row
+
+**Category:** UX — subgraph navigation
+
+**Problem:** Placing the breadcrumb as the first child in a `Column` above `GraphynEditorShell` adds it to the layout flow, shrinking the canvas and making it easy to miss — users reported "no way to exit subgraph view".
+
+**Fix and rule:** Switch to a `Box` wrapper so `GraphynEditorShell` fills the entire area, then render the breadcrumb pill as a `Box`-aligned overlay (`Alignment.TopStart` with canvas-relative padding). The pill uses a semi-transparent `panelBackground` and rounded corners so it visually floats. This keeps the canvas full-height and makes the nav affordance more discoverable.
+
+---
+
+## Custom canvas cards must test their own `executionStatus` rendering
+
+**Category:** Testing — custom node card coverage
+
+**Problem:** `SubgraphCard` rendered `NodeStatusBadge` was completely absent — `ctx.executionStatus` was ignored. The bug was invisible because there was no test specifically for custom card execution state, and the visual gap only shows at runtime when you run a workflow.
+
+**Fix and rule:** Custom cards (`NodeCanvasFactory` implementations) must overlay `NodeStatusBadge` (or `GraphynNodeStatusBadge`) and provide a jvmTest that checks badge text (`"+"`, `"v"`, `"x"`) for each `NodeExecutionStatus` value. `app/demo` can host its own `jvmTest` source set with `compose.desktop.uiTestJUnit4` — no roborazzi plugin needed for behavior-only tests. Pattern for the overlay: wrap the card in `Box(Modifier.size(...))` and add `NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(4.dp), surfaceColor = cardBg)`.
 

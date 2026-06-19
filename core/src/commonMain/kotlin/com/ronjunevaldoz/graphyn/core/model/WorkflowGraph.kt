@@ -42,11 +42,17 @@ data class NodeSpec(
  *
  * [config] holds user-edited overrides for input ports. It takes precedence over
  * [NodeSpec.defaultValues] but is overridden by any connected upstream output.
+ *
+ * [subgraph] embeds a nested [WorkflowDefinition] directly on the node. When non-null,
+ * the execution engine runs the inner workflow recursively and the editor offers an
+ * "Enter Subgraph" action in the inspector. Setting this field does not require a
+ * registered executor — the engine handles subgraph nodes automatically.
  */
 data class NodeRef(
     val id: String,
     val type: String,
     val config: Map<String, WorkflowValue> = emptyMap(),
+    val subgraph: WorkflowDefinition? = null,
 )
 
 /** Directed edge from one node's output port to another node's input port. */

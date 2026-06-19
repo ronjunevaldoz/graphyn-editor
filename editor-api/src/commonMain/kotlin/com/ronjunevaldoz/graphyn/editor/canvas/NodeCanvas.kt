@@ -27,6 +27,8 @@ data class NodeCanvasContext(
     val onConfigChange: (key: String, value: WorkflowValue) -> Unit = { _, _ -> },
     /** Canvas surface text color — use for labels drawn on the canvas background, not on the card itself. */
     val contentColor: Color = Color.Unspecified,
+    /** Non-null only when this node has an embedded [WorkflowDefinition] and the host supports drill-in navigation. */
+    val onEnterSubgraph: (() -> Unit)? = null,
 )
 
 enum class NodeShape { Rectangle, Circle }

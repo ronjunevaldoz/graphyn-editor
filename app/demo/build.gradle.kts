@@ -45,5 +45,9 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
         }
+        jvmTest.dependencies {
+            implementation(compose.desktop.currentOs)
+            implementation(compose.desktop.uiTestJUnit4)
+        }
     }
 }

@@ -3,7 +3,6 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesSpecs
 
 // All workflow vals must be declared before DemoScene enum to avoid Kotlin enum static init ordering.
@@ -21,14 +20,14 @@ val styleNodesDemoWorkflow = WorkflowDefinition(
 val listOpsDemoWorkflow = WorkflowDefinition(
     id = "list-ops-demo", name = "List Ops",
     nodes = listOf(
-        NodeRef("zip", "listops.zip"),
-        NodeRef("map", "listops.map"),
+        NodeRef("zip",    "listops.zip"),
+        NodeRef("map",    "listops.map"),
         NodeRef("filter", "listops.filter"),
         NodeRef("reduce", "listops.reduce"),
     ),
     connections = listOf(
-        ConnectionRef("zip", "pairs", "map", "list"),
-        ConnectionRef("map", "result", "filter", "list"),
+        ConnectionRef("zip",    "pairs",  "map",    "list"),
+        ConnectionRef("map",    "result", "filter", "list"),
         ConnectionRef("filter", "result", "reduce", "list"),
     ),
 )
@@ -36,14 +35,14 @@ val listOpsDemoWorkflow = WorkflowDefinition(
 val controlDemoWorkflow = WorkflowDefinition(
     id = "control-demo", name = "Control Flow",
     nodes = listOf(
-        NodeRef("loop", "control.loop"),
+        NodeRef("loop",   "control.loop"),
         NodeRef("branch", "control.branch"),
-        NodeRef("merge", "control.merge"),
+        NodeRef("merge",  "control.merge"),
     ),
     connections = listOf(
-        ConnectionRef("loop", "item", "branch", "value"),
-        ConnectionRef("branch", "truePath", "merge", "a"),
-        ConnectionRef("branch", "falsePath", "merge", "b"),
+        ConnectionRef("loop",   "item",      "branch", "value"),
+        ConnectionRef("branch", "truePath",  "merge",  "a"),
+        ConnectionRef("branch", "falsePath", "merge",  "b"),
     ),
 )
 
@@ -51,8 +50,8 @@ val textDemoWorkflow = WorkflowDefinition(
     id = "text-demo", name = "Text Ops",
     nodes = listOf(
         NodeRef("format", "text.format"),
-        NodeRef("split", "text.split"),
-        NodeRef("regex", "text.regex"),
+        NodeRef("split",  "text.split"),
+        NodeRef("regex",  "text.regex"),
     ),
     connections = listOf(
         ConnectionRef("format", "result", "split", "text"),
@@ -62,13 +61,13 @@ val textDemoWorkflow = WorkflowDefinition(
 val typesDemoWorkflow = WorkflowDefinition(
     id = "types-demo", name = "Type Utils",
     nodes = listOf(
-        NodeRef("schema", "types.schema"),
-        NodeRef("cast", "types.cast"),
+        NodeRef("schema",   "types.schema"),
+        NodeRef("cast",     "types.cast"),
         NodeRef("validate", "types.validate"),
     ),
     connections = listOf(
         ConnectionRef("schema", "schema", "validate", "schema"),
-        ConnectionRef("cast", "result", "validate", "value"),
+        ConnectionRef("cast",   "result", "validate", "value"),
     ),
 )
 
@@ -76,47 +75,11 @@ val ioDemoWorkflow = WorkflowDefinition(
     id = "io-demo", name = "I/O",
     nodes = listOf(
         NodeRef("request", "io.http_request"),
-        NodeRef("read", "io.file_read"),
-        NodeRef("write", "io.file_write"),
+        NodeRef("read",    "io.file_read"),
+        NodeRef("write",   "io.file_write"),
     ),
     connections = listOf(
         ConnectionRef("request", "body", "write", "content"),
-    ),
-)
-
-val groupsDemoWorkflow = WorkflowDefinition(
-    id = "groups-demo", name = "Groups",
-    nodes = listOf(
-        NodeRef("fetch", "io.http_request"),
-        NodeRef("read", "io.file_read"),
-        NodeRef("zip", "listops.zip"),
-        NodeRef("map", "listops.map"),
-        NodeRef("filter", "listops.filter"),
-        NodeRef("write", "io.file_write"),
-    ),
-    connections = listOf(
-        ConnectionRef("fetch", "body", "zip", "listA"),
-        ConnectionRef("read", "content", "zip", "listB"),
-        ConnectionRef("zip", "result", "map", "list"),
-        ConnectionRef("map", "result", "filter", "list"),
-        ConnectionRef("filter", "result", "write", "content"),
-    ),
-)
-
-val subgraphDemoWorkflow = WorkflowDefinition(
-    id = "subgraph-demo", name = "Subgraph",
-    nodes = listOf(
-        NodeRef("fetch", "io.http_request"),
-        NodeRef("pipeline", SUBGRAPH_NODE_TYPE, config = mapOf(
-            SUBGRAPH_LABEL_KEY to WorkflowValue.StringValue("Transform Pipeline"),
-            SUBGRAPH_CONTENTS_KEY to WorkflowValue.StringValue("zip, map, filter, reduce"),
-            SUBGRAPH_COUNT_KEY to WorkflowValue.IntValue(4),
-        )),
-        NodeRef("write", "io.file_write"),
-    ),
-    connections = listOf(
-        ConnectionRef("fetch", "body", "pipeline", "input"),
-        ConnectionRef("pipeline", "output", "write", "content"),
     ),
 )
 
@@ -134,13 +97,13 @@ enum class DemoScene(val label: String) {
     ;
     val workflow: WorkflowDefinition
         get() = when (this) {
-            Styles -> styleNodesDemoWorkflow
-            ListOps -> listOpsDemoWorkflow
-            Control -> controlDemoWorkflow
-            Text -> textDemoWorkflow
-            Types -> typesDemoWorkflow
-            Io -> ioDemoWorkflow
-            Groups -> groupsDemoWorkflow
+            Styles   -> styleNodesDemoWorkflow
+            ListOps  -> listOpsDemoWorkflow
+            Control  -> controlDemoWorkflow
+            Text     -> textDemoWorkflow
+            Types    -> typesDemoWorkflow
+            Io       -> ioDemoWorkflow
+            Groups   -> groupsDemoWorkflow
             Subgraph -> subgraphDemoWorkflow
         }
 }
