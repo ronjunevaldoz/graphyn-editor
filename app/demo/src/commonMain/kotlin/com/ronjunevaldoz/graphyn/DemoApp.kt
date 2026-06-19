@@ -12,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.ronjunevaldoz.graphyn.bootstrap.DemoScene
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
-import com.ronjunevaldoz.graphyn.bootstrap.groupsDemoWorkflow
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
@@ -74,7 +73,7 @@ fun DemoApp(
                     initialWorkflow = wf,
                     canvasBounds = canvasBounds,
                 )
-                if (wf.id == groupsDemoWorkflow.id) {
+                if (wf.id == DemoScene.Groups.workflow.id) {
                     LaunchedEffect(Unit) {
                         state.groups = listOf(
                             NodeGroup(label = "Data Acquisition", nodeIds = setOf("fetch", "read")),
