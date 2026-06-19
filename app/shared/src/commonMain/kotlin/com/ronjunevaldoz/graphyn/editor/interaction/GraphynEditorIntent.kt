@@ -53,4 +53,9 @@ sealed interface GraphynEditorIntent {
 
     // Layout
     data object AutoLayout : GraphynEditorIntent
+
+    // Groups
+    data object CreateGroupFromSelection : GraphynEditorIntent
+    data class DeleteGroup(val groupId: String) : GraphynEditorIntent
+    data class RenameGroup(val groupId: String, val label: String) : GraphynEditorIntent
 }

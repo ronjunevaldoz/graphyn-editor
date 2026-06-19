@@ -13,14 +13,32 @@ import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
+import com.ronjunevaldoz.graphyn.plugins.control.ControlEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.control.ControlPlugin
+import com.ronjunevaldoz.graphyn.plugins.io.IoEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.io.IoPlugin
+import com.ronjunevaldoz.graphyn.plugins.listops.ListOpsEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.listops.ListOpsPlugin
 import com.ronjunevaldoz.graphyn.plugins.samplelogger.SampleLoggerPlugin
 import com.ronjunevaldoz.graphyn.plugins.sampleloggerui.SampleLoggerEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNoteEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNotePlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesPlugin
+import com.ronjunevaldoz.graphyn.plugins.text.TextEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.text.TextPlugin
+import com.ronjunevaldoz.graphyn.plugins.types.TypesEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.types.TypesPlugin
 
 object GraphynDemoPlugins {
-    val runtime: List<GraphynPlugin> = listOf(SampleLoggerPlugin, StyleNodesPlugin)
-    val editor: List<GraphynEditorPlugin> = listOf(SampleLoggerEditorPlugin, StyleNodesEditorPlugin)
+    val runtime: List<GraphynPlugin> = listOf(
+        SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin,
+        ListOpsPlugin, ControlPlugin, TypesPlugin, TextPlugin, IoPlugin,
+    )
+    val editor: List<GraphynEditorPlugin> = listOf(
+        SampleLoggerEditorPlugin, StyleNodesEditorPlugin, StickyNoteEditorPlugin,
+        ListOpsEditorPlugin, ControlEditorPlugin, TypesEditorPlugin, TextEditorPlugin, IoEditorPlugin,
+    )
 }
 
 object GraphynDemoWorkflow {

@@ -46,5 +46,14 @@ internal fun GraphynEditorState.handleDispatch(intent: GraphynEditorIntent) {
             executionStatusByNodeId = executionStatusByNodeId + (intent.nodeId to intent.status)
         GraphynEditorIntent.AutoLayout -> performAutoLayout()
         is GraphynEditorIntent.UpdateNodeConfig -> withHistory { updateNodeConfig(intent.nodeId, intent.key, intent.value) }
+        GraphynEditorIntent.CreateGroupFromSelection -> createGroupFromSelection()
+        is GraphynEditorIntent.DeleteGroup -> groups = groups.filterNot { it.id == intent.groupId }
+        is GraphynEditorIntent.RenameGroup -> groups = groups.map { if (it.id == intent.groupId) it.copy(label = intent.label) else it }
     }
+}
+
+private fun GraphynEditorState.createGroupFromSelection() {
+    val ids = effectiveSelectedNodeIds
+    if (ids.size < 2) return
+    groups = groups + NodeGroup(nodeIds = ids)
 }

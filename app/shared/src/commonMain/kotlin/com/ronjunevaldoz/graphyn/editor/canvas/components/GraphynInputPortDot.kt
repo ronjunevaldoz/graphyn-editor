@@ -8,8 +8,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -17,13 +20,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
+import com.ronjunevaldoz.graphyn.core.model.displayName
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
@@ -86,9 +93,11 @@ internal fun GraphynInputPortDot(
                             ?.let { nodeSpecs.resolve(it.type) }?.outputs?.firstOrNull { it.name == draft.fromPort }
                         val tgtPort = nodeSpecs.resolve(node.type)?.inputs?.firstOrNull { it.name == inputPort.name }
                         if (srcPort == null || tgtPort == null || !WorkflowTypeCompatibility.isCompatible(tgtPort.type, srcPort.type)) {
-                            state.addDebugLog("Rejected: ${draft.fromNodeId}:${draft.fromPort} -> ${node.id}:${inputPort.name}")
+                            state.rejectedConnectionPort = node.id to inputPort.name
+                            state.addDebugLog("Rejected: ${draft.fromNodeId}:${draft.fromPort} → ${node.id}:${inputPort.name} (type mismatch)")
                             state.dispatch(GraphynEditorIntent.CancelConnection)
                         } else {
+                            state.rejectedConnectionPort = null
                             state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, inputPort.name))
                         }
                     }
@@ -102,5 +111,24 @@ internal fun GraphynInputPortDot(
                         state.dispatch(GraphynEditorIntent.BeginConnection(node.id, inputPort.name, isFromInput = true))
                 }
             },
-    )
+    ) {
+        if (isHovered && draft == null) {
+            PortTooltip("→ ${inputPort.name}: ${inputPort.type.displayName()}", inputColor)
+        }
+    }
+}
+
+@Composable
+internal fun PortTooltip(label: String, accentColor: Color) {
+    Popup(alignment = androidx.compose.ui.Alignment.BottomCenter, onDismissRequest = {}) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(Color(0xFF1A1A2E))
+                .border(1.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                .padding(horizontal = 6.dp, vertical = 3.dp),
+        ) {
+            BasicText(label, style = TextStyle(color = Color(0xFFE0E0E0), fontSize = 9.sp))
+        }
+    }
 }

@@ -42,4 +42,45 @@ GraphynEditorShell(
 )
 ```
 
-See [Quickstart](getting-started/quickstart.md) for a full walkthrough.
+---
+
+## Getting started
+
+- [Installation](getting-started/installation.md)
+- [Quickstart](getting-started/quickstart.md)
+
+---
+
+## Guides
+
+### Integration
+- [Persistence — save and load workflows](guides/persistence.md)
+- [Read-only mode](guides/read-only-mode.md)
+- [Remote execution — server-side node runners](guides/remote-execution.md)
+- [Embedding on Android](guides/embedding-android.md)
+- [Embedding on Web (JS / WASM)](guides/embedding-web.md)
+
+### Extending
+- [Plugin authoring](guides/plugin-authoring.md)
+- [Custom cards](guides/custom-cards.md)
+- [Theming](guides/theming.md)
+- [Plugin versioning](guides/plugin-versioning.md)
+
+### Production
+- [Analytics hooks](guides/analytics-hooks.md)
+
+---
+
+## Reference
+
+- [Type system](reference/type-system.md)
+- [Keyboard shortcuts](reference/keyboard-shortcuts.md)
+- [Serialization](reference/serialization.md)
+
+---
+
+## Architecture
+
+- [Roadmap](architecture/roadmap.md)
+- [Test coverage](architecture/test-coverage.md)
+- [Lessons learned](architecture/lessons.md)

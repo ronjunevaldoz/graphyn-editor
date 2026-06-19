@@ -47,3 +47,17 @@ sealed interface WorkflowType {
     @Serializable @SerialName("opaque")
     data object OpaqueType : WorkflowType
 }
+
+/** Human-readable label for a type, shown in port tooltips and the inspector. */
+fun WorkflowType.displayName(): String = when (this) {
+    WorkflowType.StringType        -> "String"
+    WorkflowType.IntType           -> "Int"
+    WorkflowType.DoubleType        -> "Double"
+    WorkflowType.BooleanType       -> "Boolean"
+    WorkflowType.OpaqueType        -> "Any"
+    is WorkflowType.ListType       -> "List<${elementType.displayName()}>"
+    is WorkflowType.NullableType   -> "${wrappedType.displayName()}?"
+    is WorkflowType.RecordType     -> "Record"
+    is WorkflowType.EnumType       -> "Enum"
+    is WorkflowType.MultiEnumType  -> "MultiEnum"
+}

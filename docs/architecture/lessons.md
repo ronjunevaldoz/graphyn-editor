@@ -274,6 +274,58 @@ plugin specs. See CLAUDE.md § style-nodes plugin.
 
 ---
 
+## Modifier.align() Requires BoxScope Receiver
+
+**Category:** Compose — BoxScope scoping  
+**Applies to:** Any standalone `@Composable` that wraps a `Box` and tries to use `Modifier.align()`
+
+### Problem
+
+`Modifier.align(Alignment.BottomCenter)` is an extension on `BoxScope`, not on plain `Modifier`.
+A composable function extracted from a `Box` content lambda loses the `BoxScope`, so `align` is
+unresolved:
+
+```kotlin
+// ❌ extracted composable — BoxScope lost
+@Composable
+fun Toast(msg: String) {
+    Box(Modifier.align(Alignment.BottomCenter)) { ... } // Unresolved reference 'align'
+}
+```
+
+### Fix
+
+Wrap the content inside the composable in its own `Box(fillMaxSize, contentAlignment = BottomCenter)`:
+
+```kotlin
+@Composable
+fun Toast(msg: String) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+        Box(Modifier.padding(bottom = 16.dp)...) { ... }
+    }
+}
+```
+
+### Rule
+
+Only use `Modifier.align()` directly on children inside a `Box` content lambda. If you extract
+that child into a named composable, add an inner `Box` to recreate the alignment context.
+
+---
+
+## First-Party Plugin Build File Doesn't Need Compose Unless It Uses Compose APIs
+
+**Category:** Gradle — unnecessary dependencies  
+**Applies to:** Plugin modules that only register specs and executors
+
+### Rule
+
+Runtime-only plugins (`GraphynPlugin`) never need `compose.runtime`, `compose.foundation`, or
+`compose.ui`. Only editor plugins (`GraphynEditorPlugin`) that render custom composables need
+Compose. If the build file includes Compose for a pure runtime plugin, it's over-specified.
+
+---
+
 ## Card Visual Uniformity via Shared Color Tokens
 
 **Category:** UI consistency — multi-card design systems

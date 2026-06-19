@@ -57,6 +57,7 @@ class GraphynEditorState(
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
     var executionStatusByNodeId by mutableStateOf<Map<String, NodeExecutionStatus>>(emptyMap())
     var rejectedConnectionPort by mutableStateOf<Pair<String, String>?>(null)
+    var groups by mutableStateOf<List<NodeGroup>>(emptyList())
 
     val effectiveSelectedNodeIds: Set<String>
         get() = if (selectedNodeIds.isNotEmpty()) selectedNodeIds

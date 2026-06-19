@@ -19,4 +19,5 @@ internal object GraphynShortcuts {
     fun isDuplicate(e: KeyEvent) = e.isPrimaryMeta && !e.isShiftPressed && e.key == Key.D
     fun isSelectAll(e: KeyEvent) = e.isPrimaryMeta && !e.isShiftPressed && e.key == Key.A
     fun isAutoLayout(e: KeyEvent) = e.isPrimaryMeta && e.isShiftPressed && e.key == Key.L
+    fun isGroup(e: KeyEvent) = e.isPrimaryMeta && !e.isShiftPressed && e.key == Key.G
 }

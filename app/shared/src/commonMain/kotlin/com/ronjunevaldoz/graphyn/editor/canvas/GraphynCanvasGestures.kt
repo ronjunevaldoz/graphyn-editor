@@ -106,6 +106,7 @@ internal fun Modifier.graphynKeyboardShortcuts(state: GraphynEditorState): Modif
             GraphynShortcuts.isDuplicate(event) -> { state.dispatch(GraphynEditorIntent.DuplicateSelection); true }
             GraphynShortcuts.isSelectAll(event) -> { state.dispatch(GraphynEditorIntent.SelectAll); true }
             GraphynShortcuts.isAutoLayout(event) -> { state.dispatch(GraphynEditorIntent.AutoLayout); true }
+            GraphynShortcuts.isGroup(event) -> { state.dispatch(GraphynEditorIntent.CreateGroupFromSelection); true }
             event.key == Key.Escape -> {
                 if (state.connectionDraft != null) state.dispatch(GraphynEditorIntent.CancelConnection)
                 else { state.selectedNodeId = null; state.selectedNodeIds = emptySet(); state.selectedConnection = null }

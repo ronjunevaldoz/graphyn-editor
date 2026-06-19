@@ -15,6 +15,7 @@ import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.displayName
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelContext
@@ -101,15 +102,3 @@ private fun PortRow(port: PortSpec, isInput: Boolean) {
     }
 }
 
-private fun WorkflowType.displayName(): String = when (this) {
-    WorkflowType.StringType  -> "String"
-    WorkflowType.IntType     -> "Int"
-    WorkflowType.DoubleType  -> "Double"
-    WorkflowType.BooleanType -> "Boolean"
-    WorkflowType.OpaqueType  -> "Opaque"
-    is WorkflowType.ListType      -> "List<${elementType.displayName()}>"
-    is WorkflowType.NullableType  -> "${wrappedType.displayName()}?"
-    is WorkflowType.RecordType    -> "Record"
-    is WorkflowType.EnumType      -> "Enum"
-    is WorkflowType.MultiEnumType -> "MultiEnum"
-}

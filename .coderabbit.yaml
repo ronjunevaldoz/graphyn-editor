@@ -1,0 +1,66 @@
+version: "2"
+
+language: "en-US"
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+  path_instructions:
+    - path: "core/**"
+      instructions: |
+        This is pure Kotlin with no Compose dependency. Flag any import from
+        androidx.compose or the UI layer. All public classes, interfaces, functions,
+        and properties must have KDoc that explains the contract or why — not just
+        the name. Reject KDoc that only restates the signature.
+
+    - path: "editor-api/**"
+      instructions: |
+        Public API surface for editor plugin authors. Every public symbol needs KDoc.
+        Check that no implementation details from app/shared leak into this module.
+
+    - path: "plugin-api/**"
+      instructions: |
+        Public API surface for node plugin authors. Every public symbol needs KDoc.
+        Flag any Compose or UI imports — this module must be UI-framework-free.
+
+    - path: "ui/cards/**"
+      instructions: |
+        Compose Multiplatform card components. Every public composable and factory
+        class needs KDoc with a usage example. Flag hardcoded colors or sizes that
+        should come from GraphynDs tokens. Check that no file exceeds 150 lines.
+
+    - path: "app/shared/**"
+      instructions: |
+        Internal editor implementation. MVI only — all state mutations must go through
+        dispatch(GraphynEditorIntent). Flag any direct mutation of GraphynEditorState
+        fields outside of state handler files. Canvas positions must be IntOffset
+        (dp-as-int); flag Float-based position arithmetic that isn't inside a
+        DrawScope or graphicsLayer lambda. Check that no file exceeds 150 lines.
+
+    - path: "plugins/**"
+      instructions: |
+        Plugin modules are library modules, not demo galleries. Flag any WorkflowDefinition
+        sample data, placeholder NodeSpec, or test fixture defined inside a plugin module —
+        these belong in app/demo instead. Each plugin module should contain only its
+        production runtime and editor implementation. Check that no file exceeds 150 lines.
+
+    - path: "app/demo/**"
+      instructions: |
+        Demo-only module. No Material3 imports — use GraphynDs tokens and BasicText.
+        This is the correct place for sample WorkflowDefinition data and illustrative
+        node definitions used by demo scenes.
+
+  abort_on_close: true
+
+chat:
+  auto_reply: true

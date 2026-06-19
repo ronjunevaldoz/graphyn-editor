@@ -8,7 +8,7 @@ internal object GraphynAutoLayout {
     private const val COL_GAP = 300
     private const val ROW_GAP = 200
 
-    private const val MAX_NODES = 20
+    internal const val MAX_NODES = 20
 
     fun computePositions(
         nodes: List<NodeRef>,
@@ -45,19 +45,34 @@ internal object GraphynAutoLayout {
             visited.add(id)
         }
 
-        val byDepth = nodes.groupBy { depth[it.id] ?: 0 }
-        return buildMap {
-            byDepth.entries.sortedBy { it.key }.forEach { (col, nodesAtDepth) ->
-                nodesAtDepth.forEachIndexed { row, node ->
-                    put(node.id, IntOffset(col * COL_GAP, row * ROW_GAP))
-                }
+        // Group by depth and assign y positions centered on parent midpoints
+        val positions = mutableMapOf<String, IntOffset>()
+        nodes.groupBy { depth[it.id] ?: 0 }.entries.sortedBy { it.key }.forEach { (col, nodesAtDepth) ->
+            // Sort within column by average parent y so siblings stay near their parent
+            val sorted = nodesAtDepth.sortedBy { node ->
+                val ys = inEdges[node.id]?.mapNotNull { positions[it]?.y?.toDouble() } ?: emptyList()
+                if (ys.isEmpty()) Double.NEGATIVE_INFINITY else ys.average()
+            }
+            // Place each node at its parents' midpoint; push down to enforce ROW_GAP
+            var cursor = 0
+            sorted.forEach { node ->
+                val ys = inEdges[node.id]?.mapNotNull { positions[it]?.y } ?: emptyList()
+                val preferred = if (ys.isEmpty()) cursor else ys.average().toInt()
+                val y = maxOf(cursor, preferred)
+                positions[node.id] = IntOffset(col * COL_GAP, y)
+                cursor = y + ROW_GAP
             }
         }
+        return positions
     }
 }
 
 internal fun GraphynEditorState.performAutoLayout() {
     val wf = workflow ?: return
+    if (wf.nodes.size > GraphynAutoLayout.MAX_NODES) {
+        log.push("Auto-layout skipped: ${wf.nodes.size} nodes exceeds limit of ${GraphynAutoLayout.MAX_NODES}")
+        return
+    }
     val positions = GraphynAutoLayout.computePositions(wf.nodes, wf.connections)
     positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
     viewportState.fitToPositions(positions)
