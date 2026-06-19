@@ -21,6 +21,8 @@ import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynNodePickerState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,6 +62,7 @@ class GraphynEditorState(
     var executionStatusByNodeId by mutableStateOf<Map<String, NodeExecutionStatus>>(emptyMap())
     var lastExecutionResult by mutableStateOf<WorkflowExecutionResult?>(null)
     internal var canvasCards: NodeCanvasRegistry? = null
+    internal val scope = CoroutineScope(SupervisorJob())
     private var _rejectionSerial = 0
     var rejectedConnectionPort by mutableStateOf<Triple<String, String, Int>?>(null)
 
