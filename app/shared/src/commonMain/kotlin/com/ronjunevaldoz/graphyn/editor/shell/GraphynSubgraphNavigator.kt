@@ -5,10 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -52,37 +49,36 @@ fun GraphynSubgraphNavigator(
     var stack by remember { mutableStateOf(emptyList<SubgraphFrame>()) }
     val rootState = state ?: rememberGraphynEditorState(nodeSpecs = dependencies.nodeSpecs)
     val activeState = stack.lastOrNull()?.state ?: rootState
+    // Keyed by inner workflow id so positions survive pop-and-re-enter.
+    val stateCache = remember { mutableMapOf<String, GraphynEditorState>() }
 
-    val navDependencies = remember(dependencies) {
+    val showNavBar = onHome != null || stack.isNotEmpty()
+    val navDependencies = remember(dependencies, stack.isNotEmpty()) {
         dependencies.copy(
             onEnterSubgraph = { label, inner ->
-                val innerState = GraphynEditorState(
-                    initialWorkflow = inner,
-                    nodeSpecs = dependencies.nodeSpecs,
-                )
+                val innerState = stateCache.getOrPut(inner.id) {
+                    GraphynEditorState(initialWorkflow = inner, nodeSpecs = dependencies.nodeSpecs)
+                }
                 stack = stack + SubgraphFrame(label, innerState)
             },
+            onExitSubgraph = if (stack.isNotEmpty()) ({ stack = stack.dropLast(1) }) else null,
+            canvasTopStart = if (showNavBar) ({
+                SubgraphNavigationBar(
+                    rootLabel = rootState.workflow?.name ?: "Untitled",
+                    stack = stack,
+                    onHome = onHome,
+                    onNavigateTo = { depth -> stack = stack.take(depth) },
+                )
+            }) else null,
         )
     }
 
-    Box(Modifier.fillMaxSize()) {
-        GraphynEditorShell(
-            dependencies = navDependencies,
-            branding = branding,
-            appearanceState = appearanceState,
-            state = activeState,
-        )
-        val showNavBar = onHome != null || stack.isNotEmpty()
-        if (showNavBar) {
-            SubgraphNavigationBar(
-                rootLabel = rootState.workflow?.name ?: "Untitled",
-                stack = stack,
-                onHome = onHome,
-                onNavigateTo = { depth -> stack = stack.take(depth) },
-                modifier = Modifier.align(Alignment.TopStart).padding(start = 228.dp, top = 12.dp),
-            )
-        }
-    }
+    GraphynEditorShell(
+        dependencies = navDependencies,
+        branding = branding,
+        appearanceState = appearanceState,
+        state = activeState,
+    )
 }
 
 @Composable

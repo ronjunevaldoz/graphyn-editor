@@ -2,7 +2,9 @@ package com.ronjunevaldoz.graphyn.editor.canvas
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,14 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
@@ -35,6 +34,7 @@ import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyCanvasHint
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynEmptyNodesHint
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynGroupLayer
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodePickerPopup
+import com.ronjunevaldoz.graphyn.editor.canvas.components.TypeMismatchToast
 import com.ronjunevaldoz.graphyn.editor.canvas.components.compatiblePickerSpecs
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
@@ -47,6 +47,8 @@ fun GraphynCanvasSurface(
     modifier: Modifier = Modifier,
     canvasCards: NodeCanvasRegistry? = null,
     onEnterSubgraph: ((label: String, inner: WorkflowDefinition) -> Unit)? = null,
+    onExitSubgraph: (() -> Unit)? = null,
+    canvasTopStart: (@Composable () -> Unit)? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -128,21 +130,21 @@ fun GraphynCanvasSurface(
             LaunchedEffect(nodeId, portName) { delay(2000); state.rejectedConnectionPort = null }
             TypeMismatchToast("Type mismatch on $portName")
         }
-    }
-}
 
-@Composable
-private fun TypeMismatchToast(message: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-        Box(
-            modifier = Modifier
-                .padding(bottom = 16.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(Color(0xFF2D1111))
-                .border(1.dp, Color(0xFFEF5350).copy(alpha = 0.7f), RoundedCornerShape(6.dp))
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            BasicText(message, style = TextStyle(color = Color(0xFFEF9A9A), fontSize = 11.sp))
+        if (canvasTopStart != null) {
+            Box(Modifier.align(Alignment.TopStart).padding(12.dp)) { canvasTopStart() }
+        }
+        if (onExitSubgraph != null) {
+            val exitInteraction = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(GraphynDs.colors.panelBackground.copy(alpha = 0.92f))
+                    .clickable(interactionSource = exitInteraction, indication = null, onClick = onExitSubgraph)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                BasicText("✕ Exit", style = GraphynDs.type.bodySmall.copy(color = GraphynDs.colors.accent))
+            }
         }
     }
 }

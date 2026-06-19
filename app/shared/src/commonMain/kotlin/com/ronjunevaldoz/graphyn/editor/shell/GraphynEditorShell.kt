@@ -48,6 +48,10 @@ data class GraphynEditorShellDependencies(
     val executionEngine: WorkflowExecutionEngine? = null,
     /** Called when the user selects "Enter →" on a subgraph node in the inspector. */
     val onEnterSubgraph: ((label: String, inner: WorkflowDefinition) -> Unit)? = null,
+    /** Called when the floating exit button is tapped while inside a subgraph canvas. */
+    val onExitSubgraph: (() -> Unit)? = null,
+    /** Composable rendered at the canvas top-start (e.g. breadcrumb navigation). */
+    val canvasTopStart: (@Composable () -> Unit)? = null,
 )
 
 @Composable
@@ -95,6 +99,8 @@ private fun GraphynEditorShellContent(
             nodeSpecs = dependencies.nodeSpecs,
             canvasCards = dependencies.canvasCards,
             onEnterSubgraph = dependencies.onEnterSubgraph,
+            onExitSubgraph = dependencies.onExitSubgraph,
+            canvasTopStart = dependencies.canvasTopStart,
         )
     }
 

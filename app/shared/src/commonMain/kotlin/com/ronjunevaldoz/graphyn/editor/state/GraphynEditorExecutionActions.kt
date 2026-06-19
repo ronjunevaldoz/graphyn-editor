@@ -18,7 +18,7 @@ fun GraphynEditorState.applyExecutionResult(result: WorkflowExecutionResult) {
     executionStatusByNodeId = allNodeIds.associateWith { id ->
         if (id in succeeded) NodeExecutionStatus.Success else NodeExecutionStatus.Error
     }
-    lastExecutionOrder = result.executionOrder
+    lastExecutionResult = result
     val failed = allNodeIds.size - succeeded.size
     val summary = if (failed == 0) "✓ Run complete — ${succeeded.size} nodes"
                   else "✗ Run complete — ${succeeded.size} ok, $failed failed"

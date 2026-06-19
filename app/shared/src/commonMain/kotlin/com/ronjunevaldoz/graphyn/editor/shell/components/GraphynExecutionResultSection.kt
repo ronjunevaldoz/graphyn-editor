@@ -16,8 +16,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
+import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 
@@ -27,21 +29,19 @@ private val RUNNING_COLOR = Color(0xFFFACC15)
 
 @Composable
 internal fun GraphynExecutionResultSection(
-    executionOrder: List<String>,
-    outputsByNodeId: Map<String, Map<String, WorkflowValue>>,
+    result: WorkflowExecutionResult,
     statusByNodeId: Map<String, NodeExecutionStatus>,
     nodeLabel: (id: String) -> String,
     modifier: Modifier = Modifier,
 ) {
-    val colors = GraphynDs.colors
     val type = GraphynDs.type
-    var expanded by remember(executionOrder) { mutableStateOf(true) }
+    var expanded by remember(result) { mutableStateOf(true) }
 
-    val successCount = executionOrder.count { statusByNodeId[it] == NodeExecutionStatus.Success }
-    val allOk = successCount == executionOrder.size
+    val successCount = result.executionOrder.count { statusByNodeId[it] == NodeExecutionStatus.Success }
+    val allOk = successCount == result.executionOrder.size
     val summaryColor = if (allOk) SUCCESS_COLOR else ERROR_COLOR
-    val summaryText = if (allOk) "✓ ${executionOrder.size} nodes succeeded"
-                      else "✗ $successCount/${executionOrder.size} nodes succeeded"
+    val summaryText = if (allOk) "✓ ${result.executionOrder.size} nodes succeeded"
+                      else "✗ $successCount/${result.executionOrder.size} nodes succeeded"
 
     val headerInteraction = remember { MutableInteractionSource() }
     Column(modifier = modifier) {
@@ -53,19 +53,20 @@ internal fun GraphynExecutionResultSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             BasicText(summaryText, style = type.bodySmall.copy(color = summaryColor))
-            BasicText(if (expanded) "▲" else "▼", style = type.bodySmall.copy(color = colors.textDisabled))
+            BasicText(if (expanded) "▲" else "▼", style = type.bodySmall.copy(color = GraphynDs.colors.textDisabled))
         }
         if (expanded) {
             Column(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                executionOrder.forEach { nodeId ->
+                result.executionOrder.forEach { nodeId ->
                     NodeResultRow(
                         label = nodeLabel(nodeId),
                         nodeId = nodeId,
                         status = statusByNodeId[nodeId] ?: NodeExecutionStatus.Idle,
-                        outputs = outputsByNodeId[nodeId].orEmpty(),
+                        outputs = result.nodeOutputsByNodeId[nodeId].orEmpty(),
+                        subResult = result.subResults[nodeId],
                     )
                 }
             }
@@ -79,6 +80,7 @@ private fun NodeResultRow(
     nodeId: String,
     status: NodeExecutionStatus,
     outputs: Map<String, WorkflowValue>,
+    subResult: WorkflowExecutionResult?,
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
@@ -101,15 +103,16 @@ private fun NodeResultRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 BasicText("$port →", style = type.mono.copy(color = colors.textSecondary))
-                BasicText(value.preview(), style = type.mono.copy(color = colors.accent), maxLines = 1)
+                BasicText(value.preview(), style = type.mono.copy(color = colors.accent), maxLines = 1,
+                    overflow = TextOverflow.Ellipsis)
             }
         }
-        if (outputs.isEmpty()) {
-            BasicText(
-                "  (no outputs)",
-                modifier = Modifier.padding(start = 16.dp),
-                style = type.mono.copy(color = colors.textDisabled),
-            )
+        if (outputs.isEmpty() && subResult == null) {
+            BasicText("  (no outputs)", modifier = Modifier.padding(start = 16.dp),
+                style = type.mono.copy(color = colors.textDisabled))
+        }
+        if (subResult != null) {
+            NestedResultSection(subResult = subResult, indent = 16.dp)
         }
     }
 }

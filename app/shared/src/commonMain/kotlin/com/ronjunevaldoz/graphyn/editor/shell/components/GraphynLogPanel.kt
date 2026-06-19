@@ -42,15 +42,14 @@ internal fun GraphynLogPanel(
                 }
             }
         }
-        val executionOrder = state.lastExecutionOrder
-        if (executionOrder.isNotEmpty()) {
+        val result = state.lastExecutionResult
+        if (result != null) {
             val nodeLabel: (String) -> String = { id ->
                 state.workflow?.nodes?.firstOrNull { it.id == id }
                     ?.type?.substringAfterLast('.') ?: id
             }
             GraphynExecutionResultSection(
-                executionOrder = executionOrder,
-                outputsByNodeId = state.nodeOutputsByNodeId,
+                result = result,
                 statusByNodeId = state.executionStatusByNodeId,
                 nodeLabel = nodeLabel,
                 modifier = Modifier.fillMaxWidth()

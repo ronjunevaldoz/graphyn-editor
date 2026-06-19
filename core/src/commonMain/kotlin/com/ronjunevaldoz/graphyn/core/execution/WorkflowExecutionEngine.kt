@@ -12,6 +12,8 @@ import kotlinx.serialization.Serializable
 data class WorkflowExecutionResult(
     val nodeOutputsByNodeId: Map<String, Map<String, WorkflowValue>>,
     val executionOrder: List<String>,
+    /** Nested results for any nodes whose [NodeRef.subgraph] was executed. */
+    val subResults: Map<String, WorkflowExecutionResult> = emptyMap(),
 )
 
 class WorkflowExecutionException(
@@ -30,6 +32,7 @@ class WorkflowExecutionEngine(
 
         val order = topologicalOrder(workflow)
         val outputsByNodeId = linkedMapOf<String, Map<String, WorkflowValue>>()
+        val subResults = linkedMapOf<String, WorkflowExecutionResult>()
 
         for (nodeId in order) {
             val node = nodesById.getValue(nodeId)
@@ -41,6 +44,7 @@ class WorkflowExecutionEngine(
                 val inner = execute(node.subgraph!!)
                 val sinkId = inner.executionOrder.lastOrNull()
                 outputsByNodeId[node.id] = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
+                subResults[node.id] = inner
                 continue
             }
 
@@ -53,6 +57,7 @@ class WorkflowExecutionEngine(
         return WorkflowExecutionResult(
             nodeOutputsByNodeId = outputsByNodeId,
             executionOrder = order,
+            subResults = subResults,
         )
     }
 
