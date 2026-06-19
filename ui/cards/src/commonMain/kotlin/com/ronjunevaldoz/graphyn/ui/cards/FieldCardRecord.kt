@@ -28,6 +28,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
@@ -85,7 +86,7 @@ private fun RecordFieldRow(
     theme: FieldNodeTheme,
     onEdit: (WorkflowValue) -> Unit,
 ) {
-    var editText by remember(value) { mutableStateOf<String?>(null) }
+    var editText by remember { mutableStateOf<String?>(null) }
     var focusGranted by remember { mutableStateOf(false) }
     val display = value?.label() ?: ""
     fun commit() {
@@ -96,7 +97,17 @@ private fun RecordFieldRow(
         BasicText(key, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.width(6.dp))
-        if (editText != null) {
+        if (type == WorkflowType.BooleanType && value is WorkflowValue.BooleanValue) {
+            val on = value.value
+            val activeBg = appTheme.colors.primary
+            val activeText = appTheme.colors.onPrimary
+            Box(
+                Modifier.widthIn(min = 48.dp, max = 80.dp).clip(RoundedCornerShape(2.dp))
+                    .background(if (on) activeBg else theme.valueBg())
+                    .clickable { onEdit(WorkflowValue.BooleanValue(!on)) }
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+            ) { BasicText(if (on) "ON" else "OFF", style = TextStyle(color = if (on) activeText else theme.valueText(), fontSize = 10.sp)) }
+        } else if (editText != null) {
             BasicTextField(
                 value = editText!!,
                 onValueChange = { editText = it },

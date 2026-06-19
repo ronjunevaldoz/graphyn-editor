@@ -28,7 +28,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 @Composable
@@ -55,7 +57,18 @@ internal fun InputRow(
         BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
         if (currentValue != null) {
             Spacer(Modifier.weight(1f))
-            if (editText != null) {
+            if (input.type == WorkflowType.BooleanType && currentValue is WorkflowValue.BooleanValue) {
+                val on = currentValue.value
+                val activeBg = appTheme.colors.primary
+                val activeText = appTheme.colors.onPrimary
+                Box(
+                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp))
+                        .background(if (on) activeBg else theme.valueBg())
+                        .clickable { onValueChange(WorkflowValue.BooleanValue(!on)) }
+                        .padding(horizontal = 5.dp, vertical = 2.dp),
+                    contentAlignment = Alignment.Center,
+                ) { BasicText(if (on) "ON" else "OFF", style = TextStyle(color = if (on) activeText else theme.valueText(), fontSize = 10.sp)) }
+            } else if (editText != null) {
                 BasicTextField(
                     value = editText!!,
                     onValueChange = { editText = it },
