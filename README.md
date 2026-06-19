@@ -46,6 +46,7 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | Workflow execution engine | |
 | Observable workflow state (`StateFlow`) | |
 | Auto-layout (topological sort, Cmd+Shift+L) | |
+| Kotlin script node (JVM) with inline IDE-style editor | |
 | Screenshot tests via Roborazzi | |
 
 ---
@@ -84,8 +85,11 @@ implements NodeCanvasFactory with ready-to-use card shapes.
 | `plugins/sample-math` | — | Sample: math runtime plugin |
 | `plugins/sample-logger` | — | Sample: logger runtime + editor plugin |
 | `plugins/sample-style-nodes` | — | Sample: ShapeCard/FieldCard/CircleCard demo, uses `ui/cards` factories |
+| `plugins/script` | — | JVM-only: Kotlin JSR-223 scripting node with inline code editor card |
+| `plugins/sticky-notes` | — | Annotation node: resizable sticky note, no executor |
 | `server` | — | Sample: JVM server runtime wiring |
-| `app/demo` | — | Sample: full editor app wiring |
+| `app/demo` | — | Demo scene library: 9 sample workflows |
+| `app/desktopApp` | — | Production Desktop editor (JVM), includes script plugin |
 
 ---
 

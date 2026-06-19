@@ -544,3 +544,33 @@ include a monotonic nonce. Added `rejectConnectionPort(nodeId, portName)` to `Gr
 which increments a private `_rejectionSerial` counter and stores a `Triple<String, String, Int>`.
 The composable uses `LaunchedEffect(rejection)` on the whole triple, so every new rejection
 event — even to the same port — gets a distinct key and a fresh timer.
+
+---
+
+## Drag on Outer Box vs Header — When to Use Each
+
+**Category:** Compose gestures — canvas card drag
+
+**Problem:** Moving drag gesture detection to the header (to avoid competition with interactive child widgets like value chips) means the rest of the card body is a dead zone for drag. For cards with a small header and a large body of non-interactive content (port label rows, dividers), the user can't drag from most of the visible card area.
+
+**Fix and rule:** Put the `pointerInput` drag on the **outer Box** of the card, not the header. Interactive children (`BasicTextField`, `clickable` chips, steppers) naturally absorb pointer events within their own bounds — they never propagate up. Non-interactive children (labels, dividers, port rows) do not consume events, so the outer drag fires from those areas. The net result: drag works everywhere except inside interactive children. `FieldCard` keeps drag on the header because its entire body is interactive chips. `ScriptCard` puts drag on the outer box because only the `BasicTextField` area is interactive; port rows above and below are dead space that should be draggable.
+
+---
+
+## JVM-Only Plugin with Custom Canvas Card
+
+**Category:** Plugin architecture — KMP boundary
+
+**Problem:** A JVM-only plugin (`plugins/script`) needs a custom `NodeCanvasFactory` with Compose. The plugin can't use `ui:cards` `internal` helpers, and `app/demo` is KMP so it can't host JVM-only UI.
+
+**Fix and rule:** The JVM-only plugin (`kotlinJvm`) depends on `ui:cards` and `editor-api` and defines its own `NodeCanvasFactory` implementation (e.g., `ScriptCardFactory`). The editor plugin registers it via `registrar.registerCanvasCard(type, ScriptCardFactory)`. The KMP `app/demo` module uses the node type string `"script.eval"` with no import — it compiles on all targets. The JVM-only plugin is wired in `app/desktopApp/main.kt` which is already JVM-only.
+
+---
+
+## Config-Only Fields vs Port Inputs in NodeSpec
+
+**Category:** Plugin design — spec authoring
+
+**Problem:** A node has a field the user edits inline on the card (e.g., a code editor for a script) but it should not be a connectable wire port. Initially modelled as `PortSpec("code", ...)` in `inputs`, which showed it as a connectable port in the canvas and created an unnecessary wire target.
+
+**Fix and rule:** Fields that are purely user-editable config (not wired from other nodes) belong in `NodeSpec.defaultValues` only — not in `inputs`. The execution engine merges `spec.defaultValues + node.config + connectedPortInputs` before calling the executor (see `WorkflowExecutionEngine.buildInputMap`), so the executor receives the config key just as if it were a port. The card reads it from `ctx.node.config[key] ?: ctx.spec.defaultValues[key]` and calls `ctx.onConfigChange` on edit.
