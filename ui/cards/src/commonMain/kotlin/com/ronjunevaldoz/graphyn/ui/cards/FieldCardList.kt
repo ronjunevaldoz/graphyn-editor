@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
@@ -61,10 +63,12 @@ internal fun ListRow(
 private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, theme: FieldNodeTheme, onChange: (List<WorkflowValue>) -> Unit) {
     Column(Modifier.widthIn(min = 120.dp, max = 200.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
         items.forEachIndexed { i, item ->
-            ListItemRow(item, elementType, theme,
-                onEdit = { updated -> onChange(items.toMutableList().also { it[i] = updated }) },
-                onRemove = { onChange(items.toMutableList().also { it.removeAt(i) }) },
-            )
+            key(i) {
+                ListItemRow(item, elementType, theme,
+                    onEdit = { updated -> onChange(items.toMutableList().also { it[i] = updated }) },
+                    onRemove = { onChange(items.toMutableList().also { it.removeAt(i) }) },
+                )
+            }
         }
         Box(Modifier.fillMaxWidth().clickable { onChange(items + defaultItem(elementType)) }.padding(horizontal = 8.dp, vertical = 5.dp)) {
             BasicText("+ Add", style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
@@ -74,14 +78,24 @@ private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, the
 
 @Composable
 private fun ListItemRow(value: WorkflowValue, elementType: WorkflowType, theme: FieldNodeTheme, onEdit: (WorkflowValue) -> Unit, onRemove: () -> Unit) {
-    var editText by remember(value) { mutableStateOf<String?>(null) }
+    var editText by remember { mutableStateOf<String?>(null) }
     var focusGranted by remember { mutableStateOf(false) }
     fun commit() {
         val raw = editText ?: return; editText = null
         parseListItem(elementType, raw)?.let(onEdit)
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (editText != null) {
+        if (elementType == WorkflowType.BooleanType && value is WorkflowValue.BooleanValue) {
+            val on = value.value
+            val activeBg = appTheme.colors.primary
+            val activeText = appTheme.colors.onPrimary
+            Box(
+                Modifier.weight(1f).clip(RoundedCornerShape(2.dp))
+                    .background(if (on) activeBg else theme.valueBg())
+                    .clickable { onEdit(WorkflowValue.BooleanValue(!on)) }
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+            ) { BasicText(if (on) "ON" else "OFF", style = TextStyle(color = if (on) activeText else theme.valueText(), fontSize = 10.sp)) }
+        } else if (editText != null) {
             BasicTextField(
                 value = editText!!,
                 onValueChange = { editText = it },
