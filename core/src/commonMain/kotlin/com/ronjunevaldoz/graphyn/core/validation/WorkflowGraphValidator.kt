@@ -7,6 +7,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValidator
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 
+/**
+ * Full structural validator for a [WorkflowDefinition].
+ *
+ * Checks for unknown node types, type-incompatible connections, duplicate input connections,
+ * missing required inputs, and cycles. Returns all errors found — not just the first.
+ */
 class WorkflowGraphValidator(
     private val nodeSpecRegistry: NodeSpecRegistry,
 ) : WorkflowValidator {

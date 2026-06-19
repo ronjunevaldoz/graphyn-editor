@@ -1,11 +1,13 @@
 package com.ronjunevaldoz.graphyn.editor.canvas
 
+/** Display metadata for a node category shown in the node-picker palette. */
 data class NodeCategoryMeta(
     val label: String,
     val color: Long,
     val icon: String = "",
 )
 
+/** Maps category id strings to their [NodeCategoryMeta] for palette grouping. */
 interface NodeCategoryRegistry {
     fun resolve(categoryId: String): NodeCategoryMeta?
     fun register(categoryId: String, meta: NodeCategoryMeta)

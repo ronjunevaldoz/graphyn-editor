@@ -82,7 +82,7 @@ internal fun GraphynOutputPortDot(
                         val inputPort = draftNode?.let { nodeSpecs.resolve(it.type) }
                             ?.inputs?.firstOrNull { it.name == draft.fromPort }
                         if (inputPort == null || !WorkflowTypeCompatibility.isCompatible(inputPort.type, outputPort.type)) {
-                            state.rejectedConnectionPort = node.id to outputPort.name
+                            state.rejectConnectionPort(node.id, outputPort.name)
                             state.addDebugLog("Rejected: ${node.id}:${outputPort.name} → ${draft.fromNodeId}:${draft.fromPort} (type mismatch)")
                             state.dispatch(GraphynEditorIntent.CancelConnection)
                         } else {

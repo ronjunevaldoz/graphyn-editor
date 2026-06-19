@@ -21,7 +21,7 @@ internal fun GraphynEditorState.completeConnection(toNodeId: String, toPort: Str
         val compatible = outputType is WorkflowType.OpaqueType || inputType is WorkflowType.OpaqueType
             || WorkflowTypeCompatibility.isCompatible(inputType, outputType)
         if (!compatible) {
-            rejectedConnectionPort = toNodeId to toPort
+            rejectConnectionPort(toNodeId, toPort)
             connectionDraft = null
             connectionDraftPosition = null
             log.push("Rejected connection: $outputType is not compatible with $inputType")

@@ -34,6 +34,12 @@ import kotlin.math.roundToInt
 
 private const val LABEL_HEIGHT_DP = 18
 
+/**
+ * Compact shape card — circle by default — for trigger/sink nodes with one primary input or output.
+ *
+ * The node label is rendered below the shape; the optional [avatar] composable replaces the
+ * default initial-letter icon inside the shape. Port anchors are centred on the shape.
+ */
 class ShapeCardFactory(
     val shape: Shape = CircleShape,
     val size: Dp = 64.dp,

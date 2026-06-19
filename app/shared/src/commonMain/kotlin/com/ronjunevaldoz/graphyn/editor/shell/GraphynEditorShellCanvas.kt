@@ -36,10 +36,7 @@ internal fun GraphynEditorShellCanvas(
                 onZoomOut = { state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, ZoomOutStep, Offset.Zero)) },
             )
             val minimapWidth = 200.dp
-            val cs = state.canvasSize
-            val minimapHeight = if (cs.width > 0)
-                (minimapWidth.value * cs.height.toFloat() / cs.width.toFloat()).coerceIn(80f, 200f).dp
-            else 130.dp
+            val minimapHeight = 130.dp
             GraphynMinimapDebugger(
                 state = state,
                 canvasCards = dependencies.canvasCards,
