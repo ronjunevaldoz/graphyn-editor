@@ -95,6 +95,7 @@ internal fun GraphynMinimapDebugger(
             nodes.forEachIndexed { index, node ->
                 val position = nodePositions.getOrNull(index) ?: return@forEachIndexed
                 val factory = canvasCards?.resolve(node.type)
+                if (factory?.isAnnotation == true) return@forEachIndexed
                 val nodeW = (factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width).toFloat()
                 val nodeH = (factory?.nodeHeight ?: GraphynCanvasMetrics.NodeSize.height).toFloat()
                 val shape = factory?.nodeShape ?: NodeShape.Rectangle

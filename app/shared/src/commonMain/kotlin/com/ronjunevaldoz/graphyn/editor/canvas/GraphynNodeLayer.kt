@@ -27,12 +27,34 @@ internal fun GraphynNodeLayer(
     canvasCards: NodeCanvasRegistry?,
     surfaceColor: Color,
 ) {
+    // Pass 1: annotation nodes (sticky notes, frames) always render behind regular nodes
+    workflow.nodes.forEachIndexed { index, node ->
+        val spec = nodeSpecs.resolve(node.type) ?: return@forEachIndexed
+        val factory = canvasCards?.resolve(node.type) ?: return@forEachIndexed
+        if (!factory.isAnnotation) return@forEachIndexed
+        val position = state.nodePosition(node.id, index)
+        val ctx = NodeCanvasContext(
+            node = node, spec = spec,
+            selected = state.selectedNodeId == node.id,
+            executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
+            onSelect = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
+            onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
+            onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
+            contentColor = GraphynDs.colors.textPrimary,
+        )
+        Box(modifier = Modifier.offset { position }) {
+            with(factory) { NodeCanvas(ctx) }
+        }
+    }
+
+    // Pass 2: regular nodes on top
     workflow.nodes.forEachIndexed { index, node ->
         val spec = nodeSpecs.resolve(node.type)
         val position = state.nodePosition(node.id, index)
         val factory = spec?.let { canvasCards?.resolve(node.type) }
+        if (factory?.isAnnotation == true) return@forEachIndexed
 
-        if (factory != null && spec != null) {
+        if (factory != null) {
             val ctx = NodeCanvasContext(
                 node = node,
                 spec = spec,

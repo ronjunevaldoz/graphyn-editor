@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -48,6 +50,9 @@ private val HINT_COLOR = Color(0xFF9E8A7A)
 
 @Composable
 internal fun StickyNoteCard(ctx: NodeCanvasContext) {
+    val noteW = (ctx.node.config[STICKY_NOTE_W_KEY] as? WorkflowValue.IntValue)?.value ?: STICKY_NOTE_DEFAULT_W
+    val noteH = (ctx.node.config[STICKY_NOTE_H_KEY] as? WorkflowValue.IntValue)?.value ?: STICKY_NOTE_DEFAULT_H
+
     val currentText = (ctx.node.config[STICKY_NOTE_TEXT_KEY]
         ?: ctx.spec.defaultValues[STICKY_NOTE_TEXT_KEY])
         .let { (it as? WorkflowValue.StringValue)?.value ?: "" }
@@ -64,67 +69,75 @@ internal fun StickyNoteCard(ctx: NodeCanvasContext) {
     LaunchedEffect(editing) { if (editing != null) focusRequester.requestFocus() }
 
     val borderColor = if (ctx.selected) BORDER_SELECTED else BORDER_DEFAULT
-    Column(
-        modifier = Modifier
-            .clip(SHAPE)
-            .background(BG)
-            .border(1.5.dp, borderColor, SHAPE),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(24.dp)
-                .background(HEADER_BG)
-                .clickable { ctx.onSelect() }
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        awaitTouchSlopOrCancellation(down.id) { c, _ -> c.consume() }
-                            ?: return@awaitEachGesture
-                        drag(down.id) { c ->
-                            c.consume()
-                            val d = c.position - c.previousPosition
-                            ctx.onMove(IntOffset(d.x.roundToInt(), d.y.roundToInt()))
-                        }
-                    }
-                }
-                .padding(horizontal = 8.dp),
-        ) {
-            BasicText(
-                "Note",
-                style = TextStyle(color = TEXT_COLOR, fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
-            )
-        }
-        Box(
+    Box(Modifier.size(noteW.dp, noteH.dp)) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp),
+                .clip(SHAPE)
+                .background(BG)
+                .border(1.5.dp, borderColor, SHAPE),
         ) {
-            if (editing != null) {
-                BasicTextField(
-                    value = editing!!,
-                    onValueChange = { editing = it },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { s ->
-                            if (s.isFocused) focusGranted = true else if (focusGranted) commit()
-                        },
-                    textStyle = TextStyle(color = TEXT_COLOR, fontSize = 11.sp, lineHeight = 16.sp),
-                )
-            } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .background(HEADER_BG)
+                    .clickable { ctx.onSelect() }
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            awaitTouchSlopOrCancellation(down.id) { c, _ -> c.consume() }
+                                ?: return@awaitEachGesture
+                            drag(down.id) { c ->
+                                c.consume()
+                                val d = c.position - c.previousPosition
+                                ctx.onMove(IntOffset(d.x.roundToInt(), d.y.roundToInt()))
+                            }
+                        }
+                    }
+                    .padding(horizontal = 8.dp),
+            ) {
                 BasicText(
-                    text = currentText.ifEmpty { "Click to add note…" },
-                    style = TextStyle(
-                        color = if (currentText.isEmpty()) HINT_COLOR else TEXT_COLOR,
-                        fontSize = 11.sp,
-                        lineHeight = 16.sp,
-                    ),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { focusGranted = false; editing = currentText },
+                    "Note",
+                    style = TextStyle(color = TEXT_COLOR, fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
                 )
             }
+            Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                if (editing != null) {
+                    BasicTextField(
+                        value = editing!!,
+                        onValueChange = { editing = it },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { s ->
+                                if (s.isFocused) focusGranted = true else if (focusGranted) commit()
+                            },
+                        textStyle = TextStyle(color = TEXT_COLOR, fontSize = 11.sp, lineHeight = 16.sp),
+                    )
+                } else {
+                    BasicText(
+                        text = currentText.ifEmpty { "Click to add note…" },
+                        style = TextStyle(
+                            color = if (currentText.isEmpty()) HINT_COLOR else TEXT_COLOR,
+                            fontSize = 11.sp,
+                            lineHeight = 16.sp,
+                        ),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { focusGranted = false; editing = currentText },
+                    )
+                }
+            }
         }
+        StickyNoteResizeHandle(
+            modifier = Modifier.align(Alignment.BottomEnd),
+            onResize = { dw, dh ->
+                val newW = (noteW + dw).coerceAtLeast(120)
+                val newH = (noteH + dh).coerceAtLeast(80)
+                if (newW != noteW) ctx.onConfigChange(STICKY_NOTE_W_KEY, WorkflowValue.IntValue(newW))
+                if (newH != noteH) ctx.onConfigChange(STICKY_NOTE_H_KEY, WorkflowValue.IntValue(newH))
+            },
+        )
     }
 }

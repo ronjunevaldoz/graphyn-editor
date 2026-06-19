@@ -37,7 +37,7 @@ internal fun GraphynPalettePanel(
     val colors = GraphynDs.colors
     val type = GraphynDs.type
     var query by remember { mutableStateOf("") }
-    var collapsed by remember { mutableStateOf(emptySet<String>()) }
+    var expanded by remember { mutableStateOf(emptySet<String>()) }
 
     Column(
         modifier = modifier
@@ -97,9 +97,9 @@ internal fun GraphynPalettePanel(
                     .sortedBy { it.value.label }
 
                 categorized.forEach { (id, meta) ->
-                    val isExpanded = id !in collapsed
+                    val isExpanded = id in expanded
                     PaletteCategoryHeader(meta = meta, expanded = isExpanded) {
-                        collapsed = if (isExpanded) collapsed + id else collapsed - id
+                        expanded = if (isExpanded) expanded - id else expanded + id
                     }
                     if (isExpanded) {
                         grouped[id]?.forEach { PaletteNodeItem(spec = it, onAdd = onAddNode) }

@@ -28,8 +28,9 @@ object StickyNoteEditorPlugin : GraphynEditorPlugin {
 }
 
 private object StickyNoteCardFactory : NodeCanvasFactory {
-    override val nodeWidth = 200
-    override val nodeHeight = 160
+    override val nodeWidth = STICKY_NOTE_DEFAULT_W
+    override val nodeHeight = STICKY_NOTE_DEFAULT_H
+    override val isAnnotation = true
 
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int = 80
 

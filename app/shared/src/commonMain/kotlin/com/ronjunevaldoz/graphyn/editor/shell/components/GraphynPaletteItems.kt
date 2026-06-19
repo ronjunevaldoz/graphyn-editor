@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,10 +41,7 @@ internal fun PaletteNodeItem(spec: NodeSpec, onAdd: (NodeSpec) -> Unit) {
                 .clip(RoundedCornerShape(1.dp))
                 .background(colors.textDisabled),
         )
-        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            BasicText(text = spec.label, style = type.body.copy(color = colors.textPrimary))
-            spec.description?.let { BasicText(text = it, style = type.bodySmall.copy(color = colors.textDisabled)) }
-        }
+        BasicText(text = spec.label, style = type.body.copy(color = colors.textPrimary))
     }
 }
 

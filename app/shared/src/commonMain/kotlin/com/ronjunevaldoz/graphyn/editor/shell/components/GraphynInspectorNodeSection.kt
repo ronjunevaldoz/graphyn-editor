@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
@@ -60,6 +61,23 @@ internal fun GraphynInspectorNodeSection(
                 }
             }
         }
+        if (outputs.isNotEmpty()) {
+            InspectorSectionLabel("OUTPUTS")
+            InspectorCard {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    spec?.outputs?.forEach { port ->
+                        outputs[port.name]?.let { value ->
+                            OutputRow(portName = port.name, value = value)
+                        }
+                    }
+                    outputs.forEach { (key, value) ->
+                        if (spec?.outputs?.none { it.name == key } != false) {
+                            OutputRow(portName = key, value = value)
+                        }
+                    }
+                }
+            }
+        }
         if (panelFactory != null) {
             panelFactory.Content(
                 EditorPanelContext(
@@ -79,6 +97,32 @@ internal fun GraphynInspectorNodeSection(
             state.dispatch(GraphynEditorIntent.DeleteSelectedNode)
         }
     }
+}
+
+@Composable
+private fun OutputRow(portName: String, value: WorkflowValue) {
+    val colors = GraphynDs.colors
+    val type = GraphynDs.type
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        BasicText(portName, style = type.bodySmall.copy(color = colors.textPrimary))
+        BasicText(
+            text = value.preview(),
+            style = type.mono.copy(color = colors.accent),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+private fun WorkflowValue.preview(): String = when (this) {
+    is WorkflowValue.StringValue  -> if (value.length > 40) "\"${value.take(37)}…\"" else "\"$value\""
+    is WorkflowValue.IntValue     -> value.toString()
+    is WorkflowValue.DoubleValue  -> value.toString()
+    is WorkflowValue.BooleanValue -> value.toString()
+    is WorkflowValue.ListValue    -> "[${items.size} items]"
+    is WorkflowValue.RecordValue  -> "{${fields.size} fields}"
+    WorkflowValue.NullValue       -> "null"
+    WorkflowValue.OpaqueValue     -> "opaque"
 }
 
 @Composable
