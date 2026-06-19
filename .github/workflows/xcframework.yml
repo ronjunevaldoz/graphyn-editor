@@ -1,9 +1,9 @@
 name: Build XCFramework
 
+# Runs alongside publish.yml when a version tag is pushed
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
+  push:
+    tags: ['v*.*.*']
 
 jobs:
   xcframework:
@@ -21,6 +21,9 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Resolve version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
+
       - name: Assemble XCFramework
         run: ./gradlew :app:shared:assembleGraphynEditorXCFramework --no-daemon
 
@@ -31,15 +34,13 @@ jobs:
 
       - name: Upload XCFramework to release
         uses: softprops/action-gh-release@v2
-        if: github.event_name == 'release'
         with:
+          tag_name: ${{ github.ref_name }}
           files: app/shared/build/XCFrameworks/release/GraphynEditor.xcframework.zip
 
       - name: Update Package.swift checksum
-        if: github.event_name == 'release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ github.event.release.tag_name }}
         run: |
           CHECKSUM=$(swift package compute-checksum \
             app/shared/build/XCFrameworks/release/GraphynEditor.xcframework.zip)
@@ -52,15 +53,15 @@ jobs:
           text = open(path).read()
           text = re.sub(
               r'releases/download/[^/]+/GraphynEditor\.xcframework\.zip',
-              f'releases/download/{version}/GraphynEditor.xcframework.zip',
+              f'releases/download/v{version}/GraphynEditor.xcframework.zip',
               text,
           )
           text = re.sub(r'checksum: "[^"]*"', f'checksum: "{checksum}"', text)
           open(path, "w").write(text)
-          print(f"Patched Package.swift: {version} / {checksum}")
+          print(f"Patched Package.swift: v{version} / {checksum}")
           EOF
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Package.swift
-          git commit -m "chore(spm): update XCFramework checksum for $VERSION [skip ci]"
+          git commit -m "chore(spm): update XCFramework checksum for v$VERSION [skip ci]"
           git push origin HEAD:main

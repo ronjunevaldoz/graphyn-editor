@@ -50,10 +50,12 @@ kotlin {
     }
 }
 
+val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.1.0"
+
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
-    coordinates("io.github.ronjunevaldoz", "graphyn-core", "0.1.0")
+    coordinates("io.github.ronjunevaldoz", "graphyn-core", libraryVersion)
     pom {
         name = "Graphyn Core"
         description = "Workflow model, types, validation, and execution engine — no Compose dependency"

@@ -38,10 +38,12 @@ kotlin {
     }
 }
 
+val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.1.0"
+
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
-    coordinates("io.github.ronjunevaldoz", "graphyn-ui-cards", "0.1.0")
+    coordinates("io.github.ronjunevaldoz", "graphyn-ui-cards", libraryVersion)
     pom {
         name = "Graphyn UI Cards"
         description = "Reusable Compose Multiplatform node card factories for the Graphyn editor."
