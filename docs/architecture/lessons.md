@@ -348,3 +348,26 @@ communicate domain at a glance and are explicitly separated in the shared file w
 When a plugin registers multiple card styles, shared surface tokens (body bg, border, selection
 color, corner radius, font sizes) belong in a single shared file. Per-card identity tokens
 (header accent, icon color) are documented as intentional distinctions in that same file.
+
+---
+
+## Annotation Nodes Need an `isAnnotation` Layering Sentinel
+
+**Category:** Canvas rendering — z-order, minimap filtering
+
+**Problem:** Sticky notes (and future annotation types) must always render beneath regular workflow nodes. Without a sentinel, all nodes go through a single `forEachIndexed` loop in `GraphynNodeLayer`, so placement order determines z-order — annotations placed after a regular node appear in front of it.
+
+**Root cause:** Compose Box stacks children in composition order. A single flat render loop gives no z-separation between annotation and regular nodes.
+
+**Fix and rule:** Add `val isAnnotation: Boolean get() = false` to `NodeCanvasFactory`. The canvas does two passes: first render all factories where `isAnnotation == true`, then render the rest. The minimap skips any factory with `isAnnotation == true`. Any future "frame" or "comment" card type should set `isAnnotation = true`.
+
+---
+
+## Dynamically-Sized Cards Must Set Their Own Size via `Modifier.size()`
+
+**Category:** Compose layout — card sizing in unconstrained parents
+
+**Problem:** Sticky note cards placed in `Box(Modifier.offset { pos })` are in an unconstrained container. `fillMaxSize()` inside an unconstrained Box resolves to 0×0, making the card invisible or a single-line label.
+
+**Fix and rule:** Cards that need a fixed or user-controlled size must apply `Modifier.size(w.dp, h.dp)` explicitly. Store user-adjusted dimensions in node config (e.g., `__w` / `__h` keys); read them at render time and fall back to constants. Never rely on `fillMaxSize()` to fill an unconstrained canvas slot.
+

@@ -4,20 +4,15 @@ package com.ronjunevaldoz.graphyn.editor.shell
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
@@ -36,19 +31,13 @@ import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynInspectorPanel
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynLogPanel
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynMinimapDebugger
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynPalettePanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynZoomControls
-import com.ronjunevaldoz.graphyn.editor.shell.components.ZoomOutStep
-import com.ronjunevaldoz.graphyn.editor.shell.components.ZoomStep
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
-import androidx.compose.ui.geometry.Offset
 
 data class GraphynEditorShellDependencies(
     val nodeSpecs: NodeSpecRegistry,
@@ -116,32 +105,7 @@ private fun GraphynEditorShellContent(
                 categoryRegistry = dependencies.categoryRegistry,
                 onAddNode = { spec -> state.dispatch(GraphynEditorIntent.AddNode(spec)) },
             )
-            Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                Box(modifier = Modifier.weight(1f).fillMaxWidth().testTag("graphyn-canvas")) {
-                    canvasContent()
-                    GraphynZoomControls(
-                        modifier = Modifier.align(Alignment.BottomStart),
-                        onZoomIn = { state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, ZoomStep, Offset.Zero)) },
-                        onZoomOut = { state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, ZoomOutStep, Offset.Zero)) },
-                    )
-                    val minimapWidth = 200.dp
-                    val cs = state.canvasSize
-                    val minimapHeight = if (cs.width > 0)
-                        (minimapWidth.value * cs.height.toFloat() / cs.width.toFloat())
-                            .coerceIn(80f, 200f).dp
-                    else 130.dp
-                    GraphynMinimapDebugger(
-                        state = state,
-                        canvasCards = dependencies.canvasCards,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(width = minimapWidth, height = minimapHeight)
-                            .testTag("minimap")
-                            .graphicsLayer { alpha = 0.9f },
-                    )
-                }
-                GraphynLogPanel(modifier = Modifier.fillMaxWidth(), state = state)
-            }
+            GraphynEditorShellCanvas(state = state, dependencies = dependencies, modifier = Modifier.weight(1f), canvasContent = canvasContent)
             GraphynInspectorPanel(
                 modifier = Modifier.width(260.dp).fillMaxHeight(),
                 state = state,

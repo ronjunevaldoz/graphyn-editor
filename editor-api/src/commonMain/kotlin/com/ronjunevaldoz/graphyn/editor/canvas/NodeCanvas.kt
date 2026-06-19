@@ -60,6 +60,12 @@ interface NodeCanvasFactory {
     val nodeShape: NodeShape get() = NodeShape.Rectangle
 
     /**
+     * When true the canvas renders this node beneath all regular nodes and the minimap skips it.
+     * Use for annotation layers (sticky notes, frames) that should never occlude workflow nodes.
+     */
+    val isAnnotation: Boolean get() = false
+
+    /**
      * Y offset in dp from the card's top-left corner to the centre of the connection dot
      * for [portIndex]. Override to align wires with your card's actual port row positions.
      */

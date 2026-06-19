@@ -5,8 +5,8 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 
 internal object GraphynAutoLayout {
-    private const val COL_GAP = 300
-    private const val ROW_GAP = 200
+    private const val COL_GAP = 320
+    private const val ROW_GAP = 220
 
     internal const val MAX_NODES = 20
 
@@ -26,43 +26,62 @@ internal object GraphynAutoLayout {
             }
         }
 
+        // Kahn BFS: topological order + longest-path depth (= column index)
         val depth = nodes.associate { it.id to 0 }.toMutableMap()
-        val queue = ArrayDeque<String>()
+        val topoOrder = mutableListOf<String>()
         val visited = mutableSetOf<String>()
+        val queue = ArrayDeque<String>()
         nodes.filter { inEdges[it.id].isNullOrEmpty() }.forEach { queue.add(it.id) }
 
         while (queue.isNotEmpty()) {
             val id = queue.removeFirst()
             if (!visited.add(id)) continue
+            topoOrder.add(id)
             outEdges[id]?.forEach { succ ->
                 depth[succ] = maxOf(depth[succ] ?: 0, (depth[id] ?: 0) + 1)
                 if (inEdges[succ]?.all { it in visited } == true) queue.add(succ)
             }
         }
-        nodes.filter { it.id !in visited }.forEach { queue.add(it.id) }
-        while (queue.isNotEmpty()) {
-            val id = queue.removeFirst()
-            visited.add(id)
+        // Append disconnected / cyclic nodes so they still receive positions
+        nodes.filter { it.id !in visited }.forEach { topoOrder.add(it.id) }
+
+        // Bottom-up: count the number of leaves under each node.
+        // Leaves = 1; internal nodes = sum of children's leaf counts.
+        // This determines how much vertical band each node should own.
+        val leafCount = mutableMapOf<String, Int>()
+        topoOrder.reversed().forEach { id ->
+            val children = outEdges[id] ?: emptyList()
+            leafCount[id] = if (children.isEmpty()) 1 else children.sumOf { leafCount[it] ?: 1 }
         }
 
-        // Group by depth and assign y positions centered on parent midpoints
+        // Top-down band assignment:
+        // Each node owns ROW_GAP * leafCount vertical space.
+        // The node itself sits at the centre of that band.
+        // Children's bands tile inside the parent's band in order.
+        val bandStart = mutableMapOf<String, Int>()
+        var cursor = 0
         val positions = mutableMapOf<String, IntOffset>()
-        nodes.groupBy { depth[it.id] ?: 0 }.entries.sortedBy { it.key }.forEach { (col, nodesAtDepth) ->
-            // Sort within column by average parent y so siblings stay near their parent
-            val sorted = nodesAtDepth.sortedBy { node ->
-                val ys = inEdges[node.id]?.mapNotNull { positions[it]?.y?.toDouble() } ?: emptyList()
-                if (ys.isEmpty()) Double.NEGATIVE_INFINITY else ys.average()
+
+        topoOrder.forEach { id ->
+            if (id !in bandStart) {
+                // root or disconnected: claim the next available band
+                bandStart[id] = cursor
+                cursor += (leafCount[id] ?: 1) * ROW_GAP
             }
-            // Place each node at its parents' midpoint; push down to enforce ROW_GAP
-            var cursor = 0
-            sorted.forEach { node ->
-                val ys = inEdges[node.id]?.mapNotNull { positions[it]?.y } ?: emptyList()
-                val preferred = if (ys.isEmpty()) cursor else ys.average().toInt()
-                val y = maxOf(cursor, preferred)
-                positions[node.id] = IntOffset(col * COL_GAP, y)
-                cursor = y + ROW_GAP
+            val start = bandStart.getValue(id)
+            val size = (leafCount[id] ?: 1) * ROW_GAP
+            positions[id] = IntOffset((depth[id] ?: 0) * COL_GAP, start + size / 2)
+
+            // Tile children's sub-bands left-to-right within this band
+            var childCursor = start
+            outEdges[id]?.forEach { childId ->
+                if (childId !in bandStart) {
+                    bandStart[childId] = childCursor
+                    childCursor += (leafCount[childId] ?: 1) * ROW_GAP
+                }
             }
         }
+
         return positions
     }
 }
