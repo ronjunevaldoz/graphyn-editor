@@ -471,3 +471,66 @@ color, corner radius, font sizes) belong in a single shared file. Per-card ident
 
 **Fix and rule:** Custom cards (`NodeCanvasFactory` implementations) must overlay `NodeStatusBadge` (or `GraphynNodeStatusBadge`) and provide a jvmTest that checks badge text (`"+"`, `"v"`, `"x"`) for each `NodeExecutionStatus` value. `app/demo` can host its own `jvmTest` source set with `compose.desktop.uiTestJUnit4` — no roborazzi plugin needed for behavior-only tests. Pattern for the overlay: wrap the card in `Box(Modifier.size(...))` and add `NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(4.dp), surfaceColor = cardBg)`.
 
+
+---
+
+## Compose test `captureToImage` captures outer Box, not inner Canvas when padding is applied
+
+**Category:** Testing — Compose UI screenshot tests
+
+**Problem:** `captureToImage()` on a `testTag` applied to a Box that has `padding(4.dp)` returns an image whose coordinates include the padding. If the test computes `calculateMinimapLayout(minimapSize = IntSize(image.width, image.height))`, the layout is based on the OUTER size, but the actual drawing code inside uses an inner Canvas whose `onSizeChanged` reports a SMALLER size (outer minus `2 × padding`). The mismatch shifts the test's computed viewport rect by `paddingPx` pixels, causing sample points to land in the padding background zone instead of on the drawn stroke.
+
+**Fix and rule:** Apply a dedicated `testTag("minimap-canvas")` to the **inner Canvas** composable (where drawing happens), not only to the outer Box. The test then captures the Canvas directly — its image dimensions equal the `minimapSize` tracked by `onSizeChanged`, so `calculateMinimapLayout` in the test receives the exact same input as the composable. No padding offset arithmetic needed.
+
+---
+
+## Auto-layout band-height must be at least the node's own height
+
+**Category:** Canvas layout — auto-layout tree packing
+
+**Problem:** For internal nodes (those with children), `bandH[node]` was set to `sum(children.bandH)`. If children are shorter than the parent (e.g., a FieldCard parent → ShapeCard child: 169dp vs 82dp), `bandH < nodeHeight`, and `y = bandStart + (bandH - nodeHeight) / 2` computes a negative y-offset. This causes the node to render above its own band, overlapping siblings.
+
+**Fix and rule:** Use `maxOf(fallbackH(id), children.sumOf {...})` so a parent node's band is never smaller than `nodeHeight + VERT_GAP`. This guarantees `(bandH - nodeHeight) / 2 ≥ VERT_GAP / 2 > 0` always.
+
+---
+
+## Auto-layout must know actual node sizes and the logical canvas center
+
+**Category:** Canvas layout — auto-layout algorithm
+
+**Problem:** `GraphynAutoLayout.computePositions` used fixed `COL_GAP=320` and `ROW_GAP=220` constants with no awareness of actual node dimensions. `fitToPositions` also used hardcoded `nodeWidth=280, nodeHeight=180`. The layout was placed starting at world `(0,0)` instead of the centre of the 4096×3072 logical canvas, making auto-layout nodes appear far from the visible canvas area.
+
+**Fix and rule:**
+- Pass `nodeSize: (nodeType: String) -> IntSize` into `computePositions`. Column x positions accumulate per-column max width + `HORIZ_GAP`. Band heights use `nodeHeight + VERT_GAP` per leaf, summed up the tree.
+- After computing positions, shift the entire layout so its bounding-box centre lands on `(DefaultLogicalCanvasWidth/2, DefaultLogicalCanvasHeight/2)` = `(2048, 1536)`.
+- `fitToPositions` now takes `Map<String, IntSize>` for per-node bounds; falls back to `GraphynCanvasMetrics.NodeSize` when a node type is unregistered.
+- `GraphynEditorState.canvasCards: NodeCanvasRegistry?` is set via `SideEffect` in `GraphynEditorShellContent` so `performAutoLayout` can resolve per-type factory sizes at dispatch time.
+
+---
+
+## `Map.getOrDefault` is not available in Kotlin commonMain
+
+**Category:** KMP stdlib — `commonMain` / multiplatform compatibility
+
+**Problem:** `Map<K,V>.getOrDefault(key, default)` compiles on JVM but not in `commonMain`
+because it's a JDK extension, not part of the Kotlin stdlib's common set.
+
+**Fix and rule:** Use `map.getOrElse(key) { default }` everywhere in commonMain. It is
+available in all targets and avoids the JVM-specific extension.
+
+---
+
+## LaunchedEffect with stable key doesn't restart on repeated identical input
+
+**Category:** Compose effects — `GraphynCanvasSurface`
+
+**Problem:** `LaunchedEffect(nodeId, portName)` was used to auto-dismiss the type-mismatch
+toast after 2 s. If the same port was rejected twice in quick succession (before the first
+timer expired), the key didn't change so the effect didn't restart — the second rejection
+was silently absorbed and the toast didn't reset.
+
+**Fix and rule:** Whenever an effect must re-run on logically repeated events, the key must
+include a monotonic nonce. Added `rejectConnectionPort(nodeId, portName)` to `GraphynEditorState`
+which increments a private `_rejectionSerial` counter and stores a `Triple<String, String, Int>`.
+The composable uses `LaunchedEffect(rejection)` on the whole triple, so every new rejection
+event — even to the same port — gets a distinct key and a fresh timer.

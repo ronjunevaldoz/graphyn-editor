@@ -17,6 +17,7 @@ import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynNodePickerState
@@ -58,7 +59,13 @@ class GraphynEditorState(
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
     var executionStatusByNodeId by mutableStateOf<Map<String, NodeExecutionStatus>>(emptyMap())
     var lastExecutionResult by mutableStateOf<WorkflowExecutionResult?>(null)
-    var rejectedConnectionPort by mutableStateOf<Pair<String, String>?>(null)
+    internal var canvasCards: NodeCanvasRegistry? = null
+    private var _rejectionSerial = 0
+    var rejectedConnectionPort by mutableStateOf<Triple<String, String, Int>?>(null)
+
+    fun rejectConnectionPort(nodeId: String, portName: String) {
+        rejectedConnectionPort = Triple(nodeId, portName, ++_rejectionSerial)
+    }
     var groups by mutableStateOf<List<NodeGroup>>(emptyList())
 
     val effectiveSelectedNodeIds: Set<String>

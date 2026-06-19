@@ -33,7 +33,7 @@ class GraphynSubgraphNavigatorUiTest {
                 onHome = {},
             )
         }
-        rule.onNodeWithText("⌂").assertExists()
+        rule.onNodeWithText("← Home").assertExists()
     }
 
     @Test
@@ -72,7 +72,7 @@ class GraphynSubgraphNavigatorUiTest {
                 onHome = { fired = true },
             )
         }
-        rule.onNodeWithText("⌂").performClick()
+        rule.onNodeWithText("← Home").performClick()
         assertTrue(fired)
     }
 

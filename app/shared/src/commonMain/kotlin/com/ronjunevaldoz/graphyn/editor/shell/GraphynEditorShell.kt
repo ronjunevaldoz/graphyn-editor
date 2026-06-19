@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,8 @@ data class GraphynEditorShellDependencies(
     val onExitSubgraph: (() -> Unit)? = null,
     /** Composable rendered at the canvas top-start (e.g. breadcrumb navigation). */
     val canvasTopStart: (@Composable () -> Unit)? = null,
+    /** Called when the user taps the "← Home" button in the toolbar; shows the button when set. */
+    val onHome: (() -> Unit)? = null,
 )
 
 @Composable
@@ -87,6 +90,7 @@ private fun GraphynEditorShellContent(
     state: GraphynEditorState,
     canvas: (@Composable () -> Unit)?,
 ) {
+    SideEffect { state.canvasCards = dependencies.canvasCards }
     val colors = GraphynDs.colors
     val executionEngine = dependencies.executionEngine
     val validator = remember(dependencies.nodeSpecs) { WorkflowGraphValidator(dependencies.nodeSpecs) }
@@ -111,6 +115,8 @@ private fun GraphynEditorShellContent(
             canRun = executionEngine != null,
             onRun = { executionEngine?.let { state.execute(it) } },
             onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },
+            onHome = dependencies.onHome,
+            workflowName = if (dependencies.onHome != null) state.workflow?.name else null,
         )
         Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
             GraphynPalettePanel(

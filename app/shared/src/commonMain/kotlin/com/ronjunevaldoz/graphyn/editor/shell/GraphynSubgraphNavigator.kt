@@ -32,11 +32,12 @@ data class SubgraphFrame(val label: String, val state: GraphynEditorState)
 /**
  * Wraps [GraphynEditorShell] with subgraph drill-in navigation and optional home navigation.
  *
- * A breadcrumb bar appears whenever there is a home button ([onHome]) or the user has
- * drilled into a subgraph. Clicking home or a breadcrumb segment pops back to that level.
+ * When [onHome] is provided a "← Home" button appears in the top toolbar. A canvas breadcrumb
+ * overlay appears only while the user is drilled into a subgraph, showing the path and letting
+ * them tap any segment to pop back.
  *
- * @param onHome Optional callback to return to a launcher or parent screen. When set, a
- *   "⌂" home button is always visible in the navigation bar alongside the workflow name.
+ * @param onHome Called when the user taps "← Home" in the toolbar; typically sets `openWorkflow = null`
+ *   to return to a launcher screen.
  */
 @Composable
 fun GraphynSubgraphNavigator(
@@ -52,9 +53,9 @@ fun GraphynSubgraphNavigator(
     // Keyed by inner workflow id so positions survive pop-and-re-enter.
     val stateCache = remember { mutableMapOf<String, GraphynEditorState>() }
 
-    val showNavBar = onHome != null || stack.isNotEmpty()
     val navDependencies = remember(dependencies, stack.isNotEmpty()) {
         dependencies.copy(
+            onHome = onHome,
             onEnterSubgraph = { label, inner ->
                 val innerState = stateCache.getOrPut(inner.id) {
                     GraphynEditorState(initialWorkflow = inner, nodeSpecs = dependencies.nodeSpecs)
@@ -62,11 +63,11 @@ fun GraphynSubgraphNavigator(
                 stack = stack + SubgraphFrame(label, innerState)
             },
             onExitSubgraph = if (stack.isNotEmpty()) ({ stack = stack.dropLast(1) }) else null,
-            canvasTopStart = if (showNavBar) ({
+            // Canvas breadcrumb only appears when drilled into a subgraph; home lives in the toolbar.
+            canvasTopStart = if (stack.isNotEmpty()) ({
                 SubgraphNavigationBar(
                     rootLabel = rootState.workflow?.name ?: "Untitled",
                     stack = stack,
-                    onHome = onHome,
                     onNavigateTo = { depth -> stack = stack.take(depth) },
                 )
             }) else null,
@@ -85,7 +86,6 @@ fun GraphynSubgraphNavigator(
 private fun SubgraphNavigationBar(
     rootLabel: String,
     stack: List<SubgraphFrame>,
-    onHome: (() -> Unit)?,
     onNavigateTo: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -99,20 +99,9 @@ private fun SubgraphNavigationBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        if (onHome != null) {
-            val homeInteraction = remember { MutableInteractionSource() }
-            Box(Modifier.clickable(interactionSource = homeInteraction, indication = null, onClick = onHome)) {
-                BasicText("⌂", style = type.bodySmall.copy(color = colors.accent))
-            }
-            BasicText(" · ", style = type.bodySmall.copy(color = colors.textDisabled))
-        }
         val rootInteraction = remember { MutableInteractionSource() }
-        val rootIsClickable = stack.isNotEmpty()
-        Box(
-            if (rootIsClickable) Modifier.clickable(interactionSource = rootInteraction, indication = null) { onNavigateTo(0) }
-            else Modifier,
-        ) {
-            BasicText(rootLabel, style = type.bodySmall.copy(color = if (rootIsClickable) colors.accent else colors.textPrimary))
+        Box(Modifier.clickable(interactionSource = rootInteraction, indication = null) { onNavigateTo(0) }) {
+            BasicText(rootLabel, style = type.bodySmall.copy(color = colors.accent))
         }
         stack.forEachIndexed { index, frame ->
             BasicText(" › ", style = type.bodySmall.copy(color = colors.textDisabled))
