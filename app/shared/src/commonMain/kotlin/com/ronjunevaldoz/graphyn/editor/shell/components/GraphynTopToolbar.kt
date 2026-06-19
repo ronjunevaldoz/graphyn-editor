@@ -35,6 +35,8 @@ internal fun GraphynTopToolbar(
     canRun: Boolean,
     onRun: () -> Unit,
     onAutoLayout: (() -> Unit)? = null,
+    onHome: (() -> Unit)? = null,
+    workflowName: String? = null,
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
@@ -48,6 +50,18 @@ internal fun GraphynTopToolbar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (onHome != null) {
+            val homeInteraction = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable(interactionSource = homeInteraction, indication = null, onClick = onHome)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                BasicText("← Home", style = type.label.copy(color = colors.accent))
+            }
+        }
         branding.logo?.let { logo ->
             Image(
                 painter = logo,
@@ -56,7 +70,7 @@ internal fun GraphynTopToolbar(
             )
         }
         BasicText(
-            text = branding.appName,
+            text = workflowName ?: branding.appName,
             style = type.appTitle.copy(color = colors.textPrimary),
         )
         Spacer(Modifier.weight(1f))

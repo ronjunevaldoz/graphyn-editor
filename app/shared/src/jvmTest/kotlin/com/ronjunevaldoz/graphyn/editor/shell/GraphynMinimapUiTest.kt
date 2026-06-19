@@ -38,7 +38,9 @@ class GraphynMinimapUiTest {
         ).apply {
             setNodePosition("logger-1", IntOffset(0, 0))
             setNodePosition("logger-2", IntOffset(1200, 0))
-            viewport = GraphynViewport(offset = Offset(-700f, 0f), scale = 2f)
+            // scale=1.0 shows the nodes at natural size; the viewport rect is wide enough in the
+            // minimap (graphWorldBounds = 4096×3072) to sample clearly inside and outside it.
+            viewport = GraphynViewport(offset = Offset(0f, 0f), scale = 1.0f)
         }
 
         rule.setContent {
@@ -53,7 +55,9 @@ class GraphynMinimapUiTest {
 
         rule.waitForIdle()
 
-        val minimapImage = rule.onNodeWithTag("minimap").captureToImage()
+        // Capture the inner Canvas (not the outer Box with padding) so the image coordinates
+        // match the drawing coordinates used by calculateMinimapLayout inside GraphynMinimapDebugger.
+        val minimapImage = rule.onNodeWithTag("minimap-canvas").captureToImage()
         val pixels = minimapImage.toPixelMap()
         val canvasSize = state.canvasSize
         val layout = calculateMinimapLayout(

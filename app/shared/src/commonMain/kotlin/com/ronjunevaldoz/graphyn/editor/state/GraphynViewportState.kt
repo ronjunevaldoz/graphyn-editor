@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 
 internal class GraphynViewportState(
     private val canvasBounds: GraphynCanvasBounds,
@@ -45,13 +46,14 @@ internal class GraphynViewportState(
         canvasSize = size
     }
 
-    fun fitToPositions(positions: Map<String, IntOffset>, nodeWidth: Int = 280, nodeHeight: Int = 180) {
+    fun fitToPositions(positions: Map<String, IntOffset>, sizes: Map<String, IntSize> = emptyMap()) {
         if (positions.isEmpty() || canvasSize.width <= 0 || canvasSize.height <= 0) return
         val padding = 60f
+        val default = GraphynCanvasMetrics.NodeSize
         val minX = positions.values.minOf { it.x.toFloat() }
         val minY = positions.values.minOf { it.y.toFloat() }
-        val maxX = positions.values.maxOf { it.x.toFloat() } + nodeWidth
-        val maxY = positions.values.maxOf { it.y.toFloat() } + nodeHeight
+        val maxX = positions.entries.maxOf { (id, p) -> p.x + (sizes[id]?.width ?: default.width).toFloat() }
+        val maxY = positions.entries.maxOf { (id, p) -> p.y + (sizes[id]?.height ?: default.height).toFloat() }
         val scale = minOf(
             (canvasSize.width - padding * 2) / (maxX - minX),
             (canvasSize.height - padding * 2) / (maxY - minY),
