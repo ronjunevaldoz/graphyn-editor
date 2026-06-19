@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.bootstrap.DemoScene
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
+import com.ronjunevaldoz.graphyn.editor.state.NodeGroup
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
@@ -71,6 +73,15 @@ fun DemoApp(
                     initialWorkflow = currentScene.workflow,
                     canvasBounds = canvasBounds,
                 )
+                if (currentScene == DemoScene.Groups) {
+                    LaunchedEffect(Unit) {
+                        state.groups = listOf(
+                            NodeGroup(label = "Data Acquisition", nodeIds = setOf("fetch", "read")),
+                            NodeGroup(label = "Transform", nodeIds = setOf("zip", "map", "filter")),
+                            NodeGroup(label = "Output", nodeIds = setOf("write")),
+                        )
+                    }
+                }
                 Box(Modifier.weight(1f)) {
                     GraphynEditorShell(
                         branding = branding,

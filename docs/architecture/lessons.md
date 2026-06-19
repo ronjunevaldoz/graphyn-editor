@@ -363,6 +363,26 @@ color, corner radius, font sizes) belong in a single shared file. Per-card ident
 
 ---
 
+## Demo-Local Plugin Pattern — Avoid Module Proliferation for Demo-Only Node Types
+
+**Category:** Demo app architecture
+
+**Problem:** Concepts not yet implemented (e.g., Subgraphs) still benefit from a visual demo. Creating a full plugin module for them (`plugins/subgraph/`) adds an unnecessary module and `settings.gradle.kts` entry for something that is demo-only.
+
+**Fix and rule:** Define demo-only node types (spec + runtime plugin + editor plugin) inside `app/demo/src/commonMain/kotlin/.../bootstrap/` as a single `*DemoPlugin.kt` file. Register them in `GraphynDemoPlugins.runtime` and `GraphynDemoPlugins.editor`. They live and die with the demo module. When a concept matures to production, extract it into a proper `plugins/` module.
+
+---
+
+## Seeding Scene-Specific Editor State with `LaunchedEffect` Inside `key()`
+
+**Category:** Compose — state scoping, `key()` block patterns
+
+**Problem:** When the demo tab bar switches scenes, `key(currentScene)` recreates `GraphynEditorState`. Some scenes need additional state that can't be expressed through `rememberGraphynEditorState`'s parameters (e.g., `state.groups` for the Groups scene). A `LaunchedEffect` at the outer level fires once on the first scene and never again on later scene switches.
+
+**Fix and rule:** Put the `LaunchedEffect(Unit)` **inside** the `key(currentScene)` block, after state creation. Because `key()` disposes and restarts its content on every key change, `LaunchedEffect(Unit)` fires once per scene switch — exactly right. Gate it with `if (currentScene == DemoScene.Groups)` so only the relevant scene gets the seed. This pattern is safe because `LaunchedEffect` on the main dispatcher runs before the first composition frame is drawn.
+
+---
+
 ## Dynamically-Sized Cards Must Set Their Own Size via `Modifier.size()`
 
 **Category:** Compose layout — card sizing in unconstrained parents
