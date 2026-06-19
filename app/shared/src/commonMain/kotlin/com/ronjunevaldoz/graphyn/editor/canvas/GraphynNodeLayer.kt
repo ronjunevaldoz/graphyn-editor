@@ -26,6 +26,7 @@ internal fun GraphynNodeLayer(
     nodeSpecs: NodeSpecRegistry,
     canvasCards: NodeCanvasRegistry?,
     surfaceColor: Color,
+    onEnterSubgraph: ((label: String, inner: WorkflowDefinition) -> Unit)? = null,
 ) {
     // Pass 1: annotation nodes (sticky notes, frames) always render behind regular nodes
     workflow.nodes.forEachIndexed { index, node ->
@@ -41,6 +42,7 @@ internal fun GraphynNodeLayer(
             onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
             onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
             contentColor = GraphynDs.colors.textPrimary,
+            onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
         )
         Box(modifier = Modifier.offset { position }) {
             with(factory) { NodeCanvas(ctx) }
@@ -54,7 +56,7 @@ internal fun GraphynNodeLayer(
         val factory = spec?.let { canvasCards?.resolve(node.type) }
         if (factory?.isAnnotation == true) return@forEachIndexed
 
-        if (factory != null) {
+        if (factory != null && spec != null) {
             val ctx = NodeCanvasContext(
                 node = node,
                 spec = spec,
@@ -64,6 +66,7 @@ internal fun GraphynNodeLayer(
                 onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
                 onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
                 contentColor = GraphynDs.colors.textPrimary,
+                onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
             )
             Box(modifier = Modifier.offset { position }) {
                 with(factory) { NodeCanvas(ctx) }

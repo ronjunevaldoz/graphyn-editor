@@ -3,7 +3,6 @@ package com.ronjunevaldoz.graphyn.editor.shell.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,23 +24,38 @@ internal fun GraphynLogPanel(
         modifier = modifier
             .fillMaxWidth()
             .background(colors.panelBackground)
-            .border(width = 1.dp, color = colors.border)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .border(width = 1.dp, color = colors.border),
     ) {
-        BasicText("OUTPUT", style = type.panelTitle.copy(color = colors.textSecondary))
-        val logs = state.debugLogEntries
-        if (logs.isEmpty()) {
-            BasicText("No log entries yet.", style = type.mono.copy(color = colors.textDisabled))
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                logs.takeLast(8).forEach { entry ->
-                    BasicText(
-                        text = "> $entry",
-                        style = type.mono.copy(color = colors.textSecondary),
-                    )
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            BasicText("OUTPUT", style = type.panelTitle.copy(color = colors.textSecondary))
+            val logs = state.debugLogEntries
+            if (logs.isEmpty()) {
+                BasicText("No log entries yet.", style = type.mono.copy(color = colors.textDisabled))
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    logs.takeLast(6).forEach { entry ->
+                        BasicText("> $entry", style = type.mono.copy(color = colors.textSecondary))
+                    }
                 }
             }
+        }
+        val executionOrder = state.lastExecutionOrder
+        if (executionOrder.isNotEmpty()) {
+            val nodeLabel: (String) -> String = { id ->
+                state.workflow?.nodes?.firstOrNull { it.id == id }
+                    ?.type?.substringAfterLast('.') ?: id
+            }
+            GraphynExecutionResultSection(
+                executionOrder = executionOrder,
+                outputsByNodeId = state.nodeOutputsByNodeId,
+                statusByNodeId = state.executionStatusByNodeId,
+                nodeLabel = nodeLabel,
+                modifier = Modifier.fillMaxWidth()
+                    .border(width = 1.dp, color = colors.border.copy(alpha = 0.5f)),
+            )
         }
     }
 }

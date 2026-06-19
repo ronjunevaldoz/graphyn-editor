@@ -18,6 +18,11 @@ data class EditorPanelContext(
     val selectedNodeOutputs: Map<String, WorkflowValue>,
     val flattenedSelectedNodeOutputs: Map<String, WorkflowValue>,
     val onConfigChange: (key: String, value: WorkflowValue) -> Unit = { _, _ -> },
+    /**
+     * Provided when the host supports subgraph navigation. Call with the inner
+     * [WorkflowDefinition] to drill into it. Null when navigation is not available.
+     */
+    val onEnterSubgraph: ((inner: WorkflowDefinition) -> Unit)? = null,
 )
 
 fun interface EditorPanelFactory {

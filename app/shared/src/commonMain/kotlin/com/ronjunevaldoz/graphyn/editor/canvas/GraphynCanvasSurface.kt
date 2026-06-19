@@ -25,6 +25,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynCanvasBackdrop
@@ -45,6 +46,7 @@ fun GraphynCanvasSurface(
     nodeSpecs: NodeSpecRegistry,
     modifier: Modifier = Modifier,
     canvasCards: NodeCanvasRegistry? = null,
+    onEnterSubgraph: ((label: String, inner: WorkflowDefinition) -> Unit)? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -118,6 +120,7 @@ fun GraphynCanvasSurface(
             GraphynNodeLayer(
                 workflow = workflow, state = state, nodeSpecs = nodeSpecs,
                 canvasCards = canvasCards, surfaceColor = surfaceColor,
+                onEnterSubgraph = onEnterSubgraph,
             )
         }
 

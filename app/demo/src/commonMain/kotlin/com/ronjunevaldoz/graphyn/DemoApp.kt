@@ -2,16 +2,7 @@
 
 package com.ronjunevaldoz.graphyn
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,22 +10,19 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.bootstrap.DemoScene
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
-import com.ronjunevaldoz.graphyn.editor.state.NodeGroup
+import com.ronjunevaldoz.graphyn.bootstrap.groupsDemoWorkflow
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
-import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
+import com.ronjunevaldoz.graphyn.editor.launcher.GraphynWorkflowLauncher
+import com.ronjunevaldoz.graphyn.editor.launcher.WorkflowTemplate
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
-import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShell
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShellDependencies
+import com.ronjunevaldoz.graphyn.editor.shell.GraphynSubgraphNavigator
+import com.ronjunevaldoz.graphyn.editor.state.NodeGroup
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynTheme
@@ -50,7 +38,11 @@ fun DemoApp(
     executionEngine: WorkflowExecutionEngine? = null,
     canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
 ) {
-    var currentScene by remember { mutableStateOf(DemoScene.Styles) }
+    val templates = remember {
+        DemoScene.entries.map { WorkflowTemplate(it.label, null, it.workflow) }
+    }
+    var recentWorkflows by remember { mutableStateOf(emptyList<WorkflowTemplate>()) }
+    var openWorkflow by remember { mutableStateOf<WorkflowDefinition?>(null) }
 
     val editorRegistry = remember(editorPlugins) {
         DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
@@ -65,15 +57,24 @@ fun DemoApp(
     val darkTheme = appearanceState.resolvedDarkTheme(isSystemInDarkTheme())
 
     GraphynTheme(branding = branding.copy(palette = appearanceState.resolvePalette(darkTheme)), darkTheme = darkTheme) {
-        Column(Modifier.fillMaxSize()) {
-            DemoSceneTabBar(currentScene) { currentScene = it }
-
-            key(currentScene) {
+        val wf = openWorkflow
+        if (wf == null) {
+            GraphynWorkflowLauncher(
+                templates = templates,
+                recentWorkflows = recentWorkflows,
+                onOpen = { template ->
+                    recentWorkflows = listOf(template) +
+                        recentWorkflows.filter { it.workflow.id != template.workflow.id }.take(9)
+                    openWorkflow = template.workflow
+                },
+            )
+        } else {
+            key(wf.id) {
                 val state = rememberGraphynEditorState(
-                    initialWorkflow = currentScene.workflow,
+                    initialWorkflow = wf,
                     canvasBounds = canvasBounds,
                 )
-                if (currentScene == DemoScene.Groups) {
+                if (wf.id == groupsDemoWorkflow.id) {
                     LaunchedEffect(Unit) {
                         state.groups = listOf(
                             NodeGroup(label = "Data Acquisition", nodeIds = setOf("fetch", "read")),
@@ -82,51 +83,18 @@ fun DemoApp(
                         )
                     }
                 }
-                Box(Modifier.weight(1f)) {
-                    GraphynEditorShell(
-                        branding = branding,
-                        dependencies = GraphynEditorShellDependencies(
-                            nodeSpecs = pluginRegistry.nodeSpecs,
-                            panels = editorRegistry.panels,
-                            canvasCards = editorRegistry.canvasCards,
-                            categoryRegistry = editorRegistry.categories,
-                            executionEngine = executionEngine ?: engine,
-                        ),
-                        appearanceState = appearanceState,
-                        state = state,
-                        canvas = {
-                            GraphynCanvasSurface(
-                                state = state,
-                                nodeSpecs = pluginRegistry.nodeSpecs,
-                                canvasCards = editorRegistry.canvasCards,
-                            )
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DemoSceneTabBar(current: DemoScene, onSelect: (DemoScene) -> Unit) {
-    val colors = GraphynDs.colors
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(colors.panelBackground)
-            .padding(horizontal = 4.dp, vertical = 2.dp),
-    ) {
-        DemoScene.entries.forEach { scene ->
-            val selected = scene == current
-            Box(Modifier.clickable { onSelect(scene) }.padding(horizontal = 12.dp, vertical = 6.dp)) {
-                BasicText(
-                    scene.label,
-                    style = TextStyle(
-                        color = if (selected) colors.accent else colors.textSecondary,
-                        fontSize = 11.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                GraphynSubgraphNavigator(
+                    branding = branding,
+                    dependencies = GraphynEditorShellDependencies(
+                        nodeSpecs = pluginRegistry.nodeSpecs,
+                        panels = editorRegistry.panels,
+                        canvasCards = editorRegistry.canvasCards,
+                        categoryRegistry = editorRegistry.categories,
+                        executionEngine = executionEngine ?: engine,
                     ),
+                    appearanceState = appearanceState,
+                    state = state,
+                    onHome = { openWorkflow = null },
                 )
             }
         }

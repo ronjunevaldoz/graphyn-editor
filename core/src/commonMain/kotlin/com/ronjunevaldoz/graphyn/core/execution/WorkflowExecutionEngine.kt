@@ -34,12 +34,20 @@ class WorkflowExecutionEngine(
         for (nodeId in order) {
             val node = nodesById.getValue(nodeId)
             val spec = nodeSpecs?.resolve(node.type)
+
+            // Nodes with an embedded subgraph execute their inner workflow recursively.
+            // The sink node's outputs become this node's outputs; no registered executor needed.
+            if (node.subgraph != null) {
+                val inner = execute(node.subgraph!!)
+                val sinkId = inner.executionOrder.lastOrNull()
+                outputsByNodeId[node.id] = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
+                continue
+            }
+
             val executor = nodeExecutors.resolve(node.type)
                 ?: throw WorkflowExecutionException("No executor registered for node type '${node.type}'.")
-
             val inputs = buildInputMap(workflow, node, spec, outputsByNodeId)
-            val outputs = executor.execute(inputs)
-            outputsByNodeId[node.id] = outputs
+            outputsByNodeId[node.id] = executor.execute(inputs)
         }
 
         return WorkflowExecutionResult(
