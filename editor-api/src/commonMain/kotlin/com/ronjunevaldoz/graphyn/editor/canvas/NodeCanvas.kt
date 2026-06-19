@@ -29,6 +29,8 @@ data class NodeCanvasContext(
     val contentColor: Color = Color.Unspecified,
     /** Non-null only when this node has an embedded [WorkflowDefinition] and the host supports drill-in navigation. */
     val onEnterSubgraph: (() -> Unit)? = null,
+    /** Output values produced by the last workflow run for this node. Empty before any run. */
+    val executionOutputs: Map<String, WorkflowValue> = emptyMap(),
 )
 
 enum class NodeShape { Rectangle, Circle }

@@ -43,6 +43,7 @@ internal fun GraphynNodeLayer(
             onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
             contentColor = GraphynDs.colors.textPrimary,
             onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
+            executionOutputs = state.outputsFor(node.id),
         )
         Box(modifier = Modifier.offset { position }) {
             with(factory) { NodeCanvas(ctx) }
@@ -67,6 +68,7 @@ internal fun GraphynNodeLayer(
                 onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
                 contentColor = GraphynDs.colors.textPrimary,
                 onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
+                executionOutputs = state.outputsFor(node.id),
             )
             Box(modifier = Modifier.offset { position }) {
                 with(factory) { NodeCanvas(ctx) }

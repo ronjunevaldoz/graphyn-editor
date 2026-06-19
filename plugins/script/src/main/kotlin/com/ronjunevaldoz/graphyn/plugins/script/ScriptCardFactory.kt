@@ -107,6 +107,7 @@ private fun ScriptCard(ctx: NodeCanvasContext) {
                 onValueChange = { ctx.onConfigChange("code", WorkflowValue.StringValue(it)) },
                 modifier = Modifier.fillMaxWidth().height(CODE_HEIGHT_DP.dp)
                     .background(CODE_BG).padding(horizontal = 10.dp, vertical = 6.dp),
+                visualTransformation = KotlinHighlightTransformation,
                 textStyle = TextStyle(
                     fontFamily = FontFamily.Monospace,
                     fontSize = 11.sp,

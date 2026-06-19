@@ -42,6 +42,7 @@ kotlin {
             implementation(projects.plugins.types)
             implementation(projects.plugins.text)
             implementation(projects.plugins.io)
+            implementation(projects.plugins.preview)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
         }
