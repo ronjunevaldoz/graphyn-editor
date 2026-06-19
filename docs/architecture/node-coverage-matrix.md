@@ -13,7 +13,7 @@ Tracks test and implementation completeness across all registered node types.
 | `math.subtract` | sample-math | ✅ | ✅ | ❌ | ❌ (default) | 2 | 1 | |
 | `math.multiply` | sample-math | ✅ | ✅ | ❌ | ❌ (default) | 2 | 1 | |
 | `sample.logger` | sample-logger | ✅ | ✅ | ✅ | ❌ (default) | 1 | 1 | |
-| `stylenodes.ksampler` | sample-style-nodes | ✅ | ❌ | ✅ | ✅ DarkHeaderCard | 4 | 1 | required inputs have no defaults — demo scenes show missing_required_input |
+| `stylenodes.ksampler` | sample-style-nodes | ✅ | ❌ | ✅ | ✅ ShapeCard | 4 | 1 | required inputs have no defaults — demo scenes show missing_required_input |
 | `stylenodes.distribute_points` | sample-style-nodes | ✅ | ❌ | ✅ | ✅ FieldCard | 5 | 1 | |
 | `stylenodes.webhook` | sample-style-nodes | ✅ | ❌ | ✅ | ✅ CircleCard | 0 | 1 | |
 | `graphyn.sticky_note` | sticky-notes | ➖ | ❌ | ❌ | ✅ annotation | 0 | 0 | annotation-only, no executor needed |

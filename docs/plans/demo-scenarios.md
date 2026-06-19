@@ -3,7 +3,7 @@
 ## Problem
 
 The current demo workflow (two `sample.logger` nodes) demonstrates connectivity but nothing else.
-`style-nodes` already defines three card styles (DarkHeaderCard, FieldCard, CircleCard) and three
+`style-nodes` already defines three card styles (ShapeCard, FieldCard, CircleCard) and three
 partial node specs (KSampler, DistributePoints, Webhook) — but no complete workflows that exercise
 them. The result: the demo does not show what Graphyn actually looks like in a real use-case.
 
@@ -29,9 +29,9 @@ Each has a distinct visual language and workflow type. Mixing them in one demo r
 
 | Style | Graphyn card | Status |
 |---|---|---|
-| n8n wide card | `DarkHeaderCard` | ✅ built |
+| n8n wide card | `ShapeCard` | ✅ built |
 | n8n sub-node circle | `CircleCard` | ✅ built |
-| ComfyUI coloured header | `DarkHeaderCard` (same shape, different colours) | ✅ built |
+| ComfyUI coloured header | `ShapeCard` (same shape, different colours) | ✅ built |
 | Blender field list | `FieldCard` | ✅ built |
 | Inline widget (ComfyUI / Blender) | ❌ not built | future |
 
@@ -75,7 +75,7 @@ CheckpointLoader → CLIPTextEncode (positive)  ─┐
                  → (latent noise)             ─┘
 ```
 
-- Card: `DarkHeaderCard`  
+- Card: `ShapeCard`  
 - Port colours: model=blue-purple, conditioning=orange, latent=purple, image=green  
 - New specs needed: `CheckpointLoader`, `CLIPTextEncode`, `VAEDecode`, `SaveImage`
 
@@ -99,7 +99,7 @@ MeshPrimitive → SubdivideMesh → DistributePoints → InstanceOnPoints → Ge
 Webhook → SetField → FilterIf → HTTPRequest → LogOutput
 ```
 
-- Card: `DarkHeaderCard` for data nodes, `CircleCard` for Webhook trigger and LogOutput  
+- Card: `ShapeCard` for data nodes, `CircleCard` for Webhook trigger and LogOutput  
 - Port colours: data=neutral, boolean=yellow, string=blue  
 - New specs needed: `SetField`, `FilterIf`, `HTTPRequest`, `LogOutput`
 

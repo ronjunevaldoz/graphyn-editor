@@ -45,7 +45,7 @@ Plugin modules (`plugins/*`) are **library modules**, not sample galleries:
 
 | Spec | Card | Purpose |
 |---|---|---|
-| `kSampler` | `DarkHeaderCard` | Multi-port, coloured header |
+| `kSampler` | `ShapeCard` | Multi-port, compact shape card |
 | `distributePoints` | `FieldCard` | Labelled field rows |
 | `webhook` | `CircleCard` | Compact trigger/sink |
 
