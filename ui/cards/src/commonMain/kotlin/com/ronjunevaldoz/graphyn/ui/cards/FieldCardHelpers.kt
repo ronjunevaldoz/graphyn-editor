@@ -2,6 +2,10 @@ package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,19 +20,35 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import kotlin.math.roundToInt
 
+// The header is the drag handle — no interactive children, so gesture ownership is uncontested.
 @Composable
-internal fun FieldHeader(label: String, theme: FieldNodeTheme) {
+internal fun FieldHeader(label: String, theme: FieldNodeTheme, onMove: ((IntOffset) -> Unit)? = null) {
     Box(
         modifier = Modifier.fillMaxWidth().height(HEADER_DP.dp).background(theme.headerBackground())
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 10.dp)
+            .then(if (onMove != null) Modifier.pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    awaitTouchSlopOrCancellation(down.id) { c, _ -> c.consume() }
+                        ?: return@awaitEachGesture
+                    drag(down.id) { c ->
+                        c.consume()
+                        val d = c.position - c.previousPosition
+                        onMove(IntOffset(d.x.roundToInt(), d.y.roundToInt()))
+                    }
+                }
+            } else Modifier),
         contentAlignment = Alignment.CenterStart,
     ) {
         BasicText(label, style = TextStyle(color = theme.titleColor(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold))

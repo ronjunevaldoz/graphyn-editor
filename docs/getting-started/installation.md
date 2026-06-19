@@ -21,7 +21,7 @@ api("io.github.ronjunevaldoz:graphyn-editor-api:0.2.0")
 // Required — Compose Multiplatform editor shell (canvas, palette, inspector)
 api("io.github.ronjunevaldoz:graphyn-editor:0.2.0")
 
-// Optional — pre-built card styles (DarkHeaderCard, FieldCard, CircleCard)
+// Optional — pre-built card styles (FieldCard, CircleCard, ShapeCard)
 implementation("io.github.ronjunevaldoz:graphyn-ui-cards:0.2.0")
 
 // Optional — HTTP Request, File Read, File Write executor nodes

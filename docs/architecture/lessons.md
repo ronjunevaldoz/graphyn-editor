@@ -262,7 +262,7 @@ color or text, reach for `GraphynDs` tokens and `BasicText`.
 
 ### Pattern
 
-`style-nodes` was built to demonstrate three card shapes (DarkHeaderCard, FieldCard,
+`style-nodes` was built to demonstrate three card shapes (ShapeCard, FieldCard,
 CircleCard). When demo scenes needed more nodes to tell a story, specs were added to the
 plugin (15 total), making it look like a real domain library instead of a visual showcase.
 
@@ -332,7 +332,7 @@ Compose. If the build file includes Compose for a pure runtime plugin, it's over
 
 ### Problem
 
-Three card styles (`DarkHeaderCard`, `FieldCard`, `CircleCard`) drifted independently: different
+Three card styles (`ShapeCard`, `FieldCard`, `CircleCard`) drifted independently: different
 body background colors, border colors, corner radii, font sizes, and selection highlight colors.
 Each card had its own hardcoded hex values with no relationship to the others.
 

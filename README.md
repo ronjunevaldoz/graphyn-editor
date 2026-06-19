@@ -83,7 +83,7 @@ implements NodeCanvasFactory with ready-to-use card shapes.
 | `app/shared` | `graphyn-editor` | Compose Multiplatform canvas and editor shell |
 | `plugins/sample-math` | — | Sample: math runtime plugin |
 | `plugins/sample-logger` | — | Sample: logger runtime + editor plugin |
-| `plugins/sample-style-nodes` | — | Sample: DarkHeaderCard demo, uses `ui/cards` factories |
+| `plugins/sample-style-nodes` | — | Sample: ShapeCard/FieldCard/CircleCard demo, uses `ui/cards` factories |
 | `server` | — | Sample: JVM server runtime wiring |
 | `app/demo` | — | Sample: full editor app wiring |
 

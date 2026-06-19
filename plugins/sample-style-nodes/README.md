@@ -6,7 +6,7 @@ Reference editor plugin demonstrating three custom canvas card styles.
 
 | Card | Description |
 |---|---|
-| `DarkHeaderCard` | Dark header with colored port dots — n8n-style |
+
 | `FieldCard` | Field list layout with labeled input/output rows |
 | `CircleCard` | Minimal circular node for simple pass-through nodes |
 

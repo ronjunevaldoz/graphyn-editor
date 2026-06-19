@@ -3,10 +3,6 @@ package com.ronjunevaldoz.graphyn.ui.cards
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
-import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -16,15 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
-import kotlin.math.roundToInt
 
 internal const val HEADER_DP = 28
 internal const val ROW_DP = 22
@@ -91,22 +84,10 @@ private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
     Box(
         modifier = Modifier
             .width(240.dp).clip(shape).background(bg).border(1.dp, borderColor, shape)
-            .clickable { ctx.onSelect() }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    awaitTouchSlopOrCancellation(down.id) { c, _ -> c.consume() }
-                        ?: return@awaitEachGesture
-                    drag(down.id) { c ->
-                        c.consume()
-                        val d = c.position - c.previousPosition
-                        ctx.onMove(IntOffset(d.x.roundToInt(), d.y.roundToInt()))
-                    }
-                }
-            },
+            .clickable { ctx.onSelect() },
     ) {
         Column {
-            FieldHeader(ctx.spec.label, theme)
+            FieldHeader(ctx.spec.label, theme, onMove = ctx.onMove)
             FieldBody(
                 inputs = ctx.spec.inputs,
                 values = ctx.spec.defaultValues + ctx.node.config,
