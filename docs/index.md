@@ -16,16 +16,22 @@
 
 ```kotlin
 // Core domain model (no Compose)
-implementation("io.github.ronjunevaldoz:graphyn-core:0.1.0")
+implementation("io.github.ronjunevaldoz:graphyn-core:0.2.0")
 
 // Plugin contracts
-implementation("io.github.ronjunevaldoz:graphyn-plugin-api:0.1.0")
+implementation("io.github.ronjunevaldoz:graphyn-plugin-api:0.2.0")
 
 // Editor plugin contracts
-implementation("io.github.ronjunevaldoz:graphyn-editor-api:0.1.0")
+implementation("io.github.ronjunevaldoz:graphyn-editor-api:0.2.0")
 
 // Full Compose editor canvas
-implementation("io.github.ronjunevaldoz:graphyn-editor:0.1.0")
+implementation("io.github.ronjunevaldoz:graphyn-editor:0.2.0")
+
+// Optional — pre-built card styles
+implementation("io.github.ronjunevaldoz:graphyn-ui-cards:0.2.0")
+
+// Optional — HTTP / File IO executor nodes
+implementation("io.github.ronjunevaldoz:graphyn-plugin-io:0.2.0")
 ```
 
 ## Quick example
@@ -48,12 +54,14 @@ GraphynEditorShell(
 
 - [Installation](getting-started/installation.md)
 - [Quickstart](getting-started/quickstart.md)
+- [Running locally](guides/running-locally.md)
 
 ---
 
 ## Guides
 
 ### Integration
+- [Running locally — desktopApp vs sample vs demo](guides/running-locally.md)
 - [Persistence — save and load workflows](guides/persistence.md)
 - [Read-only mode](guides/read-only-mode.md)
 - [Remote execution — server-side node runners](guides/remote-execution.md)
