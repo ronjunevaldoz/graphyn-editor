@@ -520,6 +520,16 @@ available in all targets and avoids the JVM-specific extension.
 
 ---
 
+## `NodeExecutorRegistry` Has No `all()` Method — Use `WorkflowExecutionEngine` Directly
+
+**Category:** Plugin integration — consumer app pattern
+
+**Problem:** Trying to transfer executors from one `NodeExecutorRegistry` to another via `registry.all()` fails to compile because `NodeExecutorRegistry` only exposes `resolve(type)` and `register(type, executor)`. There is no `all()` method (unlike `NodeSpecRegistry` which does have one).
+
+**Fix and rule:** Pass the registry from `DefaultGraphynPluginRegistry` directly to `WorkflowExecutionEngine(plugins.nodeExecutors, plugins.nodeSpecs)` without copying. The plugin registry's registries implement the exact interfaces `WorkflowExecutionEngine` accepts, so no transfer is needed.
+
+---
+
 ## LaunchedEffect with stable key doesn't restart on repeated identical input
 
 **Category:** Compose effects — `GraphynCanvasSurface`
