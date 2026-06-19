@@ -10,8 +10,9 @@ internal const val CATEGORY_SCRIPT = "script"
 /**
  * Node spec for the Kotlin script executor.
  *
- * The `code` port holds the script source. Inside the script, `input` is bound to
- * whatever value arrives on the `input` port (or [WorkflowValue.NullValue] if unwired).
+ * `code` is a config-only field edited inline on the card (not a wire port).
+ * Inside the script, `input` is bound to whatever arrives on the `input` port as a native
+ * Kotlin type (`String`, `Int`, `Boolean`, `List`, `Map`, or `null`).
  * The last expression in the script becomes `result`.
  *
  * Example script:
@@ -26,14 +27,13 @@ internal val specScriptEval = NodeSpec(
     description = "Evaluates a Kotlin .kts script. 'input' binding holds the connected value.",
     category = CATEGORY_SCRIPT,
     inputs = listOf(
-        PortSpec("code",  WorkflowType.StringType,  required = false),
-        PortSpec("input", WorkflowType.OpaqueType,  required = false),
+        PortSpec("input", WorkflowType.OpaqueType, required = false),
     ),
     outputs = listOf(
         PortSpec("result", WorkflowType.OpaqueType),
         PortSpec("error",  WorkflowType.StringType),
     ),
     defaultValues = mapOf(
-        "code" to WorkflowValue.StringValue("// 'input' is available as a WorkflowValue\ninput"),
+        "code" to WorkflowValue.StringValue("// 'input' is available as a native Kotlin value\ninput"),
     ),
 )
