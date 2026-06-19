@@ -21,6 +21,7 @@ import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegist
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShellDependencies
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynSubgraphNavigator
+import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.editor.state.NodeGroup
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
@@ -80,6 +81,17 @@ fun DemoApp(
                             NodeGroup(label = "Transform", nodeIds = setOf("zip", "map", "filter")),
                             NodeGroup(label = "Output", nodeIds = setOf("write")),
                         )
+                    }
+                }
+                if (wf.id == DemoScene.Script.workflow.id) {
+                    // Center the 3-node pipeline on the canvas (4096×3072).
+                    // widths: format=240, script=320, preview=180; gaps=80 → total=900
+                    // Nodes are vertically centred independently around cy=1536.
+                    LaunchedEffect(Unit) {
+                        val cx = 2048; val cy = 1536
+                        state.setNodePosition("format",  IntOffset(cx - 450,       cy - 51))
+                        state.setNodePosition("script",  IntOffset(cx - 450 + 320, cy - 124))
+                        state.setNodePosition("preview", IntOffset(cx - 450 + 720, cy - 72))
                     }
                 }
                 GraphynSubgraphNavigator(
