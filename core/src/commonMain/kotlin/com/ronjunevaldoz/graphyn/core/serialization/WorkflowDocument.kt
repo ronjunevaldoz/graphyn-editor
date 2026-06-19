@@ -7,8 +7,10 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+/** Incremented whenever the serialized format changes in a breaking way. */
 const val GRAPHYN_WORKFLOW_FORMAT_VERSION = 1
 
+/** Root envelope for a persisted workflow; carries the format [version] and the workflow payload. */
 @Serializable
 data class WorkflowDocument(
     val version: Int,
@@ -38,16 +40,19 @@ data class WorkflowDocumentConnection(
     val toPort: String,
 )
 
+/** Converts between [WorkflowDefinition] and the serializable [WorkflowDocument] envelope. */
 interface WorkflowDocumentCodec {
     fun encode(workflow: WorkflowDefinition): WorkflowDocument
     fun decode(document: WorkflowDocument): WorkflowDefinition
 }
 
+/** Converts a [WorkflowDefinition] to and from a JSON string using the Graphyn format. */
 interface WorkflowJsonCodec {
     fun encodeToString(workflow: WorkflowDefinition): String
     fun decodeFromString(value: String): WorkflowDefinition
 }
 
+/** Shared [Json] instance used by all Graphyn serializers — `prettyPrint`, `ignoreUnknownKeys`. */
 object GraphynWorkflowJson {
     val json: Json = Json {
         prettyPrint = true

@@ -53,11 +53,11 @@ internal const val VALUE_DP = 80
  * ```kotlin
  * FieldCardFactory(
  *     theme = FieldNodeTheme(
- *         background       = { Color(0xFF1E1E1E) },
- *         headerBackground = { Color(0xFF2D2D2D) },
- *         selectedBorder   = { Color(0xFF61AFEF) },
- *         labelColor       = { Color(0xFF9DA5B4) },
- *         valueText        = { Color(0xFFABB2BF) },
+ *         background       = { appTheme.colors.surface },
+ *         headerBackground = { appTheme.colors.surfaceVariant },
+ *         selectedBorder   = { appTheme.colors.borderFocus },
+ *         labelColor       = { appTheme.colors.onSurfaceVariant },
+ *         valueText        = { appTheme.colors.onSurface },
  *     ),
  *     inputRows = 4,
  *     outputRows = 2,

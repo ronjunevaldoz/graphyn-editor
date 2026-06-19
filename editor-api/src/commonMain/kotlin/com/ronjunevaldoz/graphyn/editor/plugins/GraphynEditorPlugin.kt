@@ -13,6 +13,7 @@ import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 
 const val GRAPHYN_EDITOR_PLUGIN_API_VERSION = 1
 
+/** Identity and version information declared by a [GraphynEditorPlugin]. */
 data class GraphynEditorPluginMetadata(
     val id: String,
     val displayName: String,
@@ -20,12 +21,18 @@ data class GraphynEditorPluginMetadata(
     val apiVersion: Int = GRAPHYN_EDITOR_PLUGIN_API_VERSION,
 )
 
+/**
+ * Extension point for adding editor-level capabilities (panels, canvas cards, node categories).
+ *
+ * Implement this interface and install the plugin via [GraphynEditorPluginRegistry.install].
+ */
 interface GraphynEditorPlugin {
     val metadata: GraphynEditorPluginMetadata
 
     fun register(registrar: GraphynEditorPluginRegistrar)
 }
 
+/** Passed to [GraphynEditorPlugin.register] so the plugin can self-register its components. */
 interface GraphynEditorPluginRegistrar {
     val panels: EditorPanelRegistry
     val canvasCards: NodeCanvasRegistry
@@ -36,6 +43,7 @@ interface GraphynEditorPluginRegistrar {
     fun registerCategory(id: String, meta: NodeCategoryMeta) = categories.register(id, meta)
 }
 
+/** Host-side registry that installs [GraphynEditorPlugin]s and owns the resulting registrars. */
 interface GraphynEditorPluginRegistry : GraphynEditorPluginRegistrar {
     val plugins: List<GraphynEditorPlugin>
 

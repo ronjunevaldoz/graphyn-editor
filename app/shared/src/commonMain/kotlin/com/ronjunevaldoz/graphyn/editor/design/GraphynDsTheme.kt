@@ -20,6 +20,13 @@ object GraphynDs {
         get() = LocalGraphynDsTypography.current
 }
 
+/**
+ * Root theme for the Graphyn editor.
+ *
+ * Wraps [MaterialTheme] intentionally so that Material3 components used inside the editor
+ * (e.g. `BasicTextField`, tooltips) receive consistent colours derived from [GraphynDsColors]
+ * without requiring a separate `MaterialTheme` call at the host site.
+ */
 @Composable
 fun GraphynDsTheme(
     colors: GraphynDsColors = GraphynDsColors.Dark,

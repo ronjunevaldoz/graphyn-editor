@@ -5,6 +5,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValueFlattener
 
+/** BFS traversal helpers for computing which nodes are downstream of a changed node. */
 object WorkflowGraphImpact {
     fun affectedNodeIds(workflow: WorkflowDefinition, sourceNodeId: String): Set<String> {
         val adjacency = workflow.connections.groupBy { it.fromNodeId }.mapValues { (_, refs) ->
@@ -24,6 +25,12 @@ object WorkflowGraphImpact {
     }
 }
 
+/**
+ * In-memory cache of per-node execution outputs paired with the current workflow graph.
+ *
+ * Call [updateNodeOutputs] after each node run; it returns the set of downstream node ids that may
+ * need to re-execute due to the changed outputs.
+ */
 class WorkflowDataStore(
     private var workflow: WorkflowDefinition? = null,
 ) {

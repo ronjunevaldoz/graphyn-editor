@@ -126,9 +126,9 @@ fun GraphynCanvasSurface(
             )
         }
 
-        state.rejectedConnectionPort?.let { (nodeId, portName) ->
-            LaunchedEffect(nodeId, portName) { delay(2000); state.rejectedConnectionPort = null }
-            TypeMismatchToast("Type mismatch on $portName")
+        state.rejectedConnectionPort?.let { rejection ->
+            LaunchedEffect(rejection) { delay(2000); state.rejectedConnectionPort = null }
+            TypeMismatchToast("Type mismatch on ${rejection.second}")
         }
 
         if (canvasTopStart != null) {

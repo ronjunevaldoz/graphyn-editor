@@ -10,6 +10,7 @@ import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 
 const val GRAPHYN_PLUGIN_API_VERSION = 1
 
+/** Identity and version information declared by a [GraphynPlugin]. */
 data class GraphynPluginMetadata(
     val id: String,
     val displayName: String,
@@ -17,12 +18,18 @@ data class GraphynPluginMetadata(
     val apiVersion: Int = GRAPHYN_PLUGIN_API_VERSION,
 )
 
+/**
+ * Extension point for contributing node specs and executors to the runtime.
+ *
+ * Implement this interface and install the plugin via [GraphynPluginRegistry.install].
+ */
 interface GraphynPlugin {
     val metadata: GraphynPluginMetadata
 
     fun register(registrar: GraphynPluginRegistrar)
 }
 
+/** Passed to [GraphynPlugin.register] so the plugin can self-register its node specs and executors. */
 interface GraphynPluginRegistrar {
     val nodeSpecs: NodeSpecRegistry
     val nodeExecutors: NodeExecutorRegistry
@@ -36,6 +43,7 @@ interface GraphynPluginRegistrar {
     }
 }
 
+/** Host-side registry that installs [GraphynPlugin]s and owns the resulting specs and executors. */
 interface GraphynPluginRegistry : GraphynPluginRegistrar {
     val plugins: List<GraphynPlugin>
 

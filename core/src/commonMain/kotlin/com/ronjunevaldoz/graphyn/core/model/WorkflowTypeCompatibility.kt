@@ -1,5 +1,11 @@
 package com.ronjunevaldoz.graphyn.core.model
 
+/**
+ * Type-compatibility rules for port connections.
+ *
+ * `OpaqueType` is universally compatible. `DoubleType` accepts `IntType` (widening). All other
+ * pairs require structural equality of the type descriptor.
+ */
 object WorkflowTypeCompatibility {
     fun isCompatible(expected: WorkflowType, actual: WorkflowType): Boolean = when (expected) {
         WorkflowType.StringType -> actual is WorkflowType.StringType
