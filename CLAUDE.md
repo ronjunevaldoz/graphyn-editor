@@ -30,9 +30,18 @@ Files currently over the limit are tracked in `docs/architecture/code-audit.md`.
 - Previews live in `jvmMain`, import `androidx.compose.ui.tooling.preview.Preview` (not the `org.jetbrains` alias)
 - No comments unless the WHY is non-obvious
 
+## Plugin modules
+
+Plugin modules (`plugins/*`) are **library modules**, not sample galleries:
+
+- Each plugin contains only its production runtime and editor implementation
+- **Never** add demo workflows, placeholder node specs, or test data to any plugin module
+- If a demo or test needs illustrative nodes, define them as local `WorkflowDefinition` data in `app/demo`
+- Plugin specs that exist solely to show a UI shape are fine — but the spec must model a real, named operation, not generic scaffolding
+
 ## style-nodes plugin
 
-`plugins/style-nodes` contains exactly **3 node specs** — one per card style — and must stay that way:
+`plugins/sample-style-nodes` contains exactly **3 node specs** — one per card style — and must stay that way:
 
 | Spec | Card | Purpose |
 |---|---|---|
@@ -41,6 +50,15 @@ Files currently over the limit are tracked in `docs/architecture/code-audit.md`.
 | `webhook` | `CircleCard` | Compact trigger/sink |
 
 **Do not add domain-specific nodes here.** If a demo needs more nodes, define them as local `WorkflowDefinition` data in `app/demo` — not as registered plugin specs. The plugin's job is to demonstrate card shapes, not to model real workflows.
+
+## KDoc
+
+All public API surfaces in `core/`, `editor-api/`, `plugin-api/`, and `ui/cards/` must have KDoc. This includes classes, interfaces, functions, and properties that a plugin or app author would consume.
+
+- Prefer KDoc over separate markdown docs — IDEs surface it inline, it stays co-located with the code, and it can't go stale independently
+- Delete any `docs/architecture/*.md` file whose content belongs on the code it describes
+- KDoc must explain the **why** or the **contract**, not just restate the name — one sentence is enough if that's all it takes
+- Include usage examples (` ```kotlin ` blocks) when the call site isn't obvious from the signature
 
 ## Documenting learnings
 

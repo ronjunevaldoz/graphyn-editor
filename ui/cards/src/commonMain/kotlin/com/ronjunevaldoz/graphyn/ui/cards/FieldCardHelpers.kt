@@ -8,25 +8,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
@@ -55,10 +46,11 @@ internal fun FieldBody(
         val value = values[input.name]
         val onChange: (WorkflowValue) -> Unit = { onValueChange(input.name, it) }
         when (val type = input.type) {
-            is WorkflowType.EnumType -> SingleSelectRow(input, value, type.values, onChange, theme)
+            is WorkflowType.EnumType      -> SingleSelectRow(input, value, type.values, onChange, theme)
             is WorkflowType.MultiEnumType -> MultiSelectRow(input, value, type.values, onChange, theme)
-            is WorkflowType.ListType -> ListRow(input, value, type.elementType, onChange, theme)
-            is WorkflowType.RecordType -> RecordRow(input, value, type.fields, onChange, theme)
+            is WorkflowType.ListType      -> ListRow(input, value, type.elementType, onChange, theme)
+            is WorkflowType.RecordType    -> RecordRow(input, value, type.fields, onChange, theme)
+            is WorkflowType.NullableType  -> NullableRow(input, value, type.wrappedType, onChange, theme)
             WorkflowType.IntType, WorkflowType.DoubleType -> NumericRow(input, value, onChange, theme)
             else -> InputRow(input, value, onChange, theme)
         }
@@ -72,81 +64,52 @@ internal fun FieldFooter(outputs: List<PortSpec>, theme: FieldNodeTheme) {
     }
     outputs.forEach { output -> OutputRow(output = output, theme = theme) }
 }
+
 @Composable
-private fun InputRow(
+private fun NullableRow(
     input: PortSpec,
     currentValue: WorkflowValue?,
+    innerType: WorkflowType,
     onValueChange: (WorkflowValue) -> Unit,
     theme: FieldNodeTheme,
 ) {
-    var editText by remember { mutableStateOf<String?>(null) }
-    var focusGranted by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
-    fun commit() {
-        val raw = editText ?: return
-        editText = null
-        val parsed = parseValue(currentValue, raw) ?: return
-        onValueChange(parsed)
-    }
-    LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
+    val isNull = currentValue == null || currentValue is WorkflowValue.NullValue
     Row(
         modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
-        if (currentValue != null) {
-            Spacer(Modifier.weight(1f))
-            if (editText != null) {
-                BasicTextField(
-                    value = editText!!,
-                    onValueChange = { editText = it },
-                    modifier = Modifier.width(VALUE_DP.dp)
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
-                    textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp, textAlign = TextAlign.Center),
-                    decorationBox = { inner ->
-                        Box(
-                            Modifier.clip(RoundedCornerShape(3.dp)).background(theme.valueBg())
-                                .padding(horizontal = 5.dp, vertical = 2.dp),
-                            contentAlignment = Alignment.Center,
-                        ) { inner() }
-                    },
-                )
-            } else {
-                Box(
-                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp))
-                        .background(theme.valueBg())
-                        .clickable { focusGranted = false; editText = currentValue.label() }
-                        .padding(horizontal = 5.dp, vertical = 2.dp),
-                    contentAlignment = Alignment.Center,
-                ) { BasicText(currentValue.label(), style = TextStyle(color = theme.valueText(), fontSize = 10.sp)) }
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(if (!isNull) theme.selectedBorder() else theme.valueBg())
+                .clickable {
+                    if (isNull) {
+                        onValueChange(defaultForType(innerType))
+                    } else {
+                        onValueChange(WorkflowValue.NullValue)
+                    }
+                },
+        )
+        Spacer(Modifier.width(6.dp))
+        if (!isNull) {
+            val innerInput = input.copy(type = innerType)
+            val innerOnChange: (WorkflowValue) -> Unit = onValueChange
+            when (innerType) {
+                WorkflowType.IntType, WorkflowType.DoubleType -> NumericRow(innerInput, currentValue, innerOnChange, theme)
+                else -> InputRow(innerInput, currentValue, innerOnChange, theme)
             }
+        } else {
+            BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+            Spacer(Modifier.weight(1f))
+            BasicText("null", style = TextStyle(color = theme.labelColor().copy(alpha = 0.4f), fontSize = 10.sp))
         }
     }
 }
 
-@Composable
-private fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
-    Row(
-        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Spacer(Modifier.weight(1f))
-        BasicText(output.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
-    }
-}
-
-private fun parseValue(original: WorkflowValue?, raw: String): WorkflowValue? = when (original) {
-    is WorkflowValue.IntValue     -> raw.toIntOrNull()?.let { WorkflowValue.IntValue(it) }
-    is WorkflowValue.DoubleValue  -> raw.toDoubleOrNull()?.let { WorkflowValue.DoubleValue(it) }
-    is WorkflowValue.StringValue  -> WorkflowValue.StringValue(raw)
-    is WorkflowValue.BooleanValue -> raw.toBooleanStrictOrNull()?.let { WorkflowValue.BooleanValue(it) }
-    else -> null
-}
-internal fun WorkflowValue.label(): String = when (this) {
-    is WorkflowValue.IntValue     -> value.toString()
-    is WorkflowValue.DoubleValue  -> (kotlin.math.round(value * 1000) / 1000.0).toString()
-    is WorkflowValue.StringValue  -> value
-    is WorkflowValue.BooleanValue -> if (value) "true" else "false"
-    else -> ""
+private fun defaultForType(type: WorkflowType): WorkflowValue = when (type) {
+    WorkflowType.IntType     -> WorkflowValue.IntValue(0)
+    WorkflowType.DoubleType  -> WorkflowValue.DoubleValue(0.0)
+    WorkflowType.BooleanType -> WorkflowValue.BooleanValue(false)
+    else                     -> WorkflowValue.StringValue("")
 }

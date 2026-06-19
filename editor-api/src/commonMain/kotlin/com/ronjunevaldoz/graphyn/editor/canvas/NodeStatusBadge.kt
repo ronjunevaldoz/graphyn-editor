@@ -17,6 +17,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 
+/**
+ * Small circular badge overlaid in the top-right corner of a node card. Hidden when [status]
+ * is [NodeExecutionStatus.Idle]; shows yellow `+` (running), green `v` (success), or red `x` (error).
+ *
+ * Driven by [GraphynEditorIntent.UpdateNodeExecutionStatus]. Custom cards include it with:
+ * ```kotlin
+ * NodeStatusBadge(
+ *     status = context.executionStatus,
+ *     modifier = Modifier.align(Alignment.TopEnd).padding(4.dp),
+ *     surfaceColor = myCardBackground,
+ * )
+ * ```
+ */
 @Composable
 fun NodeStatusBadge(
     status: NodeExecutionStatus,

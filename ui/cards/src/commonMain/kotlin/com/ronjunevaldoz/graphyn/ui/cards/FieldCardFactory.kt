@@ -31,6 +31,39 @@ internal const val ROW_DP = 22
 internal const val FOOTER_DIVIDER_DP = 9
 internal const val VALUE_DP = 80
 
+/**
+ * Card with labelled field rows. Use for nodes whose inputs the user edits directly on the canvas.
+ *
+ * Height is computed automatically: `HEADER + inputRows × ROW + DIVIDER + outputRows × ROW`.
+ *
+ * ### Input type widgets
+ * | [WorkflowType] | Widget | Behaviour |
+ * |---|---|---|
+ * | StringType / BooleanType | Text chip | Click to inline-edit; commits on focus loss |
+ * | IntType | `−∣value∣+` stepper | Centre-click to type; `−`/`+` steps by 1 |
+ * | DoubleType | `−∣value∣+` stepper | Centre-click to type; `−`/`+` steps by 0.1 |
+ * | EnumType | Dropdown chip | Single-select popup |
+ * | MultiEnumType | Dropdown chip | Multi-select popup with checkboxes |
+ * | ListType(elementType) | `N items ▾` chip | Popup: add/remove items, inline edit per item |
+ * | RecordType(fields) | `{ N fields } ▾` chip | Popup: one editable row per schema key |
+ * | NullableType | Falls through to inner type widget | — |
+ * | OpaqueType | Text chip (display only) | Accepts any connected type |
+ *
+ * ### Theme customisation
+ * ```kotlin
+ * FieldCardFactory(
+ *     theme = FieldNodeTheme(
+ *         background       = { Color(0xFF1E1E1E) },
+ *         headerBackground = { Color(0xFF2D2D2D) },
+ *         selectedBorder   = { Color(0xFF61AFEF) },
+ *         labelColor       = { Color(0xFF9DA5B4) },
+ *         valueText        = { Color(0xFFABB2BF) },
+ *     ),
+ *     inputRows = 4,
+ *     outputRows = 2,
+ * )
+ * ```
+ */
 class FieldCardFactory(
     val theme: FieldNodeTheme = FieldNodeTheme(),
     val inputRows: Int = 3,

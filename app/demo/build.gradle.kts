@@ -36,6 +36,12 @@ kotlin {
             implementation(projects.plugins.sampleLogger)
             implementation(projects.plugins.sampleLoggerUi)
             implementation(projects.plugins.sampleStyleNodes)
+            implementation(projects.plugins.stickyNotes)
+            implementation(projects.plugins.listOps)
+            implementation(projects.plugins.control)
+            implementation(projects.plugins.types)
+            implementation(projects.plugins.text)
+            implementation(projects.plugins.io)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
         }

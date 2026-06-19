@@ -23,6 +23,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
+import com.ronjunevaldoz.graphyn.core.model.displayName
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
@@ -81,9 +82,11 @@ internal fun GraphynOutputPortDot(
                         val inputPort = draftNode?.let { nodeSpecs.resolve(it.type) }
                             ?.inputs?.firstOrNull { it.name == draft.fromPort }
                         if (inputPort == null || !WorkflowTypeCompatibility.isCompatible(inputPort.type, outputPort.type)) {
-                            state.addDebugLog("Rejected: ${node.id}:${outputPort.name} -> ${draft.fromNodeId}:${draft.fromPort}")
+                            state.rejectedConnectionPort = node.id to outputPort.name
+                            state.addDebugLog("Rejected: ${node.id}:${outputPort.name} → ${draft.fromNodeId}:${draft.fromPort} (type mismatch)")
                             state.dispatch(GraphynEditorIntent.CancelConnection)
                         } else {
+                            state.rejectedConnectionPort = null
                             state.dispatch(GraphynEditorIntent.CompleteConnection(node.id, outputPort.name))
                         }
                     }
@@ -94,5 +97,9 @@ internal fun GraphynOutputPortDot(
                     else -> state.dispatch(GraphynEditorIntent.BeginConnection(node.id, outputPort.name))
                 }
             },
-    )
+    ) {
+        if (isHovered && draft == null) {
+            PortTooltip("← ${outputPort.name}: ${outputPort.type.displayName()}", outputColor)
+        }
+    }
 }
