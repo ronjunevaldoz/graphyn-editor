@@ -91,10 +91,12 @@ dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }
 
+val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.1.0"
+
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
-    coordinates("io.github.ronjunevaldoz", "graphyn-editor", "0.1.0")
+    coordinates("io.github.ronjunevaldoz", "graphyn-editor", libraryVersion)
     pom {
         name = "Graphyn Editor"
         description = "Compose Multiplatform workflow editor canvas — canvas, palette, inspector, and gesture handling."

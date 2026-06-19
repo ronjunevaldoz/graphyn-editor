@@ -54,10 +54,12 @@ kotlin {
     }
 }
 
+val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.1.0"
+
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
-    coordinates("io.github.ronjunevaldoz", "graphyn-editor-api", "0.1.0")
+    coordinates("io.github.ronjunevaldoz", "graphyn-editor-api", libraryVersion)
     pom {
         name = "Graphyn Editor API"
         description = "Contract for Graphyn editor panel plugins — register custom inspector UI"

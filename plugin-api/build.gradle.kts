@@ -48,10 +48,12 @@ kotlin {
     }
 }
 
+val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.1.0"
+
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
-    coordinates("io.github.ronjunevaldoz", "graphyn-plugin-api", "0.1.0")
+    coordinates("io.github.ronjunevaldoz", "graphyn-plugin-api", libraryVersion)
     pom {
         name = "Graphyn Plugin API"
         description = "Contract for Graphyn runtime node plugins — register node specs and executors"
