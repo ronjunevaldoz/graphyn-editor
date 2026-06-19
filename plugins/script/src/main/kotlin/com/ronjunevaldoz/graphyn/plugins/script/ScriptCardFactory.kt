@@ -43,10 +43,9 @@ private const val HEADER_DP      = 28
 private const val PORT_ROW_DP    = 26
 private const val CODE_HEIGHT_DP = 140
 
-// Editor palette — fixed dark to match code-editor conventions regardless of app theme.
-private val CODE_BG      = Color(0xFF1E1E2E)
-private val CODE_TEXT    = Color(0xFFCDD6F4)
-private val CODE_HINT    = Color(0xFF6C7086)
+private val CODE_BG   = Color(0xFF1E1E2E)
+private val CODE_TEXT = Color(0xFFCDD6F4)
+private val CODE_HINT = Color(0xFF6C7086)
 
 internal object ScriptCardFactory : NodeCanvasFactory {
     override val nodeWidth  = CARD_WIDTH_DP
@@ -71,14 +70,28 @@ private fun ScriptCard(ctx: NodeCanvasContext) {
         ?: (ctx.spec.defaultValues["code"] as? WorkflowValue.StringValue)?.value
         ?: ""
 
+    // Drag lives on the outer box so every non-interactive area (header, port rows, dividers)
+    // is a valid drag handle. BasicTextField absorbs events within its own bounds naturally.
     Box(
         modifier = Modifier.width(CARD_WIDTH_DP.dp).clip(shape)
             .background(colors.surface)
             .border(1.dp, if (ctx.selected) colors.borderFocus else colors.border, shape)
-            .clickable { ctx.onSelect() },
+            .clickable { ctx.onSelect() }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    awaitTouchSlopOrCancellation(down.id) { c, _ -> c.consume() }
+                        ?: return@awaitEachGesture
+                    drag(down.id) { c ->
+                        c.consume()
+                        val d = c.position - c.previousPosition
+                        ctx.onMove(IntOffset(d.x.roundToInt(), d.y.roundToInt()))
+                    }
+                }
+            },
     ) {
         Column {
-            ScriptHeader(ctx.spec.label, colors.surfaceVariant, colors.onSurface, ctx.onMove)
+            ScriptHeader(ctx.spec.label, colors.surfaceVariant, colors.onSurface)
 
             Row(
                 modifier = Modifier.fillMaxWidth().height(PORT_ROW_DP.dp).padding(horizontal = 10.dp),
@@ -126,22 +139,9 @@ private fun ScriptCard(ctx: NodeCanvasContext) {
 }
 
 @Composable
-private fun ScriptHeader(label: String, bg: Color, textColor: Color, onMove: (IntOffset) -> Unit) {
+private fun ScriptHeader(label: String, bg: Color, textColor: Color) {
     Box(
-        modifier = Modifier.fillMaxWidth().height(HEADER_DP.dp).background(bg)
-            .padding(horizontal = 10.dp)
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    awaitTouchSlopOrCancellation(down.id) { c, _ -> c.consume() }
-                        ?: return@awaitEachGesture
-                    drag(down.id) { c ->
-                        c.consume()
-                        val d = c.position - c.previousPosition
-                        onMove(IntOffset(d.x.roundToInt(), d.y.roundToInt()))
-                    }
-                }
-            },
+        modifier = Modifier.fillMaxWidth().height(HEADER_DP.dp).background(bg).padding(horizontal = 10.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
         BasicText(label, style = TextStyle(color = textColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
