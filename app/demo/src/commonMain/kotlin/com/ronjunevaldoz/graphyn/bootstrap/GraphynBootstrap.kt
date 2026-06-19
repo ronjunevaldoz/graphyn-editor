@@ -21,6 +21,8 @@ import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNoteEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNotePlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesPlugin
+import com.ronjunevaldoz.graphyn.plugins.preview.PreviewEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.preview.PreviewPlugin
 import com.ronjunevaldoz.graphyn.plugins.text.TextEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.text.TextPlugin
 import com.ronjunevaldoz.graphyn.plugins.types.TypesEditorPlugin
@@ -30,12 +32,12 @@ object GraphynDemoPlugins {
     val runtime: List<GraphynPlugin> = listOf(
         SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin,
         ListOpsPlugin, ControlPlugin, TypesPlugin, TextPlugin, IoPlugin,
-        SubgraphRuntimePlugin,
+        SubgraphRuntimePlugin, PreviewPlugin,
     )
     val editor: List<GraphynEditorPlugin> = listOf(
         SampleLoggerEditorPlugin, StyleNodesEditorPlugin, StickyNoteEditorPlugin,
         ListOpsEditorPlugin, ControlEditorPlugin, TypesEditorPlugin, TextEditorPlugin, IoEditorPlugin,
-        SubgraphEditorPlugin,
+        SubgraphEditorPlugin, PreviewEditorPlugin,
     )
 }
 
