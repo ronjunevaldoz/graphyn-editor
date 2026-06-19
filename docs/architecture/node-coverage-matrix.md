@@ -34,16 +34,17 @@ Tracks test and implementation completeness across all registered node types.
 | `io.file_read` | io | ✅ | ❌ | ❌ | ✅ FieldCard | 1 | 2 | blank path → empty content, exists=false |
 | `io.file_write` | io | ✅ | ❌ | ❌ | ✅ FieldCard | 3 | 1 | content port is OpaqueType → matches every output |
 | `demo.subgraph` | app/demo (SubgraphRuntimePlugin) | ✅ | ❌ | ❌ | ✅ SubgraphCard | 1 | 1 | bug: inner workflow's last node output leaks as pipeline output instead of mapped `output` port |
+| `script.eval` | script (JVM-only) | ✅ | ❌ | ❌ | ✅ ScriptCardFactory | 1 | 2 | JVM-only; `code` is config-only (not a wire port); custom 320dp card with dark monospace editor |
 
 ## Summary
 
 | Category | Count |
 |---|---|
-| Total node types | 24 |
-| With executor | 23 (sticky_note is annotation-only) |
+| Total node types | 25 |
+| With executor | 24 (sticky_note is annotation-only) |
 | With unit tests | 4 (math.×3, sample.logger) |
 | With UI / Roborazzi tests | 4 (sample.logger, stylenodes.×3) |
-| With custom canvas card | 20 |
+| With custom canvas card | 21 |
 | Without custom card (uses default) | 4 (math.×3, sample.logger) |
 
 ## Port Compatibility Notes
