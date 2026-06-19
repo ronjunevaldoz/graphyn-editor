@@ -24,13 +24,13 @@ object StyleNodesSpecs {
         description = "Runs the diffusion sampling loop using a model, conditioning, and latent image.",
         category = CATEGORY_AI,
         inputs = listOf(
-            PortSpec("model",    WorkflowType.OpaqueType, portColor = COLOR_MODEL),
-            PortSpec("positive", WorkflowType.StringType, portColor = COLOR_CONDITIONING),
-            PortSpec("negative", WorkflowType.StringType, portColor = COLOR_CONDITIONING),
-            PortSpec("latent",   WorkflowType.OpaqueType, portColor = COLOR_LATENT),
+            PortSpec("model",    WorkflowType.OpaqueType, portColor = COLOR_MODEL,        description = "Loaded diffusion model"),
+            PortSpec("positive", WorkflowType.StringType, portColor = COLOR_CONDITIONING, description = "CLIP-encoded text describing what to include"),
+            PortSpec("negative", WorkflowType.StringType, portColor = COLOR_CONDITIONING, description = "CLIP-encoded text describing what to exclude"),
+            PortSpec("latent",   WorkflowType.OpaqueType, portColor = COLOR_LATENT,       description = "Initial latent image or empty latent"),
         ),
         outputs = listOf(
-            PortSpec("latent", WorkflowType.OpaqueType, portColor = COLOR_LATENT),
+            PortSpec("latent", WorkflowType.OpaqueType, portColor = COLOR_LATENT, description = "Denoised latent ready for decoding"),
         ),
         defaultValues = mapOf(
             "steps" to WorkflowValue.IntValue(20),
@@ -44,14 +44,14 @@ object StyleNodesSpecs {
         description = "Scatters points across a mesh surface using the chosen density and distribution mode.",
         category = CATEGORY_GEOMETRY,
         inputs = listOf(
-            PortSpec("mesh",     WorkflowType.OpaqueType,                                          portColor = COLOR_GEOMETRY),
-            PortSpec("density",  WorkflowType.DoubleType,                                          portColor = COLOR_FLOAT),
-            PortSpec("seed",     WorkflowType.IntType,                                             portColor = COLOR_INT),
-            PortSpec("mode",     WorkflowType.EnumType(listOf("uniform", "random", "poisson")),    portColor = COLOR_INT),
-            PortSpec("channels", WorkflowType.MultiEnumType(listOf("R", "G", "B", "A")),           portColor = COLOR_INT),
+            PortSpec("mesh",     WorkflowType.OpaqueType,                                          portColor = COLOR_GEOMETRY, description = "Source mesh to scatter points on"),
+            PortSpec("density",  WorkflowType.DoubleType,                                          portColor = COLOR_FLOAT,    description = "Points per unit area"),
+            PortSpec("seed",     WorkflowType.IntType,                                             portColor = COLOR_INT,      description = "Random seed for reproducible placement"),
+            PortSpec("mode",     WorkflowType.EnumType(listOf("uniform", "random", "poisson")),    portColor = COLOR_INT,      description = "Distribution algorithm"),
+            PortSpec("channels", WorkflowType.MultiEnumType(listOf("R", "G", "B", "A")),           portColor = COLOR_INT,      description = "Color channels used to weight density"),
         ),
         outputs = listOf(
-            PortSpec("points", WorkflowType.OpaqueType, portColor = COLOR_GEOMETRY),
+            PortSpec("points", WorkflowType.OpaqueType, portColor = COLOR_GEOMETRY, description = "Scattered point cloud"),
         ),
         defaultValues = mapOf(
             "density"  to WorkflowValue.DoubleValue(0.002),
@@ -68,7 +68,7 @@ object StyleNodesSpecs {
         category = CATEGORY_AUTOMATION,
         inputs = emptyList(),
         outputs = listOf(
-            PortSpec("body", WorkflowType.RecordType(emptyMap())),
+            PortSpec("body", WorkflowType.RecordType(emptyMap()), description = "Parsed JSON body of the incoming HTTP request"),
         ),
     )
 }

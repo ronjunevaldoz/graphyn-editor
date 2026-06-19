@@ -3,6 +3,8 @@ package com.ronjunevaldoz.graphyn.core.model
 /**
  * Declares a single port on a node.
  *
+ * @param description Short hint shown in the inspector below the port name.
+ *   Describe what the port expects or produces — e.g. "CLIP-encoded positive prompt".
  * @param portColor Optional ARGB color override for the connection dot on the canvas.
  *   Falls back to the type-based color from `GraphynPortTypeColor` when null.
  */
@@ -11,6 +13,7 @@ data class PortSpec(
     val type: WorkflowType,
     val required: Boolean = true,
     val portColor: Long? = null,
+    val description: String? = null,
 )
 
 /**

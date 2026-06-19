@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.editor.shell.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -9,8 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
@@ -47,6 +50,15 @@ internal fun GraphynInspectorNodeSection(
                 BasicText(node.id, style = type.mono.copy(color = colors.textDisabled))
             }
         }
+        if (!spec?.inputs.isNullOrEmpty() || !spec?.outputs.isNullOrEmpty()) {
+            InspectorSectionLabel("PORTS")
+            InspectorCard {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    spec?.inputs?.forEach { PortRow(it, isInput = true) }
+                    spec?.outputs?.forEach { PortRow(it, isInput = false) }
+                }
+            }
+        }
         if (panelFactory != null) {
             panelFactory.Content(
                 EditorPanelContext(
@@ -66,4 +78,38 @@ internal fun GraphynInspectorNodeSection(
             state.dispatch(GraphynEditorIntent.DeleteSelectedNode)
         }
     }
+}
+
+@Composable
+private fun PortRow(port: PortSpec, isInput: Boolean) {
+    val colors = GraphynDs.colors
+    val type = GraphynDs.type
+    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            BasicText(
+                text = "${if (isInput) "→" else "←"} ${port.name}",
+                style = type.bodySmall.copy(color = colors.textPrimary),
+            )
+            BasicText(
+                text = port.type.displayName(),
+                style = type.mono.copy(color = colors.textDisabled),
+            )
+        }
+        port.description?.let {
+            BasicText(it, style = type.bodySmall.copy(color = colors.textSecondary))
+        }
+    }
+}
+
+private fun WorkflowType.displayName(): String = when (this) {
+    WorkflowType.StringType  -> "String"
+    WorkflowType.IntType     -> "Int"
+    WorkflowType.DoubleType  -> "Double"
+    WorkflowType.BooleanType -> "Boolean"
+    WorkflowType.OpaqueType  -> "Opaque"
+    is WorkflowType.ListType      -> "List<${elementType.displayName()}>"
+    is WorkflowType.NullableType  -> "${wrappedType.displayName()}?"
+    is WorkflowType.RecordType    -> "Record"
+    is WorkflowType.EnumType      -> "Enum"
+    is WorkflowType.MultiEnumType -> "MultiEnum"
 }
