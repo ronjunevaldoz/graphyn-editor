@@ -26,7 +26,7 @@ private val listOpsDemoWorkflow = WorkflowDefinition(
         NodeRef("reduce", "listops.reduce"),
     ),
     connections = listOf(
-        ConnectionRef("zip",    "pairs",  "map",    "list"),
+        ConnectionRef("zip",    "result", "map",    "list"),
         ConnectionRef("map",    "result", "filter", "list"),
         ConnectionRef("filter", "result", "reduce", "list"),
     ),
