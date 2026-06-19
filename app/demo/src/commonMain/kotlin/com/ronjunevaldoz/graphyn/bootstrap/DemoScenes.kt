@@ -83,6 +83,41 @@ val ioDemoWorkflow = WorkflowDefinition(
     ),
 )
 
+val groupsDemoWorkflow = WorkflowDefinition(
+    id = "groups-demo", name = "Groups",
+    nodes = listOf(
+        NodeRef("fetch", "io.http_request"),
+        NodeRef("read", "io.file_read"),
+        NodeRef("zip", "listops.zip"),
+        NodeRef("map", "listops.map"),
+        NodeRef("filter", "listops.filter"),
+        NodeRef("write", "io.file_write"),
+    ),
+    connections = listOf(
+        ConnectionRef("fetch", "body", "zip", "listA"),
+        ConnectionRef("read", "content", "zip", "listB"),
+        ConnectionRef("zip", "result", "map", "list"),
+        ConnectionRef("map", "result", "filter", "list"),
+        ConnectionRef("filter", "result", "write", "content"),
+    ),
+)
+
+val subgraphDemoWorkflow = WorkflowDefinition(
+    id = "subgraph-demo", name = "Subgraph",
+    nodes = listOf(
+        NodeRef("fetch", "io.http_request"),
+        NodeRef("pipeline", SUBGRAPH_NODE_TYPE, config = mapOf(
+            "label" to com.ronjunevaldoz.graphyn.core.model.WorkflowValue.StringValue("Transform Pipeline"),
+            SUBGRAPH_COUNT_KEY to com.ronjunevaldoz.graphyn.core.model.WorkflowValue.IntValue(4),
+        )),
+        NodeRef("write", "io.file_write"),
+    ),
+    connections = listOf(
+        ConnectionRef("fetch", "body", "pipeline", "input"),
+        ConnectionRef("pipeline", "output", "write", "content"),
+    ),
+)
+
 val demoWorkflow = styleNodesDemoWorkflow
 
 enum class DemoScene(val label: String) {
@@ -92,6 +127,8 @@ enum class DemoScene(val label: String) {
     Text("Text"),
     Types("Types"),
     Io("I/O"),
+    Groups("Groups"),
+    Subgraph("Subgraph"),
     ;
     val workflow: WorkflowDefinition
         get() = when (this) {
@@ -101,5 +138,7 @@ enum class DemoScene(val label: String) {
             Text -> textDemoWorkflow
             Types -> typesDemoWorkflow
             Io -> ioDemoWorkflow
+            Groups -> groupsDemoWorkflow
+            Subgraph -> subgraphDemoWorkflow
         }
 }

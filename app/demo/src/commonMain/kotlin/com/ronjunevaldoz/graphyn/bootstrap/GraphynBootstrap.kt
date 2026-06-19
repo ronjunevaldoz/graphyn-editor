@@ -34,10 +34,12 @@ object GraphynDemoPlugins {
     val runtime: List<GraphynPlugin> = listOf(
         SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin,
         ListOpsPlugin, ControlPlugin, TypesPlugin, TextPlugin, IoPlugin,
+        SubgraphRuntimePlugin,
     )
     val editor: List<GraphynEditorPlugin> = listOf(
         SampleLoggerEditorPlugin, StyleNodesEditorPlugin, StickyNoteEditorPlugin,
         ListOpsEditorPlugin, ControlEditorPlugin, TypesEditorPlugin, TextEditorPlugin, IoEditorPlugin,
+        SubgraphEditorPlugin,
     )
 }
 
