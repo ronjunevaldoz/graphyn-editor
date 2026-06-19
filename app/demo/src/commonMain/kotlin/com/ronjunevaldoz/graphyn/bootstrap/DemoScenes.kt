@@ -16,8 +16,12 @@ private val scriptDemoWorkflow = WorkflowDefinition(
                 "import java.time.LocalDate\n" +
                 "\"[\${LocalDate.now()}] \$input\""
             ))),
+        NodeRef("preview", "preview.view"),
     ),
-    connections = listOf(ConnectionRef("format", "result", "script", "input")),
+    connections = listOf(
+        ConnectionRef("format",  "result", "script",  "input"),
+        ConnectionRef("script",  "result", "preview", "value"),
+    ),
 )
 
 enum class DemoScene(val label: String, val workflow: WorkflowDefinition) {
