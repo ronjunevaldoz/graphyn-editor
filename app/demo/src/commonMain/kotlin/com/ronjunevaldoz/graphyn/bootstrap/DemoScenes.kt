@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesSpecs
 
 // All workflow vals must be declared before DemoScene enum to avoid Kotlin enum static init ordering.
@@ -107,8 +108,9 @@ val subgraphDemoWorkflow = WorkflowDefinition(
     nodes = listOf(
         NodeRef("fetch", "io.http_request"),
         NodeRef("pipeline", SUBGRAPH_NODE_TYPE, config = mapOf(
-            "label" to com.ronjunevaldoz.graphyn.core.model.WorkflowValue.StringValue("Transform Pipeline"),
-            SUBGRAPH_COUNT_KEY to com.ronjunevaldoz.graphyn.core.model.WorkflowValue.IntValue(4),
+            SUBGRAPH_LABEL_KEY to WorkflowValue.StringValue("Transform Pipeline"),
+            SUBGRAPH_CONTENTS_KEY to WorkflowValue.StringValue("zip, map, filter, reduce"),
+            SUBGRAPH_COUNT_KEY to WorkflowValue.IntValue(4),
         )),
         NodeRef("write", "io.file_write"),
     ),
