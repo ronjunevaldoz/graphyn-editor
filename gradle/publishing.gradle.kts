@@ -6,7 +6,7 @@ plugins {
 
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-    signAllPublications()
+    if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
 
     pom {
         url = "https://github.com/ronjunevaldoz/graphyn-editor"

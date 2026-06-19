@@ -96,7 +96,7 @@ val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.1.0"
 
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
-    signAllPublications()
+    if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
     coordinates("io.github.ronjunevaldoz", "graphyn-editor", libraryVersion)
     pom {
         name = "Graphyn Editor"
