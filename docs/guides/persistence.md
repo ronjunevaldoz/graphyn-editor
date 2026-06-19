@@ -108,6 +108,47 @@ suspend fun saveToApi(state: GraphynEditorState, api: WorkflowApi) {
 
 ---
 
+---
+
+## Pattern 4 — Persist to a local file (Desktop / JVM)
+
+This is the pattern used in `app/sample`. Load the workflow from a JSON file on startup and
+auto-save on every edit. Works on any JVM target (Desktop, Server).
+
+```kotlin
+private val saveFile = File(System.getProperty("user.home"), ".myapp/workflow.json")
+
+private fun loadWorkflow(): WorkflowDefinition =
+    if (saveFile.exists()) runCatching { workflowFromJson(saveFile.readText()) }.getOrNull()
+        ?: defaultWorkflow()
+    else defaultWorkflow()
+
+private fun saveWorkflow(workflow: WorkflowDefinition) {
+    saveFile.parentFile.mkdirs()
+    saveFile.writeText(workflow.toJson())
+}
+
+@Composable
+fun MyEditor() {
+    val state = rememberGraphynEditorState(initialWorkflow = remember { loadWorkflow() })
+
+    val workflow = state.workflow
+    LaunchedEffect(workflow) {
+        if (workflow != null) {
+            delay(1_000)          // debounce — only write after 1 s of inactivity
+            saveWorkflow(workflow)
+        }
+    }
+
+    GraphynEditorShell(
+        dependencies = GraphynEditorShellDependencies(nodeSpecs = mySpecs),
+        state = state,
+    )
+}
+```
+
+---
+
 ## Serialization
 
 ```kotlin

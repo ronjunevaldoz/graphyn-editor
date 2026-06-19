@@ -11,11 +11,21 @@ repositories {
 Then add the artifacts you need:
 
 ```kotlin
-// In commonMain.dependencies
-api("io.github.ronjunevaldoz:graphyn-core:0.1.0")
-api("io.github.ronjunevaldoz:graphyn-plugin-api:0.1.0")
-api("io.github.ronjunevaldoz:graphyn-editor-api:0.1.0")
-api("io.github.ronjunevaldoz:graphyn-editor:0.1.0")
+// Required — workflow model, execution engine, serialization
+api("io.github.ronjunevaldoz:graphyn-core:0.2.0")
+
+// Required — plugin and editor plugin contracts
+api("io.github.ronjunevaldoz:graphyn-plugin-api:0.2.0")
+api("io.github.ronjunevaldoz:graphyn-editor-api:0.2.0")
+
+// Required — Compose Multiplatform editor shell (canvas, palette, inspector)
+api("io.github.ronjunevaldoz:graphyn-editor:0.2.0")
+
+// Optional — pre-built card styles (DarkHeaderCard, FieldCard, CircleCard)
+implementation("io.github.ronjunevaldoz:graphyn-ui-cards:0.2.0")
+
+// Optional — HTTP Request, File Read, File Write executor nodes
+implementation("io.github.ronjunevaldoz:graphyn-plugin-io:0.2.0")
 ```
 
 ### iOS — Swift Package Manager
@@ -25,7 +35,7 @@ Add the binary target to your `Package.swift`:
 ```swift
 .binaryTarget(
     name: "GraphynEditor",
-    url: "https://github.com/ronjunevaldoz/graphyn-editor/releases/download/v0.1.0/GraphynEditor.xcframework.zip",
+    url: "https://github.com/ronjunevaldoz/graphyn-editor/releases/download/v0.2.0/GraphynEditor.xcframework.zip",
     checksum: "<sha256>"
 )
 ```
