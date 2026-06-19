@@ -20,9 +20,9 @@ import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 
 internal const val HEADER_DP = 28
-internal const val ROW_DP = 22
+internal const val ROW_DP = 26
 internal const val FOOTER_DIVIDER_DP = 9
-internal const val VALUE_DP = 100
+internal const val VALUE_DP = 110
 
 /**
  * Card with labelled field rows. Use for nodes whose inputs the user edits directly on the canvas.
@@ -62,7 +62,7 @@ class FieldCardFactory(
     val inputRows: Int = 3,
     val outputRows: Int = 3,
 ) : NodeCanvasFactory {
-    override val nodeWidth = 240
+    override val nodeWidth = 260
     override val nodeHeight = HEADER_DP + inputRows * ROW_DP + FOOTER_DIVIDER_DP + outputRows * ROW_DP
 
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
@@ -83,7 +83,7 @@ private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
     val shape = RoundedCornerShape(appTheme.shapes.md)
     Box(
         modifier = Modifier
-            .width(240.dp).clip(shape).background(bg).border(1.dp, borderColor, shape)
+            .width(260.dp).clip(shape).background(bg).border(1.dp, borderColor, shape)
             .clickable { ctx.onSelect() },
     ) {
         Column {

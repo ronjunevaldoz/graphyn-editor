@@ -25,7 +25,7 @@ class FieldCardFactoryTest {
 
     @Test
     fun nodeWidth_isFixed() {
-        assertEquals(220, FieldCardFactory().nodeWidth)
+        assertEquals(260, FieldCardFactory().nodeWidth)
     }
 
     @Test

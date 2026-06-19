@@ -5,7 +5,6 @@ import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSIO
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginRegistrar
-import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
 
 /** Editor plugin: registers the Script node canvas card and palette category. */
 object ScriptEditorPlugin : GraphynEditorPlugin {
@@ -17,7 +16,7 @@ object ScriptEditorPlugin : GraphynEditorPlugin {
     )
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
-        registrar.registerCanvasCard(specScriptEval.type, FieldCardFactory(inputRows = 2, outputRows = 2))
+        registrar.registerCanvasCard(specScriptEval.type, ScriptCardFactory)
         registrar.registerCategory(CATEGORY_SCRIPT, NodeCategoryMeta("Script", 0xFFA78BFAL))
     }
 }
