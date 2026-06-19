@@ -10,6 +10,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.test.runTest
 
 class SubgraphExecutionTest {
 
@@ -31,7 +32,7 @@ class SubgraphExecutionTest {
     )
 
     @Test
-    fun subgraphNodeRunsInnerWorkflowAndPropagatesOutputsDownstream() {
+    fun subgraphNodeRunsInnerWorkflowAndPropagatesOutputsDownstream() = runTest {
         val workflow = WorkflowDefinition(
             id = "outer", name = "Outer",
             nodes = listOf(
@@ -49,7 +50,7 @@ class SubgraphExecutionTest {
     }
 
     @Test
-    fun subgraphNodeRequiresNoRegisteredExecutor() {
+    fun subgraphNodeRequiresNoRegisteredExecutor() = runTest {
         val workflow = WorkflowDefinition(
             id = "outer2", name = "Outer",
             nodes = listOf(NodeRef("sg", "completely.unknown.type", subgraph = innerWorkflow())),
@@ -61,7 +62,7 @@ class SubgraphExecutionTest {
     }
 
     @Test
-    fun nodeWithoutSubgraphAndWithoutExecutorThrows() {
+    fun nodeWithoutSubgraphAndWithoutExecutorThrows() = runTest {
         val workflow = WorkflowDefinition(
             id = "broken", name = "Broken",
             nodes = listOf(NodeRef("sg", "completely.unknown.type")),
@@ -74,7 +75,7 @@ class SubgraphExecutionTest {
     }
 
     @Test
-    fun nestedSubgraphsExecuteRecursively() {
+    fun nestedSubgraphsExecuteRecursively() = runTest {
         val innermost = WorkflowDefinition(
             id = "innermost", name = "Innermost",
             nodes = listOf(NodeRef("p", "passthrough", config = mapOf("in" to WorkflowValue.IntValue(7)))),

@@ -8,6 +8,11 @@ import com.ronjunevaldoz.graphyn.pluginapi.GRAPHYN_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginMetadata
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginRegistrar
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpMethod
+import io.ktor.http.isSuccess
 
 const val CATEGORY_IO = "graphyn.io"
 
@@ -75,22 +80,46 @@ object IoPlugin : GraphynPlugin {
         apiVersion = GRAPHYN_PLUGIN_API_VERSION,
     )
 
+    private val httpClient by lazy { createHttpClient() }
+
     override fun register(registrar: GraphynPluginRegistrar) {
         listOf(specHttpRequest, specFileRead, specFileWrite).forEach { registrar.registerNodeSpec(it) }
+
         registrar.registerExecutor(specHttpRequest.type) { inputs ->
-            mapOf(
-                "body" to WorkflowValue.StringValue(""),
-                "statusCode" to WorkflowValue.IntValue(0),
-                "ok" to WorkflowValue.BooleanValue(false),
-            )
+            val url = (inputs["url"] as? WorkflowValue.StringValue)?.value?.takeIf { it.isNotBlank() }
+                ?: return@registerExecutor mapOf(
+                    "body" to WorkflowValue.StringValue(""),
+                    "statusCode" to WorkflowValue.IntValue(0),
+                    "ok" to WorkflowValue.BooleanValue(false),
+                )
+            val method = (inputs["method"] as? WorkflowValue.StringValue)?.value ?: "GET"
+            val body = (inputs["body"] as? WorkflowValue.StringValue)?.value
+            try {
+                val response = httpClient.request(url) {
+                    this.method = HttpMethod.parse(method)
+                    if (body != null) setBody(body)
+                }
+                mapOf(
+                    "body" to WorkflowValue.StringValue(response.bodyAsText()),
+                    "statusCode" to WorkflowValue.IntValue(response.status.value),
+                    "ok" to WorkflowValue.BooleanValue(response.status.isSuccess()),
+                )
+            } catch (e: Exception) {
+                mapOf(
+                    "body" to WorkflowValue.StringValue("Error: ${e.message}"),
+                    "statusCode" to WorkflowValue.IntValue(0),
+                    "ok" to WorkflowValue.BooleanValue(false),
+                )
+            }
         }
+
         registrar.registerExecutor(specFileRead.type) { inputs ->
             mapOf(
                 "content" to WorkflowValue.StringValue(""),
                 "exists" to WorkflowValue.BooleanValue(false),
             )
         }
-        registrar.registerExecutor(specFileWrite.type) { inputs ->
+        registrar.registerExecutor(specFileWrite.type) { _ ->
             mapOf("success" to WorkflowValue.BooleanValue(false))
         }
     }

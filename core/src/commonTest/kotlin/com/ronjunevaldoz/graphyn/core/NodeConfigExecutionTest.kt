@@ -12,6 +12,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.runTest
 
 internal fun intOf(n: Int) = WorkflowValue.IntValue(n)
 internal fun strOf(s: String) = WorkflowValue.StringValue(s)
@@ -28,7 +29,7 @@ internal fun wf(vararg nodes: NodeRef, connections: List<ConnectionRef> = emptyL
 class NodeConfigExecutionTest {
 
     @Test
-    fun configOverridesSpecDefault() {
+    fun configOverridesSpecDefault() = runTest {
         val specs = DefaultNodeSpecRegistry().apply {
             register(NodeSpec("echo", "Echo",
                 inputs = listOf(PortSpec("count", WorkflowType.IntType)),
@@ -44,7 +45,7 @@ class NodeConfigExecutionTest {
     }
 
     @Test
-    fun specDefaultUsedWhenConfigAbsent() {
+    fun specDefaultUsedWhenConfigAbsent() = runTest {
         val specs = DefaultNodeSpecRegistry().apply {
             register(NodeSpec("echo", "Echo",
                 inputs = listOf(PortSpec("count", WorkflowType.IntType)),
@@ -59,7 +60,7 @@ class NodeConfigExecutionTest {
     }
 
     @Test
-    fun connectedInputOverridesNodeConfig() {
+    fun connectedInputOverridesNodeConfig() = runTest {
         val eng = engine(
             "source" to { _ -> mapOf("val" to intOf(42)) },
             "sink"   to { inputs -> mapOf("out" to (inputs["val"] ?: intOf(0))) },
@@ -73,12 +74,12 @@ class NodeConfigExecutionTest {
     }
 
     @Test
-    fun enumConfigValueBranchesExecutorLogic() {
+    fun enumConfigValueBranchesExecutorLogic() = runTest {
         val eng = engine("node" to { inputs ->
             val mode = (inputs["mode"] as? WorkflowValue.StringValue)?.value
             mapOf("result" to intOf(if (mode == "fast") 1 else 2))
         })
-        fun run(mode: String) = eng.execute(
+        suspend fun run(mode: String) = eng.execute(
             wf(NodeRef("n", "node", config = mapOf("mode" to strOf(mode))))
         ).nodeOutputsByNodeId["n"]?.get("result")
 
@@ -87,7 +88,7 @@ class NodeConfigExecutionTest {
     }
 
     @Test
-    fun multiEnumListValueCountedByExecutor() {
+    fun multiEnumListValueCountedByExecutor() = runTest {
         val eng = engine("node" to { inputs ->
             val list = (inputs["channels"] as? WorkflowValue.ListValue)?.items ?: emptyList()
             mapOf("count" to intOf(list.size))

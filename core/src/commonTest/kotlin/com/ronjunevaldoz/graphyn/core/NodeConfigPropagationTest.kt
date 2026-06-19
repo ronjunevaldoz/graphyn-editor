@@ -4,11 +4,12 @@ import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.runTest
 
 class NodeConfigPropagationTest {
 
     @Test
-    fun nestedChainABCPropagatesConfigValue() {
+    fun nestedChainABCPropagatesConfigValue() = runTest {
         // A(x=3) -> B(double) -> C(+1) → expect 7
         val eng = engine(
             "a" to { inputs -> mapOf("out" to (inputs["x"] ?: intOf(0))) },
@@ -25,7 +26,7 @@ class NodeConfigPropagationTest {
     }
 
     @Test
-    fun deepChainFourHopsPropagatesValue() {
+    fun deepChainFourHopsPropagatesValue() = runTest {
         val eng = engine(
             "src" to { inputs -> mapOf("v" to (inputs["v"] ?: intOf(0))) },
             "hop" to { inputs -> mapOf("v" to (inputs["v"] ?: intOf(0))) },
@@ -41,7 +42,7 @@ class NodeConfigPropagationTest {
     }
 
     @Test
-    fun fanOutBothDownstreamNodesReflectSourceConfig() {
+    fun fanOutBothDownstreamNodesReflectSourceConfig() = runTest {
         val eng = engine(
             "src" to { inputs -> mapOf("val" to (inputs["v"] ?: intOf(0))) },
             "b"   to { inputs -> inputs },
@@ -57,7 +58,7 @@ class NodeConfigPropagationTest {
     }
 
     @Test
-    fun fanInSumsInputsFromTwoUpstreamNodes() {
+    fun fanInSumsInputsFromTwoUpstreamNodes() = runTest {
         val eng = engine(
             "a"   to { inputs -> mapOf("out" to (inputs["v"] ?: intOf(0))) },
             "b"   to { inputs -> mapOf("out" to (inputs["v"] ?: intOf(0))) },
@@ -77,7 +78,7 @@ class NodeConfigPropagationTest {
     }
 
     @Test
-    fun diamondTopologyBothPathsMergeAtSink() {
+    fun diamondTopologyBothPathsMergeAtSink() = runTest {
         // source → left and right separately → sink sums both
         val eng = engine(
             "src"  to { inputs -> mapOf("v" to (inputs["v"] ?: intOf(0))) },
@@ -102,7 +103,7 @@ class NodeConfigPropagationTest {
     }
 
     @Test
-    fun configChangeOnIsolatedNodeDoesNotAffectOther() {
+    fun configChangeOnIsolatedNodeDoesNotAffectOther() = runTest {
         val eng = engine("node" to { inputs -> mapOf("out" to (inputs["v"] ?: intOf(0))) })
         val result = eng.execute(wf(
             NodeRef("a", "node", config = mapOf("v" to intOf(99))),

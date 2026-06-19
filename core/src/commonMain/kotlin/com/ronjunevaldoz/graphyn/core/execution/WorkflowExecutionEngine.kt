@@ -24,7 +24,7 @@ class WorkflowExecutionEngine(
     private val nodeExecutors: NodeExecutorRegistry,
     private val nodeSpecs: NodeSpecRegistry? = null,
 ) {
-    fun execute(workflow: WorkflowDefinition): WorkflowExecutionResult {
+    suspend fun execute(workflow: WorkflowDefinition): WorkflowExecutionResult {
         val nodesById = workflow.nodes.associateBy { it.id }
         if (nodesById.size != workflow.nodes.size) {
             throw WorkflowExecutionException("Workflow contains duplicate node ids.")

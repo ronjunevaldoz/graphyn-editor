@@ -29,6 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 
 class EditorRegistryTest {
     @Test
@@ -430,7 +431,7 @@ class EditorRegistryTest {
     }
 
     @Test
-    fun editorStateAppliesExecutionResults() {
+    fun editorStateAppliesExecutionResults() = runTest {
         val specs = DefaultNodeSpecRegistry().apply {
             register(
                 NodeSpec(
@@ -462,7 +463,7 @@ class EditorRegistryTest {
         )
         val engine = WorkflowExecutionEngine(executors, specs)
 
-        state.execute(engine)
+        state.execute(engine).join()
 
         assertEquals(
             WorkflowValue.BooleanValue(true),

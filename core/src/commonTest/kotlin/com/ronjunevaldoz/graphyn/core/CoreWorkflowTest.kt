@@ -220,7 +220,7 @@ class CoreWorkflowTest {
     }
 
     @Test
-    fun workflowExecutionResolvesExecutorsInTopologicalOrder() {
+    fun workflowExecutionResolvesExecutorsInTopologicalOrder() = kotlinx.coroutines.test.runTest {
         val specs = DefaultNodeSpecRegistry().apply {
             register(
                 NodeSpec(

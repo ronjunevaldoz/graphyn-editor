@@ -32,6 +32,25 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
+            implementation(libs.ktor.clientCore)
+        }
+        val jvmMain by getting {
+            dependencies { implementation(libs.ktor.clientCio) }
+        }
+        val androidMain by getting {
+            dependencies { implementation(libs.ktor.clientOkhttp) }
+        }
+        val iosMain by creating {
+            dependsOn(commonMain.get())
+            dependencies { implementation(libs.ktor.clientDarwin) }
+        }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+        val jsMain by getting {
+            dependencies { implementation(libs.ktor.clientJs) }
+        }
+        val wasmJsMain by getting {
+            dependencies { implementation(libs.ktor.clientJs) }
         }
         commonTest.dependencies { implementation(libs.kotlin.test) }
     }

@@ -4,6 +4,8 @@ import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 fun GraphynEditorState.updateNodeOutputs(nodeId: String, outputs: Map<String, WorkflowValue>) {
     nodeOutputsByNodeId = nodeOutputsByNodeId + (nodeId to outputs)
@@ -25,13 +27,15 @@ fun GraphynEditorState.applyExecutionResult(result: WorkflowExecutionResult) {
     log.push(summary)
 }
 
-fun GraphynEditorState.execute(engine: WorkflowExecutionEngine) {
-    val w = workflow ?: return
+fun GraphynEditorState.execute(engine: WorkflowExecutionEngine): Job {
+    val w = workflow ?: return Job()
     executionStatusByNodeId = w.nodes.associate { it.id to NodeExecutionStatus.Running }
-    try {
-        applyExecutionResult(engine.execute(w))
-    } catch (e: Exception) {
-        executionStatusByNodeId = w.nodes.associate { it.id to NodeExecutionStatus.Error }
-        log.push("Execution failed: ${e.message}")
+    return scope.launch {
+        try {
+            applyExecutionResult(engine.execute(w))
+        } catch (e: Exception) {
+            executionStatusByNodeId = w.nodes.associate { it.id to NodeExecutionStatus.Error }
+            log.push("Execution failed: ${e.message}")
+        }
     }
 }
