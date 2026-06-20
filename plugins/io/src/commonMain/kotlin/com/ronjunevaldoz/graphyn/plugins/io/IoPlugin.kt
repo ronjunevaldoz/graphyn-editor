@@ -72,6 +72,22 @@ internal val specFileWrite = NodeSpec(
     ),
 )
 
+internal val specFileBrowse = NodeSpec(
+    type = "io.file_browse",
+    label = "File Browser",
+    description = "Lets the user select a file or folder. Emits the chosen paths as outputs.",
+    category = CATEGORY_IO,
+    inputs = emptyList(),
+    outputs = listOf(
+        PortSpec("file", WorkflowType.StringType, description = "Absolute path of the selected file"),
+        PortSpec("folder", WorkflowType.StringType, description = "Absolute path of the selected folder"),
+    ),
+    defaultValues = mapOf(
+        "file" to WorkflowValue.StringValue(""),
+        "folder" to WorkflowValue.StringValue(""),
+    ),
+)
+
 object IoPlugin : GraphynPlugin {
     override val metadata = GraphynPluginMetadata(
         id = "graphyn.io",
@@ -83,7 +99,7 @@ object IoPlugin : GraphynPlugin {
     private val httpClient by lazy { createHttpClient() }
 
     override fun register(registrar: GraphynPluginRegistrar) {
-        listOf(specHttpRequest, specFileRead, specFileWrite).forEach { registrar.registerNodeSpec(it) }
+        listOf(specHttpRequest, specFileRead, specFileWrite, specFileBrowse).forEach { registrar.registerNodeSpec(it) }
 
         registrar.registerExecutor(specHttpRequest.type) { inputs ->
             val url = (inputs["url"] as? WorkflowValue.StringValue)?.value?.takeIf { it.isNotBlank() }
@@ -121,6 +137,12 @@ object IoPlugin : GraphynPlugin {
         }
         registrar.registerExecutor(specFileWrite.type) { _ ->
             mapOf("success" to WorkflowValue.BooleanValue(false))
+        }
+        registrar.registerExecutor(specFileBrowse.type) { inputs ->
+            mapOf(
+                "file" to (inputs["file"] ?: WorkflowValue.StringValue("")),
+                "folder" to (inputs["folder"] ?: WorkflowValue.StringValue("")),
+            )
         }
     }
 }
