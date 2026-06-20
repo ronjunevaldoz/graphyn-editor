@@ -17,6 +17,7 @@ import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
@@ -61,7 +62,9 @@ class GraphynEditorState(
     var nodeOutputsByNodeId by mutableStateOf<Map<String, Map<String, WorkflowValue>>>(emptyMap())
     var executionStatusByNodeId by mutableStateOf<Map<String, NodeExecutionStatus>>(emptyMap())
     var lastExecutionResult by mutableStateOf<WorkflowExecutionResult?>(null)
-    internal var canvasCards: NodeCanvasRegistry? = null
+    internal var canvasCards: NodeCanvasRegistry? by mutableStateOf(null)
+    /** True once the editor shell has registered its canvas card factories. */
+    val hasCanvasCards: Boolean get() = canvasCards != null
     internal val scope = CoroutineScope(SupervisorJob())
     private var _rejectionSerial = 0
     var rejectedConnectionPort by mutableStateOf<Triple<String, String, Int>?>(null)
@@ -115,6 +118,20 @@ class GraphynEditorState(
     // Viewport delegation
     fun updateCanvasSize(size: IntSize) = viewportState.updateCanvasSize(size)
     fun resetViewport() { viewportState.reset(); log.push("Viewport reset") }
+    fun fitToContent(
+        positions: Map<String, IntOffset>? = null,
+        sizes: Map<String, IntSize> = emptyMap(),
+    ) {
+        val resolvedPositions = positions ?: layout.nodePositionsByNodeId
+        val resolvedSizes = sizes.ifEmpty {
+            workflow?.nodes?.associate { node ->
+                node.id to (canvasCards?.resolve(node.type)
+                    ?.let { IntSize(it.nodeWidth, it.nodeHeight) }
+                    ?: GraphynCanvasMetrics.NodeSize)
+            } ?: emptyMap()
+        }
+        viewportState.fitToPositions(resolvedPositions, resolvedSizes, maxScale = 1.0f)
+    }
     fun screenToWorld(position: Offset): Offset = viewportState.screenToWorld(position)
     fun worldToScreen(position: Offset): Offset = viewportState.worldToScreen(position)
 

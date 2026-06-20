@@ -108,7 +108,5 @@ internal fun GraphynEditorState.performAutoLayout() {
         registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) } ?: GraphynCanvasMetrics.NodeSize
     }
     val positions = GraphynAutoLayout.computePositions(wf.nodes, wf.connections, nodeSize)
-    val sizes = wf.nodes.associate { it.id to nodeSize(it.type) }
     positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
-    viewportState.fitToPositions(positions, sizes)
 }

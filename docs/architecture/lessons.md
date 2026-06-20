@@ -574,3 +574,23 @@ event — even to the same port — gets a distinct key and a fresh timer.
 **Problem:** A node has a field the user edits inline on the card (e.g., a code editor for a script) but it should not be a connectable wire port. Initially modelled as `PortSpec("code", ...)` in `inputs`, which showed it as a connectable port in the canvas and created an unnecessary wire target.
 
 **Fix and rule:** Fields that are purely user-editable config (not wired from other nodes) belong in `NodeSpec.defaultValues` only — not in `inputs`. The execution engine merges `spec.defaultValues + node.config + connectedPortInputs` before calling the executor (see `WorkflowExecutionEngine.buildInputMap`), so the executor receives the config key just as if it were a port. The card reads it from `ctx.node.config[key] ?: ctx.spec.defaultValues[key]` and calls `ctx.onConfigChange` on edit.
+
+---
+
+## AutoLayout + fitToContent: Dispatch Order and Size Awareness
+
+**Category:** Canvas state — MVI dispatch, viewport fitting
+
+**Problem:** `performAutoLayout()` was calling `fitToPositions` directly with `maxScale=5.0f`, causing over-zoom. Additionally, `fitToContent()` used a hardcoded default size (280×180) for every node, so the bounding box center was miscalculated when actual card sizes differed (e.g. ScriptCard is 320×248).
+
+**Fix and rule:** Remove `fitToPositions` from `performAutoLayout()` — it only sets node positions. The dispatch handler calls `{ performAutoLayout(); fitToContent() }` in sequence. `fitToContent()` resolves actual sizes from `state.canvasCards` and caps scale at 1.0f. Always separate layout (positions) from viewport fitting (scale + offset) in MVI dispatch.
+
+---
+
+## Minimap Node Size `* 2f` Bug
+
+**Category:** Minimap rendering — coordinate space
+
+**Problem:** `GraphynMinimapDebugger.kt` multiplied node width/height by `* 2f` when drawing nodes in the minimap. This kept the top-left position correct but doubled the rendered size, shifting the visual center of each node rectangle to the actual node's bottom-right corner in world space. With accurate card sizes from `canvasCards`, the preview node's inflated rectangle clipped outside the viewport indicator even though the layout was mathematically centered.
+
+**Fix and rule:** Use `maxOf(nodeW * minimapLayout.scale, 3f)` — proportionally correct size with a 3px minimum for visibility. Never multiply minimap node sizes by an arbitrary factor; it breaks the position/size relationship and makes the viewport indicator look wrong.

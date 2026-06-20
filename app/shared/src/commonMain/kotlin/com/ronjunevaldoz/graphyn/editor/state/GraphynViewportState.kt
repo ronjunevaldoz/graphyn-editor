@@ -46,7 +46,11 @@ internal class GraphynViewportState(
         canvasSize = size
     }
 
-    fun fitToPositions(positions: Map<String, IntOffset>, sizes: Map<String, IntSize> = emptyMap()) {
+    fun fitToPositions(
+        positions: Map<String, IntOffset>,
+        sizes: Map<String, IntSize> = emptyMap(),
+        maxScale: Float = MaxScale,
+    ) {
         if (positions.isEmpty() || canvasSize.width <= 0 || canvasSize.height <= 0) return
         val padding = 60f
         val default = GraphynCanvasMetrics.NodeSize
@@ -57,7 +61,7 @@ internal class GraphynViewportState(
         val scale = minOf(
             (canvasSize.width - padding * 2) / (maxX - minX),
             (canvasSize.height - padding * 2) / (maxY - minY),
-            MaxScale,
+            maxScale,
         ).coerceAtLeast(MinScale)
         val cx = (minX + maxX) / 2f
         val cy = (minY + maxY) / 2f
