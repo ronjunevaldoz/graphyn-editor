@@ -24,6 +24,7 @@ object IoEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(specFileRead.type, FieldCardFactory(inputRows = 1, outputRows = 2))
         registrar.registerCanvasCard(specFileWrite.type, FieldCardFactory(inputRows = 3, outputRows = 1))
         registrar.registerCanvasCard(specFileBrowse.type, FileBrowseCardFactory)
+        registrar.registerCanvasCard(specFolderBrowse.type, FolderBrowseCardFactory)
         registrar.registerCategory(CATEGORY_IO, NodeCategoryMeta("I/O", 0xFF34D399L))
     }
 }
@@ -31,10 +32,15 @@ object IoEditorPlugin : GraphynEditorPlugin {
 private object FileBrowseCardFactory : NodeCanvasFactory {
     override val nodeWidth = FILE_BROWSE_WIDTH
     override val nodeHeight = FILE_BROWSE_HEIGHT
-
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) = FileBrowseCard(context)
+    override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int = 78
+}
 
-    override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
-        36 + portIndex * 82 + 41
+private object FolderBrowseCardFactory : NodeCanvasFactory {
+    override val nodeWidth = FILE_BROWSE_WIDTH
+    override val nodeHeight = FILE_BROWSE_HEIGHT
+    @Composable
+    override fun NodeCanvas(context: NodeCanvasContext) = FolderBrowseCard(context)
+    override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int = 78
 }

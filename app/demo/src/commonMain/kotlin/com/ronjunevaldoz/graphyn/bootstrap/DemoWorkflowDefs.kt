@@ -78,33 +78,29 @@ internal val ioDemoWorkflow = WorkflowDefinition(
 )
 
 private val subgraphInnerWorkflow = WorkflowDefinition(
-    id = "subgraph-inner", name = "Transform Pipeline",
+    id = "subgraph-inner", name = "File Copy Pipeline",
     nodes = listOf(
-        NodeRef("src",    "io.http_request"),
-        NodeRef("zip",    "listops.zip"),
-        NodeRef("map",    "listops.map"),
-        NodeRef("filter", "listops.filter"),
-        NodeRef("reduce", "listops.reduce"),
+        NodeRef("browse", "io.file_browse"),
+        NodeRef("read",   "io.file_read"),
         NodeRef("sink",   "io.file_write"),
     ),
     connections = listOf(
-        ConnectionRef("src",    "body",   "zip",    "listA"),
-        ConnectionRef("zip",    "result", "map",    "list"),
-        ConnectionRef("map",    "result", "filter", "list"),
-        ConnectionRef("filter", "result", "reduce", "list"),
-        ConnectionRef("reduce", "result", "sink",   "content"),
+        ConnectionRef("browse", "path",    "read",  "path"),
+        ConnectionRef("read",   "content", "sink",  "content"),
     ),
 )
 
 internal val subgraphDemoWorkflow = WorkflowDefinition(
     id = "subgraph-demo", name = "Subgraph",
     nodes = listOf(
-        NodeRef("fetch",    "io.http_request"),
+        NodeRef("src",      "io.file_browse"),
         NodeRef("pipeline", SUBGRAPH_NODE_TYPE, subgraph = subgraphInnerWorkflow),
+        NodeRef("out_dir",  "io.folder_browse"),
         NodeRef("write",    "io.file_write"),
     ),
     connections = listOf(
-        ConnectionRef("fetch",    "body",   "pipeline", "input"),
+        ConnectionRef("src",      "path",   "pipeline", "input"),
+        ConnectionRef("out_dir",  "path",   "write",    "path"),
         ConnectionRef("pipeline", "output", "write",    "content"),
     ),
 )
