@@ -99,4 +99,34 @@ class SubgraphExecutionTest {
         // Innermost outputs out=7; middle inherits it; outer's double produces 14
         assertEquals(WorkflowValue.IntValue(14), result.nodeOutputsByNodeId["d1"]?.get("result"))
     }
+
+    @Test
+    fun subgraphWithRegisteredExecutorMapsOutputsThroughExecutor() = runTest {
+        // Executor remaps inner output key "out" → declared port "result"
+        val executors2 = DefaultNodeExecutorRegistry().apply {
+            register("passthrough") { inputs ->
+                mapOf("out" to (inputs["in"] ?: WorkflowValue.NullValue))
+            }
+            register("mapped.subgraph") { inputs ->
+                mapOf("result" to (inputs["out"] ?: WorkflowValue.NullValue))
+            }
+        }
+        val inner = WorkflowDefinition(
+            id = "inner-mapped", name = "Inner",
+            nodes = listOf(NodeRef("p", "passthrough", config = mapOf("in" to WorkflowValue.IntValue(99)))),
+            connections = emptyList(),
+        )
+        val workflow = WorkflowDefinition(
+            id = "outer-mapped", name = "Outer",
+            nodes = listOf(NodeRef("sg", "mapped.subgraph", subgraph = inner)),
+            connections = emptyList(),
+        )
+
+        val result = WorkflowExecutionEngine(executors2).execute(workflow)
+        // Executor must be called; inner raw key "out" → declared key "result"
+        assertEquals(WorkflowValue.IntValue(99), result.nodeOutputsByNodeId["sg"]?.get("result"),
+            "executor should remap inner output 'out' to declared port 'result'")
+        assertEquals(null, result.nodeOutputsByNodeId["sg"]?.get("out"),
+            "raw inner key must not leak through when executor is present")
+    }
 }

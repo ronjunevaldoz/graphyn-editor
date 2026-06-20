@@ -43,8 +43,15 @@ class WorkflowExecutionEngine(
             if (node.subgraph != null) {
                 val inner = execute(node.subgraph!!)
                 val sinkId = inner.executionOrder.lastOrNull()
-                outputsByNodeId[node.id] = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
+                val innerOutputs = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
                 subResults[node.id] = inner
+                val subgraphExecutor = nodeExecutors.resolve(node.type)
+                outputsByNodeId[node.id] = if (subgraphExecutor != null) {
+                    val upstreamInputs = buildInputMap(workflow, node, spec, outputsByNodeId)
+                    subgraphExecutor.execute(upstreamInputs + innerOutputs)
+                } else {
+                    innerOutputs
+                }
                 continue
             }
 
