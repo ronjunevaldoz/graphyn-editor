@@ -77,25 +77,6 @@ internal val ioDemoWorkflow = WorkflowDefinition(
     connections = listOf(ConnectionRef("request", "body", "write", "content")),
 )
 
-internal val groupsDemoWorkflow = WorkflowDefinition(
-    id = "groups-demo", name = "Groups",
-    nodes = listOf(
-        NodeRef("fetch",  "io.http_request"),
-        NodeRef("read",   "io.file_read"),
-        NodeRef("zip",    "listops.zip"),
-        NodeRef("map",    "listops.map"),
-        NodeRef("filter", "listops.filter"),
-        NodeRef("write",  "io.file_write"),
-    ),
-    connections = listOf(
-        ConnectionRef("fetch",  "body",    "zip",    "listA"),
-        ConnectionRef("read",   "content", "zip",    "listB"),
-        ConnectionRef("zip",    "result",  "map",    "list"),
-        ConnectionRef("map",    "result",  "filter", "list"),
-        ConnectionRef("filter", "result",  "write",  "content"),
-    ),
-)
-
 private val subgraphInnerWorkflow = WorkflowDefinition(
     id = "subgraph-inner", name = "Transform Pipeline",
     nodes = listOf(

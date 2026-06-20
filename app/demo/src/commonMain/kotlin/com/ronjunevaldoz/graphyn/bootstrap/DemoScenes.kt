@@ -31,7 +31,6 @@ enum class DemoScene(val label: String, val workflow: WorkflowDefinition) {
     Text("Text",         textDemoWorkflow),
     Types("Types",       typesDemoWorkflow),
     Io("I/O",            ioDemoWorkflow),
-    Groups("Groups",     groupsDemoWorkflow),
     Subgraph("Subgraph", subgraphDemoWorkflow),
     Script("Script",     scriptDemoWorkflow),
 }
