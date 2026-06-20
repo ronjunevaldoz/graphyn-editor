@@ -73,19 +73,17 @@ internal val specFileWrite = NodeSpec(
 )
 
 internal val specFileBrowse = NodeSpec(
-    type = "io.file_browse",
-    label = "File Browser",
-    description = "Lets the user select a file or folder. Emits the chosen paths as outputs.",
-    category = CATEGORY_IO,
+    type = "io.file_browse", label = "File Browser", category = CATEGORY_IO,
     inputs = emptyList(),
-    outputs = listOf(
-        PortSpec("file", WorkflowType.StringType, description = "Absolute path of the selected file"),
-        PortSpec("folder", WorkflowType.StringType, description = "Absolute path of the selected folder"),
-    ),
-    defaultValues = mapOf(
-        "file" to WorkflowValue.StringValue(""),
-        "folder" to WorkflowValue.StringValue(""),
-    ),
+    outputs = listOf(PortSpec("path", WorkflowType.StringType, description = "Absolute path of the selected file")),
+    defaultValues = mapOf("path" to WorkflowValue.StringValue("")),
+)
+
+internal val specFolderBrowse = NodeSpec(
+    type = "io.folder_browse", label = "Folder Browser", category = CATEGORY_IO,
+    inputs = emptyList(),
+    outputs = listOf(PortSpec("path", WorkflowType.StringType, description = "Absolute path of the selected folder")),
+    defaultValues = mapOf("path" to WorkflowValue.StringValue("")),
 )
 
 object IoPlugin : GraphynPlugin {
@@ -99,7 +97,7 @@ object IoPlugin : GraphynPlugin {
     private val httpClient by lazy { createHttpClient() }
 
     override fun register(registrar: GraphynPluginRegistrar) {
-        listOf(specHttpRequest, specFileRead, specFileWrite, specFileBrowse).forEach { registrar.registerNodeSpec(it) }
+        listOf(specHttpRequest, specFileRead, specFileWrite, specFileBrowse, specFolderBrowse).forEach { registrar.registerNodeSpec(it) }
 
         registrar.registerExecutor(specHttpRequest.type) { inputs ->
             val url = (inputs["url"] as? WorkflowValue.StringValue)?.value?.takeIf { it.isNotBlank() }
@@ -139,10 +137,10 @@ object IoPlugin : GraphynPlugin {
             mapOf("success" to WorkflowValue.BooleanValue(false))
         }
         registrar.registerExecutor(specFileBrowse.type) { inputs ->
-            mapOf(
-                "file" to (inputs["file"] ?: WorkflowValue.StringValue("")),
-                "folder" to (inputs["folder"] ?: WorkflowValue.StringValue("")),
-            )
+            mapOf("path" to (inputs["path"] ?: WorkflowValue.StringValue("")))
+        }
+        registrar.registerExecutor(specFolderBrowse.type) { inputs ->
+            mapOf("path" to (inputs["path"] ?: WorkflowValue.StringValue("")))
         }
     }
 }
