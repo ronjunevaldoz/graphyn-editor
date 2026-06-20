@@ -86,8 +86,6 @@ class DemoSceneWorkflowTest {
     fun noStructuralValidationErrorsInAnyScene() {
         // Demo scenes choose nodes for narrative clarity, not production type safety:
         // - missing_required_input: ports intentionally left unwired in visual showcases
-        // - type_mismatch: Groups scene uses IO→list-ops connections for ETL story;
-        //   no adapter node exists to bridge StringType↔ListType in the demo registry
         val ignoredCodes = setOf("missing_required_input", "type_mismatch")
         // Script scene uses JVM-only nodes unregistered in the KMP test registry
         val jvmOnlyScenes = setOf(DemoScene.Script)

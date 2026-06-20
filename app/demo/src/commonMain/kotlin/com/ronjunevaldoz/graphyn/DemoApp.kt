@@ -23,7 +23,6 @@ import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegist
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShellDependencies
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynSubgraphNavigator
-import com.ronjunevaldoz.graphyn.editor.state.NodeGroup
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynTheme
@@ -76,15 +75,6 @@ fun DemoApp(
                     initialWorkflow = wf,
                     canvasBounds = canvasBounds,
                 )
-                if (wf.id == DemoScene.Groups.workflow.id) {
-                    LaunchedEffect(Unit) {
-                        state.groups = listOf(
-                            NodeGroup(label = "Data Acquisition", nodeIds = setOf("fetch", "read")),
-                            NodeGroup(label = "Transform", nodeIds = setOf("zip", "map", "filter")),
-                            NodeGroup(label = "Output", nodeIds = setOf("write")),
-                        )
-                    }
-                }
                 if (wf.id == DemoScene.Script.workflow.id) {
                     LaunchedEffect(Unit) {
                         snapshotFlow { state.canvasSize to state.hasCanvasCards }
