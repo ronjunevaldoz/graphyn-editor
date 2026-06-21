@@ -21,11 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
@@ -51,7 +49,7 @@ internal fun FieldHeader(label: String, theme: FieldNodeTheme, onMove: ((IntOffs
             } else Modifier),
         contentAlignment = Alignment.CenterStart,
     ) {
-        BasicText(label, style = TextStyle(color = theme.titleColor(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold))
+        BasicText(label, style = appTheme.typography.nodeHeader.copy(color = theme.titleColor()))
     }
 }
 
@@ -120,9 +118,9 @@ private fun NullableRow(
                 else -> InputRow(innerInput, currentValue, innerOnChange, theme)
             }
         } else {
-            BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+            BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
             Spacer(Modifier.weight(1f))
-            BasicText("null", style = TextStyle(color = theme.labelColor().copy(alpha = 0.4f), fontSize = 10.sp))
+            BasicText("null", style = appTheme.typography.nodeLabel.copy(color = theme.labelColor().copy(alpha = 0.4f)))
         }
     }
 }

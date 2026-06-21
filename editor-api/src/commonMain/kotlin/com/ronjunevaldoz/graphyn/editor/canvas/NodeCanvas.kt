@@ -33,6 +33,7 @@ data class NodeCanvasContext(
     val executionOutputs: Map<String, WorkflowValue> = emptyMap(),
 )
 
+/** Minimap rendering hint for a node card. The canvas uses this to choose a draw primitive. */
 enum class NodeShape { Rectangle, Circle }
 
 private const val DEFAULT_PORT_SECTION_TOP = 70
@@ -78,11 +79,15 @@ interface NodeCanvasFactory {
             DEFAULT_PORT_BUBBLE_H / 2 + portIndex * (DEFAULT_PORT_BUBBLE_H + DEFAULT_PORT_BUBBLE_GAP)
 }
 
+/** Maps node type strings to their [NodeCanvasFactory] for custom card rendering. */
 interface NodeCanvasRegistry {
+    /** Returns the factory registered for [nodeType], or null to use the default card. */
     fun resolve(nodeType: String): NodeCanvasFactory?
+    /** Registers [factory] as the canvas renderer for [nodeType]. */
     fun register(nodeType: String, factory: NodeCanvasFactory)
 }
 
+/** In-memory [NodeCanvasRegistry]. */
 @GraphynExperimentalApi
 class DefaultNodeCanvasRegistry : NodeCanvasRegistry {
     private val factories = mutableMapOf<String, NodeCanvasFactory>()

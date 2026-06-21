@@ -23,10 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
@@ -41,7 +40,7 @@ internal fun SingleSelectRow(
     var showMenu by remember { mutableStateOf(false) }
     val selected = (currentValue as? WorkflowValue.StringValue)?.value
     Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
             ValueChip(selected ?: "—", theme) { showMenu = true }
@@ -70,7 +69,7 @@ internal fun MultiSelectRow(
     }
     val label = when (selectedSet.size) { 0 -> "—"; 1 -> selectedSet.first(); else -> "${selectedSet.size} selected" }
     Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
             ValueChip(label, theme) { showMenu = true }
@@ -89,7 +88,7 @@ internal fun MultiSelectRow(
 @Composable
 private fun ValueChip(label: String, theme: FieldNodeTheme, onClick: () -> Unit) =
     Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable(onClick = onClick).padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) {
-        BasicText(label, style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+        BasicText(label, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
     }
 
 @Composable
@@ -97,7 +96,7 @@ private fun DropdownMenu(options: List<String>, theme: FieldNodeTheme, onSelect:
     Column(Modifier.widthIn(min = 80.dp, max = 160.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
         options.forEach { option ->
             Box(Modifier.fillMaxWidth().clickable { onSelect(option) }.padding(horizontal = 8.dp, vertical = 5.dp)) {
-                BasicText(option, style = TextStyle(color = theme.valueText(), fontSize = 10.sp), maxLines = 1)
+                BasicText(option, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()), maxLines = 1)
             }
         }
     }
@@ -110,7 +109,7 @@ private fun MultiDropdownMenu(options: List<String>, selected: Set<String>, them
             Row(Modifier.fillMaxWidth().clickable { onToggle(option) }.padding(horizontal = 8.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(if (option in selected) theme.selectedBorder() else theme.valueBg()).border(1.dp, theme.border(), RoundedCornerShape(2.dp)))
                 Spacer(Modifier.width(6.dp))
-                BasicText(option, style = TextStyle(color = theme.valueText(), fontSize = 10.sp), maxLines = 1)
+                BasicText(option, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()), maxLines = 1)
             }
         }
     }

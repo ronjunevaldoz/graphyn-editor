@@ -19,4 +19,8 @@ data class AppTypography(
     val labelLarge: TextStyle    = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, fontWeight = FontWeight.Medium,   lineHeight = 20.sp, letterSpacing = 0.1.sp),
     val labelSmall: TextStyle    = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 11.sp, fontWeight = FontWeight.Medium,   lineHeight = 16.sp, letterSpacing = 0.5.sp),
     val mono: TextStyle          = TextStyle(fontFamily = FontFamily.Monospace,  fontSize = 13.sp, fontWeight = FontWeight.Normal,   lineHeight = 20.sp),
+    /** Compact label used inside canvas node cards — port names, field labels. */
+    val nodeLabel: TextStyle     = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 10.sp, fontWeight = FontWeight.Normal,   lineHeight = 14.sp),
+    /** Header label used inside canvas node cards — node title row. */
+    val nodeHeader: TextStyle    = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, lineHeight = 16.sp),
 )
