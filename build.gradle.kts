@@ -10,5 +10,6 @@ plugins {
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.ktor) apply false
     alias(libs.plugins.roborazzi) apply false
+    alias(libs.plugins.dokka) apply false
     alias(libs.plugins.mavenPublish) apply false
 }
