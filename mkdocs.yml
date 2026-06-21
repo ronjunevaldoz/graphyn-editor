@@ -27,6 +27,8 @@ theme:
 
 nav:
   - Home: index.md
+  - Live Demo: /graphyn-editor/app/
+  - API Reference: /graphyn-editor/api/
   - Getting Started:
       - Quickstart: getting-started/quickstart.md
       - Installation: getting-started/installation.md

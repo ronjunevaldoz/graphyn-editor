@@ -18,6 +18,7 @@ ktor = "3.5.0"
 logback = "1.5.34"
 material3 = "1.11.0-alpha07"
 kotlinx-serialization = "1.9.0"
+dokka = "2.0.0"
 roborazzi = "1.64.0"
 vanniktech-publish = "0.30.0"
 
@@ -68,5 +69,6 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-publish" }
