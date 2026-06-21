@@ -25,10 +25,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
@@ -56,7 +55,7 @@ internal fun NumericRow(
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
     Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         if (currentValue != null) {
             Spacer(Modifier.weight(1f))
             if (editText != null) {
@@ -65,7 +64,7 @@ internal fun NumericRow(
                     onValueChange = { if (isValidIntermediate(input.type, it)) editText = it },
                     modifier = Modifier.width(VALUE_DP.dp).focusRequester(focusRequester)
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
-                    textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp, textAlign = TextAlign.Center),
+                    textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center),
                     decorationBox = { inner ->
                         Box(Modifier.clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) { inner() }
                     },
@@ -94,15 +93,15 @@ private fun StepperChip(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.clickable(onClick = onMinus).padding(horizontal = 5.dp, vertical = 2.dp)) {
-            BasicText("−", style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+            BasicText("−", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
         Box(Modifier.width(1.dp).height(10.dp).background(theme.divider()))
         Box(Modifier.widthIn(min = 24.dp).clickable(onClick = onEdit).padding(horizontal = 4.dp, vertical = 2.dp), Alignment.Center) {
-            BasicText(label, style = TextStyle(color = theme.valueText(), fontSize = 10.sp, textAlign = TextAlign.Center))
+            BasicText(label, style = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center))
         }
         Box(Modifier.width(1.dp).height(10.dp).background(theme.divider()))
         Box(Modifier.clickable(onClick = onPlus).padding(horizontal = 5.dp, vertical = 2.dp)) {
-            BasicText("+", style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+            BasicText("+", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
     }
 }

@@ -6,7 +6,9 @@ import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 interface NodeSpecRegistry {
     /** Returns the spec for [type], or null if no spec is registered. */
     fun resolve(type: String): NodeSpec?
+    /** Returns all registered specs in registration order. */
     fun all(): List<NodeSpec>
+    /** Registers [spec]; overwrites any existing registration for the same [NodeSpec.type]. */
     fun register(spec: NodeSpec)
 }
 

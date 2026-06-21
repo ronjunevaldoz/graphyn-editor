@@ -24,9 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
@@ -45,11 +43,11 @@ internal fun RecordRow(
     val fields = (currentValue as? WorkflowValue.RecordValue)?.fields ?: emptyMap()
     val label = when (fieldTypes.size) { 1 -> "1 field"; else -> "${fieldTypes.size} fields" }
     Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
             Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) {
-                BasicText("{ $label } ▾", style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+                BasicText("{ $label } ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
             if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { showPopup = false }) {
                 RecordPopup(fields, fieldTypes, theme) { onValueChange(WorkflowValue.RecordValue(it)) }
@@ -94,7 +92,7 @@ private fun RecordFieldRow(
         parseRecordField(type, raw)?.let(onEdit)
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(key, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(key, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.width(6.dp))
         if (type == WorkflowType.BooleanType && value is WorkflowValue.BooleanValue) {
@@ -106,20 +104,20 @@ private fun RecordFieldRow(
                     .background(if (on) activeBg else theme.valueBg())
                     .clickable { onEdit(WorkflowValue.BooleanValue(!on)) }
                     .padding(horizontal = 4.dp, vertical = 2.dp),
-            ) { BasicText(if (on) "ON" else "OFF", style = TextStyle(color = if (on) activeText else theme.valueText(), fontSize = 10.sp)) }
+            ) { BasicText(if (on) "ON" else "OFF", style = appTheme.typography.nodeLabel.copy(color = if (on) activeText else theme.valueText())) }
         } else if (editText != null) {
             BasicTextField(
                 value = editText!!,
                 onValueChange = { editText = it },
                 modifier = Modifier.widthIn(min = 48.dp, max = 80.dp)
                     .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
-                textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp),
+                textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
                 decorationBox = { inner -> Box(Modifier.clip(RoundedCornerShape(2.dp)).background(theme.valueBg()).padding(horizontal = 4.dp, vertical = 2.dp)) { inner() } },
                 singleLine = true,
             )
         } else {
             Box(Modifier.widthIn(min = 48.dp, max = 80.dp).clip(RoundedCornerShape(2.dp)).background(theme.valueBg()).clickable { focusGranted = false; editText = display }.padding(horizontal = 4.dp, vertical = 2.dp)) {
-                BasicText(display.ifEmpty { "—" }, style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+                BasicText(display.ifEmpty { "—" }, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
         }
     }

@@ -3,7 +3,6 @@
 package com.ronjunevaldoz.graphyn.editor.shell
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -38,6 +37,7 @@ import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
+import com.ronjunevaldoz.graphyn.editor.theme.systemIsDarkTheme
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
 
@@ -66,7 +66,7 @@ fun GraphynEditorShell(
     canvas: (@Composable () -> Unit)? = null,
 ) {
     val resolvedState = state ?: rememberGraphynEditorState(nodeSpecs = dependencies.nodeSpecs)
-    val systemDark = isSystemInDarkTheme()
+    val systemDark = systemIsDarkTheme()
     val isDark = appearanceState.resolvedDarkTheme(systemDark)
     val palette = appearanceState.resolvePalette(isDark)
     val dsColors = remember(palette, isDark) { GraphynDsColors.fromPalette(palette, isDark) }

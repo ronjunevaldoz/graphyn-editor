@@ -25,9 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
@@ -46,11 +44,11 @@ internal fun ListRow(
     val items = (currentValue as? WorkflowValue.ListValue)?.items ?: emptyList()
     val label = when (items.size) { 0 -> "empty"; 1 -> "1 item"; else -> "${items.size} items" }
     Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
             Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) {
-                BasicText("$label ▾", style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+                BasicText("$label ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
             if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { showPopup = false }) {
                 ListPopup(items, elementType, theme) { onValueChange(WorkflowValue.ListValue(it)) }
@@ -71,7 +69,7 @@ private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, the
             }
         }
         Box(Modifier.fillMaxWidth().clickable { onChange(items + defaultItem(elementType)) }.padding(horizontal = 8.dp, vertical = 5.dp)) {
-            BasicText("+ Add", style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+            BasicText("+ Add", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
     }
 }
@@ -94,24 +92,24 @@ private fun ListItemRow(value: WorkflowValue, elementType: WorkflowType, theme: 
                     .background(if (on) activeBg else theme.valueBg())
                     .clickable { onEdit(WorkflowValue.BooleanValue(!on)) }
                     .padding(horizontal = 4.dp, vertical = 2.dp),
-            ) { BasicText(if (on) "ON" else "OFF", style = TextStyle(color = if (on) activeText else theme.valueText(), fontSize = 10.sp)) }
+            ) { BasicText(if (on) "ON" else "OFF", style = appTheme.typography.nodeLabel.copy(color = if (on) activeText else theme.valueText())) }
         } else if (editText != null) {
             BasicTextField(
                 value = editText!!,
                 onValueChange = { editText = it },
                 modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
-                textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp),
+                textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
                 decorationBox = { inner -> Box(Modifier.clip(RoundedCornerShape(2.dp)).background(theme.valueBg()).padding(2.dp)) { inner() } },
                 singleLine = true,
             )
         } else {
             Box(Modifier.weight(1f).clip(RoundedCornerShape(2.dp)).background(theme.valueBg()).clickable { focusGranted = false; editText = value.label() }.padding(horizontal = 4.dp, vertical = 2.dp)) {
-                BasicText(value.label(), style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+                BasicText(value.label(), style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
         }
         Spacer(Modifier.width(4.dp))
         Box(Modifier.clickable(onClick = onRemove).padding(2.dp)) {
-            BasicText("×", style = TextStyle(color = theme.valueText(), fontSize = 10.sp))
+            BasicText("×", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
     }
 }

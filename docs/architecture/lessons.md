@@ -587,6 +587,44 @@ event — even to the same port — gets a distinct key and a fresh timer.
 
 ---
 
+---
+
+## Convention Plugin `libs` Accessor Not Available at Compile Time
+
+**Category:** Gradle — included builds, convention plugins
+
+**Problem:** In a precompiled script plugin (`.gradle.kts` file inside `build-logic/src/main/kotlin/`), writing `libs.versions.android.compileSdk.get()` compiles correctly in a regular build script but fails in a convention plugin with "Unresolved reference 'libs'". The type-safe `libs` accessor is generated per-project and isn't on the convention plugin's compile classpath.
+
+**Fix and rule:** Use the `VersionCatalogsExtension` API directly in the convention plugin body:
+```kotlin
+private val catalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+compileSdk = catalog.findVersion("android-compileSdk").get().requiredVersion.toInt()
+implementation(catalog.findLibrary("kotlin-test").get())
+```
+The TOML key name (with hyphens) is passed as-is to `findVersion`/`findLibrary`.
+
+---
+
+## `org.jetbrains.kotlin.plugin.compose` Can't Use `id()` in Convention Plugin `plugins {}` Block
+
+**Category:** Gradle — included builds, compose compiler plugin resolution
+
+**Problem:** Writing `id("org.jetbrains.kotlin.plugin.compose")` in a precompiled convention plugin's `plugins {}` block fails during `generatePrecompiledScriptPluginAccessors` with "Plugin was not found in any sources". Even with the plugin's JAR on the build-logic classpath and `pluginManagement.plugins {}` version pins in settings, Gradle can't resolve it for accessor generation.
+
+**Fix and rule:** Apply the compose compiler plugin imperatively with `apply(plugin = "org.jetbrains.kotlin.plugin.compose")` outside the `plugins {}` block. The `plugins {}` block handles `graphyn-kmp-library` and `org.jetbrains.compose`; the compose compiler plugin is applied separately via `apply()`.
+
+---
+
+## `NodeExecutor.execute()` Is Suspend — Tests Need `runTest {}`
+
+**Category:** Testing — plugin unit tests, suspend functions
+
+**Problem:** Plugin tests that call `executor.execute(input)` fail to compile because `NodeExecutor.execute()` is a `suspend fun`. Regular `@Test` functions aren't suspend contexts.
+
+**Fix and rule:** Wrap all calls to `execute()` in `runTest { }` from `kotlinx-coroutines-test`. Add `implementation(libs.kotlinx.coroutinesTest)` to each plugin's `commonTest` dependencies (or to the convention plugin if all modules need it). Non-suspend tests (checking spec counts with `registry.nodeSpecs.all().size`) do not need `runTest`.
+
+---
+
 ## Minimap Node Size `* 2f` Bug
 
 **Category:** Minimap rendering — coordinate space

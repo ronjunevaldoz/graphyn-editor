@@ -24,10 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
@@ -54,7 +52,7 @@ internal fun InputRow(
         modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BasicText(input.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         if (currentValue != null) {
             Spacer(Modifier.weight(1f))
             if (input.type == WorkflowType.BooleanType && currentValue is WorkflowValue.BooleanValue) {
@@ -67,7 +65,7 @@ internal fun InputRow(
                         .clickable { onValueChange(WorkflowValue.BooleanValue(!on)) }
                         .padding(horizontal = 5.dp, vertical = 2.dp),
                     contentAlignment = Alignment.Center,
-                ) { BasicText(if (on) "ON" else "OFF", style = TextStyle(color = if (on) activeText else theme.valueText(), fontSize = 10.sp)) }
+                ) { BasicText(if (on) "ON" else "OFF", style = appTheme.typography.nodeLabel.copy(color = if (on) activeText else theme.valueText())) }
             } else if (editText != null) {
                 BasicTextField(
                     value = editText!!,
@@ -75,7 +73,7 @@ internal fun InputRow(
                     modifier = Modifier.width(VALUE_DP.dp)
                         .focusRequester(focusRequester)
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
-                    textStyle = TextStyle(color = theme.valueText(), fontSize = 10.sp, textAlign = TextAlign.Center),
+                    textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center),
                     decorationBox = { inner ->
                         Box(
                             Modifier.clip(RoundedCornerShape(3.dp)).background(theme.valueBg())
@@ -91,7 +89,7 @@ internal fun InputRow(
                         .clickable { focusGranted = false; editText = currentValue.label() }
                         .padding(horizontal = 5.dp, vertical = 2.dp),
                     contentAlignment = Alignment.Center,
-                ) { BasicText(currentValue.label(), style = TextStyle(color = theme.valueText(), fontSize = 10.sp)) }
+                ) { BasicText(currentValue.label(), style = appTheme.typography.nodeLabel.copy(color = theme.valueText())) }
             }
         }
     }
@@ -104,7 +102,7 @@ internal fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))
-        BasicText(output.name, style = TextStyle(color = theme.labelColor(), fontSize = 10.sp))
+        BasicText(output.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
     }
 }
 

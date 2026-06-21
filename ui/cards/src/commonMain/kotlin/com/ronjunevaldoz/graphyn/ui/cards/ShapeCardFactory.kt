@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
@@ -104,7 +105,7 @@ private fun ShapeCard(
             }
             BasicText(
                 ctx.spec.label,
-                style = TextStyle(color = theme.labelColor(), fontSize = 10.sp, fontWeight = FontWeight.Medium),
+                style = appTheme.typography.nodeLabel.copy(color = theme.labelColor(), fontWeight = FontWeight.Medium),
             )
         }
         NodeStatusBadge(
