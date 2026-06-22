@@ -12,4 +12,5 @@ dependencies {
     implementation(libs.compose.runtime)
     implementation(libs.compose.foundation)
     implementation(libs.kotlin.scriptingJsr223)
+    testImplementation(libs.kotlin.test)
 }
