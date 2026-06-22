@@ -631,7 +631,7 @@ The TOML key name (with hyphens) is passed as-is to `findVersion`/`findLibrary`.
 
 **Problem:** `GraphynMinimapDebugger.kt` multiplied node width/height by `* 2f` when drawing nodes in the minimap. This kept the top-left position correct but doubled the rendered size, shifting the visual center of each node rectangle to the actual node's bottom-right corner in world space. With accurate card sizes from `canvasCards`, the preview node's inflated rectangle clipped outside the viewport indicator even though the layout was mathematically centered.
 
-**Fix and rule:** Use `maxOf(nodeW * minimapLayout.scale, 3f)` — proportionally correct size with a 3px minimum for visibility. Never multiply minimap node sizes by an arbitrary factor; it breaks the position/size relationship and makes the viewport indicator look wrong.
+**Fix and rule:** Use `maxOf(nodeW * minimapLayout.scale, 3f)` — proportionally correct size with a 3px minimum for visibility. Never multiply minimap node sizes by an arbitrary factor; it breaks the position/size relationship and makes the viewport indicator look wrong. **(Fixed in GraphynMinimapDebugger.kt.)**
 
 ---
 
