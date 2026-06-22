@@ -34,6 +34,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.app.shared)
+            api(projects.runtime)
             implementation(projects.plugins.sampleLogger)
             implementation(projects.plugins.sampleLoggerUi)
             implementation(projects.plugins.sampleStyleNodes)

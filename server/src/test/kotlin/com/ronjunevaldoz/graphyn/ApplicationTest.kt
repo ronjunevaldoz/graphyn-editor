@@ -26,24 +26,23 @@ class ApplicationTest {
     }
 
     @Test
-    fun testExecute() = testApplication {
+    fun testExecuteRunsRealRuntimePlugins() = testApplication {
         application {
             module()
         }
+        // Uses real production nodes (json.parse -> json.path), proving the server shares the
+        // editor's runtime instead of toy built-ins.
         val workflow = WorkflowDefinition(
             id = "workflow-server",
             name = "Server",
             nodes = listOf(
-                NodeRef(id = "switch-1", type = "switch", config = mapOf("enabled" to WorkflowValue.BooleanValue(true))),
-                NodeRef(id = "display-1", type = "display"),
+                NodeRef(id = "parse", type = "json.parse",
+                    config = mapOf("text" to WorkflowValue.StringValue("""{"name":"Ada","age":30}"""))),
+                NodeRef(id = "name", type = "json.path",
+                    config = mapOf("path" to WorkflowValue.StringValue("name"))),
             ),
             connections = listOf(
-                ConnectionRef(
-                    fromNodeId = "switch-1",
-                    fromPort = "on",
-                    toNodeId = "display-1",
-                    toPort = "enabled",
-                ),
+                ConnectionRef(fromNodeId = "parse", fromPort = "value", toNodeId = "name", toPort = "value"),
             ),
         )
 
@@ -59,10 +58,8 @@ class ApplicationTest {
             response.bodyAsText(),
         )
 
-        assertEquals(listOf("switch-1", "display-1"), result.executionOrder)
-        assertEquals(
-            WorkflowValue.BooleanValue(true),
-            result.nodeOutputsByNodeId["display-1"]?.get("state"),
-        )
+        assertTrue(result.isFullSuccess, "statuses: ${result.statusByNodeId}")
+        assertEquals(WorkflowValue.BooleanValue(true), result.nodeOutputsByNodeId["parse"]?.get("ok"))
+        assertEquals(WorkflowValue.StringValue("Ada"), result.nodeOutputsByNodeId["name"]?.get("result"))
     }
 }
