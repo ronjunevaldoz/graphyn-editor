@@ -21,6 +21,12 @@ VERSION="${1:-0.1.0}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
+# Load .env from the project root if it exists and DOPPLER_TOKEN isn't already set.
+if [[ -z "${DOPPLER_TOKEN:-}" && -f "$ROOT_DIR/.env" ]]; then
+  # shellcheck source=/dev/null
+  set -o allexport; source "$ROOT_DIR/.env"; set +o allexport
+fi
+
 if ! command -v doppler &>/dev/null; then
   echo "Error: Doppler CLI not found. Install: brew install dopplerhq/cli/doppler" >&2
   exit 1
