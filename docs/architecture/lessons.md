@@ -816,3 +816,26 @@ one function when using `expect/actual`.
 multiplatform artifact that covers every Graphyn target without extra source sets. Reserve
 `expect/actual` for behavior that genuinely differs by platform, not for stdlib gaps that
 a JetBrains library already bridges.
+
+---
+
+## `kotlinx-datetime` is `implementation`, not `api` — not transitively available to consumers
+
+**Category:** KMP — module dependency graph
+
+**Problem:** `core/build.gradle.kts` declares `implementation(libs.kotlinx.datetime)`.
+Modules that depend on `:core` via `api(projects.core)` (e.g., `app/shared`, `app/demo`)
+do not get `Clock.System` transitively — `implementation` deps are not exported.
+Attempting to use `Clock.System.now()` in `app/demo/commonMain` fails to compile.
+
+**Rule:** For IDs in `commonMain` without adding a new dep, use `kotlin.random.Random.nextLong()` from the stdlib. Only add `kotlinx-datetime` to a consuming module if it needs clock access beyond what comes through `:core`'s public API.
+
+---
+
+## `LaunchedEffect` cannot be called inside a non-composable lambda
+
+**Category:** Compose — correctness
+
+**Problem:** Trying to call `LaunchedEffect(id) { ... }` inside an `onClick` lambda (non-composable scope) is a compile error; composables can only be called from `@Composable` functions.
+
+**Rule:** Use a state variable as the trigger (`var pendingLoadId by remember { ... }`), set it in the lambda, and observe it with a top-level `LaunchedEffect(pendingLoadId)` in the composable body.

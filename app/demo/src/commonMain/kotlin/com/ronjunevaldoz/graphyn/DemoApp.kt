@@ -14,6 +14,9 @@ import com.ronjunevaldoz.graphyn.bootstrap.DemoScene
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.store.WorkflowMeta
+import com.ronjunevaldoz.graphyn.core.store.WorkflowStore
+import kotlin.random.Random
 import androidx.compose.runtime.snapshotFlow
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
@@ -38,12 +41,25 @@ fun DemoApp(
     editorPlugins: List<GraphynEditorPlugin> = GraphynBootstrap.editorPlugins(),
     executionEngine: WorkflowExecutionEngine? = null,
     canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
+    store: WorkflowStore? = null,
 ) {
     val templates = remember {
         DemoScene.entries.map { WorkflowTemplate(it.label, null, it.workflow) }
     }
     var recentWorkflows by remember { mutableStateOf(emptyList<WorkflowTemplate>()) }
+    var savedWorkflows by remember { mutableStateOf(emptyList<WorkflowMeta>()) }
     var openWorkflow by remember { mutableStateOf<WorkflowDefinition?>(null) }
+    var pendingLoadId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(store) {
+        savedWorkflows = store?.list() ?: emptyList()
+    }
+    LaunchedEffect(pendingLoadId) {
+        val id = pendingLoadId ?: return@LaunchedEffect
+        val loaded = store?.load(id)
+        if (loaded != null) openWorkflow = loaded
+        pendingLoadId = null
+    }
 
     val editorRegistry = remember(editorPlugins) {
         DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
@@ -63,6 +79,16 @@ fun DemoApp(
             GraphynWorkflowLauncher(
                 templates = templates,
                 recentWorkflows = recentWorkflows,
+                savedWorkflows = savedWorkflows,
+                onNew = {
+                    openWorkflow = WorkflowDefinition(
+                        id = "wf-${Random.nextLong().and(0xFFFFFFFFL)}",
+                        name = "Untitled",
+                        nodes = emptyList(),
+                        connections = emptyList(),
+                    )
+                },
+                onOpenSaved = { id -> pendingLoadId = id },
                 onOpen = { template ->
                     recentWorkflows = listOf(template) +
                         recentWorkflows.filter { it.workflow.id != template.workflow.id }.take(9)
@@ -74,6 +100,7 @@ fun DemoApp(
                 val state = rememberGraphynEditorState(
                     initialWorkflow = wf,
                     canvasBounds = canvasBounds,
+                    store = store,
                 )
                 if (wf.id == DemoScene.Script.workflow.id) {
                     LaunchedEffect(Unit) {
