@@ -9,38 +9,26 @@ import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
-import com.ronjunevaldoz.graphyn.plugins.control.ControlEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.control.ControlPlugin
-import com.ronjunevaldoz.graphyn.plugins.io.IoEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.io.IoPlugin
-import com.ronjunevaldoz.graphyn.plugins.json.JsonEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.json.JsonPlugin
-import com.ronjunevaldoz.graphyn.plugins.listops.ListOpsEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.listops.ListOpsPlugin
+import com.ronjunevaldoz.graphyn.runtime.GraphynRuntime
 import com.ronjunevaldoz.graphyn.plugins.samplelogger.SampleLoggerPlugin
 import com.ronjunevaldoz.graphyn.plugins.sampleloggerui.SampleLoggerEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNoteEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNotePlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesPlugin
-import com.ronjunevaldoz.graphyn.plugins.preview.PreviewEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.preview.PreviewPlugin
-import com.ronjunevaldoz.graphyn.plugins.text.TextEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.text.TextPlugin
-import com.ronjunevaldoz.graphyn.plugins.types.TypesEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.types.TypesPlugin
 
+/**
+ * Demo plugin set = the production [GraphynRuntime] plugins plus sample/demonstration plugins
+ * (logger, style-node card shapes, sticky notes, subgraph) that are not part of a real deployment.
+ */
 object GraphynDemoPlugins {
-    val runtime: List<GraphynPlugin> = listOf(
-        SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin,
-        ListOpsPlugin, ControlPlugin, TypesPlugin, TextPlugin, IoPlugin, JsonPlugin,
-        SubgraphRuntimePlugin, PreviewPlugin,
-    )
-    val editor: List<GraphynEditorPlugin> = listOf(
-        SampleLoggerEditorPlugin, StyleNodesEditorPlugin, StickyNoteEditorPlugin,
-        ListOpsEditorPlugin, ControlEditorPlugin, TypesEditorPlugin, TextEditorPlugin, IoEditorPlugin,
-        JsonEditorPlugin, SubgraphEditorPlugin, PreviewEditorPlugin,
-    )
+    private val demoOnlyRuntime: List<GraphynPlugin> =
+        listOf(SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin, SubgraphRuntimePlugin)
+    private val demoOnlyEditor: List<GraphynEditorPlugin> =
+        listOf(SampleLoggerEditorPlugin, StyleNodesEditorPlugin, StickyNoteEditorPlugin, SubgraphEditorPlugin)
+
+    val runtime: List<GraphynPlugin> = GraphynRuntime.runtimePlugins + demoOnlyRuntime
+    val editor: List<GraphynEditorPlugin> = GraphynRuntime.editorPlugins + demoOnlyEditor
 }
 
 object GraphynBootstrap {
