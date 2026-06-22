@@ -39,6 +39,8 @@ import com.ronjunevaldoz.graphyn.editor.state.constrainTo
 import com.ronjunevaldoz.graphyn.editor.state.mapMinimapPointToWorld
 import com.ronjunevaldoz.graphyn.editor.state.viewportCenteredOnWorldPoint
 
+private const val MINIMAP_PADDING = 40f
+
 @Composable
 internal fun GraphynMinimapDebugger(
     state: GraphynEditorState,
@@ -62,7 +64,7 @@ internal fun GraphynMinimapDebugger(
     val graphWorldBounds = state.graphWorldBounds
     val minimapLayout = remember(graphWorldBounds, minimapSize) {
         val worldBounds = graphWorldBounds ?: return@remember null
-        calculateMinimapLayout(worldBounds = worldBounds, minimapSize = minimapSize)
+        calculateMinimapLayout(worldBounds = worldBounds.inflate(MINIMAP_PADDING), minimapSize = minimapSize)
     }
 
     Box(
@@ -115,8 +117,8 @@ internal fun GraphynMinimapDebugger(
                 val shape = factory?.nodeShape ?: NodeShape.Rectangle
                 val x = minimapLayout.insetX + ((position.x.toFloat() - minimapLayout.worldBounds.left) * minimapLayout.scale)
                 val y = minimapLayout.insetY + ((position.y.toFloat() - minimapLayout.worldBounds.top) * minimapLayout.scale)
-                val w = nodeW * minimapLayout.scale * 2f
-                val h = nodeH * minimapLayout.scale * 2f
+                val w = maxOf(nodeW * minimapLayout.scale, 3f)
+                val h = maxOf(nodeH * minimapLayout.scale, 3f)
                 when (shape) {
                     NodeShape.Circle -> {
                         val radius = w / 2f
