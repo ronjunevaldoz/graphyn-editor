@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Publish Graphyn libraries to Maven Central, tag the release, and post GitHub release notes.
-# Credentials are pulled from Doppler (project: graphyn, config: prd).
+# Publish Graphyn libraries to Maven Central, tag the release, post GitHub release notes,
+# then auto-bump the patch version in gradle.properties ready for the next publish.
 #
 # Usage:
-#   ./scripts/publish-maven.sh 0.1.0          # tag + changelog + publish + GitHub release
-#   ./scripts/publish-maven.sh 0.1.0 --dry-run  # preview changelog only, no publish/tag
+#   ./scripts/publish-maven.sh              # reads VERSION from gradle.properties
+#   ./scripts/publish-maven.sh --dry-run    # preview changelog only, no publish/tag/bump
 #
-# DOPPLER_TOKEN can be set in .env or the environment:
-#   service token (dp.st.*) — recommended for scripting
-#   personal token (dp.pt.*) — local use
+# For a milestone bump (minor/major), edit gradle.properties before running:
+#   VERSION=0.3.0
+#
+# DOPPLER_TOKEN: set in .env or the environment (dp.st.* service / dp.pt.* personal token).
 #
 # Required Doppler secrets:
 #   ORG_GRADLE_PROJECT_mavenCentralUsername  — Sonatype Central Portal token username
@@ -18,21 +19,34 @@
 
 set -euo pipefail
 
-VERSION="${1:-0.1.0}"
-DRY_RUN=false
-[[ "${2:-}" == "--dry-run" ]] && DRY_RUN=true
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+PROPS="$ROOT_DIR/gradle.properties"
+
+DRY_RUN=false
+[[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
+
+# ── read VERSION from gradle.properties ───────────────────────────────────────
+VERSION="$(grep -E '^VERSION=' "$PROPS" | cut -d= -f2 | tr -d '[:space:]')"
+if [[ -z "$VERSION" ]]; then
+  echo "Error: VERSION not found in gradle.properties" >&2; exit 1
+fi
 TAG="v${VERSION}"
 
-# ── helpers ──────────────────────────────────────────────────────────────────
+# ── helpers ───────────────────────────────────────────────────────────────────
 check_tool() { command -v "$1" &>/dev/null || { echo "Error: $1 not found. $2" >&2; exit 1; }; }
 
+bump_patch() {
+  local ver="$1"
+  local major minor patch
+  IFS='.' read -r major minor patch <<< "$ver"
+  echo "${major}.${minor}.$((patch + 1))"
+}
+
 # ── pre-flight ────────────────────────────────────────────────────────────────
-check_tool doppler  "Install: brew install dopplerhq/cli/doppler"
+check_tool doppler   "Install: brew install dopplerhq/cli/doppler"
 check_tool git-cliff "Install: brew install git-cliff"
-check_tool gh       "Install: brew install gh"
+check_tool gh        "Install: brew install gh"
 
 if [[ -z "${DOPPLER_TOKEN:-}" && -f "$ROOT_DIR/.env" ]]; then
   # shellcheck source=/dev/null
@@ -48,31 +62,30 @@ else
 fi
 DOPPLER_ARGS+=(--)
 
-# ── changelog ────────────────────────────────────────────────────────────────
+# ── changelog ─────────────────────────────────────────────────────────────────
 echo "Generating release notes for ${TAG}..."
 RELEASE_NOTES="$(git-cliff --tag "$TAG" --unreleased --strip all 2>/dev/null)"
 
 if [[ -z "$RELEASE_NOTES" ]]; then
-  echo "No unreleased commits found since last tag." >&2
-  exit 1
+  echo "No unreleased commits found since last tag." >&2; exit 1
 fi
 
 echo "$RELEASE_NOTES"
 echo ""
 
 if $DRY_RUN; then
-  echo "── Dry run — skipping tag, publish, and GitHub release. ──"
+  echo "── Dry run — skipping tag, publish, and bump. ──"
   exit 0
 fi
 
-# ── update CHANGELOG.md ──────────────────────────────────────────────────────
+# ── update CHANGELOG.md ───────────────────────────────────────────────────────
 echo "Updating CHANGELOG.md..."
 git-cliff --tag "$TAG" --output "$ROOT_DIR/CHANGELOG.md"
 
-# ── git tag ──────────────────────────────────────────────────────────────────
+# ── git tag ───────────────────────────────────────────────────────────────────
 echo "Tagging ${TAG}..."
 git -C "$ROOT_DIR" add CHANGELOG.md
-git -C "$ROOT_DIR" commit -m "chore(release): ${TAG}" || true  # no-op if nothing changed
+git -C "$ROOT_DIR" commit -m "chore(release): ${TAG}" || true
 git -C "$ROOT_DIR" tag -a "$TAG" -m "Release ${TAG}"
 git -C "$ROOT_DIR" push origin main --tags
 
@@ -92,7 +105,26 @@ gh release create "$TAG" \
   --title "Graphyn ${VERSION}" \
   --notes "$RELEASE_NOTES"
 
+# ── auto-bump patch ───────────────────────────────────────────────────────────
+NEXT_VERSION="$(bump_patch "$VERSION")"
+echo "Bumping VERSION: ${VERSION} → ${NEXT_VERSION}..."
+sed -i '' "s/^VERSION=.*/VERSION=${NEXT_VERSION}/" "$PROPS"
+# sync fallbacks in all publishable modules
+for f in \
+  "$ROOT_DIR/core/build.gradle.kts" \
+  "$ROOT_DIR/plugin-api/build.gradle.kts" \
+  "$ROOT_DIR/editor-api/build.gradle.kts" \
+  "$ROOT_DIR/app/shared/build.gradle.kts" \
+  "$ROOT_DIR/ui/cards/build.gradle.kts"; do
+  sed -i '' "s|?: \"${VERSION}\"|?: \"${NEXT_VERSION}\"|g" "$f"
+done
+git -C "$ROOT_DIR" add gradle.properties \
+  core/build.gradle.kts plugin-api/build.gradle.kts editor-api/build.gradle.kts \
+  app/shared/build.gradle.kts ui/cards/build.gradle.kts
+git -C "$ROOT_DIR" commit -m "chore: bump version to ${NEXT_VERSION}"
+git -C "$ROOT_DIR" push origin main
+
 echo ""
-echo "✓ ${TAG} published."
+echo "✓ ${TAG} published. Next version is ${NEXT_VERSION}."
 echo "  Maven Central: https://central.sonatype.com/publishing"
 echo "  GitHub:        https://github.com/ronjunevaldoz/graphyn-editor/releases/tag/${TAG}"
