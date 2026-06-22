@@ -635,6 +635,38 @@ The TOML key name (with hyphens) is passed as-is to `findVersion`/`findLibrary`.
 
 ---
 
+## Auto-Layout Gaps Must Be Proportional to Node Size
+
+**Category:** Canvas layout — auto-layout spacing
+
+**Problem:** Hardcoded gap constants (`HORIZ_GAP = 200`, `VERT_GAP = 120`) caused node overlap whenever actual card sizes exceeded the assumed baseline. A FieldCard at 240dp wide and a SubgraphCard at 280dp wide require different breathing room — one constant can't serve both.
+
+**Fix and rule:** Remove all constant gaps from `GraphynAutoLayout.computePositions`. After building the `sizes` map, derive gaps from the actual max node dimensions in the current layout set:
+```kotlin
+val maxW = sizes.values.maxOf { it.width }.coerceAtLeast(GraphynCanvasMetrics.NodeSize.width)
+val maxH = sizes.values.maxOf { it.height }.coerceAtLeast(GraphynCanvasMetrics.NodeSize.height)
+val horizGap = (maxW * 1.5f).toInt()
+val vertGap  = (maxH * 1.5f).toInt()
+```
+The 1.5× multiplier ensures visible gaps on the canvas **and** in the minimap (see lesson below). The `coerceAtLeast` guards against empty-factory fallback producing zero.
+
+---
+
+## Minimap 2× Node Rendering Inflates Gaps Visually
+
+**Category:** Canvas rendering — minimap accuracy
+
+**Problem:** The minimap draws node markers at `nodeSize * scale * 2f` for visual weight (so small nodes don't vanish at minimap scale). The side effect: a gap equal to 1× node size on the canvas looks like zero gap in the minimap, because each node dot already occupies 2× its proportional world area. Tests can assert no overlap (gap ≥ 0) and still produce a minimap where nodes appear to touch.
+
+**Rule:**
+- A gap of **< 1× node size** → nodes overlap in the minimap.
+- A gap of **1× node size** → nodes exactly touch in the minimap (still looks cramped).
+- A gap of **1.5× node size** → clear breathing room in both canvas and minimap.
+
+The 2× minimap multiplier is intentional (for readability at small sizes). Design auto-layout gaps with this in mind: the canvas gap needs to be at least 1× the node dimension for the minimap to show any separation at all.
+
+---
+
 ## JVM-Only Plugin Modules Need `src/test/kotlin`, Not `src/commonTest`
 
 **Category:** Testing — module structure
