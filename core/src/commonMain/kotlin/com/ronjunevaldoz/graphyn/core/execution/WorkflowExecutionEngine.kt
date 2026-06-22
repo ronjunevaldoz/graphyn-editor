@@ -1,136 +1,112 @@
 package com.ronjunevaldoz.graphyn.core.execution
 
-import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
-import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
-import kotlinx.serialization.Serializable
+import kotlinx.coroutines.CancellationException
+import kotlin.time.TimeSource
 
-@Serializable
-data class WorkflowExecutionResult(
-    val nodeOutputsByNodeId: Map<String, Map<String, WorkflowValue>>,
-    val executionOrder: List<String>,
-    /** Nested results for any nodes whose [NodeRef.subgraph] was executed. */
-    val subResults: Map<String, WorkflowExecutionResult> = emptyMap(),
-)
+class WorkflowExecutionException(message: String) : IllegalStateException(message)
 
-class WorkflowExecutionException(
-    message: String,
-) : IllegalStateException(message)
-
+/**
+ * Runs a [WorkflowDefinition] in topological order.
+ *
+ * Execution is **resilient**: a node that throws is recorded as an error and its transitive
+ * dependents are skipped, but independent branches keep running. The returned
+ * [WorkflowExecutionResult] therefore reports per-node status and may be partial.
+ *
+ * Pass [onEvent] to observe progress live (e.g. highlight nodes on a canvas as they run).
+ */
 class WorkflowExecutionEngine(
     private val nodeExecutors: NodeExecutorRegistry,
     private val nodeSpecs: NodeSpecRegistry? = null,
 ) {
-    suspend fun execute(workflow: WorkflowDefinition): WorkflowExecutionResult {
+    suspend fun execute(
+        workflow: WorkflowDefinition,
+        onEvent: ((ExecutionEvent) -> Unit)? = null,
+    ): WorkflowExecutionResult {
         val nodesById = workflow.nodes.associateBy { it.id }
         if (nodesById.size != workflow.nodes.size) {
             throw WorkflowExecutionException("Workflow contains duplicate node ids.")
         }
 
-        val order = topologicalOrder(workflow)
-        val outputsByNodeId = linkedMapOf<String, Map<String, WorkflowValue>>()
+        val order = workflow.topologicalOrder()
+        val dependents = workflow.directDependents()
+
+        val outputs = linkedMapOf<String, Map<String, WorkflowValue>>()
+        val status = linkedMapOf<String, NodeExecutionStatus>()
+        val errors = linkedMapOf<String, String>()
+        val durations = linkedMapOf<String, Long>()
         val subResults = linkedMapOf<String, WorkflowExecutionResult>()
+        val executed = mutableListOf<String>()
 
         for (nodeId in order) {
+            if (status[nodeId] == NodeExecutionStatus.Skipped) continue
+
             val node = nodesById.getValue(nodeId)
-            val spec = nodeSpecs?.resolve(node.type)
-
-            // Nodes with an embedded subgraph execute their inner workflow recursively.
-            // The sink node's outputs become this node's outputs; no registered executor needed.
-            if (node.subgraph != null) {
-                val inner = execute(node.subgraph!!)
-                val sinkId = inner.executionOrder.lastOrNull()
-                val innerOutputs = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
-                subResults[node.id] = inner
-                val subgraphExecutor = nodeExecutors.resolve(node.type)
-                outputsByNodeId[node.id] = if (subgraphExecutor != null) {
-                    val upstreamInputs = buildInputMap(workflow, node, spec, outputsByNodeId)
-                    subgraphExecutor.execute(upstreamInputs + innerOutputs)
-                } else {
-                    innerOutputs
+            onEvent?.invoke(ExecutionEvent.Started(nodeId))
+            val start = TimeSource.Monotonic.markNow()
+            try {
+                outputs[nodeId] = runNode(workflow, node, outputs, subResults)
+                val ms = start.elapsedNow().inWholeMilliseconds
+                durations[nodeId] = ms
+                status[nodeId] = NodeExecutionStatus.Success
+                executed += nodeId
+                onEvent?.invoke(ExecutionEvent.Succeeded(nodeId, outputs.getValue(nodeId), ms))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                val ms = start.elapsedNow().inWholeMilliseconds
+                durations[nodeId] = ms
+                status[nodeId] = NodeExecutionStatus.Error
+                errors[nodeId] = e.message ?: e::class.simpleName ?: "Unknown error"
+                executed += nodeId
+                onEvent?.invoke(ExecutionEvent.Failed(nodeId, errors.getValue(nodeId), ms))
+                dependents.transitiveDependentsOf(nodeId).forEach { dep ->
+                    if (status[dep] == null) {
+                        status[dep] = NodeExecutionStatus.Skipped
+                        onEvent?.invoke(ExecutionEvent.Skipped(dep, causeNodeId = nodeId))
+                    }
                 }
-                continue
             }
-
-            val executor = nodeExecutors.resolve(node.type)
-                ?: throw WorkflowExecutionException("No executor registered for node type '${node.type}'.")
-            val inputs = buildInputMap(workflow, node, spec, outputsByNodeId)
-            outputsByNodeId[node.id] = executor.execute(inputs)
         }
 
         return WorkflowExecutionResult(
-            nodeOutputsByNodeId = outputsByNodeId,
-            executionOrder = order,
+            nodeOutputsByNodeId = outputs,
+            executionOrder = executed,
+            statusByNodeId = status,
+            errorsByNodeId = errors,
+            durationsByNodeId = durations,
             subResults = subResults,
         )
     }
 
-    private fun buildInputMap(
+    /** Executes one node — either its embedded subgraph or its registered executor. */
+    private suspend fun runNode(
         workflow: WorkflowDefinition,
         node: NodeRef,
-        spec: NodeSpec?,
-        outputsByNodeId: Map<String, Map<String, WorkflowValue>>,
+        outputs: Map<String, Map<String, WorkflowValue>>,
+        subResults: MutableMap<String, WorkflowExecutionResult>,
     ): Map<String, WorkflowValue> {
-        val connectedInputs = workflow.connections
-            .filter { it.toNodeId == node.id }
-            .associateNotNull { connection ->
-                val sourceOutputs = outputsByNodeId[connection.fromNodeId] ?: return@associateNotNull null
-                sourceOutputs[connection.fromPort]?.let { value ->
-                    connection.toPort to value
-                }
+        val spec = nodeSpecs?.resolve(node.type)
+        val inputs = buildInputMap(workflow, node, spec, outputs)
+
+        val subgraph = node.subgraph
+        if (subgraph != null) {
+            val inner = execute(subgraph)
+            subResults[node.id] = inner
+            if (inner.errorCount > 0) {
+                throw WorkflowExecutionException("Subgraph '${node.id}' failed: ${inner.errorsByNodeId.values.firstOrNull()}")
             }
-
-        val defaults = spec?.defaultValues.orEmpty()
-        return defaults + node.config + connectedInputs
-    }
-
-    private fun topologicalOrder(workflow: WorkflowDefinition): List<String> {
-        val incomingCount = workflow.nodes.associate { node ->
-            node.id to 0
-        }.toMutableMap()
-        val adjacency = workflow.connections.groupBy(ConnectionRef::fromNodeId)
-            .mapValues { (_, refs) -> refs.map(ConnectionRef::toNodeId) }
-
-        workflow.connections.forEach { connection ->
-            incomingCount[connection.toNodeId] = (incomingCount[connection.toNodeId] ?: 0) + 1
+            val sinkId = inner.executionOrder.lastOrNull()
+            val innerOutputs = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
+            val executor = nodeExecutors.resolve(node.type)
+            return if (executor != null) executor.execute(inputs + innerOutputs) else innerOutputs
         }
 
-        val queue = ArrayDeque<String>()
-        workflow.nodes.filter { incomingCount[it.id] == 0 }.forEach { queue.add(it.id) }
-
-        val order = mutableListOf<String>()
-        val seen = mutableSetOf<String>()
-
-        while (queue.isNotEmpty()) {
-            val current = queue.removeFirst()
-            if (!seen.add(current)) continue
-            order += current
-
-            adjacency[current].orEmpty().forEach { next ->
-                val remaining = (incomingCount[next] ?: 0) - 1
-                incomingCount[next] = remaining
-                if (remaining == 0) {
-                    queue.add(next)
-                }
-            }
-        }
-
-        if (order.size != workflow.nodes.size) {
-            throw WorkflowExecutionException("Workflow contains a cycle and cannot be executed.")
-        }
-
-        return order
+        val executor = nodeExecutors.resolve(node.type)
+            ?: throw WorkflowExecutionException("No executor registered for node type '${node.type}'.")
+        return executor.execute(inputs)
     }
-}
-
-private inline fun <K, V, R> Iterable<V>.associateNotNull(transform: (V) -> Pair<K, R>?): Map<K, R> {
-    val destination = linkedMapOf<K, R>()
-    for (element in this) {
-        val pair = transform(element) ?: continue
-        destination[pair.first] = pair.second
-    }
-    return destination
 }

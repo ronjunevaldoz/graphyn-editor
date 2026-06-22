@@ -1,15 +1,15 @@
 package com.ronjunevaldoz.graphyn.core
 
 import com.ronjunevaldoz.graphyn.core.execution.DefaultNodeExecutorRegistry
+import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
-import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionException
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 
 class SubgraphExecutionTest {
@@ -62,16 +62,17 @@ class SubgraphExecutionTest {
     }
 
     @Test
-    fun nodeWithoutSubgraphAndWithoutExecutorThrows() = runTest {
+    fun nodeWithoutSubgraphAndWithoutExecutorIsRecordedAsError() = runTest {
+        // Resilient execution: a missing executor fails only that node, it does not abort the run.
         val workflow = WorkflowDefinition(
             id = "broken", name = "Broken",
             nodes = listOf(NodeRef("sg", "completely.unknown.type")),
             connections = emptyList(),
         )
 
-        assertFailsWith<WorkflowExecutionException> {
-            engine.execute(workflow)
-        }
+        val result = engine.execute(workflow)
+        assertEquals(NodeExecutionStatus.Error, result.statusByNodeId["sg"])
+        assertTrue(result.errorsByNodeId["sg"]?.contains("No executor registered") == true)
     }
 
     @Test

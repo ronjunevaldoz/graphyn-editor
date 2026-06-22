@@ -10,6 +10,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -65,7 +66,7 @@ class MathPluginTest {
     }
 
     @Test
-    fun mathWorkflowExecutesChainedOperations() {
+    fun mathWorkflowExecutesChainedOperations() = runTest {
         // add(2, 3) = 5  →  multiply(5, 4) = 20
         val specs = DefaultNodeSpecRegistry()
         val executors = DefaultNodeExecutorRegistry()
