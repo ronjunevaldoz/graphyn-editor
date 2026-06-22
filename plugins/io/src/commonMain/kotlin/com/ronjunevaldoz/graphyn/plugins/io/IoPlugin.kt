@@ -24,8 +24,8 @@ internal val specHttpRequest = NodeSpec(
     inputs = listOf(
         PortSpec("url", WorkflowType.StringType, description = "Request URL"),
         PortSpec("method", WorkflowType.EnumType(listOf("GET", "POST", "PUT", "DELETE", "PATCH")), description = "HTTP method"),
-        PortSpec("body", WorkflowType.NullableType(WorkflowType.StringType), description = "Request body (optional)"),
-        PortSpec("headers", WorkflowType.NullableType(WorkflowType.RecordType(emptyMap())), description = "Request headers (optional)"),
+        PortSpec("body", WorkflowType.NullableType(WorkflowType.StringType), required = false, description = "Request body (optional)"),
+        PortSpec("headers", WorkflowType.NullableType(WorkflowType.RecordType(emptyMap())), required = false, description = "Request headers (optional)"),
     ),
     outputs = listOf(
         PortSpec("body", WorkflowType.StringType, description = "Response body as text"),
