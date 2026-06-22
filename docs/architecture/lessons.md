@@ -782,3 +782,37 @@ decodes as one value.
 
 **Rule:** Encode SSE frame payloads with a **compact** `Json` (no `prettyPrint`). Pretty
 output is fine for ordinary response bodies but never for `text/event-stream` data.
+
+---
+
+## `@Serializable` on existing model types enables direct store snapshots
+
+**Category:** KMP — serialization, persistence
+
+**Problem:** `NodeRef`, `ConnectionRef`, and `WorkflowDefinition` were not `@Serializable`.
+The `WorkflowDocumentCodec` worked around this by mapping to DTO types, but it silently
+dropped `NodeRef.subgraph` (recursive field). Any store that needed to persist full
+snapshots either had to go through the codec (losing subgraphs) or duplicate the graph model.
+
+**Rule:** Annotate the core graph model types with `@Serializable` directly. The serializer
+handles recursive types (`WorkflowDefinition` → `NodeRef.subgraph: WorkflowDefinition?`)
+correctly. The existing `WorkflowDocumentCodec` remains valid for the versioned document
+format; `@Serializable` is additive and does not replace it. Always annotate foundational
+data-model classes at the time they're defined — retrofitting later forces consumers to
+update all serialization paths simultaneously.
+
+---
+
+## `kotlinx-datetime` is the correct KMP clock — avoid `expect/actual` for time
+
+**Category:** KMP — cross-platform utilities
+
+**Problem:** Needing `currentTimeMillis()` in `commonMain` requires platform-specific
+implementations for JVM, JS, wasmJs, Android, iosArm64, iosSimulatorArm64 — six files for
+one function when using `expect/actual`.
+
+**Rule:** Add `org.jetbrains.kotlinx:kotlinx-datetime` to the catalog and use
+`Clock.System.now().toEpochMilliseconds()` in `commonMain`. The library ships a single
+multiplatform artifact that covers every Graphyn target without extra source sets. Reserve
+`expect/actual` for behavior that genuinely differs by platform, not for stdlib gaps that
+a JetBrains library already bridges.
