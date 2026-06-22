@@ -749,3 +749,36 @@ the latent bug.
 
 **Rule:**
 - A `NullableType` port is not automatically optional. Set `required = false` for ports that are genuinely optional, or give them a `defaultValues` entry. Nullability describes the value; `required` describes whether the port must be satisfied.
+
+---
+
+## @Serializable needs the compiler plugin in the *defining* module
+
+**Category:** kotlinx-serialization — multi-module setup
+
+**Problem:** The server (`:server`, a plain `kotlinJvm` module) defined a `@Serializable`
+DTO and got a runtime `SerializationException: Serializer for class 'RunAccepted' is not
+found` — even though serializing `:core` types from the same module worked fine. The
+serialization *compiler plugin* only generates serializers for `@Serializable` classes in
+modules that **apply the plugin**. `:core` applies it, so its types carry generated
+serializers across the dependency edge; `:server` did not, so its own annotated classes had
+none.
+
+**Rule:** Every module that *declares* its own `@Serializable` types must apply
+`alias(libs.plugins.serialization)` (or the KMP equivalent). Depending on a module that has
+the plugin is not enough — it only covers that module's own classes.
+
+---
+
+## SSE frame data must be single-line — don't pretty-print it
+
+**Category:** Ktor — server-sent events
+
+**Problem:** Streaming `ServerSentEvent(data = prettyJson.encodeToString(...))` produced
+frames the client couldn't parse (`Unexpected JSON token ... JSON input: {`). SSE delimits
+frames by blank lines and treats each `\n` inside `data` as a separate `data:` line, so a
+pretty-printed (multi-line) JSON object is split across several `data:` lines and no longer
+decodes as one value.
+
+**Rule:** Encode SSE frame payloads with a **compact** `Json` (no `prettyPrint`). Pretty
+output is fine for ordinary response bodies but never for `text/event-stream` data.
