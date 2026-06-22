@@ -88,6 +88,7 @@ private fun NodeResultRow(
         NodeExecutionStatus.Success -> SUCCESS_COLOR to "✓"
         NodeExecutionStatus.Error   -> ERROR_COLOR   to "✗"
         NodeExecutionStatus.Running -> RUNNING_COLOR  to "●"
+        NodeExecutionStatus.Skipped -> colors.textDisabled to "⊘"
         NodeExecutionStatus.Idle    -> colors.textDisabled to "○"
     }
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {

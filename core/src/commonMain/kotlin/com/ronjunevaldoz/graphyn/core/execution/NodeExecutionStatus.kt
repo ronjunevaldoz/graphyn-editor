@@ -10,4 +10,6 @@ enum class NodeExecutionStatus {
     Success,
     /** Execution threw an exception or returned an error result. */
     Error,
+    /** Not run because an upstream dependency failed. Distinct from [Error] — this node never executed. */
+    Skipped,
 }

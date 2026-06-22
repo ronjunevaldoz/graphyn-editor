@@ -41,6 +41,7 @@ fun NodeStatusBadge(
         NodeExecutionStatus.Running -> Color(0xFFFACC15) to "+"
         NodeExecutionStatus.Success -> Color(0xFF4ADE80) to "v"
         NodeExecutionStatus.Error   -> Color(0xFFF87171) to "x"
+        NodeExecutionStatus.Skipped -> Color(0xFF6B7280) to "-"
         NodeExecutionStatus.Idle    -> return
     }
     Box(
