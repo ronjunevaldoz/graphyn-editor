@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
-private enum class OutputTab { Output, Logs }
+private enum class OutputTab { Output, Logs, Debug }
 
 @Composable
 internal fun GraphynLogPanel(
@@ -81,6 +82,7 @@ internal fun GraphynLogPanel(
         // Panel body
         AnimatedVisibility(visible = expanded) {
             val scrollState = rememberScrollState()
+            SelectionContainer {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -118,7 +120,18 @@ internal fun GraphynLogPanel(
                             }
                         }
                     }
+                    OutputTab.Debug -> {
+                        val telemetry = state.telemetryEntries
+                        if (telemetry.isEmpty()) {
+                            BasicText("No telemetry yet. Trigger Auto Layout or resize the window.", style = type.mono.copy(color = colors.textDisabled))
+                        } else {
+                            telemetry.takeLast(20).forEach { entry ->
+                                BasicText("> $entry", style = type.mono.copy(color = colors.textSecondary))
+                            }
+                        }
+                    }
                 }
+            }
             }
         }
     }

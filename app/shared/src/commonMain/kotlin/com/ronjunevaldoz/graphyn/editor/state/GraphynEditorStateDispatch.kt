@@ -29,7 +29,7 @@ internal fun GraphynEditorState.handleDispatch(intent: GraphynEditorIntent) {
         is GraphynEditorIntent.UpdateConnectionDraftPosition -> {
             if (nodePickerState == null) connectionDraftPosition = intent.position
         }
-        is GraphynEditorIntent.UpdateViewportTransform -> viewportState.updateTransform(intent.pan, intent.zoom, intent.focus)
+        is GraphynEditorIntent.UpdateViewportTransform -> updateViewportTransform(intent.pan, intent.zoom, intent.focus)
         GraphynEditorIntent.CancelConnection -> {
             connectionDraft = null; connectionDraftPosition = null; nodePickerState = null
         }

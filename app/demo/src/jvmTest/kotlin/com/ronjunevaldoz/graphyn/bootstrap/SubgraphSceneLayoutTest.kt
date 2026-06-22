@@ -30,10 +30,14 @@ class SubgraphSceneLayoutTest {
         recordOptions = RoborazziOptions.RecordOptions(resizeScale = 0.5),
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
     )
+    private val minimapOptions = RoborazziOptions(
+        recordOptions = RoborazziOptions.RecordOptions(resizeScale = 3.0),
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
+    )
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun subgraphScene_autoLayout_nodesAreProperlySpaced() = runDesktopComposeUiTest {
+    fun subgraphScene_autoLayout_nodesAreProperlySpaced() = runDesktopComposeUiTest(width = 1920, height = 1080) {
         val editorPlugins = GraphynBootstrap.editorPlugins()
         val runtimePlugins = GraphynBootstrap.runtimePlugins()
         val editorRegistry = DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
@@ -83,9 +87,21 @@ class SubgraphSceneLayoutTest {
                     assertTrue(!rectA.overlaps(rectB), "Nodes '$idA' and '$idB' overlap: $rectA vs $rectB")
                 }
             }
+
+            // Fit must map the layout bounding-box centre onto the canvas centre.
+            val vp = state.viewport
+            val cs = state.canvasSize
+            val minX = rects.minOf { it.second.left }
+            val maxX = rects.maxOf { it.second.right }
+            val minY = rects.minOf { it.second.top }
+            val maxY = rects.maxOf { it.second.bottom }
+            val screenCx = (minX + maxX) / 2f * vp.scale + vp.offset.x
+            val screenCy = (minY + maxY) / 2f * vp.scale + vp.offset.y
+            assertTrue(kotlin.math.abs(screenCx - cs.width / 2f) < 1f, "x not centered: $screenCx vs ${cs.width / 2f}")
+            assertTrue(kotlin.math.abs(screenCy - cs.height / 2f) < 1f, "y not centered: $screenCy vs ${cs.height / 2f}")
         }
 
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
-        onNodeWithTag("minimap").captureRoboImage(roborazziOptions = roborazziOptions)
+        onNodeWithTag("minimap").captureRoboImage(roborazziOptions = minimapOptions)
     }
 }
