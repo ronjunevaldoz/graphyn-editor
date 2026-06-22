@@ -1,14 +1,15 @@
 package com.ronjunevaldoz.graphyn
 
-import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
-import com.ronjunevaldoz.graphyn.core.serialization.DefaultWorkflowJsonCodec
+import io.ktor.server.application.Application
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import io.ktor.server.sse.SSE
 import kotlinx.serialization.json.Json
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
 
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
@@ -17,25 +18,19 @@ fun main() {
 
 fun Application.module() {
     val runtime = createGraphynServerRuntime()
+    val registry = GraphynRunRegistry(runtime.executionEngine)
+    // Compact (not pretty): SSE frame data must stay on a single line.
     val json = Json {
         encodeDefaults = false
-        prettyPrint = true
         ignoreUnknownKeys = true
     }
+
+    install(SSE)
 
     routing {
         get("/") {
             call.respondText("Graphyn server is running")
         }
-        post("/execute") {
-            val workflow = DefaultWorkflowJsonCodec.decodeFromString(call.receiveText())
-            val result = runtime.executionEngine.execute(workflow)
-            call.respondText(
-                json.encodeToString(
-                    WorkflowExecutionResult.serializer(),
-                    result,
-                ),
-            )
-        }
+        executionRoutes(runtime, registry, json)
     }
 }
