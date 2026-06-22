@@ -3,7 +3,6 @@ package com.ronjunevaldoz.graphyn.editor.launcher
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,28 +11,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.store.WorkflowMeta
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 
 /**
- * Full-screen workflow launcher showing recent workflows and bundled templates.
+ * Full-screen workflow launcher showing saved, recent, and bundled template workflows.
  *
  * Sits in front of [com.ronjunevaldoz.graphyn.editor.shell.GraphynSubgraphNavigator].
  * The host is responsible for switching from launcher to navigator when [onOpen] fires.
  *
  * @param templates Bundled starting points shown in the Templates section.
  * @param recentWorkflows In-session recently opened workflows shown above templates.
+ * @param savedWorkflows Persisted workflows loaded from [com.ronjunevaldoz.graphyn.core.store.WorkflowStore].
+ * @param onNew Called when the user wants a blank new workflow.
+ * @param onOpenSaved Called with the workflow ID when the user picks a saved workflow.
  * @param onOpen Called with the selected template; host should load the workflow into the editor.
  */
 @Composable
 fun GraphynWorkflowLauncher(
     templates: List<WorkflowTemplate>,
     recentWorkflows: List<WorkflowTemplate> = emptyList(),
+    savedWorkflows: List<WorkflowMeta> = emptyList(),
+    onNew: () -> Unit = {},
+    onOpenSaved: (String) -> Unit = {},
     onOpen: (WorkflowTemplate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -54,9 +60,24 @@ fun GraphynWorkflowLauncher(
                 .padding(horizontal = 32.dp, vertical = 40.dp),
             verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                BasicText("Graphyn", style = type.appTitle.copy(color = colors.textPrimary))
-                BasicText("Open a workflow or start from a template.", style = type.bodySmall.copy(color = colors.textSecondary))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    BasicText("Graphyn", style = type.appTitle.copy(color = colors.textPrimary))
+                    BasicText("Open a workflow or start from a template.", style = type.bodySmall.copy(color = colors.textSecondary))
+                }
+                NewWorkflowButton(onClick = onNew)
+            }
+
+            if (savedWorkflows.isNotEmpty()) {
+                LauncherSection(title = "Saved") {
+                    savedWorkflows.take(6).forEach { meta ->
+                        SavedWorkflowCard(meta = meta, modifier = Modifier.fillMaxWidth()) { onOpenSaved(meta.id) }
+                    }
+                }
             }
 
             if (recentWorkflows.isNotEmpty()) {
@@ -86,12 +107,3 @@ fun GraphynWorkflowLauncher(
     }
 }
 
-@Composable
-private fun LauncherSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    val type = GraphynDs.type
-    val colors = GraphynDs.colors
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        BasicText(title.uppercase(), style = type.labelSmall.copy(color = colors.textDisabled))
-        content()
-    }
-}
