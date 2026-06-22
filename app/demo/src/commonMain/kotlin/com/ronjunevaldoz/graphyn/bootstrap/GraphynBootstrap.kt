@@ -13,6 +13,8 @@ import com.ronjunevaldoz.graphyn.plugins.control.ControlEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.control.ControlPlugin
 import com.ronjunevaldoz.graphyn.plugins.io.IoEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.io.IoPlugin
+import com.ronjunevaldoz.graphyn.plugins.json.JsonEditorPlugin
+import com.ronjunevaldoz.graphyn.plugins.json.JsonPlugin
 import com.ronjunevaldoz.graphyn.plugins.listops.ListOpsEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.listops.ListOpsPlugin
 import com.ronjunevaldoz.graphyn.plugins.samplelogger.SampleLoggerPlugin
@@ -31,13 +33,13 @@ import com.ronjunevaldoz.graphyn.plugins.types.TypesPlugin
 object GraphynDemoPlugins {
     val runtime: List<GraphynPlugin> = listOf(
         SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin,
-        ListOpsPlugin, ControlPlugin, TypesPlugin, TextPlugin, IoPlugin,
+        ListOpsPlugin, ControlPlugin, TypesPlugin, TextPlugin, IoPlugin, JsonPlugin,
         SubgraphRuntimePlugin, PreviewPlugin,
     )
     val editor: List<GraphynEditorPlugin> = listOf(
         SampleLoggerEditorPlugin, StyleNodesEditorPlugin, StickyNoteEditorPlugin,
         ListOpsEditorPlugin, ControlEditorPlugin, TypesEditorPlugin, TextEditorPlugin, IoEditorPlugin,
-        SubgraphEditorPlugin, PreviewEditorPlugin,
+        JsonEditorPlugin, SubgraphEditorPlugin, PreviewEditorPlugin,
     )
 }
 
