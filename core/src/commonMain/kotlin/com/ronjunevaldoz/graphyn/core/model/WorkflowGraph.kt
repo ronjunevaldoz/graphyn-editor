@@ -1,5 +1,7 @@
 package com.ronjunevaldoz.graphyn.core.model
 
+import kotlinx.serialization.Serializable
+
 /**
  * Declares a single port on a node.
  *
@@ -48,6 +50,7 @@ data class NodeSpec(
  * "Enter Subgraph" action in the inspector. Setting this field does not require a
  * registered executor — the engine handles subgraph nodes automatically.
  */
+@Serializable
 data class NodeRef(
     val id: String,
     val type: String,
@@ -56,6 +59,7 @@ data class NodeRef(
 )
 
 /** Directed edge from one node's output port to another node's input port. */
+@Serializable
 data class ConnectionRef(
     val fromNodeId: String,
     val fromPort: String,
@@ -64,6 +68,7 @@ data class ConnectionRef(
 )
 
 /** Complete, serializable description of a workflow — nodes and the edges between them. */
+@Serializable
 data class WorkflowDefinition(
     val id: String,
     val name: String,

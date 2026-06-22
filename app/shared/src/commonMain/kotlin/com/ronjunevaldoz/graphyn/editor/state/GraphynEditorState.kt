@@ -14,6 +14,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
+import com.ronjunevaldoz.graphyn.core.store.WorkflowStore
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
@@ -31,6 +32,7 @@ class GraphynEditorState(
     initialWorkflow: WorkflowDefinition? = null,
     private val canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
     internal val nodeSpecs: NodeSpecRegistry? = null,
+    store: WorkflowStore? = null,
 ) : GraphynEditorStateView {
     internal val viewportState = GraphynViewportState(canvasBounds)
     internal val layout = GraphynNodeLayoutState(canvasBounds, viewportScale = { viewportState.viewport.scale })
@@ -97,6 +99,7 @@ class GraphynEditorState(
             layout.setNodePosition(node.id, GraphynCanvasLayout.fallbackPosition(index))
         }
         viewportState.refresh(nodes.mapTo(mutableSetOf()) { it.id })
+        if (store != null) initAutoSave(store)
     }
 
     fun dispatch(intent: GraphynEditorIntent) = handleDispatch(intent)
