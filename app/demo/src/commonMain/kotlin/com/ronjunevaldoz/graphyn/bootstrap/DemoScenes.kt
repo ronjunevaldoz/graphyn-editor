@@ -33,4 +33,5 @@ enum class DemoScene(val label: String, val workflow: WorkflowDefinition) {
     Io("I/O",            ioDemoWorkflow),
     Subgraph("Subgraph", subgraphDemoWorkflow),
     Script("Script",     scriptDemoWorkflow),
+    ApiIngestion("API Ingestion", apiIngestionDemoWorkflow),
 }
