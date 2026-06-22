@@ -1,5 +1,7 @@
 package com.ronjunevaldoz.graphyn.editor.shell.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,11 +21,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeShape
@@ -44,6 +49,12 @@ internal fun GraphynMinimapDebugger(
     val minimapColors = rememberMinimapColors()
     val shape = RoundedCornerShape(6.dp)
     var minimapSize by remember { mutableStateOf(IntSize.Zero) }
+    val alpha = remember { Animatable(0f) }
+    LaunchedEffect(state.viewport) {
+        alpha.animateTo(0.9f, tween(durationMillis = 150))
+        delay(1500L)
+        alpha.animateTo(0f, tween(durationMillis = 600))
+    }
     val workflow = state.workflow
     val nodePositions = remember(workflow, state.nodePositionsByNodeId) {
         workflow?.nodes.orEmpty().mapIndexed { index, node -> state.nodePosition(node.id, index) }
@@ -56,6 +67,7 @@ internal fun GraphynMinimapDebugger(
 
     Box(
         modifier = modifier
+            .graphicsLayer { this.alpha = alpha.value }
             .clip(shape)
             .background(minimapColors.background)
             .border(1.dp, colors.border, shape)
@@ -127,11 +139,8 @@ internal fun GraphynMinimapDebugger(
             )?.let { vp ->
                 val topLeft = Offset(vp.left, vp.top)
                 val rectSize = Size(vp.width, vp.height)
+                drawRect(color = minimapColors.viewportFill, topLeft = topLeft, size = rectSize)
                 drawRect(color = minimapColors.viewportStroke, topLeft = topLeft, size = rectSize, style = Stroke(width = 2f))
-                listOf(topLeft, Offset(topLeft.x + rectSize.width, topLeft.y),
-                    Offset(topLeft.x, topLeft.y + rectSize.height),
-                    Offset(topLeft.x + rectSize.width, topLeft.y + rectSize.height),
-                ).forEach { corner -> drawCircle(color = minimapColors.viewportStroke, radius = 2.25f, center = corner) }
             }
         }
     }

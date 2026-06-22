@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
@@ -43,8 +42,7 @@ internal fun GraphynEditorShellCanvas(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(width = minimapWidth, height = minimapHeight)
-                    .testTag("minimap")
-                    .graphicsLayer { alpha = 0.9f },
+                    .testTag("minimap"),
             )
         }
         GraphynLogPanel(modifier = Modifier.fillMaxWidth(), state = state)
