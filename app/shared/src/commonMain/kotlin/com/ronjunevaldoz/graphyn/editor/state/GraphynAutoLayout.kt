@@ -116,17 +116,24 @@ internal object GraphynAutoLayout {
     }
 }
 
-internal fun GraphynEditorState.performAutoLayout() {
-    val wf = workflow ?: return
+internal data class AutoLayoutResult(
+    val positions: Map<String, IntOffset>,
+    val sizes: Map<String, IntSize>,
+)
+
+internal fun GraphynEditorState.performAutoLayout(): AutoLayoutResult? {
+    val wf = workflow ?: return null
     val registry = canvasCards
     val layoutNodes = wf.nodes.filter { registry?.resolve(it.type)?.isAnnotation != true }
     if (layoutNodes.size > GraphynAutoLayout.MAX_NODES) {
         log.push("Auto-layout skipped: ${layoutNodes.size} nodes exceeds limit of ${GraphynAutoLayout.MAX_NODES}")
-        return
+        return null
     }
     val nodeSize: (String) -> IntSize = { type ->
         registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) } ?: GraphynCanvasMetrics.NodeSize
     }
     val positions = GraphynAutoLayout.computePositions(layoutNodes, wf.connections, nodeSize)
     positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
+    val sizes = layoutNodes.associate { it.id to nodeSize(it.type) }
+    return AutoLayoutResult(positions, sizes)
 }

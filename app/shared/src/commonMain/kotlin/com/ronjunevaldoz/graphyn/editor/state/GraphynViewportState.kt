@@ -68,7 +68,7 @@ internal class GraphynViewportState(
         viewport = GraphynViewport(
             offset = Offset(canvasSize.width / 2f - cx * scale, canvasSize.height / 2f - cy * scale),
             scale = scale,
-        )
+        ).constrainTo(graphWorldBounds, canvasSize)
     }
 
     fun screenToWorld(position: Offset): Offset = viewport.screenToWorld(position)
