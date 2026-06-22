@@ -41,6 +41,16 @@ class CoreWorkflowTest {
     }
 
     @Test
+    fun opaqueTypeIsCompatibleInBothDirections() {
+        // Opaque as expected (input) accepts anything; opaque as actual (output) flows anywhere.
+        assertTrue(WorkflowTypeCompatibility.isCompatible(WorkflowType.OpaqueType, WorkflowType.StringType))
+        assertTrue(WorkflowTypeCompatibility.isCompatible(WorkflowType.StringType, WorkflowType.OpaqueType))
+        assertTrue(WorkflowTypeCompatibility.isCompatible(
+            WorkflowType.ListType(WorkflowType.IntType), WorkflowType.OpaqueType,
+        ))
+    }
+
+    @Test
     fun workflowDocumentRoundTrips() {
         val workflow = WorkflowDefinition(
             id = "workflow-1",

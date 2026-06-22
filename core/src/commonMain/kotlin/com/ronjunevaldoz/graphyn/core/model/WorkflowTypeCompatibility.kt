@@ -7,7 +7,11 @@ package com.ronjunevaldoz.graphyn.core.model
  * pairs require structural equality of the type descriptor.
  */
 object WorkflowTypeCompatibility {
-    fun isCompatible(expected: WorkflowType, actual: WorkflowType): Boolean = when (expected) {
+    fun isCompatible(expected: WorkflowType, actual: WorkflowType): Boolean {
+        // OpaqueType is the untyped escape hatch: it is universally compatible in BOTH directions.
+        // An opaque handle may flow into any typed port, and any value may flow into an opaque port.
+        if (actual is WorkflowType.OpaqueType) return true
+        return when (expected) {
         WorkflowType.StringType -> actual is WorkflowType.StringType
         WorkflowType.IntType -> actual is WorkflowType.IntType
         WorkflowType.DoubleType -> actual is WorkflowType.DoubleType || actual is WorkflowType.IntType
@@ -32,5 +36,6 @@ object WorkflowTypeCompatibility {
         is WorkflowType.MultiEnumType ->
             actual is WorkflowType.MultiEnumType && expected.values == actual.values
         WorkflowType.OpaqueType -> true
+        }
     }
 }

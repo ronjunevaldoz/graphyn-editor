@@ -17,7 +17,6 @@ import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
@@ -41,7 +40,7 @@ class GraphynEditorState(
 
     // When true, a canvas resize re-runs fitToContent so the graph stays centered/contained.
     // Cleared once the user manually pans or zooms, so we never fight their navigation.
-    private var autoFitOnResize = false
+    internal var autoFitOnResize = false
     internal val history = GraphynHistoryState()
     internal val clipboard = GraphynClipboardState()
 
@@ -121,50 +120,7 @@ class GraphynEditorState(
         return layout.isOverNode(position, nodes.mapIndexed { i, n -> n.id to i })
     }
 
-    // Viewport delegation
-    fun updateCanvasSize(size: IntSize) {
-        val changed = size != viewportState.canvasSize
-        if (changed) telemetry.push("canvasSize -> ${size.width}x${size.height}")
-        viewportState.updateCanvasSize(size)
-        if (changed && autoFitOnResize && size.width > 0 && size.height > 0) fitToContent()
-    }
-
-    /** Manual pan/zoom: stop auto-refitting so we don't override the user's navigation. */
-    fun updateViewportTransform(pan: Offset, zoom: Float, focus: Offset) {
-        autoFitOnResize = false
-        viewportState.updateTransform(pan, zoom, focus)
-    }
-    fun resetViewport() { viewportState.reset(); log.push("Viewport reset") }
-    fun fitToContent(
-        positions: Map<String, IntOffset>? = null,
-        sizes: Map<String, IntSize> = emptyMap(),
-    ) {
-        val resolvedPositions = positions ?: layout.nodePositionsByNodeId
-        val resolvedSizes = sizes.ifEmpty {
-            workflow?.nodes?.associate { node ->
-                node.id to (canvasCards?.resolve(node.type)
-                    ?.let { IntSize(it.nodeWidth, it.nodeHeight) }
-                    ?: GraphynCanvasMetrics.NodeSize)
-            } ?: emptyMap()
-        }
-        viewportState.fitToPositions(resolvedPositions, resolvedSizes, maxScale = 1.0f)
-        autoFitOnResize = resolvedPositions.isNotEmpty()
-        if (resolvedPositions.isNotEmpty()) {
-            val vp = viewportState.viewport
-            val cs = viewportState.canvasSize
-            val default = GraphynCanvasMetrics.NodeSize
-            val minX = resolvedPositions.values.minOf { it.x.toFloat() }
-            val maxX = resolvedPositions.entries.maxOf { (id, p) -> p.x + (resolvedSizes[id]?.width ?: default.width).toFloat() }
-            val minY = resolvedPositions.values.minOf { it.y.toFloat() }
-            val maxY = resolvedPositions.entries.maxOf { (id, p) -> p.y + (resolvedSizes[id]?.height ?: default.height).toFloat() }
-            val lGap = (minX * vp.scale + vp.offset.x).toInt()
-            val rGap = (cs.width - (maxX * vp.scale + vp.offset.x)).toInt()
-            val tGap = (minY * vp.scale + vp.offset.y).toInt()
-            val bGap = (cs.height - (maxY * vp.scale + vp.offset.y)).toInt()
-            val s = (vp.scale * 1000).toInt() / 1000f
-            telemetry.push("fit: canvas=${cs.width}x${cs.height} scale=$s off=(${vp.offset.x.toInt()},${vp.offset.y.toInt()}) L=$lGap R=$rGap T=$tGap B=$bGap")
-        }
-    }
+    // Viewport delegation — fit/resize/pan actions live in GraphynEditorViewportActions.kt
     fun screenToWorld(position: Offset): Offset = viewportState.screenToWorld(position)
     fun worldToScreen(position: Offset): Offset = viewportState.worldToScreen(position)
 

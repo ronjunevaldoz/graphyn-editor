@@ -51,11 +51,12 @@ class GraphynNodePickerTest {
     }
 
     @Test
-    fun opaqueOutputMatchesOnlyOpaqueInputNode() {
+    fun opaqueOutputMatchesAnyInputNode() {
+        // OpaqueType is a bidirectional wildcard: an opaque output may feed any typed input.
         val draft = GraphynConnectionDraft(fromNodeId = "src-opq", fromPort = "output", isFromInput = false)
         val types = compatiblePickerSpecs(draft, workflow, registry).map { it.first.type }
         assertTrue("demo.opaque" in types, "OpaqueType output should match OpaqueType input")
-        assertFalse("text.upper" in types, "OpaqueType output must not match StringType input")
+        assertTrue("text.upper" in types, "OpaqueType output is a wildcard and should match StringType input")
     }
 
     @Test

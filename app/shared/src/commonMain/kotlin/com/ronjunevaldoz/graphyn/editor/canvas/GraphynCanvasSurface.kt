@@ -39,6 +39,7 @@ import com.ronjunevaldoz.graphyn.editor.canvas.components.compatiblePickerSpecs
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
+import com.ronjunevaldoz.graphyn.editor.state.updateCanvasSize
 
 @Composable
 fun GraphynCanvasSurface(
