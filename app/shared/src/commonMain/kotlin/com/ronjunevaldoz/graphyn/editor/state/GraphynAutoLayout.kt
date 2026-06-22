@@ -8,8 +8,8 @@ import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 
 internal object GraphynAutoLayout {
-    private const val HORIZ_GAP = 120
-    private const val VERT_GAP = 80
+    private const val HORIZ_GAP = 200
+    private const val VERT_GAP = 120
     private const val GRID_COLS = 3
     internal const val MAX_NODES = 50
 

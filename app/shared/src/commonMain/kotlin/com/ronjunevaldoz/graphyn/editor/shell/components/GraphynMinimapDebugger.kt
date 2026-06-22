@@ -117,8 +117,8 @@ internal fun GraphynMinimapDebugger(
                 val shape = factory?.nodeShape ?: NodeShape.Rectangle
                 val x = minimapLayout.insetX + ((position.x.toFloat() - minimapLayout.worldBounds.left) * minimapLayout.scale)
                 val y = minimapLayout.insetY + ((position.y.toFloat() - minimapLayout.worldBounds.top) * minimapLayout.scale)
-                val w = maxOf(nodeW * minimapLayout.scale, 3f)
-                val h = maxOf(nodeH * minimapLayout.scale, 3f)
+                val w = nodeW * minimapLayout.scale * 2f
+                val h = nodeH * minimapLayout.scale * 2f
                 when (shape) {
                     NodeShape.Circle -> {
                         val radius = w / 2f
