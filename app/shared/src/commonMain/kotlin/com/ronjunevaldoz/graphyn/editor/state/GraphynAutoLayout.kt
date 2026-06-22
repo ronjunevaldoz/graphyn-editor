@@ -8,8 +8,6 @@ import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 
 internal object GraphynAutoLayout {
-    private const val HORIZ_GAP = 200
-    private const val VERT_GAP = 120
     private const val GRID_COLS = 3
     internal const val MAX_NODES = 50
 
@@ -20,6 +18,10 @@ internal object GraphynAutoLayout {
     ): Map<String, IntOffset> {
         if (nodes.isEmpty() || nodes.size > MAX_NODES) return emptyMap()
         val sizes = nodes.associate { it.id to nodeSize(it.type) }
+        val maxW = sizes.values.maxOf { it.width }.coerceAtLeast(GraphynCanvasMetrics.NodeSize.width)
+        val maxH = sizes.values.maxOf { it.height }.coerceAtLeast(GraphynCanvasMetrics.NodeSize.height)
+        val horizGap = (maxW * 1.5f).toInt()
+        val vertGap = (maxH * 1.5f).toInt()
         val nodeIds = nodes.mapTo(mutableSetOf()) { it.id }
 
         val inEdges = nodes.associate { it.id to mutableListOf<String>() }
@@ -53,7 +55,7 @@ internal object GraphynAutoLayout {
         }
         connected.filter { it.id !in visited }.forEach { topoOrder.add(it.id) }
 
-        // Column x: each column's x = cumulative (max node width + HORIZ_GAP) of preceding columns
+        // Column x: each column's x = cumulative (max node width + horizGap) of preceding columns
         val maxWidthPerCol = mutableMapOf<Int, Int>()
         connected.forEach { n ->
             val d = depth[n.id] ?: 0
@@ -61,12 +63,12 @@ internal object GraphynAutoLayout {
         }
         val maxDepth = depth.values.maxOrNull() ?: 0
         val colX = IntArray(maxDepth + 1)
-        for (d in 1..maxDepth) colX[d] = colX[d - 1] + (maxWidthPerCol[d - 1] ?: 0) + HORIZ_GAP
+        for (d in 1..maxDepth) colX[d] = colX[d - 1] + (maxWidthPerCol[d - 1] ?: 0) + horizGap
 
         // Band height: leaf = nodeHeight + VERT_GAP; branch = max(own height, sum of children).
         // The max ensures a tall parent never gets a band smaller than itself, preventing
         // negative y-offsets when children are shorter than the parent node.
-        val fallbackH = { id: String -> (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) + VERT_GAP }
+        val fallbackH = { id: String -> (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) + vertGap }
         val bandH = mutableMapOf<String, Int>()
         topoOrder.reversed().forEach { id ->
             val children = outEdges[id] ?: emptyList()
@@ -94,12 +96,12 @@ internal object GraphynAutoLayout {
         // Grid-arrange isolated nodes below the DAG block
         val dagBottom = if (positions.isEmpty()) 0
                         else positions.entries.maxOf { (id, p) -> p.y + (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) }
-        val gridTop = if (isolated.isEmpty()) dagBottom else dagBottom + VERT_GAP * 2
+        val gridTop = if (isolated.isEmpty()) dagBottom else dagBottom + vertGap * 2
         isolated.forEachIndexed { i, node ->
             val col = i % GRID_COLS
             val row = i / GRID_COLS
-            val cellW = (sizes[node.id]?.width ?: GraphynCanvasMetrics.NodeSize.width) + HORIZ_GAP
-            val cellH = (sizes[node.id]?.height ?: GraphynCanvasMetrics.NodeSize.height) + VERT_GAP
+            val cellW = (sizes[node.id]?.width ?: GraphynCanvasMetrics.NodeSize.width) + horizGap
+            val cellH = (sizes[node.id]?.height ?: GraphynCanvasMetrics.NodeSize.height) + vertGap
             positions[node.id] = IntOffset(col * cellW, gridTop + row * cellH)
         }
 
