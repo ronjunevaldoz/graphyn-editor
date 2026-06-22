@@ -686,3 +686,43 @@ The 2× minimap multiplier is intentional (for readability at small sizes). Desi
 - Fit-to-content needs its **own** minimum-scale floor (`MinFitScale`, here 0.05f), separate from the interactive `MinScale`. Flooring a fit at the interactive zoom limit clips wide content in small viewports.
 - When a rendered test capture and the live app disagree, trust the live app. Surface real numbers from the running app (here via `log.push` → LOGS panel) instead of pixel-measuring screenshots — headless capture sizes can hide size-dependent bugs.
 - `FitToContentTest.wideContentIsContainedInNarrowCanvas` locks this in: 1640-wide content in a 640px canvas must have both edges inside the canvas.
+
+---
+
+## Auto-dismissing animations make screenshot tests flaky
+
+**Category:** Compose UI testing — animation clocks
+**Applies to:** Any composable that fades/animates itself away on a timer, captured via `captureToImage()`
+
+### Pattern
+
+`GraphynMinimapDebugger` uses `LaunchedEffect(state.viewport) { alpha.animateTo(0.9f); delay(1500); alpha.animateTo(0f) }`
+to flash the minimap and fade it out. Under the default test clock, `waitForIdle()` / autoAdvance
+runs the clock to quiescence — past the 1.5s hold — so by capture time the minimap is fully
+transparent and every pixel equals the background. The assertion "border != outside" then fails
+even though production behaviour is correct.
+
+**Rule:**
+- Don't let a self-dismissing animation reach its end state before you capture. Disable
+  `rule.mainClock.autoAdvance`, then `advanceTimeByFrame()` + `advanceTimeBy(n)` to land on the
+  *visible* plateau (after fade-in, before the hold expires). Capture there.
+- Keep the fix in the test only — the live fade behaviour is intentional and correct.
+
+---
+
+## Truncating a sub-pixel rect edge can sample the wrong pixel
+
+**Category:** Compose UI testing — pixel sampling
+**Applies to:** Reading specific pixels from `captureToImage().toPixelMap()` against a drawn shape
+
+### Pattern
+
+The minimap viewport rect's left edge sat at `x=14.7`. A 2px stroke centred on that edge paints
+solid colour at pixels 15–17, but `viewportRect.left.toInt()` truncates to `14` — a background
+pixel just outside the stroke — so `border == outside`. The test had passed only because earlier
+geometry happened to put the edge on an integer; commit 363e09d shifted it sub-pixel and exposed
+the latent bug.
+
+**Rule:**
+- Use `roundToInt()`, not `toInt()`, when picking the pixel that should land *on* a drawn edge —
+  truncation biases toward the lower neighbour and can miss a thin stroke entirely.
