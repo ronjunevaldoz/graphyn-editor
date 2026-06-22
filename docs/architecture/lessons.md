@@ -726,3 +726,26 @@ the latent bug.
 **Rule:**
 - Use `roundToInt()`, not `toInt()`, when picking the pixel that should land *on* a drawn edge —
   truncation biases toward the lower neighbour and can miss a thin stroke entirely.
+
+---
+
+## Resilient execution changes the "missing executor" contract
+
+**Category:** Workflow execution — engine semantics
+
+**Problem:** Executor v2 wraps each node in try/catch so one failing node no longer aborts the whole run — it's recorded as `NodeExecutionStatus.Error`, its transitive dependents become `Skipped`, and independent branches still execute. This silently changes a previously-throwing path: a node with no registered executor used to throw `WorkflowExecutionException` out of `execute()`; now it's a per-node error in the result. Any test or caller asserting "the whole run throws" must instead inspect `result.statusByNodeId` / `errorsByNodeId`.
+
+**Rule:**
+- Distinguish **structural** failures (duplicate ids, cycle) — which still throw before any node runs — from **per-node** failures, which are captured in the result. Only the former abort.
+- When making execution resilient, grep for `assertFailsWith` / bulk error-marking in callers; the editor's old `execute()` marked *every* node Error on any exception and must switch to the engine's per-node status.
+
+---
+
+## NullableType inputs are still `required` unless you say otherwise
+
+**Category:** Plugin authoring — NodeSpec ports
+
+**Problem:** `PortSpec.required` defaults to `true`, independently of the port's `WorkflowType`. `io.http_request` declared `body`/`headers` as `NullableType(...)` — semantically optional — but left `required` at its default, so `WorkflowGraphValidator` flagged `missing_required_input` on any http_request node that didn't wire those ports or supply a config/default. The node looked optional but wasn't.
+
+**Rule:**
+- A `NullableType` port is not automatically optional. Set `required = false` for ports that are genuinely optional, or give them a `defaultValues` entry. Nullability describes the value; `required` describes whether the port must be satisfied.
