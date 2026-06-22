@@ -92,7 +92,7 @@ dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }
 
-val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.1.0"
+val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.2.0"
 
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
