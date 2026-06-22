@@ -42,11 +42,11 @@ internal fun RecordRow(
     var showPopup by remember { mutableStateOf(false) }
     val fields = (currentValue as? WorkflowValue.RecordValue)?.fields ?: emptyMap()
     val label = when (fieldTypes.size) { 1 -> "1 field"; else -> "${fieldTypes.size} fields" }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = appTheme.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
         BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
-            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) {
+            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = 5.dp, vertical = appTheme.spacing.xxs), Alignment.Center) {
                 BasicText("{ $label } ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
             if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { showPopup = false }) {
@@ -63,7 +63,7 @@ private fun RecordPopup(
     theme: FieldNodeTheme,
     onChange: (Map<String, WorkflowValue>) -> Unit,
 ) {
-    Column(Modifier.widthIn(min = 140.dp, max = 220.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
+    Column(Modifier.widthIn(min = RECORD_POPUP_MIN_DP.dp, max = RECORD_POPUP_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.md)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md)).padding(vertical = appTheme.spacing.xs)) {
         fieldTypes.forEach { (key, type) ->
             RecordFieldRow(
                 key = key,
@@ -91,7 +91,7 @@ private fun RecordFieldRow(
         val raw = editText ?: return; editText = null
         parseRecordField(type, raw)?.let(onEdit)
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = appTheme.spacing.sm, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
         BasicText(key, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Spacer(Modifier.width(6.dp))
@@ -100,23 +100,23 @@ private fun RecordFieldRow(
             val activeBg = appTheme.colors.primary
             val activeText = appTheme.colors.onPrimary
             Box(
-                Modifier.widthIn(min = 48.dp, max = 80.dp).clip(RoundedCornerShape(2.dp))
+                Modifier.widthIn(min = VALUE_MIN_DP.dp, max = VALUE_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.xs))
                     .background(if (on) activeBg else theme.valueBg())
                     .clickable { onEdit(WorkflowValue.BooleanValue(!on)) }
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                    .padding(horizontal = appTheme.spacing.xs, vertical = appTheme.spacing.xxs),
             ) { BasicText(if (on) "ON" else "OFF", style = appTheme.typography.nodeLabel.copy(color = if (on) activeText else theme.valueText())) }
         } else if (editText != null) {
             BasicTextField(
                 value = editText!!,
                 onValueChange = { editText = it },
-                modifier = Modifier.widthIn(min = 48.dp, max = 80.dp)
+                modifier = Modifier.widthIn(min = VALUE_MIN_DP.dp, max = VALUE_MAX_DP.dp)
                     .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                 textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
-                decorationBox = { inner -> Box(Modifier.clip(RoundedCornerShape(2.dp)).background(theme.valueBg()).padding(horizontal = 4.dp, vertical = 2.dp)) { inner() } },
+                decorationBox = { inner -> Box(Modifier.clip(RoundedCornerShape(appTheme.shapes.xs)).background(theme.valueBg()).padding(horizontal = appTheme.spacing.xs, vertical = appTheme.spacing.xxs)) { inner() } },
                 singleLine = true,
             )
         } else {
-            Box(Modifier.widthIn(min = 48.dp, max = 80.dp).clip(RoundedCornerShape(2.dp)).background(theme.valueBg()).clickable { focusGranted = false; editText = display }.padding(horizontal = 4.dp, vertical = 2.dp)) {
+            Box(Modifier.widthIn(min = VALUE_MIN_DP.dp, max = VALUE_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.xs)).background(theme.valueBg()).clickable { focusGranted = false; editText = display }.padding(horizontal = appTheme.spacing.xs, vertical = appTheme.spacing.xxs)) {
                 BasicText(display.ifEmpty { "—" }, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
         }

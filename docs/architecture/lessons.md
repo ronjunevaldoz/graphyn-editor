@@ -632,3 +632,21 @@ The TOML key name (with hyphens) is passed as-is to `findVersion`/`findLibrary`.
 **Problem:** `GraphynMinimapDebugger.kt` multiplied node width/height by `* 2f` when drawing nodes in the minimap. This kept the top-left position correct but doubled the rendered size, shifting the visual center of each node rectangle to the actual node's bottom-right corner in world space. With accurate card sizes from `canvasCards`, the preview node's inflated rectangle clipped outside the viewport indicator even though the layout was mathematically centered.
 
 **Fix and rule:** Use `maxOf(nodeW * minimapLayout.scale, 3f)` — proportionally correct size with a 3px minimum for visibility. Never multiply minimap node sizes by an arbitrary factor; it breaks the position/size relationship and makes the viewport indicator look wrong.
+
+---
+
+## Design Token Gap: `AppSpacing` Exists But ui/cards Used Raw `.dp` Literals
+
+**Category:** Design system — token adoption
+
+**Problem:** `ui/cards` depends on `core:designsystem` which exports `AppSpacing` (xxs=2, xs=4, sm=8, …) and `AppShapes` (xs=2, sm=4, md=6, …). All three FieldCard composable files used raw `.dp` literals (8.dp padding, 4.dp gap, 2.dp corner radius, 6.dp corner radius) instead of the tokens, making theme consistency impossible to enforce centrally.
+
+**Fix and rule:** Replace `.dp` literals that match a token with `appTheme.spacing.*` / `appTheme.shapes.*` in `@Composable` functions. Keep structural card dimension constants (`CARD_WIDTH_DP`, `RECORD_POPUP_MIN_DP`, etc.) as `internal const val` in `FieldCardFactory.kt` so they move with the layout math. Keep 1.dp border widths and values that don't map to any token (3.dp, 5.dp, 6.dp spacing) as literals.
+
+---
+
+## JVM-Only Plugin Modules Need `src/test/kotlin`, Not `src/commonTest`
+
+**Category:** Testing — module structure
+
+**Problem:** The `script` plugin uses `alias(libs.plugins.kotlinJvm)` (not KMP), so its source layout is `src/main/kotlin` / `src/test/kotlin`. Adding a `src/commonTest` directory does nothing for JVM-only modules. Use `testImplementation(libs.kotlin.test)` in the `dependencies {}` block (not `commonTest.dependencies {}` in a `kotlin {}` block).
