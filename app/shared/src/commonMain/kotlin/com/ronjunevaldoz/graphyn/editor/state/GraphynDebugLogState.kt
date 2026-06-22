@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 
 internal class GraphynDebugLogState {
     private companion object {
-        const val MaxEntries = 12
+        const val MaxEntries = 40
     }
 
     var entries by mutableStateOf<List<String>>(emptyList())

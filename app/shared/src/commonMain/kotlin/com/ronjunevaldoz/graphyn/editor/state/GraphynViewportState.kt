@@ -17,6 +17,9 @@ internal class GraphynViewportState(
     companion object {
         const val MinScale = 0.45f
         const val MaxScale = 5.0f
+        // Fit-to-content may zoom out below the interactive MinScale so a wide graph
+        // can be fully contained in a narrow canvas instead of spilling past the edges.
+        const val MinFitScale = 0.05f
     }
 
     var viewport: GraphynViewport by mutableStateOf(GraphynViewport())
@@ -62,7 +65,7 @@ internal class GraphynViewportState(
             (canvasSize.width - padding * 2) / (maxX - minX),
             (canvasSize.height - padding * 2) / (maxY - minY),
             maxScale,
-        ).coerceAtLeast(MinScale)
+        ).coerceAtLeast(MinFitScale)
         val cx = (minX + maxX) / 2f
         val cy = (minY + maxY) / 2f
         viewport = GraphynViewport(

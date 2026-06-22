@@ -94,6 +94,31 @@ class FitToContentTest {
     }
 
     @Test
+    fun wideContentIsContainedInNarrowCanvas() {
+        // Repro of the live bug: a 1640-wide layout in a 640px canvas. The interactive
+        // MinScale (0.45) floor used to prevent zooming out far enough, so content spilled
+        // past both edges (negative gaps). Fit must contain it instead.
+        val state = makeState("left", "right")
+        state.updateCanvasSize(IntSize(640, 556))
+        val positions = mapOf(
+            "left"  to IntOffset(1228, 1400),
+            "right" to IntOffset(2628, 1400),
+        )
+        val sizes = mapOf(
+            "left"  to IntSize(280, 120),
+            "right" to IntSize(240, 120),
+        )
+
+        state.fitToContent(positions, sizes)
+
+        val vp = state.viewport
+        val leftEdge = 1228f * vp.scale + vp.offset.x
+        val rightEdge = (2628f + 240f) * vp.scale + vp.offset.x
+        assertTrue(leftEdge >= 0f, "left edge must not spill past canvas left, was $leftEdge")
+        assertTrue(rightEdge <= 640f, "right edge must not spill under inspector, was $rightEdge")
+    }
+
+    @Test
     fun emptyPositionsAreANoOp() {
         val state = makeState("n1")
         state.updateCanvasSize(IntSize(1200, 800))

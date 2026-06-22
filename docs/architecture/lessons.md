@@ -672,3 +672,17 @@ The 2× minimap multiplier is intentional (for readability at small sizes). Desi
 **Category:** Testing — module structure
 
 **Problem:** The `script` plugin uses `alias(libs.plugins.kotlinJvm)` (not KMP), so its source layout is `src/main/kotlin` / `src/test/kotlin`. Adding a `src/commonTest` directory does nothing for JVM-only modules. Use `testImplementation(libs.kotlin.test)` in the `dependencies {}` block (not `commonTest.dependencies {}` in a `kotlin {}` block).
+---
+
+## "Auto-Layout Not Centered" Was the MinScale Floor Clamping Fit-to-Content
+
+**Category:** Viewport — fit-to-content
+
+**Problem:** In a narrow window, after Auto Layout the rightmost node was clipped under the inspector (and the leftmost under the palette) — symmetric overflow. The centering math was fine; the bug was the scale floor. `fitToPositions` computed `scale = minOf(fitX, fitY, maxScale).coerceAtLeast(MinScale)`, where `MinScale = 0.45f` is the *interactive* zoom-out limit. A 1640-wide layout in a 640px canvas needs `scale ≈ 0.317` to fit, but the `coerceAtLeast(MinScale)` floored it to 0.45, so the content was too big and spilled past **both** edges (live log: `scale=0.45 Lgap=-49 Rgap=-49`). In a *wide* window the needed scale was above 0.45, so it fit — which is why the bug was intermittent and depended on window width.
+
+**Why it took so long to find:** Roborazzi captures run at a fixed wide headless size (canvas 1440) where the required scale stayed above MinScale, so the bug never reproduced in tests or screenshots. The headless capture diverged from the live narrow window. Ground truth came from logging `canvasSize` + fit results to the app's own LOGS panel and having the user read them off the **live** app — not from any rendered screenshot.
+
+**Rule:**
+- Fit-to-content needs its **own** minimum-scale floor (`MinFitScale`, here 0.05f), separate from the interactive `MinScale`. Flooring a fit at the interactive zoom limit clips wide content in small viewports.
+- When a rendered test capture and the live app disagree, trust the live app. Surface real numbers from the running app (here via `log.push` → LOGS panel) instead of pixel-measuring screenshots — headless capture sizes can hide size-dependent bugs.
+- `FitToContentTest.wideContentIsContainedInNarrowCanvas` locks this in: 1640-wide content in a 640px canvas must have both edges inside the canvas.

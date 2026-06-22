@@ -32,10 +32,14 @@ class ScriptSceneLayoutTest {
         recordOptions = RoborazziOptions.RecordOptions(resizeScale = 0.5),
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
     )
+    private val minimapOptions = RoborazziOptions(
+        recordOptions = RoborazziOptions.RecordOptions(resizeScale = 3.0),
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
+    )
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun scriptScene_autoLayout_nodesAreProperlySpaced() = runDesktopComposeUiTest {
+    fun scriptScene_autoLayout_nodesAreProperlySpaced() = runDesktopComposeUiTest(width = 1920, height = 1080) {
         val editorPlugins = GraphynBootstrap.editorPlugins(extraPlugins = listOf(ScriptEditorPlugin))
         val runtimePlugins = GraphynBootstrap.runtimePlugins(extraPlugins = listOf(ScriptPlugin))
         val editorRegistry = DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
@@ -94,6 +98,6 @@ class ScriptSceneLayoutTest {
         }
 
         onRoot().captureRoboImage(roborazziOptions = roborazziOptions)
-        onNodeWithTag("minimap").captureRoboImage(roborazziOptions = roborazziOptions)
+        onNodeWithTag("minimap").captureRoboImage(roborazziOptions = minimapOptions)
     }
 }
