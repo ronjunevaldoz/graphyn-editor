@@ -864,3 +864,20 @@ Also avoid `Json.decodeFromString<T>()` with inferred type params in wasmJs — 
 **Problem:** `import web.window.window` (from the `web` interop package) gives a `Window` type that lacks `matchMedia`. Calling `window.matchMedia(...)` fails with "Unresolved reference".
 
 **Rule:** For media queries in `jsMain`, use `import kotlinx.browser.window` which exposes the full browser Window API including `matchMedia`.
+
+---
+
+## `channelFlow` bridges a callback API into a `Flow`
+
+**Category:** Kotlin coroutines — Flow
+
+**Problem:** `WorkflowExecutionEngine.execute()` takes an `onEvent: (ExecutionEvent) -> Unit` callback but callers (CLI, tests, custom UIs) prefer a `Flow`. Converting with `callbackFlow` is safe only when the callback is synchronous (which this one is — it runs on the engine's calling coroutine).
+
+**Rule:** When the callback is synchronous (called from the same coroutine scope, not dispatched elsewhere), use `channelFlow` + `trySend`:
+```kotlin
+channelFlow {
+    val result = execute(workflow) { event -> trySend(ExecutionStreamMessage.Event(event)) }
+    send(ExecutionStreamMessage.Completed(result))
+}
+```
+`trySend` never throws; `send` (for the terminal frame) uses suspension. Don't use `callbackFlow` for async callbacks that outlive the collector's scope.
