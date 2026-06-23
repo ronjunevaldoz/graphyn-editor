@@ -25,13 +25,16 @@ private val scriptDemoWorkflow = WorkflowDefinition(
 )
 
 enum class DemoScene(val label: String, val workflow: WorkflowDefinition) {
-    Styles("Styles",     styleNodesDemoWorkflow),
-    ListOps("List Ops",  listOpsDemoWorkflow),
-    Control("Control",   controlDemoWorkflow),
-    Text("Text",         textDemoWorkflow),
-    Types("Types",       typesDemoWorkflow),
-    Io("I/O",            ioDemoWorkflow),
-    Subgraph("Subgraph", subgraphDemoWorkflow),
-    Script("Script",     scriptDemoWorkflow),
-    ApiIngestion("API Ingestion", apiIngestionDemoWorkflow),
+    AiPipeline("AI Pipeline",           aiPipelineWorkflow),
+    GeometryPipeline("Geometry",        geometryPipelineWorkflow),
+    AutomationPipeline("Automation",    automationPipelineWorkflow),
+    Styles("Styles",                    styleNodesDemoWorkflow),
+    ListOps("List Ops",                 listOpsDemoWorkflow),
+    Control("Control",                  controlDemoWorkflow),
+    Text("Text",                        textDemoWorkflow),
+    Types("Types",                      typesDemoWorkflow),
+    Io("I/O",                           ioDemoWorkflow),
+    Subgraph("Subgraph",                subgraphDemoWorkflow),
+    Script("Script",                    scriptDemoWorkflow),
+    ApiIngestion("API Ingestion",       apiIngestionDemoWorkflow),
 }

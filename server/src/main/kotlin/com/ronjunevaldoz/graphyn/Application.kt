@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn
 
+import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.install
@@ -19,6 +20,7 @@ fun main() {
 fun Application.module() {
     val runtime = createGraphynServerRuntime()
     val registry = GraphynRunRegistry(runtime.executionEngine)
+    val store = FileWorkflowStore()
     // Compact (not pretty): SSE frame data must stay on a single line.
     val json = Json {
         encodeDefaults = false
@@ -33,5 +35,6 @@ fun Application.module() {
             call.respondText("Graphyn server is running")
         }
         executionRoutes(runtime, registry, json)
+        workflowRoutes(store, json)
     }
 }
