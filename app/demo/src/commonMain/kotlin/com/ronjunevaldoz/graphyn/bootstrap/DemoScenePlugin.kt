@@ -76,16 +76,20 @@ object DemoSceneEditorPlugin : GraphynEditorPlugin {
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
         val shape = ShapeCardFactory()
-        val field5 = FieldCardFactory(inputRows = 3, outputRows = 1)
-        listOf(specCheckpointLoader, specClipEncode, specVaeDecode, specSaveImage).forEach {
-            registrar.registerCanvasCard(it.type, shape)
-        }
+        val field3 = FieldCardFactory(inputRows = 3, outputRows = 1)
+        // CheckpointLoader has no inputs; CLIPTextEncode has 2 (clip + text); show text inline
+        registrar.registerCanvasCard(specCheckpointLoader.type, shape)
+        registrar.registerCanvasCard(specClipEncode.type, ShapeCardFactory(inlineInputRows = 1))
+        registrar.registerCanvasCard(specVaeDecode.type, shape)
+        registrar.registerCanvasCard(specSaveImage.type, shape)
         listOf(specMeshPrimitive, specSubdivideMesh, specInstanceOnPoints, specGeometryOutput).forEach {
-            registrar.registerCanvasCard(it.type, field5)
+            registrar.registerCanvasCard(it.type, field3)
         }
-        listOf(specSetField, specFilterIf, specHttpRequestDemo, specLogOutput).forEach {
-            registrar.registerCanvasCard(it.type, shape)
-        }
+        // HTTPRequest has url + method defaults; show them inline
+        registrar.registerCanvasCard(specSetField.type, shape)
+        registrar.registerCanvasCard(specFilterIf.type, shape)
+        registrar.registerCanvasCard(specHttpRequestDemo.type, ShapeCardFactory(inlineInputRows = 2))
+        registrar.registerCanvasCard(specLogOutput.type, shape)
         registrar.registerCategory(CATEGORY_AI,         NodeCategoryMeta("AI",         PORT_MODEL))
         registrar.registerCategory(CATEGORY_GEOMETRY,   NodeCategoryMeta("Geometry",   0xFF3DC95AL))
         registrar.registerCategory(CATEGORY_AUTOMATION, NodeCategoryMeta("Automation", 0xFFFF9900L))
