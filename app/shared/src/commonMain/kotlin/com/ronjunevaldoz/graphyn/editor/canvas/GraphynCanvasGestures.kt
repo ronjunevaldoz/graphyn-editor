@@ -12,6 +12,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
+import com.ronjunevaldoz.graphyn.editor.shortcuts.EditorShortcutAction
+import com.ronjunevaldoz.graphyn.editor.shortcuts.GraphynShortcutState
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
 internal fun Modifier.graphynDraftTrackingGesture(state: GraphynEditorState): Modifier =
@@ -95,19 +97,18 @@ internal fun Modifier.graphynPanGesture(
         }
     }
 
-internal fun Modifier.graphynKeyboardShortcuts(state: GraphynEditorState): Modifier =
+internal fun Modifier.graphynKeyboardShortcuts(
+    state: GraphynEditorState,
+    shortcuts: GraphynShortcutState,
+): Modifier =
     onKeyEvent { event ->
         if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+        val action = shortcuts.resolveAction(event)
+        if (action != null) {
+            dispatchShortcutAction(state, action)
+            return@onKeyEvent true
+        }
         when {
-            GraphynShortcuts.isUndo(event) -> { state.dispatch(GraphynEditorIntent.Undo); true }
-            GraphynShortcuts.isRedo(event) -> { state.dispatch(GraphynEditorIntent.Redo); true }
-            GraphynShortcuts.isCopy(event) -> { state.dispatch(GraphynEditorIntent.CopySelection); true }
-            GraphynShortcuts.isPaste(event) -> { state.dispatch(GraphynEditorIntent.Paste); true }
-            GraphynShortcuts.isDuplicate(event) -> { state.dispatch(GraphynEditorIntent.DuplicateSelection); true }
-            GraphynShortcuts.isSelectAll(event) -> { state.dispatch(GraphynEditorIntent.SelectAll); true }
-            GraphynShortcuts.isAutoLayout(event) -> { state.dispatch(GraphynEditorIntent.AutoLayout); true }
-            GraphynShortcuts.isGroup(event) -> { state.dispatch(GraphynEditorIntent.CreateGroupFromSelection); true }
-            GraphynShortcuts.isCollapseToSubgraph(event) -> { state.dispatch(GraphynEditorIntent.CollapseSelectionToSubgraph); true }
             event.key == Key.Escape -> {
                 if (state.connectionDraft != null) state.dispatch(GraphynEditorIntent.CancelConnection)
                 else { state.selectedNodeId = null; state.selectedNodeIds = emptySet(); state.selectedConnection = null }
@@ -122,3 +123,18 @@ internal fun Modifier.graphynKeyboardShortcuts(state: GraphynEditorState): Modif
             else -> false
         }
     }
+
+private fun dispatchShortcutAction(state: GraphynEditorState, action: EditorShortcutAction) {
+    val intent = when (action) {
+        EditorShortcutAction.Undo -> GraphynEditorIntent.Undo
+        EditorShortcutAction.Redo -> GraphynEditorIntent.Redo
+        EditorShortcutAction.Copy -> GraphynEditorIntent.CopySelection
+        EditorShortcutAction.Paste -> GraphynEditorIntent.Paste
+        EditorShortcutAction.Duplicate -> GraphynEditorIntent.DuplicateSelection
+        EditorShortcutAction.SelectAll -> GraphynEditorIntent.SelectAll
+        EditorShortcutAction.AutoLayout -> GraphynEditorIntent.AutoLayout
+        EditorShortcutAction.Group -> GraphynEditorIntent.CreateGroupFromSelection
+        EditorShortcutAction.CollapseToSubgraph -> GraphynEditorIntent.CollapseSelectionToSubgraph
+    }
+    state.dispatch(intent)
+}

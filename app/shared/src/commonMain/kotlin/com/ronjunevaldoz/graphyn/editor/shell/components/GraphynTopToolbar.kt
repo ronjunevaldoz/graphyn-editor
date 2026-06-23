@@ -22,8 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.design.components.GdsText
+import com.ronjunevaldoz.graphyn.editor.shortcuts.GraphynShortcutState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 
@@ -32,6 +36,7 @@ internal fun GraphynTopToolbar(
     modifier: Modifier = Modifier,
     branding: GraphynBranding,
     appearanceState: GraphynAppearanceState,
+    shortcutState: GraphynShortcutState,
     canRun: Boolean,
     onRun: () -> Unit,
     onAutoLayout: (() -> Unit)? = null,
@@ -74,6 +79,7 @@ internal fun GraphynTopToolbar(
             style = type.appTitle.copy(color = colors.textPrimary),
         )
         Spacer(Modifier.weight(1f))
+        ShortcutsToolbarButton(shortcutState = shortcutState)
         ThemeControls(appearanceState = appearanceState)
         if (onAutoLayout != null) {
             val autoInteraction = remember { MutableInteractionSource() }

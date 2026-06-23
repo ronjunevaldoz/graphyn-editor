@@ -38,6 +38,8 @@ import com.ronjunevaldoz.graphyn.editor.canvas.components.TypeMismatchToast
 import com.ronjunevaldoz.graphyn.editor.canvas.components.compatiblePickerSpecs
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
+import com.ronjunevaldoz.graphyn.editor.shortcuts.GraphynShortcutState
+import com.ronjunevaldoz.graphyn.editor.shortcuts.rememberGraphynShortcutState
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.updateCanvasSize
 
@@ -47,6 +49,7 @@ fun GraphynCanvasSurface(
     nodeSpecs: NodeSpecRegistry,
     modifier: Modifier = Modifier,
     canvasCards: NodeCanvasRegistry? = null,
+    shortcutState: GraphynShortcutState = rememberGraphynShortcutState(),
     onEnterSubgraph: ((label: String, inner: WorkflowDefinition) -> Unit)? = null,
     onExitSubgraph: (() -> Unit)? = null,
     canvasTopStart: (@Composable () -> Unit)? = null,
@@ -61,7 +64,7 @@ fun GraphynCanvasSurface(
             .graphicsLayer { clip = true }
             .focusRequester(focusRequester)
             .focusable()
-            .graphynKeyboardShortcuts(state)
+            .graphynKeyboardShortcuts(state, shortcutState)
             .graphynDraftTrackingGesture(state)
             .graphynScrollZoomGesture(state),
         contentAlignment = Alignment.TopStart,
