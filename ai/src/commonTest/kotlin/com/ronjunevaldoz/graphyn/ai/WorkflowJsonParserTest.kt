@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.ai
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -55,6 +56,36 @@ class WorkflowJsonParserTest {
         val result = parse(raw) as WorkflowGenerationResult.Success
         assertEquals(1, result.workflow.connections.size)
         assertEquals(2, result.droppedConnections)
+    }
+
+    @Test
+    fun fillsAndCoercesNodeConfigByPortType() {
+        val typed = listOf(
+            NodeSpec("req", "Req", inputs = listOf(
+                PortSpec("url", WorkflowType.StringType),
+                PortSpec("retries", WorkflowType.IntType),
+                PortSpec("ratio", WorkflowType.DoubleType),
+                PortSpec("verbose", WorkflowType.BooleanType),
+            ), outputs = emptyList()),
+        )
+        val raw = """{"nodes":[{"id":"n","type":"req","config":{
+            "url":"https://x.com","retries":3,"ratio":1.5,"verbose":true,"bogus":"ignored"}}],"connections":[]}"""
+        val result = WorkflowJsonParser.parse(raw, typed, "fb") as WorkflowGenerationResult.Success
+        val cfg = result.workflow.nodes.single().config
+        assertEquals(WorkflowValue.StringValue("https://x.com"), cfg["url"])
+        assertEquals(WorkflowValue.IntValue(3), cfg["retries"])
+        assertEquals(WorkflowValue.DoubleValue(1.5), cfg["ratio"])
+        assertEquals(WorkflowValue.BooleanValue(true), cfg["verbose"])
+        assertTrue("bogus" !in cfg, "unknown port should be dropped from config")
+    }
+
+    @Test
+    fun coercesStringifiedNumbers() {
+        val typed = listOf(NodeSpec("n", "N",
+            inputs = listOf(PortSpec("count", WorkflowType.IntType)), outputs = emptyList()))
+        val raw = """{"nodes":[{"id":"a","type":"n","config":{"count":"7"}}],"connections":[]}"""
+        val result = WorkflowJsonParser.parse(raw, typed, "fb") as WorkflowGenerationResult.Success
+        assertEquals(WorkflowValue.IntValue(7), result.workflow.nodes.single().config["count"])
     }
 
     @Test
