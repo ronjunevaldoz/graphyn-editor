@@ -17,7 +17,8 @@ object StyleNodesEditorPlugin : GraphynEditorPlugin {
     )
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
-        registrar.registerCanvasCard(StyleNodesSpecs.kSampler.type, ShapeCardFactory())
+        // kSampler has steps + cfg defaults — show them inline ComfyUI-style
+        registrar.registerCanvasCard(StyleNodesSpecs.kSampler.type, ShapeCardFactory(inlineInputRows = 2))
         registrar.registerCanvasCard(
             StyleNodesSpecs.distributePoints.type,
             FieldCardFactory(inputRows = 5, outputRows = 1)
