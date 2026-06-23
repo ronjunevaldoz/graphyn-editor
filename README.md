@@ -44,9 +44,11 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | Built-in light / dark mode + theme presets | |
 | Workflow validation with typed errors | |
 | Parallel execution engine — independent nodes run concurrently | |
+| `executeAsFlow()` — streaming `Flow<ExecutionStreamMessage>` for live progress | |
 | Per-node timeout and retry policy | |
 | Workflow persistence — `FileWorkflowStore` (JVM), `LocalStorageWorkflowStore` (web) | |
 | Full version history per workflow | |
+| Inline config widgets on `ShapeCard` (ComfyUI/Blender style) | |
 | Observable workflow state (`StateFlow`) | |
 | Auto-layout (topological sort, Cmd+Shift+L) | |
 | Kotlin script node (JVM) with inline IDE-style editor | |
