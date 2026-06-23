@@ -6,6 +6,34 @@ import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
+/**
+ * Groups nodes into layers where every node in layer N depends only on nodes in layers 0..N-1.
+ * Nodes within the same layer have no data dependency on each other and can run in parallel.
+ */
+internal fun WorkflowDefinition.topologicalLayers(): List<List<String>> {
+    val incoming = nodes.associate { it.id to 0 }.toMutableMap()
+    val adjacency = connections.groupBy(ConnectionRef::fromNodeId)
+        .mapValues { (_, refs) -> refs.map(ConnectionRef::toNodeId) }
+    connections.forEach { incoming[it.toNodeId] = (incoming[it.toNodeId] ?: 0) + 1 }
+
+    val layers = mutableListOf<List<String>>()
+    var ready = nodes.filter { incoming[it.id] == 0 }.map { it.id }
+    while (ready.isNotEmpty()) {
+        layers += ready
+        val next = mutableListOf<String>()
+        ready.forEach { nodeId ->
+            adjacency[nodeId].orEmpty().forEach { s ->
+                incoming[s] = (incoming[s] ?: 0) - 1
+                if (incoming[s] == 0) next += s
+            }
+        }
+        ready = next
+    }
+    if (layers.sumOf { it.size } != nodes.size)
+        throw WorkflowExecutionException("Workflow contains a cycle and cannot be executed.")
+    return layers
+}
+
 /** Kahn topological sort. Throws [WorkflowExecutionException] if the graph contains a cycle. */
 internal fun WorkflowDefinition.topologicalOrder(): List<String> {
     val incoming = nodes.associate { it.id to 0 }.toMutableMap()

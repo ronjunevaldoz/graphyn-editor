@@ -11,6 +11,10 @@ import com.ronjunevaldoz.graphyn.core.serialization.DefaultWorkflowJsonCodec
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.server.sse.SSE
 import io.ktor.server.testing.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -72,6 +76,27 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.OK, response.status)
         val errors = json.decodeFromString<List<ValidationError>>(response.bodyAsText())
         assertTrue(errors.any { it.code == "unknown_node_type" }, "errors: $errors")
+    }
+
+    @Test
+    fun testCapacityLimitReturns503() = testApplication {
+        application {
+            val runtime = createGraphynServerRuntime()
+            // max=0 so every request is over capacity
+            val registry = GraphynRunRegistry(runtime.executionEngine, maxConcurrentRuns = 0)
+            val json = Json { encodeDefaults = false; ignoreUnknownKeys = true }
+            install(io.ktor.server.sse.SSE)
+            install(GraphynAuthPlugin)
+            routing {
+                get("/") { call.respondText("ok") }
+                executionRoutes(runtime, registry, json)
+            }
+        }
+        val response = client.post("/executions") {
+            contentType(ContentType.Application.Json)
+            setBody(DefaultWorkflowJsonCodec.encodeToString(jsonWorkflow()))
+        }
+        assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
     }
 
     @Test

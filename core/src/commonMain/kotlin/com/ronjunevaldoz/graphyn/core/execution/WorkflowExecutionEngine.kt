@@ -5,20 +5,27 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlin.time.TimeSource
 
 class WorkflowExecutionException(message: String) : IllegalStateException(message)
 
+private data class NodeOutcome(
+    val nodeId: String,
+    val output: Map<String, WorkflowValue>?,
+    val subResult: WorkflowExecutionResult?,
+    val error: String?,
+    val durationMs: Long,
+)
+
 /**
- * Runs a [WorkflowDefinition] in topological order.
+ * Runs a [WorkflowDefinition] layer by layer in topological order.
  *
- * Execution is **resilient**: a node that throws is recorded as an error and its transitive
- * dependents are skipped, but independent branches keep running. The returned
- * [WorkflowExecutionResult] therefore reports per-node status and may be partial.
- *
- * Pass [onEvent] to observe progress live (e.g. highlight nodes on a canvas as they run).
+ * Nodes within the same layer have no data dependency on each other and execute concurrently
+ * via [coroutineScope]. A node that throws is recorded as an error and its transitive dependents
+ * are skipped, but independent branches keep running. Pass [onEvent] to observe progress live.
  */
 class WorkflowExecutionEngine(
     private val nodeExecutors: NodeExecutorRegistry,
@@ -29,11 +36,10 @@ class WorkflowExecutionEngine(
         onEvent: ((ExecutionEvent) -> Unit)? = null,
     ): WorkflowExecutionResult {
         val nodesById = workflow.nodes.associateBy { it.id }
-        if (nodesById.size != workflow.nodes.size) {
+        if (nodesById.size != workflow.nodes.size)
             throw WorkflowExecutionException("Workflow contains duplicate node ids.")
-        }
 
-        val order = workflow.topologicalOrder()
+        val layers = workflow.topologicalLayers()
         val dependents = workflow.directDependents()
 
         val outputs = linkedMapOf<String, Map<String, WorkflowValue>>()
@@ -43,32 +49,44 @@ class WorkflowExecutionEngine(
         val subResults = linkedMapOf<String, WorkflowExecutionResult>()
         val executed = mutableListOf<String>()
 
-        for (nodeId in order) {
-            if (status[nodeId] == NodeExecutionStatus.Skipped) continue
+        for (layer in layers) {
+            val outcomes = coroutineScope {
+                layer.map { nodeId ->
+                    async {
+                        if (status[nodeId] == NodeExecutionStatus.Skipped) return@async null
+                        val node = nodesById.getValue(nodeId)
+                        onEvent?.invoke(ExecutionEvent.Started(nodeId))
+                        val start = TimeSource.Monotonic.markNow()
+                        try {
+                            val (out, sub) = runWithPolicy(node) { runNode(workflow, node, outputs) }
+                            NodeOutcome(nodeId, out, sub, null, start.elapsedNow().inWholeMilliseconds)
+                        } catch (e: CancellationException) { throw e }
+                        catch (e: Throwable) {
+                            NodeOutcome(nodeId, null, null, e.message ?: e::class.simpleName ?: "Unknown", start.elapsedNow().inWholeMilliseconds)
+                        }
+                    }
+                }.awaitAll().filterNotNull()
+            }
 
-            val node = nodesById.getValue(nodeId)
-            onEvent?.invoke(ExecutionEvent.Started(nodeId))
-            val start = TimeSource.Monotonic.markNow()
-            try {
-                outputs[nodeId] = runWithPolicy(node) { runNode(workflow, node, outputs, subResults) }
-                val ms = start.elapsedNow().inWholeMilliseconds
-                durations[nodeId] = ms
-                status[nodeId] = NodeExecutionStatus.Success
-                executed += nodeId
-                onEvent?.invoke(ExecutionEvent.Succeeded(nodeId, outputs.getValue(nodeId), ms))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Throwable) {
-                val ms = start.elapsedNow().inWholeMilliseconds
-                durations[nodeId] = ms
-                status[nodeId] = NodeExecutionStatus.Error
-                errors[nodeId] = e.message ?: e::class.simpleName ?: "Unknown error"
-                executed += nodeId
-                onEvent?.invoke(ExecutionEvent.Failed(nodeId, errors.getValue(nodeId), ms))
-                dependents.transitiveDependentsOf(nodeId).forEach { dep ->
-                    if (status[dep] == null) {
-                        status[dep] = NodeExecutionStatus.Skipped
-                        onEvent?.invoke(ExecutionEvent.Skipped(dep, causeNodeId = nodeId))
+            for (o in outcomes) {
+                durations[o.nodeId] = o.durationMs
+                if (o.error == null && o.output != null) {
+                    outputs[o.nodeId] = o.output
+                    o.subResult?.let { subResults[o.nodeId] = it }
+                    status[o.nodeId] = NodeExecutionStatus.Success
+                    executed += o.nodeId
+                    onEvent?.invoke(ExecutionEvent.Succeeded(o.nodeId, o.output, o.durationMs))
+                } else {
+                    val err = o.error ?: "Unknown error"
+                    status[o.nodeId] = NodeExecutionStatus.Error
+                    errors[o.nodeId] = err
+                    executed += o.nodeId
+                    onEvent?.invoke(ExecutionEvent.Failed(o.nodeId, err, o.durationMs))
+                    dependents.transitiveDependentsOf(o.nodeId).forEach { dep ->
+                        if (status[dep] == null) {
+                            status[dep] = NodeExecutionStatus.Skipped
+                            onEvent?.invoke(ExecutionEvent.Skipped(dep, causeNodeId = o.nodeId))
+                        }
                     }
                 }
             }
@@ -84,54 +102,28 @@ class WorkflowExecutionEngine(
         )
     }
 
-    /** Executes one node — either its embedded subgraph or its registered executor. */
     private suspend fun runNode(
         workflow: WorkflowDefinition,
         node: NodeRef,
         outputs: Map<String, Map<String, WorkflowValue>>,
-        subResults: MutableMap<String, WorkflowExecutionResult>,
-    ): Map<String, WorkflowValue> {
+    ): Pair<Map<String, WorkflowValue>, WorkflowExecutionResult?> {
         val spec = nodeSpecs?.resolve(node.type)
         val inputs = buildInputMap(workflow, node, spec, outputs)
 
         val subgraph = node.subgraph
         if (subgraph != null) {
             val inner = execute(subgraph)
-            subResults[node.id] = inner
-            if (inner.errorCount > 0) {
+            if (inner.errorCount > 0)
                 throw WorkflowExecutionException("Subgraph '${node.id}' failed: ${inner.errorsByNodeId.values.firstOrNull()}")
-            }
             val sinkId = inner.executionOrder.lastOrNull()
             val innerOutputs = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
             val executor = nodeExecutors.resolve(node.type)
-            return if (executor != null) executor.execute(inputs + innerOutputs) else innerOutputs
+            val out = if (executor != null) executor.execute(inputs + innerOutputs) else innerOutputs
+            return out to inner
         }
 
         val executor = nodeExecutors.resolve(node.type)
             ?: throw WorkflowExecutionException("No executor registered for node type '${node.type}'.")
-        return executor.execute(inputs)
-    }
-
-    private suspend fun runWithPolicy(
-        node: NodeRef,
-        block: suspend () -> Map<String, WorkflowValue>,
-    ): Map<String, WorkflowValue> {
-        val attempts = (node.maxRetries.coerceAtLeast(0)) + 1
-        var lastError: Throwable = WorkflowExecutionException("No attempts made")
-        repeat(attempts) {
-            try {
-                return if (node.timeoutMs != null) {
-                    try {
-                        withTimeout(node.timeoutMs) { block() }
-                    } catch (e: TimeoutCancellationException) {
-                        throw WorkflowExecutionException("Node '${node.id}' timed out after ${node.timeoutMs}ms")
-                    }
-                } else {
-                    block()
-                }
-            } catch (e: CancellationException) { throw e }
-            catch (e: Throwable) { lastError = e }
-        }
-        throw lastError
+        return executor.execute(inputs) to null
     }
 }
