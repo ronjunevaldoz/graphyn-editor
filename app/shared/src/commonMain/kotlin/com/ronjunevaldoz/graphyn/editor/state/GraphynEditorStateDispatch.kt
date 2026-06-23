@@ -52,6 +52,8 @@ internal fun GraphynEditorState.handleDispatch(intent: GraphynEditorIntent) {
         GraphynEditorIntent.CreateGroupFromSelection -> createGroupFromSelection()
         is GraphynEditorIntent.DeleteGroup -> groups = groups.filterNot { it.id == intent.groupId }
         is GraphynEditorIntent.RenameGroup -> groups = groups.map { if (it.id == intent.groupId) it.copy(label = intent.label) else it }
+        GraphynEditorIntent.CollapseSelectionToSubgraph -> withHistory { collapseSelectionToSubgraph() }
+        is GraphynEditorIntent.ExpandSubgraph -> withHistory { expandSubgraphNode(intent.nodeId) }
     }
 }
 

@@ -901,3 +901,23 @@ channelFlow {
 **Problem:** `java.util.ServiceLoader` is JVM/Android-only, but the plugin contract lives in multiplatform `commonMain`. Hosts wanted classpath auto-discovery without a JVM-only API leaking into common code.
 
 **Rule:** Expose `expect fun discoverGraphynPlugins(): List<GraphynPlugin>` in `commonMain`; the JVM and Android actuals use `ServiceLoader.load(GraphynPlugin::class.java)`, and JS/Wasm/iOS actuals return `emptyList()`. Test fixtures register via `src/jvmTest/resources/META-INF/services/<fqcn>` and need a public no-arg constructor (or be a Kotlin `object`).
+
+---
+
+## A subgraph node's ports are derivable from its inner workflow — don't store them
+
+**Category:** Architecture — avoiding redundant state
+
+**Problem:** Collapsing a selection into a subgraph node needs the node to expose boundary ports, but the registry maps one `NodeSpec` per *type*, so a collapsed node can't carry per-instance ports that way. Storing a synthetic spec on the node (or in a parallel map) risks staleness when the inner workflow changes.
+
+**Rule:** Derive the spec on demand from the inner workflow's boundary — *free input ports* (no internal connection targets them) become inputs, *free output ports* (no internal connection consumes them) become outputs (`deriveSubgraphSpec`). The canvas/inspector resolve `registry.resolve(type) ?: deriveSubgraphSpec(node, registry)`, so a registered spec always wins (demo subgraph nodes unaffected) and collapsed nodes need no stored spec. This same "free port" boundary is what the engine uses for input injection and free-output collection — one consistent rule end to end.
+
+---
+
+## Subgraph outputs should be *all* free outputs, not the last-executed node
+
+**Category:** Execution engine — correctness
+
+**Problem:** The engine exposed a subgraph node's outputs as `executionOrder.lastOrNull()`'s outputs. That works for a linear chain but is wrong for a collapsed selection whose boundary output comes from a node that isn't executed last.
+
+**Rule:** A subgraph's outputs are the union of every inner node's output values whose `(node, port)` is not consumed by an internal connection (`freeOutputs`), keyed by port name. This matches the derived-spec boundary and stays correct for arbitrary collapsed graphs. (Verified existing linear-chain subgraph tests still pass.)

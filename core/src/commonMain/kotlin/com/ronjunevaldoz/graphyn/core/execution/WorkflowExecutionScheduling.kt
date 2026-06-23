@@ -100,3 +100,22 @@ internal fun buildInputMap(
     }
     return (spec?.defaultValues.orEmpty()) + externalInputs + node.config + connected
 }
+
+/**
+ * Collects the *free outputs* of an executed workflow: every produced output value whose
+ * (node, port) is not consumed by an internal connection. These form a subgraph node's outputs,
+ * exposing each boundary result by port name. Later nodes win on a port-name collision.
+ */
+internal fun freeOutputs(
+    workflow: WorkflowDefinition,
+    outputsByNodeId: Map<String, Map<String, WorkflowValue>>,
+): Map<String, WorkflowValue> {
+    val consumed = workflow.connections.mapTo(mutableSetOf()) { it.fromNodeId to it.fromPort }
+    val free = linkedMapOf<String, WorkflowValue>()
+    workflow.nodes.forEach { node ->
+        outputsByNodeId[node.id]?.forEach { (port, value) ->
+            if ((node.id to port) !in consumed) free[port] = value
+        }
+    }
+    return free
+}

@@ -6,7 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
+import com.ronjunevaldoz.graphyn.core.model.NodeRef
+import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
@@ -52,7 +55,7 @@ internal fun GraphynNodeLayer(
 
     // Pass 2: regular nodes on top
     workflow.nodes.forEachIndexed { index, node ->
-        val spec = nodeSpecs.resolve(node.type)
+        val spec = resolveSpec(node, nodeSpecs)
         val position = state.nodePosition(node.id, index)
         val factory = spec?.let { canvasCards?.resolve(node.type) }
         if (factory?.isAnnotation == true) return@forEachIndexed
@@ -113,3 +116,11 @@ internal fun GraphynNodeLayer(
         }
     }
 }
+
+/**
+ * Resolves a node's spec, falling back to a boundary-derived spec for editor-created subgraph
+ * nodes (which have no statically-registered spec). A registered spec always wins, so demo
+ * subgraph nodes with their own spec are unaffected.
+ */
+private fun resolveSpec(node: NodeRef, nodeSpecs: NodeSpecRegistry): NodeSpec? =
+    nodeSpecs.resolve(node.type) ?: deriveSubgraphSpec(node, nodeSpecs)

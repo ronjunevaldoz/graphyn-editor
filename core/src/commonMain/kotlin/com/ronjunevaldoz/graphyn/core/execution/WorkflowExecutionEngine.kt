@@ -118,8 +118,7 @@ class WorkflowExecutionEngine(
             val inner = execute(subgraph, externalInputs = inputs)
             if (inner.errorCount > 0)
                 throw WorkflowExecutionException("Subgraph '${node.id}' failed: ${inner.errorsByNodeId.values.firstOrNull()}")
-            val sinkId = inner.executionOrder.lastOrNull()
-            val innerOutputs = sinkId?.let { inner.nodeOutputsByNodeId[it] } ?: emptyMap()
+            val innerOutputs = freeOutputs(subgraph, inner.nodeOutputsByNodeId)
             val executor = nodeExecutors.resolve(node.type)
             val out = if (executor != null) executor.execute(inputs + innerOutputs) else innerOutputs
             return out to inner
