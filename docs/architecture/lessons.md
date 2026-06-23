@@ -963,3 +963,24 @@ body.lineSequence().filter { it.isNotBlank() }
 This handles both single-object and streamed responses. Verify LLM HTTP integrations through the
 actual client code (a `@Ignore`'d live test you run on demand), not just curl — proxies and curl
 can disagree on framing.
+
+## LLMs draft graph topology before they fill inputs
+
+When generating workflows, the first thing that worked was *structure* — the model picked correct
+node types and wired plausible connections, but left node `config` empty, so every generated node
+needed manual input entry. Two changes fixed it: (1) the prompt's node catalog must expose **port
+types**, not just names (`http_request — [url:string, method:string] -> [body:string]`), and the
+schema must include a per-node `config` object with an explicit instruction to fill every
+*unconnected* input with a type-matched literal; (2) the parser must **coerce** each JSON value to
+the port's declared `WorkflowType` (JSON numbers/bools/strings → `IntValue`/`BooleanValue`/…,
+tolerating stringified numbers), and drop config keys that don't match a real input port. Telling
+the model the types is what makes it produce usable literals.
+
+## Surface what the sanitizer dropped, or the user thinks the model failed
+
+`WorkflowJsonParser` defensively drops unknown node types and bad-port connections so generation
+never hard-fails. But silently dropping them means a user who asked for a node the catalog doesn't
+have just sees a smaller graph with no explanation. The fix is to thread the parser's
+`droppedNodes` / `droppedConnections` all the way to the UI as a per-turn **warning** line
+("⚠ Skipped unsupported node: foo (mystery) · Dropped 2 invalid connections"). Defensive parsing
+and user-visible feedback are two halves of the same feature — don't ship one without the other.

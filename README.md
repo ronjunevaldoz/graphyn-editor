@@ -52,7 +52,7 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | Observable workflow state (`StateFlow`) | |
 | Auto-layout (topological sort, Cmd+Shift+L) | |
 | Configurable keyboard shortcuts — rebind any action from the toolbar, persisted | |
-| AI workflow generation — describe a workflow, an LLM (Ollama) drafts the graph | |
+| AI workflow generation — describe a workflow, an LLM (Ollama) drafts the graph onto the canvas | ✅ |
 | Kotlin script node (JVM) with inline IDE-style editor | |
 | Screenshot tests via Roborazzi | |
 
@@ -348,10 +348,10 @@ In the editor, select two or more nodes and press **Cmd/Ctrl + Shift + G** to co
 
 The `:ai` module turns a natural-language prompt into a `WorkflowDefinition`. `WorkflowGenerator` has two implementations:
 
-- `OllamaWorkflowGenerator(OllamaConfig(baseUrl, model))` — calls an Ollama host's `/api/generate` with `format=json`. The prompt embeds the node catalog (`type: inputs -> outputs`) so the model only emits real node types; `WorkflowJsonParser` then validates the output, dropping unknown types and dangling/bad-port connections rather than failing. Default model `qwen2.5-coder:14b`.
+- `OllamaWorkflowGenerator(OllamaConfig(baseUrl, model))` — calls an Ollama host's `/api/generate` with `format=json`. The prompt embeds the node catalog with **port types** (`type — [in:type] -> [out:type]`) so the model only emits real node types and fills each node's `config` with type-matched literals for every unconnected input; `WorkflowJsonParser` validates the output, coerces config values to each port's `WorkflowType`, and drops unknown node types / dangling connections rather than failing. Default model `qwen2.5-coder:14b`.
 - `PlaceholderWorkflowGenerator` — offline canned output for UI development and no-host scenarios.
 
-The editor surfaces this via **New Workflow → describe it → Generate** (`NewWorkflowDialog`), with **Start blank** always available. Generation failures stay inline and retryable.
+The editor surfaces this as a **docked ✨ AI panel** (toggle from the toolbar). Describe a workflow and it generates onto the current canvas, auto-laid-out. The panel keeps a **chat transcript** so you can iterate, and each result reports what was created plus any **unsupported nodes or dropped connections** that were sanitized away — so you learn why the graph differs from your request. Generation failures stay inline and retryable.
 
 ### Configurable keyboard shortcuts
 
