@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Compose-Multiplatform-3DDC84?logo=jetpackcompose&logoColor=white" alt="Compose Multiplatform"/>
   <img src="https://img.shields.io/badge/platforms-Android%20·%20Desktop%20·%20Web%20·%20iOS-0095D5" alt="Platforms"/>
-  <img src="https://img.shields.io/badge/pre--release-0.1.0-orange" alt="Pre-release"/>
+  <img src="https://img.shields.io/badge/pre--release-0.2.0-orange" alt="Pre-release"/>
 </p>
 
 ---
@@ -43,7 +43,10 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | Inspector panel with per-node custom UI + write-back | |
 | Built-in light / dark mode + theme presets | |
 | Workflow validation with typed errors | |
-| Workflow execution engine | |
+| Parallel execution engine — independent nodes run concurrently | |
+| Per-node timeout and retry policy | |
+| Workflow persistence — `FileWorkflowStore` (JVM), `LocalStorageWorkflowStore` (web) | |
+| Full version history per workflow | |
 | Observable workflow state (`StateFlow`) | |
 | Auto-layout (topological sort, Cmd+Shift+L) | |
 | Kotlin script node (JVM) with inline IDE-style editor | |
@@ -85,11 +88,16 @@ implements NodeCanvasFactory with ready-to-use card shapes.
 | `plugins/sample-math` | — | Sample: math runtime plugin |
 | `plugins/sample-logger` | — | Sample: logger runtime + editor plugin |
 | `plugins/sample-style-nodes` | — | Sample: ShapeCard/FieldCard/CircleCard demo, uses `ui/cards` factories |
+| `plugins/io` | — | I/O runtime plugin: HTTP request, file read/write/browse, env reader, webhook POST |
+| `plugins/list-ops` | — | List operations: map, filter, reduce, zip |
+| `plugins/control` | — | Control flow: branch, merge, loop |
+| `plugins/text` | — | Text utilities: format, split, regex |
+| `plugins/types` | — | Type utilities: cast, validate, schema |
 | `plugins/script` | — | JVM-only: Kotlin JSR-223 scripting node with inline code editor card |
 | `plugins/sticky-notes` | — | Annotation node: resizable sticky note, no executor |
-| `server` | — | Sample: JVM server runtime wiring |
-| `app/demo` | — | Demo scene library: 9 sample workflows |
-| `app/desktopApp` | — | Production Desktop editor (JVM), includes script plugin |
+| `server` | — | Ktor server: execution API, `/workflows` CRUD, Bearer-token auth, concurrency limit |
+| `app/demo` | — | Demo scene library: 12 sample workflows (AI pipeline, geometry, automation, + 9 more) |
+| `app/desktopApp` | — | Desktop editor (JVM) with `FileWorkflowStore` persistence |
 
 ---
 
@@ -332,11 +340,39 @@ Graphyn separates runtime concerns from editor concerns — you can ship a runti
 
 ---
 
+## Server API
+
+Start the Ktor server:
+
+```bash
+./gradlew :server:run
+```
+
+The server exposes:
+
+| Endpoint | Description |
+|---|---|
+| `GET /` | Health check |
+| `POST /validate` | Validate a workflow — returns `[ValidationError]` |
+| `POST /execute` | Run synchronously — returns `WorkflowExecutionResult` |
+| `POST /executions` | Start async run — returns `{ runId }` (202) |
+| `GET /executions/{id}/events` | SSE stream of per-node events + final result |
+| `GET /workflows` | List persisted workflows (newest first) |
+| `GET /workflows/{id}` | Load a workflow by ID |
+| `POST /workflows` | Save / upsert a workflow (returns `WorkflowMeta`, 201) |
+| `DELETE /workflows/{id}` | Delete workflow and its version history |
+
+Set `GRAPHYN_API_KEY=<secret>` in the environment to enable Bearer-token auth. All endpoints except `GET /` require the token when the env var is present.
+
+---
+
 ## Testing
 
 ```bash
-./gradlew :app:shared:jvmTest   # canvas + editor UI tests (Roborazzi)
-./gradlew :core:check           # model, validation, and execution tests
+./gradlew :core:check                 # model, validation, and execution tests
+./gradlew :app:shared:jvmTest         # canvas + editor UI tests (Roborazzi)
+./gradlew :plugins:io:jvmTest         # I/O plugin tests
+./gradlew :server:test                # server route tests
 ```
 
 ---
