@@ -5,6 +5,8 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlin.time.TimeSource
 
 class WorkflowExecutionException(message: String) : IllegalStateException(message)
@@ -48,7 +50,7 @@ class WorkflowExecutionEngine(
             onEvent?.invoke(ExecutionEvent.Started(nodeId))
             val start = TimeSource.Monotonic.markNow()
             try {
-                outputs[nodeId] = runNode(workflow, node, outputs, subResults)
+                outputs[nodeId] = runWithPolicy(node) { runNode(workflow, node, outputs, subResults) }
                 val ms = start.elapsedNow().inWholeMilliseconds
                 durations[nodeId] = ms
                 status[nodeId] = NodeExecutionStatus.Success
@@ -108,5 +110,28 @@ class WorkflowExecutionEngine(
         val executor = nodeExecutors.resolve(node.type)
             ?: throw WorkflowExecutionException("No executor registered for node type '${node.type}'.")
         return executor.execute(inputs)
+    }
+
+    private suspend fun runWithPolicy(
+        node: NodeRef,
+        block: suspend () -> Map<String, WorkflowValue>,
+    ): Map<String, WorkflowValue> {
+        val attempts = (node.maxRetries.coerceAtLeast(0)) + 1
+        var lastError: Throwable = WorkflowExecutionException("No attempts made")
+        repeat(attempts) {
+            try {
+                return if (node.timeoutMs != null) {
+                    try {
+                        withTimeout(node.timeoutMs) { block() }
+                    } catch (e: TimeoutCancellationException) {
+                        throw WorkflowExecutionException("Node '${node.id}' timed out after ${node.timeoutMs}ms")
+                    }
+                } else {
+                    block()
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Throwable) { lastError = e }
+        }
+        throw lastError
     }
 }

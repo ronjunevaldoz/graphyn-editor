@@ -11,39 +11,46 @@ import kotlin.test.assertNotNull
 
 class IoPluginTest {
     @Test
-    fun ioPluginRegistersFiveNodeSpecs() {
+    fun ioPluginRegistersSevenNodeSpecs() {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(IoPlugin)
-        assertEquals(5, registry.nodeSpecs.all().size)
+        assertEquals(7, registry.nodeSpecs.all().size)
         assertNotNull(registry.nodeSpecs.resolve("io.http_request"))
         assertNotNull(registry.nodeSpecs.resolve("io.file_read"))
         assertNotNull(registry.nodeSpecs.resolve("io.file_write"))
         assertNotNull(registry.nodeSpecs.resolve("io.file_browse"))
         assertNotNull(registry.nodeSpecs.resolve("io.folder_browse"))
+        assertNotNull(registry.nodeSpecs.resolve("net.webhook_post"))
+        assertNotNull(registry.nodeSpecs.resolve("env.read"))
     }
 
     @Test
-    fun fileReadReturnsEmptyContentAndNotExists() = runTest {
+    fun fileReadReturnsNotExistsForMissingFile() = runTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(IoPlugin)
         val executor = registry.nodeExecutors.resolve("io.file_read")!!
-        val result = executor.execute(mapOf("path" to WorkflowValue.StringValue("/some/file.txt")))
+        val result = executor.execute(mapOf("path" to WorkflowValue.StringValue("/nonexistent/path/file.txt")))
         assertEquals(WorkflowValue.StringValue(""), result["content"])
         assertEquals(WorkflowValue.BooleanValue(false), result["exists"])
     }
 
     @Test
-    fun fileWriteReturnsFailureStub() = runTest {
+    fun fileWriteReturnsFalseForBlankPath() = runTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(IoPlugin)
         val executor = registry.nodeExecutors.resolve("io.file_write")!!
-        val result = executor.execute(
-            mapOf(
-                "path" to WorkflowValue.StringValue("/out.txt"),
-                "content" to WorkflowValue.StringValue("data"),
-            ),
-        )
+        val result = executor.execute(mapOf("path" to WorkflowValue.StringValue(""), "content" to WorkflowValue.StringValue("data")))
         assertEquals(WorkflowValue.BooleanValue(false), result["success"])
+    }
+
+    @Test
+    fun envReadReturnsNullForUnknownVar() = runTest {
+        val registry = DefaultGraphynPluginRegistry()
+        registry.install(IoPlugin)
+        val executor = registry.nodeExecutors.resolve("env.read")!!
+        val result = executor.execute(mapOf("name" to WorkflowValue.StringValue("__GRAPHYN_UNDEFINED_VAR_XYZ__")))
+        assertEquals(WorkflowValue.NullValue, result["value"])
+        assertEquals(WorkflowValue.BooleanValue(false), result["found"])
     }
 
     @Test
