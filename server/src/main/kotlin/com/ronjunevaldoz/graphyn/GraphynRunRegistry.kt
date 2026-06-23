@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Tracks in-flight and recently-finished workflow runs so they can be observed as event streams.
@@ -24,15 +25,24 @@ import java.util.concurrent.ConcurrentHashMap
 class GraphynRunRegistry(
     private val engine: WorkflowExecutionEngine,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    /** Maximum number of workflows that may execute concurrently. Excess requests return null. */
+    val maxConcurrentRuns: Int = 10,
 ) {
     private val runs = ConcurrentHashMap<String, MutableSharedFlow<ExecutionStreamMessage>>()
+    private val activeCount = AtomicInteger(0)
 
-    /** Validates nothing here — callers should validate first. Starts the run and returns its id. */
+    /** Returns false when the concurrent-run limit is reached. */
+    val canAcceptRun: Boolean get() = activeCount.get() < maxConcurrentRuns
+
+    /**
+     * Validates nothing here — callers should validate first and check [canAcceptRun].
+     * Starts the run and returns its id.
+     */
     fun start(workflow: WorkflowDefinition): String {
         val runId = UUID.randomUUID().toString()
-        // replay = unlimited so a late subscriber still receives every frame from the start.
         val flow = MutableSharedFlow<ExecutionStreamMessage>(replay = Int.MAX_VALUE)
         runs[runId] = flow
+        activeCount.incrementAndGet()
         scope.launch {
             val terminal = try {
                 val result = engine.execute(workflow) { event ->
@@ -41,6 +51,8 @@ class GraphynRunRegistry(
                 ExecutionStreamMessage.Completed(result)
             } catch (e: Throwable) {
                 ExecutionStreamMessage.Failed(e.message ?: "Execution failed")
+            } finally {
+                activeCount.decrementAndGet()
             }
             flow.emit(terminal)
         }

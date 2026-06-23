@@ -26,6 +26,7 @@ fun Application.module() {
     }
 
     install(SSE)
+    install(GraphynAuthPlugin)
 
     routing {
         get("/") {

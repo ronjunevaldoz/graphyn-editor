@@ -25,11 +25,17 @@ jobs:
       - name: Compile shared metadata
         run: ./gradlew :app:shared:compileCommonMainKotlinMetadata --no-daemon
 
+      - name: Run core tests
+        run: ./gradlew :core:check --no-daemon
+
       - name: Run shared JVM tests
         run: ./gradlew :app:shared:jvmTest --no-daemon
 
-      - name: Run core tests
-        run: ./gradlew :core:check --no-daemon
+      - name: Run IO plugin tests
+        run: ./gradlew :plugins:io:jvmTest --no-daemon
+
+      - name: Run server tests
+        run: ./gradlew :server:test --no-daemon
 
       - name: Upload test reports
         if: always()

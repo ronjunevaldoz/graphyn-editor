@@ -89,6 +89,30 @@ class ExecutionResilienceTest {
     }
 
     @Test
+    fun independentNodesRunInParallelLayer() = runTest {
+        val executors = DefaultNodeExecutorRegistry()
+        executors.register("a") { mapOf("out" to WorkflowValue.IntValue(1)) }
+        executors.register("b") { mapOf("out" to WorkflowValue.IntValue(2)) }
+        executors.register("merge") { inputs ->
+            val sum = (inputs["x"] as? WorkflowValue.IntValue)!!.value +
+                (inputs["y"] as? WorkflowValue.IntValue)!!.value
+            mapOf("out" to WorkflowValue.IntValue(sum))
+        }
+        val eng = WorkflowExecutionEngine(executors)
+        val wf = WorkflowDefinition(
+            id = "parallel", name = "Parallel",
+            nodes = listOf(NodeRef("a", "a"), NodeRef("b", "b"), NodeRef("m", "merge")),
+            connections = listOf(
+                ConnectionRef("a", "out", "m", "x"),
+                ConnectionRef("b", "out", "m", "y"),
+            ),
+        )
+        val result = eng.execute(wf)
+        assertTrue(result.isFullSuccess)
+        assertEquals(WorkflowValue.IntValue(3), result.nodeOutputsByNodeId["m"]?.get("out"))
+    }
+
+    @Test
     fun emitsLiveEventsPerNode() = runTest {
         val events = mutableListOf<ExecutionEvent>()
         engine().execute(workflow) { events += it }

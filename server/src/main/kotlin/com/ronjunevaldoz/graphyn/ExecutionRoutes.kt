@@ -50,6 +50,10 @@ fun Route.executionRoutes(
     }
 
     post("/executions") {
+        if (!registry.canAcceptRun) {
+            call.respondText("Server is at capacity — try again later", status = HttpStatusCode.ServiceUnavailable)
+            return@post
+        }
         val workflow = DefaultWorkflowJsonCodec.decodeFromString(call.receiveText())
         val errors = runtime.validator.validate(workflow)
         if (errors.isNotEmpty()) {
