@@ -57,7 +57,7 @@ internal fun GraphynNodeLayer(
     workflow.nodes.forEachIndexed { index, node ->
         val spec = resolveSpec(node, nodeSpecs)
         val position = state.nodePosition(node.id, index)
-        val factory = spec?.let { canvasCards?.resolve(node.type) }
+        val factory = spec?.let { resolveNodeFactory(node, canvasCards, nodeSpecs) }
         if (factory?.isAnnotation == true) return@forEachIndexed
 
         if (factory != null && spec != null) {

@@ -37,7 +37,7 @@ All shortcuts use the primary meta key: **Cmd** on macOS, **Ctrl** on Windows an
 | `Cmd + G` | Group selected nodes (requires ≥ 2 selected) |
 | `Cmd + Shift + G` | Collapse selected nodes into a subgraph (requires ≥ 2 selected) |
 
-To expand a subgraph back into its nodes, select it and use **Expand ⤢** in the inspector.
+Double-click a subgraph node to drill in; use **Expand ⤢** in the inspector to inline it again.
 
 ---
 
