@@ -16,11 +16,14 @@ import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.store.WorkflowMeta
 import com.ronjunevaldoz.graphyn.core.store.WorkflowStore
-import kotlin.random.Random
 import androidx.compose.runtime.snapshotFlow
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
+import com.ronjunevaldoz.graphyn.ai.OllamaConfig
+import com.ronjunevaldoz.graphyn.ai.OllamaWorkflowGenerator
+import com.ronjunevaldoz.graphyn.ai.WorkflowGenerator
 import com.ronjunevaldoz.graphyn.editor.launcher.GraphynWorkflowLauncher
+import com.ronjunevaldoz.graphyn.editor.launcher.NewWorkflowDialog
 import com.ronjunevaldoz.graphyn.editor.launcher.WorkflowTemplate
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
@@ -42,6 +45,7 @@ fun DemoApp(
     executionEngine: WorkflowExecutionEngine? = null,
     canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
     store: WorkflowStore? = null,
+    workflowGenerator: WorkflowGenerator? = null,
 ) {
     val templates = remember {
         DemoScene.entries.map { WorkflowTemplate(it.label, null, it.workflow) }
@@ -50,6 +54,9 @@ fun DemoApp(
     var savedWorkflows by remember { mutableStateOf(emptyList<WorkflowMeta>()) }
     var openWorkflow by remember { mutableStateOf<WorkflowDefinition?>(null) }
     var pendingLoadId by remember { mutableStateOf<String?>(null) }
+    var showNewDialog by remember { mutableStateOf(false) }
+    val generator = workflowGenerator
+        ?: remember { OllamaWorkflowGenerator(OllamaConfig(baseUrl = DEMO_OLLAMA_HOST)) }
 
     LaunchedEffect(store) {
         savedWorkflows = store?.list() ?: emptyList()
@@ -80,14 +87,7 @@ fun DemoApp(
                 templates = templates,
                 recentWorkflows = recentWorkflows,
                 savedWorkflows = savedWorkflows,
-                onNew = {
-                    openWorkflow = WorkflowDefinition(
-                        id = "wf-${Random.nextLong().and(0xFFFFFFFFL)}",
-                        name = "Untitled",
-                        nodes = emptyList(),
-                        connections = emptyList(),
-                    )
-                },
+                onNew = { showNewDialog = true },
                 onOpenSaved = { id -> pendingLoadId = id },
                 onOpen = { template ->
                     recentWorkflows = listOf(template) +
@@ -95,6 +95,14 @@ fun DemoApp(
                     openWorkflow = template.workflow
                 },
             )
+            if (showNewDialog) {
+                NewWorkflowDialog(
+                    generator = generator,
+                    catalog = pluginRegistry.nodeSpecs.all(),
+                    onCreate = { created -> showNewDialog = false; openWorkflow = created },
+                    onDismiss = { showNewDialog = false },
+                )
+            }
         } else {
             key(wf.id) {
                 val state = rememberGraphynEditorState(
@@ -126,3 +134,6 @@ fun DemoApp(
         }
     }
 }
+
+/** Ollama host used by the demo's AI workflow generation. Override via [DemoApp]'s workflowGenerator. */
+private const val DEMO_OLLAMA_HOST = "https://ron-local-home.duckdns.org/ollama/"
