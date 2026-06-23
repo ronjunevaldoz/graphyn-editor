@@ -939,3 +939,27 @@ channelFlow {
 - `GraphynShortcutState`: holds defaults + JSON-persisted overrides, exposes `chordFor(action)`, `resolveAction(event)`, `rebind/resetToDefault/resetAll()`.
 - UI: read-only `GraphynShortcutsPanel` (v1); rebind UI + record-next-key flow is next.
 
+
+---
+
+## Ollama `/api/generate` may stream NDJSON even with `stream=false`
+
+**Category:** LLM integration — HTTP response parsing
+
+**Problem:** `OllamaWorkflowGenerator` sent `stream=false` and decoded the body as a single
+`{"response": "..."}` object. Against a reverse-proxied host (`https://…/ollama/`) the body came
+back as **NDJSON** — one `{"model":…,"response":"…","done":false}` frame per line — so
+`Json.decodeFromString<GenerateResponse>(body)` threw "Expected EOF after parsing, but had {".
+Direct `curl` with `stream:false` returned a single object, so the bug only appeared through the
+real client path, not the curl smoke test.
+
+**Rule:** Parse Ollama responses defensively as NDJSON regardless of the `stream` flag —
+split by lines, decode each, concatenate every frame's `response` field:
+```kotlin
+body.lineSequence().filter { it.isNotBlank() }
+    .mapNotNull { runCatching { json.decodeFromString<GenerateResponse>(it).response }.getOrNull() }
+    .joinToString("")
+```
+This handles both single-object and streamed responses. Verify LLM HTTP integrations through the
+actual client code (a `@Ignore`'d live test you run on demand), not just curl — proxies and curl
+can disagree on framing.

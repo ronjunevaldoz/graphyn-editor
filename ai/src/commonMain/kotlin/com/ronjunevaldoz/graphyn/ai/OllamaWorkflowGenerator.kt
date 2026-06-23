@@ -55,7 +55,12 @@ class OllamaWorkflowGenerator(
             if (!response.status.isSuccess()) {
                 return WorkflowGenerationResult.Failure("Ollama returned HTTP ${response.status.value}.")
             }
-            json.decodeFromString<GenerateResponse>(response.bodyAsText()).response
+            // Ollama may return a single JSON object or NDJSON (one frame per line) even with
+            // stream=false behind a proxy. Concatenate every frame's `response` field for both cases.
+            response.bodyAsText().lineSequence()
+                .filter { it.isNotBlank() }
+                .mapNotNull { line -> runCatching { json.decodeFromString<GenerateResponse>(line).response }.getOrNull() }
+                .joinToString("")
         } catch (e: Exception) {
             return WorkflowGenerationResult.Failure("Could not reach Ollama at ${config.baseUrl}: ${e.message}")
         }

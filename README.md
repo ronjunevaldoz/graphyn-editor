@@ -51,6 +51,8 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 | Inline config widgets on `ShapeCard` (ComfyUI/Blender style) | |
 | Observable workflow state (`StateFlow`) | |
 | Auto-layout (topological sort, Cmd+Shift+L) | |
+| Configurable keyboard shortcuts — rebind any action from the toolbar, persisted | |
+| AI workflow generation — describe a workflow, an LLM (Ollama) drafts the graph | |
 | Kotlin script node (JVM) with inline IDE-style editor | |
 | Screenshot tests via Roborazzi | |
 
@@ -341,6 +343,19 @@ val registry = DefaultGraphynPluginRegistry().apply {
 A node may embed a nested `WorkflowDefinition` via `NodeRef.subgraph`. The engine runs it recursively (and in parallel where possible), and the subgraph node's resolved inputs are injected into the inner workflow's **free input ports** (those with no internal connection or config), keyed by port name — so a parent workflow can feed data into a nested one. Explicit inner config and internal wiring always take precedence. A subgraph node's outputs are the inner workflow's **free output ports** (those nothing inside consumes).
 
 In the editor, select two or more nodes and press **Cmd/Ctrl + Shift + G** to collapse them into a subgraph node; its boundary ports are derived automatically from the inner workflow. **Double-click** a subgraph node (or use **Enter →** in the inspector) to drill into it, and **Expand ⤢** in the inspector to inline it again.
+
+### AI workflow generation
+
+The `:ai` module turns a natural-language prompt into a `WorkflowDefinition`. `WorkflowGenerator` has two implementations:
+
+- `OllamaWorkflowGenerator(OllamaConfig(baseUrl, model))` — calls an Ollama host's `/api/generate` with `format=json`. The prompt embeds the node catalog (`type: inputs -> outputs`) so the model only emits real node types; `WorkflowJsonParser` then validates the output, dropping unknown types and dangling/bad-port connections rather than failing. Default model `qwen2.5-coder:14b`.
+- `PlaceholderWorkflowGenerator` — offline canned output for UI development and no-host scenarios.
+
+The editor surfaces this via **New Workflow → describe it → Generate** (`NewWorkflowDialog`), with **Start blank** always available. Generation failures stay inline and retryable.
+
+### Configurable keyboard shortcuts
+
+Every editor action (undo, copy, group, collapse, …) is a rebindable `EditorShortcutAction`. Open **⌨ Keys** in the toolbar, click an action's chord chip, and press the new combination — bindings persist via the settings store and conflicts are rejected. Contextual keys (Escape, Delete) are fixed. See [keyboard-shortcuts.md](docs/reference/keyboard-shortcuts.md).
 
 ---
 
