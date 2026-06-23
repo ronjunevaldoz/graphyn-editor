@@ -84,6 +84,9 @@ internal fun GraphynInspectorNodeSection(
                         style = type.bodySmall.copy(color = colors.textSecondary),
                     )
                     DangerButton(label = "Enter →") { onEnterSubgraph(subgraph) }
+                    DangerButton(label = "Expand ⤢") {
+                        state.dispatch(GraphynEditorIntent.ExpandSubgraph(node.id))
+                    }
                 }
             }
         }

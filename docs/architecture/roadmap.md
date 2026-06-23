@@ -43,7 +43,7 @@ Items discovered during development that are not yet built. Ordered by impact.
 | Subgraphs — execution (recursive, parallel) | ✅ done (`WorkflowExecutionEngine`) |
 | Subgraphs — input injection (parent → inner free ports) | ✅ done (`buildInputMap` `externalInputs`) |
 | Subgraphs — drill-in navigation + breadcrumb | ✅ done (`GraphynSubgraphNavigator`) |
-| Subgraphs — collapse selection / expand gesture (editor UI) | ⬜ canvas feature (needs per-instance port specs) |
+| Subgraphs — collapse selection (Cmd+Shift+G) / expand (inspector) | ✅ done (`collapseToSubgraph`/`expandSubgraph`, derived boundary specs) |
 
 ---
 

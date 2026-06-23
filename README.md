@@ -338,7 +338,9 @@ val registry = DefaultGraphynPluginRegistry().apply {
 
 ### Subgraphs
 
-A node may embed a nested `WorkflowDefinition` via `NodeRef.subgraph`. The engine runs it recursively (and in parallel where possible), and the subgraph node's resolved inputs are injected into the inner workflow's **free input ports** (those with no internal connection or config), keyed by port name — so a parent workflow can feed data into a nested one. Explicit inner config and internal wiring always take precedence.
+A node may embed a nested `WorkflowDefinition` via `NodeRef.subgraph`. The engine runs it recursively (and in parallel where possible), and the subgraph node's resolved inputs are injected into the inner workflow's **free input ports** (those with no internal connection or config), keyed by port name — so a parent workflow can feed data into a nested one. Explicit inner config and internal wiring always take precedence. A subgraph node's outputs are the inner workflow's **free output ports** (those nothing inside consumes).
+
+In the editor, select two or more nodes and press **Cmd/Ctrl + Shift + G** to collapse them into a subgraph node; its boundary ports are derived automatically from the inner workflow. Select a subgraph node and use **Expand ⤢** in the inspector to inline it again.
 
 ---
 

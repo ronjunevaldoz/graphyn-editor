@@ -20,4 +20,5 @@ internal object GraphynShortcuts {
     fun isSelectAll(e: KeyEvent) = e.isPrimaryMeta && !e.isShiftPressed && e.key == Key.A
     fun isAutoLayout(e: KeyEvent) = e.isPrimaryMeta && e.isShiftPressed && e.key == Key.L
     fun isGroup(e: KeyEvent) = e.isPrimaryMeta && !e.isShiftPressed && e.key == Key.G
+    fun isCollapseToSubgraph(e: KeyEvent) = e.isPrimaryMeta && e.isShiftPressed && e.key == Key.G
 }

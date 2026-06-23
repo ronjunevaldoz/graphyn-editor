@@ -58,4 +58,8 @@ sealed interface GraphynEditorIntent {
     data object CreateGroupFromSelection : GraphynEditorIntent
     data class DeleteGroup(val groupId: String) : GraphynEditorIntent
     data class RenameGroup(val groupId: String, val label: String) : GraphynEditorIntent
+
+    // Subgraphs
+    data object CollapseSelectionToSubgraph : GraphynEditorIntent
+    data class ExpandSubgraph(val nodeId: String) : GraphynEditorIntent
 }
