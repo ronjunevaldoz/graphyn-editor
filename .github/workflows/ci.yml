@@ -28,6 +28,9 @@ jobs:
       - name: Run core tests
         run: ./gradlew :core:check --no-daemon
 
+      - name: Run plugin-api tests
+        run: ./gradlew :plugin-api:jvmTest --no-daemon
+
       - name: Run shared JVM tests
         run: ./gradlew :app:shared:jvmTest --no-daemon
 

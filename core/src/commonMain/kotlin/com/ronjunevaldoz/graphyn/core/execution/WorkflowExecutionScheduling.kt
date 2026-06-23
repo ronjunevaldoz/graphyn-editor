@@ -77,7 +77,13 @@ internal fun Map<String, List<String>>.transitiveDependentsOf(nodeId: String): S
 }
 
 /**
- * Resolves the input map for [node]: spec defaults < node config < connected upstream outputs.
+ * Resolves the input map for [node], applying sources in increasing priority:
+ * spec defaults < [externalInputs] < node config < connected upstream outputs.
+ *
+ * [externalInputs] are values handed down from an enclosing subgraph node, keyed by port name.
+ * They fill a node's free input ports (those not set by config or an internal connection) so a
+ * nested workflow can receive data from its parent. Explicit config and internal wiring always win.
+ *
  * Only connections whose source produced output are wired (failed/skipped sources contribute nothing).
  */
 internal fun buildInputMap(
@@ -85,11 +91,12 @@ internal fun buildInputMap(
     node: NodeRef,
     spec: NodeSpec?,
     outputsByNodeId: Map<String, Map<String, WorkflowValue>>,
+    externalInputs: Map<String, WorkflowValue> = emptyMap(),
 ): Map<String, WorkflowValue> {
     val connected = linkedMapOf<String, WorkflowValue>()
     workflow.connections.filter { it.toNodeId == node.id }.forEach { conn ->
         val value = outputsByNodeId[conn.fromNodeId]?.get(conn.fromPort) ?: return@forEach
         connected[conn.toPort] = value
     }
-    return (spec?.defaultValues.orEmpty()) + node.config + connected
+    return (spec?.defaultValues.orEmpty()) + externalInputs + node.config + connected
 }

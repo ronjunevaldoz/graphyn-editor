@@ -115,7 +115,7 @@ class ExecutionResilienceTest {
     @Test
     fun emitsLiveEventsPerNode() = runTest {
         val events = mutableListOf<ExecutionEvent>()
-        engine().execute(workflow) { events += it }
+        engine().execute(workflow, onEvent = { events += it })
 
         assertTrue(events.any { it is ExecutionEvent.Started && it.nodeId == "a" })
         assertTrue(events.any { it is ExecutionEvent.Failed && it.nodeId == "b" })

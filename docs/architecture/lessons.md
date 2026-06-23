@@ -881,3 +881,23 @@ channelFlow {
 }
 ```
 `trySend` never throws; `send` (for the terminal frame) uses suspension. Don't use `callbackFlow` for async callbacks that outlive the collector's scope.
+
+---
+
+## Adding a trailing defaulted parameter breaks trailing-lambda call sites
+
+**Category:** Kotlin — API evolution
+
+**Problem:** `WorkflowExecutionEngine.execute(workflow, onEvent)` was called as `execute(w) { event -> ... }` (trailing lambda binds to `onEvent`). Adding a third defaulted param `externalInputs: Map<...> = emptyMap()` after `onEvent` silently broke every trailing-lambda call site — the lambda no longer binds to `onEvent` because it isn't the last parameter, producing a confusing "argument type mismatch" at the lambda.
+
+**Rule:** When a function may be called with a trailing lambda, keep the function-type parameter **last**, or add new params *before* it. If that's not possible, convert call sites to the named form `execute(w, onEvent = { ... })`. Grep for every `.execute(` call after changing such a signature — the compiler error points at the lambda, not the real cause.
+
+---
+
+## JVM plugin auto-discovery via `ServiceLoader` in a KMP `expect/actual`
+
+**Category:** KMP — platform capabilities
+
+**Problem:** `java.util.ServiceLoader` is JVM/Android-only, but the plugin contract lives in multiplatform `commonMain`. Hosts wanted classpath auto-discovery without a JVM-only API leaking into common code.
+
+**Rule:** Expose `expect fun discoverGraphynPlugins(): List<GraphynPlugin>` in `commonMain`; the JVM and Android actuals use `ServiceLoader.load(GraphynPlugin::class.java)`, and JS/Wasm/iOS actuals return `emptyList()`. Test fixtures register via `src/jvmTest/resources/META-INF/services/<fqcn>` and need a public no-arg constructor (or be a Kotlin `object`).

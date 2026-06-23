@@ -316,6 +316,30 @@ Graphyn separates runtime concerns from editor concerns — you can ship a runti
 
 `Default*` implementations are marked `@GraphynExperimentalApi` — their signatures may evolve. The interfaces above are stable.
 
+### Auto-discovery (JVM / Android)
+
+Instead of wiring every plugin by hand, hosts on the JVM and Android can let plugins register themselves via `java.util.ServiceLoader`. A plugin author ships a resource file:
+
+```
+# src/main/resources/META-INF/services/com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
+com.example.MyPlugin
+```
+
+Then the host installs everything on the classpath in one call:
+
+```kotlin
+val registry = DefaultGraphynPluginRegistry().apply {
+    install(CorePlugin)   // explicit, always present
+    installDiscovered()   // plus any plugin on the classpath (ServiceLoader)
+}
+```
+
+`installDiscovered()` skips plugins already installed (matched by `metadata.id`) and returns the newly-installed ones. On JS, Wasm, and iOS it is a no-op — those hosts register plugins explicitly.
+
+### Subgraphs
+
+A node may embed a nested `WorkflowDefinition` via `NodeRef.subgraph`. The engine runs it recursively (and in parallel where possible), and the subgraph node's resolved inputs are injected into the inner workflow's **free input ports** (those with no internal connection or config), keyed by port name — so a parent workflow can feed data into a nested one. Explicit inner config and internal wiring always take precedence.
+
 ---
 
 ## Platform Targets

@@ -25,7 +25,7 @@ fun WorkflowExecutionEngine.executeAsFlow(
     workflow: WorkflowDefinition,
 ): Flow<ExecutionStreamMessage> = channelFlow {
     try {
-        val result = execute(workflow) { event -> trySend(ExecutionStreamMessage.Event(event)) }
+        val result = execute(workflow, onEvent = { event -> trySend(ExecutionStreamMessage.Event(event)) })
         send(ExecutionStreamMessage.Completed(result))
     } catch (e: Exception) {
         send(ExecutionStreamMessage.Failed(e.message ?: e::class.simpleName ?: "Unknown error"))
