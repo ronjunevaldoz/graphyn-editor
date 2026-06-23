@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
+import com.ronjunevaldoz.graphyn.editor.canvas.resolveNodeFactory
 
 /** Records a canvas resize and re-fits if the viewport is still pinned to a fit (see [fitToContent]). */
 fun GraphynEditorState.updateCanvasSize(size: IntSize) {
@@ -35,7 +36,7 @@ fun GraphynEditorState.fitToContent(
     val resolvedPositions = positions ?: layout.nodePositionsByNodeId
     val resolvedSizes = sizes.ifEmpty {
         workflow?.nodes?.associate { node ->
-            node.id to (canvasCards?.resolve(node.type)
+            node.id to (resolveNodeFactory(node, canvasCards, nodeSpecs)
                 ?.let { IntSize(it.nodeWidth, it.nodeHeight) }
                 ?: GraphynCanvasMetrics.NodeSize)
         } ?: emptyMap()
