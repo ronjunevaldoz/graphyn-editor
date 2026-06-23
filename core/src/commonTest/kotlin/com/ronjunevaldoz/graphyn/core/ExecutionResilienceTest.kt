@@ -8,9 +8,11 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ExecutionResilienceTest {
@@ -48,6 +50,42 @@ class ExecutionResilienceTest {
         assertEquals(2, result.successCount)
         assertEquals(1, result.errorCount)
         assertEquals(1, result.skippedCount)
+    }
+
+    @Test
+    fun nodeTimeoutIsRecordedAsError() = runTest {
+        val executors = DefaultNodeExecutorRegistry()
+        executors.register("slow") { delay(10_000); mapOf("out" to WorkflowValue.IntValue(1)) }
+        val eng = WorkflowExecutionEngine(executors)
+        val wf = WorkflowDefinition(
+            id = "timeout-test", name = "Timeout",
+            nodes = listOf(NodeRef("s", "slow", timeoutMs = 50)),
+            connections = emptyList(),
+        )
+        val result = eng.execute(wf)
+        assertEquals(NodeExecutionStatus.Error, result.statusByNodeId["s"])
+        assertNotNull(result.errorsByNodeId["s"])
+        assertTrue(result.errorsByNodeId["s"]!!.contains("timed out"), "error message should mention timeout")
+    }
+
+    @Test
+    fun nodeRetriesOnFailureThenSucceeds() = runTest {
+        var attempts = 0
+        val executors = DefaultNodeExecutorRegistry()
+        executors.register("flaky") {
+            attempts++
+            if (attempts < 3) throw IllegalStateException("not yet")
+            mapOf("out" to WorkflowValue.IntValue(attempts))
+        }
+        val eng = WorkflowExecutionEngine(executors)
+        val wf = WorkflowDefinition(
+            id = "retry-test", name = "Retry",
+            nodes = listOf(NodeRef("f", "flaky", maxRetries = 2)),
+            connections = emptyList(),
+        )
+        val result = eng.execute(wf)
+        assertEquals(NodeExecutionStatus.Success, result.statusByNodeId["f"])
+        assertEquals(3, attempts)
     }
 
     @Test

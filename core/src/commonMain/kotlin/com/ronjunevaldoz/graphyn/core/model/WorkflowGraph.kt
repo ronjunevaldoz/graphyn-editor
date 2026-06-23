@@ -56,6 +56,10 @@ data class NodeRef(
     val type: String,
     val config: Map<String, WorkflowValue> = emptyMap(),
     val subgraph: WorkflowDefinition? = null,
+    /** Milliseconds before the node is cancelled and recorded as an error. Null = no limit. */
+    val timeoutMs: Long? = null,
+    /** How many times to retry on failure before propagating the error. 0 = no retry. */
+    val maxRetries: Int = 0,
 )
 
 /** Directed edge from one node's output port to another node's input port. */
