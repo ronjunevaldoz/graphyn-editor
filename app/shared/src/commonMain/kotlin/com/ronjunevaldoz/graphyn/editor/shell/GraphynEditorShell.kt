@@ -11,7 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
@@ -31,6 +34,8 @@ import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
+import com.ronjunevaldoz.graphyn.editor.ai.GraphynAiAssistantState
+import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynAiPanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynInspectorPanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynPalettePanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
@@ -57,6 +62,8 @@ data class GraphynEditorShellDependencies(
     val canvasTopStart: (@Composable () -> Unit)? = null,
     /** Called when the user taps the "← Home" button in the toolbar; shows the button when set. */
     val onHome: (() -> Unit)? = null,
+    /** When set, the toolbar shows an "✨ AI" toggle that opens the workflow-generation panel. */
+    val workflowGenerator: com.ronjunevaldoz.graphyn.ai.WorkflowGenerator? = null,
 )
 
 @Composable
@@ -98,6 +105,20 @@ private fun GraphynEditorShellContent(
     SideEffect { state.canvasCards = dependencies.canvasCards }
     val colors = GraphynDs.colors
     val executionEngine = dependencies.executionEngine
+    val generator = dependencies.workflowGenerator
+    var aiOpen by remember { mutableStateOf(false) }
+    val assistant = remember(generator, dependencies.nodeSpecs, state) {
+        generator?.let {
+            GraphynAiAssistantState(
+                generator = it,
+                catalog = dependencies.nodeSpecs.all(),
+                onApply = { wf ->
+                    state.withHistory { state.workflow = wf }
+                    state.dispatch(GraphynEditorIntent.AutoLayout)
+                },
+            )
+        }
+    }
     val validator = remember(dependencies.nodeSpecs) { WorkflowGraphValidator(dependencies.nodeSpecs) }
     val validationErrors = remember(state.workflow, dependencies.nodeSpecs) {
         state.workflow?.let(validator::validate).orEmpty()
@@ -124,6 +145,8 @@ private fun GraphynEditorShellContent(
             onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },
             onHome = dependencies.onHome,
             workflowName = if (dependencies.onHome != null) state.workflow?.name else null,
+            onToggleAi = if (assistant != null) ({ aiOpen = !aiOpen }) else null,
+            aiActive = aiOpen,
         )
         Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
             GraphynPalettePanel(
@@ -148,6 +171,13 @@ private fun GraphynEditorShellContent(
                     }
                 },
             )
+            if (aiOpen && assistant != null) {
+                GraphynAiPanel(
+                    assistant = assistant,
+                    onClose = { aiOpen = false },
+                    modifier = Modifier.width(300.dp).fillMaxHeight(),
+                )
+            }
         }
     }
 }

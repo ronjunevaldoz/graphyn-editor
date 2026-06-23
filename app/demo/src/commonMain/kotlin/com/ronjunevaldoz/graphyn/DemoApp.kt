@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.ronjunevaldoz.graphyn.bootstrap.DemoScene
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
+import kotlin.random.Random
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.store.WorkflowMeta
@@ -23,7 +24,6 @@ import com.ronjunevaldoz.graphyn.ai.OllamaConfig
 import com.ronjunevaldoz.graphyn.ai.OllamaWorkflowGenerator
 import com.ronjunevaldoz.graphyn.ai.WorkflowGenerator
 import com.ronjunevaldoz.graphyn.editor.launcher.GraphynWorkflowLauncher
-import com.ronjunevaldoz.graphyn.editor.launcher.NewWorkflowDialog
 import com.ronjunevaldoz.graphyn.editor.launcher.WorkflowTemplate
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
@@ -54,7 +54,6 @@ fun DemoApp(
     var savedWorkflows by remember { mutableStateOf(emptyList<WorkflowMeta>()) }
     var openWorkflow by remember { mutableStateOf<WorkflowDefinition?>(null) }
     var pendingLoadId by remember { mutableStateOf<String?>(null) }
-    var showNewDialog by remember { mutableStateOf(false) }
     val generator = workflowGenerator
         ?: remember { OllamaWorkflowGenerator(OllamaConfig(baseUrl = DEMO_OLLAMA_HOST)) }
 
@@ -87,7 +86,12 @@ fun DemoApp(
                 templates = templates,
                 recentWorkflows = recentWorkflows,
                 savedWorkflows = savedWorkflows,
-                onNew = { showNewDialog = true },
+                onNew = {
+                    openWorkflow = WorkflowDefinition(
+                        id = "wf-${Random.nextLong().and(0xFFFFFFFFL)}",
+                        name = "Untitled", nodes = emptyList(), connections = emptyList(),
+                    )
+                },
                 onOpenSaved = { id -> pendingLoadId = id },
                 onOpen = { template ->
                     recentWorkflows = listOf(template) +
@@ -95,14 +99,6 @@ fun DemoApp(
                     openWorkflow = template.workflow
                 },
             )
-            if (showNewDialog) {
-                NewWorkflowDialog(
-                    generator = generator,
-                    catalog = pluginRegistry.nodeSpecs.all(),
-                    onCreate = { created -> showNewDialog = false; openWorkflow = created },
-                    onDismiss = { showNewDialog = false },
-                )
-            }
         } else {
             key(wf.id) {
                 val state = rememberGraphynEditorState(
@@ -125,6 +121,7 @@ fun DemoApp(
                         canvasCards = editorRegistry.canvasCards,
                         categoryRegistry = editorRegistry.categories,
                         executionEngine = executionEngine ?: engine,
+                        workflowGenerator = generator,
                     ),
                     appearanceState = appearanceState,
                     state = state,
