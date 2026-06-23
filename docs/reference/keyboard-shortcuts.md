@@ -2,6 +2,11 @@
 
 All shortcuts use the primary meta key: **Cmd** on macOS, **Ctrl** on Windows and Linux.
 
+**Configurable:** the shortcuts below are defaults. Open the **⌨ Keys** button in the toolbar to
+rebind any action — click its chord chip, press the new combination, and it's saved. Conflicts are
+rejected with a message; **Reset all** restores defaults. Bindings persist via the settings store.
+Contextual keys (Escape, Delete/Backspace) are fixed and not remappable.
+
 ---
 
 ## Canvas navigation

@@ -34,6 +34,8 @@ import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynInspectorPanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynPalettePanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
+import com.ronjunevaldoz.graphyn.editor.shortcuts.GraphynShortcutState
+import com.ronjunevaldoz.graphyn.editor.shortcuts.rememberGraphynShortcutState
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
@@ -62,6 +64,7 @@ fun GraphynEditorShell(
     dependencies: GraphynEditorShellDependencies,
     branding: GraphynBranding = GraphynBranding(),
     appearanceState: GraphynAppearanceState = rememberGraphynAppearanceState(),
+    shortcutState: GraphynShortcutState = rememberGraphynShortcutState(),
     state: GraphynEditorState? = null,
     canvas: (@Composable () -> Unit)? = null,
 ) {
@@ -76,6 +79,7 @@ fun GraphynEditorShell(
             dependencies = dependencies,
             branding = branding,
             appearanceState = appearanceState,
+            shortcutState = shortcutState,
             state = resolvedState,
             canvas = canvas,
         )
@@ -87,6 +91,7 @@ private fun GraphynEditorShellContent(
     dependencies: GraphynEditorShellDependencies,
     branding: GraphynBranding,
     appearanceState: GraphynAppearanceState,
+    shortcutState: GraphynShortcutState,
     state: GraphynEditorState,
     canvas: (@Composable () -> Unit)?,
 ) {
@@ -102,6 +107,7 @@ private fun GraphynEditorShellContent(
             state = state,
             nodeSpecs = dependencies.nodeSpecs,
             canvasCards = dependencies.canvasCards,
+            shortcutState = shortcutState,
             onEnterSubgraph = dependencies.onEnterSubgraph,
             onExitSubgraph = dependencies.onExitSubgraph,
             canvasTopStart = dependencies.canvasTopStart,
@@ -112,6 +118,7 @@ private fun GraphynEditorShellContent(
         GraphynTopToolbar(
             branding = branding,
             appearanceState = appearanceState,
+            shortcutState = shortcutState,
             canRun = executionEngine != null,
             onRun = { executionEngine?.let { state.execute(it) } },
             onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },

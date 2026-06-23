@@ -921,3 +921,21 @@ channelFlow {
 **Problem:** The engine exposed a subgraph node's outputs as `executionOrder.lastOrNull()`'s outputs. That works for a linear chain but is wrong for a collapsed selection whose boundary output comes from a node that isn't executed last.
 
 **Rule:** A subgraph's outputs are the union of every inner node's output values whose `(node, port)` is not consumed by an internal connection (`freeOutputs`), keyed by port name. This matches the derived-spec boundary and stays correct for arbitrary collapsed graphs. (Verified existing linear-chain subgraph tests still pass.)
+
+---
+
+## Keyboard shortcuts are data + state, not logic branches
+
+**Category:** Architecture — state-driven configuration
+
+**Problem:** Adding configurable shortcuts requires mapping user rebinds to action dispatch, persisting them, detecting conflicts. A naive approach hardcodes checks (if `e.key == Key.Z && e.isPrimaryMeta` → Undo) in gesture handlers — but then rebinding requires rewriting those branches, and conflict detection is diffuse.
+
+**Rule:** Separate *data* (key mappings, defaults) from *behavior* (dispatch logic). Store shortcut bindings in `GraphynShortcutState` (mirrors `GraphynAppearanceState` pattern), which exposes `resolveAction(event): EditorShortcutAction?` and rebind/reset methods. The state owns persistence (overrides to `GraphynSettingsStore` as JSON), not individual branches. Gesture handlers become a simple `when(state.resolveAction(event))` dispatch. This makes rebinding + conflict detection testable in isolation, and shipping changes to defaults (new shortcuts, reordered priorities) doesn't require hunting through gesture code.
+
+**Implementation notes:**
+- `EditorShortcutAction` enum: 9 bindable actions with stable id, label, defaultChord.
+- `KeyChord` (serializable): keyName + primaryMeta + shift; matches KeyEvent, displays human-readable, conflict-detects.
+- `ShortcutKeyTable`: logical key name mapping (A-Z, 0-9, F1-F12) for stable persistence across reboots.
+- `GraphynShortcutState`: holds defaults + JSON-persisted overrides, exposes `chordFor(action)`, `resolveAction(event)`, `rebind/resetToDefault/resetAll()`.
+- UI: read-only `GraphynShortcutsPanel` (v1); rebind UI + record-next-key flow is next.
+
