@@ -40,7 +40,19 @@ Items discovered during development that are not yet built. Ordered by impact.
 |---|---|
 | Sticky notes | ✅ done (`plugins/sticky-notes`) |
 | Group nodes (visual frame around selection) | ✅ done (`NodeGroup`, `GraphynGroupLayer`, Cmd+G) |
-| Subgraphs (node whose body is a nested workflow) | ⬜ deep core change |
+| Subgraphs — execution (recursive, parallel) | ✅ done (`WorkflowExecutionEngine`) |
+| Subgraphs — input injection (parent → inner free ports) | ✅ done (`buildInputMap` `externalInputs`) |
+| Subgraphs — drill-in navigation + breadcrumb | ✅ done (`GraphynSubgraphNavigator`) |
+| Subgraphs — collapse selection / expand gesture (editor UI) | ⬜ canvas feature (needs per-instance port specs) |
+
+---
+
+## Plugin loading
+
+| Feature | Status |
+|---|---|
+| Explicit host registration | ✅ done (`GraphynPluginRegistry.install`) |
+| JVM/Android `ServiceLoader` auto-discovery | ✅ done (`discoverGraphynPlugins`, `installDiscovered`) |
 
 ---
 

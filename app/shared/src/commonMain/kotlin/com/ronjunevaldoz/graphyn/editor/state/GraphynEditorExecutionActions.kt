@@ -35,7 +35,7 @@ fun GraphynEditorState.execute(engine: WorkflowExecutionEngine): Job {
     executionStatusByNodeId = w.nodes.associate { it.id to NodeExecutionStatus.Idle }
     return scope.launch {
         try {
-            val result = engine.execute(w) { event ->
+            val result = engine.execute(w, onEvent = { event ->
                 // Live per-node status as the engine progresses.
                 val status = when (event) {
                     is ExecutionEvent.Started   -> NodeExecutionStatus.Running
@@ -45,7 +45,7 @@ fun GraphynEditorState.execute(engine: WorkflowExecutionEngine): Job {
                 }
                 executionStatusByNodeId = executionStatusByNodeId + (event.nodeId to status)
                 if (event is ExecutionEvent.Failed) log.push("✗ ${event.nodeId}: ${event.message}")
-            }
+            })
             applyExecutionResult(result)
         } catch (e: Exception) {
             // Structural failure (cycle, duplicate ids) — not a per-node error.

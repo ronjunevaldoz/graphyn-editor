@@ -34,6 +34,7 @@ class WorkflowExecutionEngine(
     suspend fun execute(
         workflow: WorkflowDefinition,
         onEvent: ((ExecutionEvent) -> Unit)? = null,
+        externalInputs: Map<String, WorkflowValue> = emptyMap(),
     ): WorkflowExecutionResult {
         val nodesById = workflow.nodes.associateBy { it.id }
         if (nodesById.size != workflow.nodes.size)
@@ -58,7 +59,7 @@ class WorkflowExecutionEngine(
                         onEvent?.invoke(ExecutionEvent.Started(nodeId))
                         val start = TimeSource.Monotonic.markNow()
                         try {
-                            val (out, sub) = runWithPolicy(node) { runNode(workflow, node, outputs) }
+                            val (out, sub) = runWithPolicy(node) { runNode(workflow, node, outputs, externalInputs) }
                             NodeOutcome(nodeId, out, sub, null, start.elapsedNow().inWholeMilliseconds)
                         } catch (e: CancellationException) { throw e }
                         catch (e: Throwable) {
@@ -106,13 +107,15 @@ class WorkflowExecutionEngine(
         workflow: WorkflowDefinition,
         node: NodeRef,
         outputs: Map<String, Map<String, WorkflowValue>>,
+        externalInputs: Map<String, WorkflowValue>,
     ): Pair<Map<String, WorkflowValue>, WorkflowExecutionResult?> {
         val spec = nodeSpecs?.resolve(node.type)
-        val inputs = buildInputMap(workflow, node, spec, outputs)
+        val inputs = buildInputMap(workflow, node, spec, outputs, externalInputs)
 
         val subgraph = node.subgraph
         if (subgraph != null) {
-            val inner = execute(subgraph)
+            // The subgraph node's resolved inputs flow down to fill the inner workflow's free ports.
+            val inner = execute(subgraph, externalInputs = inputs)
             if (inner.errorCount > 0)
                 throw WorkflowExecutionException("Subgraph '${node.id}' failed: ${inner.errorsByNodeId.values.firstOrNull()}")
             val sinkId = inner.executionOrder.lastOrNull()

@@ -130,4 +130,55 @@ class SubgraphExecutionTest {
         assertEquals(null, result.nodeOutputsByNodeId["sg"]?.get("out"),
             "raw inner key must not leak through when executor is present")
     }
+
+    @Test
+    fun subgraphInputInjectionFeedsInnerFreePorts() = runTest {
+        // Inner "p1" has a free "in" port (no config, no internal connection) — it must
+        // pull from the subgraph node's incoming "in" value supplied by an upstream node.
+        val inner = WorkflowDefinition(
+            id = "inner-injected", name = "Inner",
+            nodes = listOf(NodeRef("p1", "passthrough")),
+            connections = emptyList(),
+        )
+        val workflow = WorkflowDefinition(
+            id = "outer-injected", name = "Outer",
+            nodes = listOf(
+                NodeRef("seed", "passthrough", config = mapOf("in" to WorkflowValue.IntValue(21))),
+                NodeRef("sg", "any.subgraph", subgraph = inner),
+                NodeRef("d1", "double"),
+            ),
+            connections = listOf(
+                ConnectionRef("seed", "out", "sg", "in"),   // feeds the subgraph node's "in" port
+                ConnectionRef("sg", "out", "d1", "n"),
+            ),
+        )
+
+        val result = engine.execute(workflow)
+
+        // seed=21 → sg.in=21 → injected into inner p1.in → inner out=21 → sg out=21 → double=42
+        assertEquals(WorkflowValue.IntValue(42), result.nodeOutputsByNodeId["d1"]?.get("result"),
+            "subgraph input must flow into the inner workflow's free port")
+    }
+
+    @Test
+    fun innerConfigWinsOverInjectedInput() = runTest {
+        // Inner "p1" sets in=5 via config; an injected subgraph input must NOT override explicit config.
+        val inner = WorkflowDefinition(
+            id = "inner-config", name = "Inner",
+            nodes = listOf(NodeRef("p1", "passthrough", config = mapOf("in" to WorkflowValue.IntValue(5)))),
+            connections = emptyList(),
+        )
+        val workflow = WorkflowDefinition(
+            id = "outer-config", name = "Outer",
+            nodes = listOf(
+                NodeRef("seed", "passthrough", config = mapOf("in" to WorkflowValue.IntValue(99))),
+                NodeRef("sg", "any.subgraph", subgraph = inner),
+            ),
+            connections = listOf(ConnectionRef("seed", "out", "sg", "in")),
+        )
+
+        val result = engine.execute(workflow)
+        // inner config in=5 wins over injected 99
+        assertEquals(WorkflowValue.IntValue(5), result.nodeOutputsByNodeId["sg"]?.get("out"))
+    }
 }

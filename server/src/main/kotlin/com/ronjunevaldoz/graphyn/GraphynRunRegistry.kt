@@ -45,9 +45,9 @@ class GraphynRunRegistry(
         activeCount.incrementAndGet()
         scope.launch {
             val terminal = try {
-                val result = engine.execute(workflow) { event ->
+                val result = engine.execute(workflow, onEvent = { event ->
                     flow.tryEmit(ExecutionStreamMessage.Event(event))
-                }
+                })
                 ExecutionStreamMessage.Completed(result)
             } catch (e: Throwable) {
                 ExecutionStreamMessage.Failed(e.message ?: "Execution failed")
