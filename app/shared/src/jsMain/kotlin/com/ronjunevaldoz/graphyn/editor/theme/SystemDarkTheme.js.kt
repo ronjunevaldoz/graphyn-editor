@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import web.window.window
+import kotlinx.browser.window
 
 @Composable
 actual fun systemIsDarkTheme(): Boolean {
