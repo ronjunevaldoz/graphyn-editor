@@ -56,6 +56,7 @@ kotlin {
         commonMain.dependencies {
             api(projects.core)
             api(projects.core.designsystem)
+            api(projects.ai)
             api(projects.editorApi)
             api(projects.pluginApi)
             implementation(projects.plugins.sampleLogger)
