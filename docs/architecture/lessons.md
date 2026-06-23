@@ -839,3 +839,28 @@ Attempting to use `Clock.System.now()` in `app/demo/commonMain` fails to compile
 **Problem:** Trying to call `LaunchedEffect(id) { ... }` inside an `onClick` lambda (non-composable scope) is a compile error; composables can only be called from `@Composable` functions.
 
 **Rule:** Use a state variable as the trigger (`var pendingLoadId by remember { ... }`), set it in the lambda, and observe it with a top-level `LaunchedEffect(pendingLoadId)` in the composable body.
+
+---
+
+## `kotlinx.browser` is JS-only — wasmJs needs `@JsFun` interop
+
+**Category:** KMP — wasmJs platform target
+
+**Problem:** `import kotlinx.browser.window` compiles fine in `jsMain` but fails with "Unresolved reference 'browser'" in `wasmJsMain`. The `kotlinx.browser` package is a Kotlin/JS-only artifact and is not available to the Wasm target.
+
+**Rule:** In `wasmJsMain`, access `localStorage` (and other browser globals) via `@JsFun` external declarations:
+```kotlin
+@JsFun("(key) => localStorage.getItem(key)")
+private external fun lsGetItem(key: String): String?
+```
+Also avoid `Json.decodeFromString<T>()` with inferred type params in wasmJs — use explicit serializer: `decodeFromString(MyType.serializer(), raw)`.
+
+---
+
+## `web.window.window` does not expose `matchMedia` — use `kotlinx.browser.window`
+
+**Category:** KMP — jsMain browser APIs
+
+**Problem:** `import web.window.window` (from the `web` interop package) gives a `Window` type that lacks `matchMedia`. Calling `window.matchMedia(...)` fails with "Unresolved reference".
+
+**Rule:** For media queries in `jsMain`, use `import kotlinx.browser.window` which exposes the full browser Window API including `matchMedia`.
