@@ -24,6 +24,11 @@ kotlin {
 
         jvmMain.dependencies {
             implementation(libs.ktor.clientCio)
+            implementation(project(":ui:cards"))
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
         }
 
         jsMain.dependencies {
