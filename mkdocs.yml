@@ -32,13 +32,32 @@ nav:
   - Getting Started:
       - Quickstart: getting-started/quickstart.md
       - Installation: getting-started/installation.md
+  - Integration Guides:
+      - Running Locally: guides/running-locally.md
+      - Persistence: guides/persistence.md
+      - Read-only Mode: guides/read-only-mode.md
+      - Remote Execution: guides/remote-execution.md
+      - Embedding on Android: guides/embedding-android.md
+      - Embedding on Web: guides/embedding-web.md
+  - Extending:
+      - Plugin Authoring: guides/plugin-authoring.md
+      - Custom Cards: guides/custom-cards.md
+      - Theming: guides/theming.md
+      - Plugin Versioning: guides/plugin-versioning.md
+  - Reference:
+      - Type System: reference/type-system.md
+      - Keyboard Shortcuts: reference/keyboard-shortcuts.md
+      - Serialization: reference/serialization.md
   - Architecture:
       - Overview: architecture/README.md
       - Core API: architecture/core-api.md
       - Editor Panels: architecture/editor-panels.md
       - Plugins: architecture/plugins.md
-      - Type System: architecture/types.md
       - Node Design Research: architecture/node-design-research.md
+      - Roadmap: architecture/roadmap.md
+      - Lessons Learned: architecture/lessons.md
+  - Production:
+      - Analytics Hooks: guides/analytics-hooks.md
   - Testing: architecture/test-coverage.md
   - Changelog: changelog.md
 
