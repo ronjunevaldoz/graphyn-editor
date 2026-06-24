@@ -77,11 +77,12 @@ object DemoSceneEditorPlugin : GraphynEditorPlugin {
     override fun register(registrar: GraphynEditorPluginRegistrar) {
         val shape = ShapeCardFactory()
         val field3 = FieldCardFactory(inputRows = 3, outputRows = 1)
-        // CheckpointLoader has no inputs; CLIPTextEncode has 2 (clip + text); show text inline
-        registrar.registerCanvasCard(specCheckpointLoader.type, shape)
-        registrar.registerCanvasCard(specClipEncode.type, ShapeCardFactory(inlineInputRows = 1))
-        registrar.registerCanvasCard(specVaeDecode.type, shape)
-        registrar.registerCanvasCard(specSaveImage.type, shape)
+        val fieldAi = FieldCardFactory(inputRows = 2, outputRows = 2)
+        // AI nodes use FieldCard for better I/O visibility
+        registrar.registerCanvasCard(specCheckpointLoader.type, fieldAi)
+        registrar.registerCanvasCard(specClipEncode.type, fieldAi)
+        registrar.registerCanvasCard(specVaeDecode.type, fieldAi)
+        registrar.registerCanvasCard(specSaveImage.type, fieldAi)
         listOf(specMeshPrimitive, specSubdivideMesh, specInstanceOnPoints, specGeometryOutput).forEach {
             registrar.registerCanvasCard(it.type, field3)
         }
