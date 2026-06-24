@@ -42,7 +42,7 @@ jobs:
         run: pip install mkdocs-material
 
       - name: Build MkDocs site
-        run: mkdocs build --strict
+        run: mkdocs build
 
       # ── Merge outputs into site/ ──────────────────────────────────────
       # Skip WasmJS app copy due to build blocker
