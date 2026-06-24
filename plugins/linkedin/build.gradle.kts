@@ -21,17 +21,17 @@ kotlin {
             implementation(project(":core"))
             implementation(project(":editor-api"))
             implementation(project(":plugin-api"))
+            implementation(project(":ui:cards"))
             implementation(libs.kotlinx.coroutinesCore)
             implementation(libs.ktor.clientCore)
             implementation(libs.serialization.json)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.ui)
         }
 
         jvmMain.dependencies {
             implementation(libs.ktor.clientCio)
-            implementation(project(":ui:cards"))
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.ui)
         }
 
         jsMain.dependencies {
