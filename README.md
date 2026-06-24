@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Compose-Multiplatform-3DDC84?logo=jetpackcompose&logoColor=white" alt="Compose Multiplatform"/>
   <img src="https://img.shields.io/badge/platforms-Android%20·%20Desktop%20·%20Web%20·%20iOS-0095D5" alt="Platforms"/>
-  <img src="https://img.shields.io/badge/pre--release-0.2.0-orange" alt="Pre-release"/>
+  <img src="https://img.shields.io/badge/release-0.2.1-blue" alt="Release"/>
 </p>
 
 ---
@@ -35,120 +35,89 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
 
 ## Features
 
-| | |
-|---|---|
-| Pan & zoom canvas with minimap | |
-| Connect nodes via port drag-and-drop | |
-| Plugin system for runtime nodes and editor cards | |
-| Inspector panel with per-node custom UI + write-back | |
-| Built-in light / dark mode + theme presets | |
-| Workflow validation with typed errors | |
-| Parallel execution engine — independent nodes run concurrently | |
-| `executeAsFlow()` — streaming `Flow<ExecutionStreamMessage>` for live progress | |
-| Per-node timeout and retry policy | |
-| Workflow persistence — `FileWorkflowStore` (JVM), `LocalStorageWorkflowStore` (web) | |
-| Full version history per workflow | |
-| Inline config widgets on `ShapeCard` (ComfyUI/Blender style) | |
-| Observable workflow state (`StateFlow`) | |
-| Auto-layout (topological sort, Cmd+Shift+L) | |
-| Configurable keyboard shortcuts — rebind any action from the toolbar, persisted | |
-| AI workflow generation — describe a workflow, an LLM (Ollama) drafts the graph onto the canvas | ✅ |
-| Kotlin script node (JVM) with inline IDE-style editor | |
-| Screenshot tests via Roborazzi | |
+- **Pan & zoom** with minimap
+- **Node editor** — drag ports to connect, split/merge workflows
+- **Plugin system** — runtime plugins (node specs + executors) and editor plugins (custom UI)
+- **Parallel execution** — independent nodes run concurrently
+- **Live streaming** — `executeAsFlow()` for real-time progress
+- **Persistence** — auto-save to file (JVM) or local storage (Web)
+- **AI generation** — describe a workflow, Ollama drafts it onto the canvas
+- **Customizable shortcuts** — rebind any editor action from the toolbar
+- **Subgraph collapse** — group nodes into reusable workflows
+- **Inline widgets** — ComfyUI/Blender-style config cards
+- **Theme support** — light/dark mode + custom colors
+- **TypeScript-safe ports** — validation at wire time
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│              app/shared (Compose UI)        │
-│   canvas · shell · state · design system   │
-└────────────┬────────────────┬───────────────┘
-             │                │
-     ┌───────▼──────┐  ┌──────▼───────┐
-     │  editor-api  │  │  plugin-api  │
-     │ panel slots  │  │ node specs   │
-     │ canvas cards │  │ executors    │
-     └───────┬──────┘  └──────┬───────┘
-             │                │
-         ┌───▼────────────────▼───┐
-         │          core          │
-         │  model · types · exec  │
-         │  validation · registry │
-         └────────────────────────┘
+        ┌─────────────────────────────────┐
+        │   app/shared (Compose UI)       │
+        │     Canvas + Editor Shell       │
+        └────────┬──────────────┬─────────┘
+                 │              │
+         ┌───────▼────┐  ┌──────▼──────┐
+         │ editor-api │  │ plugin-api  │
+         │ Card UI    │  │ Node specs  │
+         │ Panels     │  │ Executors   │
+         └───────┬────┘  └──────┬──────┘
+                 │              │
+              ┌──▼──────────────▼──┐
+              │       core         │
+              │ Model · Types      │
+              │ Validation · Exec  │
+              └────────────────────┘
 
-ui/cards sits between editor-api and app/shared:
-implements NodeCanvasFactory with ready-to-use card shapes.
+ui/cards (ShapeCardFactory, FieldCardFactory)
+plugins/* (node definitions + executors)
 ```
 
-| Module | Artifact | Responsibility |
+| Module | What | Status |
 |---|---|---|
-| `core` | `graphyn-core` | Workflow model, types, validation, execution engine — no Compose |
-| `plugin-api` | `graphyn-plugin-api` | `GraphynPlugin` contract — register node specs and executors |
-| `editor-api` | `graphyn-editor-api` | `GraphynEditorPlugin` contract — register canvas cards and inspector panels |
-| `ui/cards` | `graphyn-ui-cards` | Reusable card factories — `ShapeCardFactory`, `FieldCardFactory` |
-| `app/shared` | `graphyn-editor` | Compose Multiplatform canvas and editor shell |
-| `plugins/sample-math` | — | Sample: math runtime plugin |
-| `plugins/sample-logger` | — | Sample: logger runtime + editor plugin |
-| `plugins/sample-style-nodes` | — | Sample: ShapeCard/FieldCard/CircleCard demo, uses `ui/cards` factories |
-| `plugins/io` | — | I/O runtime plugin: HTTP request, file read/write/browse, env reader, webhook POST |
-| `plugins/list-ops` | — | List operations: map, filter, reduce, zip |
-| `plugins/control` | — | Control flow: branch, merge, loop |
-| `plugins/text` | — | Text utilities: format, split, regex |
-| `plugins/types` | — | Type utilities: cast, validate, schema |
-| `plugins/script` | — | JVM-only: Kotlin JSR-223 scripting node with inline code editor card |
-| `plugins/sticky-notes` | — | Annotation node: resizable sticky note, no executor |
-| `server` | — | Ktor server: execution API, `/workflows` CRUD, Bearer-token auth, concurrency limit |
-| `app/demo` | — | Demo scene library: 12 sample workflows (AI pipeline, geometry, automation, + 9 more) |
-| `app/desktopApp` | — | Desktop editor (JVM) with `FileWorkflowStore` persistence |
+| `core` | Workflow model, types, execution | Library |
+| `editor-api` | Canvas card + panel contracts | Library |
+| `plugin-api` | Node spec + executor contracts | Library |
+| `ui/cards` | Ready-made card shapes | Library |
+| `app/shared` | Canvas + editor UI | App |
+| `plugins/gmail` | Gmail integration (fetch, send, reply) | 0.2.1 ✅ |
+| `plugins/io` | HTTP, file, env, webhook | Sample |
+| `plugins/control` | Branch, loop, merge | Sample |
+| `plugins/text` | Format, split, regex | Sample |
+| `app/desktopApp` | Desktop editor (JVM) | App |
+| `server` | Ktor execution API | App |
 
 ---
 
 ## Installation
 
-In your root `settings.gradle.kts`:
-
-```kotlin
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        google()
-    }
-}
-```
-
 ```kotlin
 // gradle/libs.versions.toml
 [versions]
-graphyn = "0.1.0"
+graphyn = "0.2.1"
 
 [libraries]
 graphyn-editor     = { module = "io.github.ronjunevaldoz:graphyn-editor",     version.ref = "graphyn" }
-graphyn-editor-api = { module = "io.github.ronjunevaldoz:graphyn-editor-api", version.ref = "graphyn" }
+graphyn-ui-cards   = { module = "io.github.ronjunevaldoz:graphyn-ui-cards",   version.ref = "graphyn" }
 graphyn-plugin-api = { module = "io.github.ronjunevaldoz:graphyn-plugin-api", version.ref = "graphyn" }
 graphyn-core       = { module = "io.github.ronjunevaldoz:graphyn-core",        version.ref = "graphyn" }
-graphyn-ui-cards   = { module = "io.github.ronjunevaldoz:graphyn-ui-cards",   version.ref = "graphyn" }
 ```
 
 ```kotlin
 // build.gradle.kts
 commonMain.dependencies {
-    implementation(libs.graphyn.editor)      // full canvas — includes core, editor-api, plugin-api
-    implementation(libs.graphyn.ui.cards)    // ShapeCardFactory + FieldCardFactory (optional)
-    implementation(libs.graphyn.plugin.api)  // runtime plugin contract only (no Compose)
-    implementation(libs.graphyn.editor.api)  // editor plugin contract only
-    implementation(libs.graphyn.core)        // workflow model only (pure Kotlin)
+    implementation(libs.graphyn.editor)      // Full canvas UI
 }
 ```
 
-| You want to… | Add |
+| Use case | Dependency |
 |---|---|
-| Embed the full canvas | `graphyn-editor` |
-| Use ready-made card shapes | `graphyn-ui-cards` |
-| Write a runtime plugin | `graphyn-plugin-api` |
-| Write an editor plugin (custom card UI) | `graphyn-editor-api` |
-| Use only the workflow model/types | `graphyn-core` |
+| Full canvas editor | `graphyn-editor` |
+| Card UI kit | `graphyn-ui-cards` |
+| Build a runtime plugin | `graphyn-plugin-api` |
+| Build an editor plugin | `graphyn-editor-api` |
+| Workflow model only | `graphyn-core` |
 
 ---
 
