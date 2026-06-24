@@ -30,6 +30,7 @@ import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 
 @Composable
 internal fun InputRow(
@@ -49,7 +50,7 @@ internal fun InputRow(
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
     Row(
-        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
+        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
@@ -60,10 +61,10 @@ internal fun InputRow(
                 val activeBg = appTheme.colors.primary
                 val activeText = appTheme.colors.onPrimary
                 Box(
-                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp))
+                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md))
                         .background(if (on) activeBg else theme.valueBg())
                         .clickable { onValueChange(WorkflowValue.BooleanValue(!on)) }
-                        .padding(horizontal = 5.dp, vertical = 2.dp),
+                        .padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm),
                     contentAlignment = Alignment.Center,
                 ) { BasicText(if (on) "ON" else "OFF", style = appTheme.typography.nodeLabel.copy(color = if (on) activeText else theme.valueText())) }
             } else if (editText != null) {
@@ -77,17 +78,17 @@ internal fun InputRow(
                     decorationBox = { inner ->
                         Box(
                             Modifier.clip(RoundedCornerShape(3.dp)).background(theme.valueBg())
-                                .padding(horizontal = 5.dp, vertical = 2.dp),
+                                .padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm),
                             contentAlignment = Alignment.Center,
                         ) { inner() }
                     },
                 )
             } else {
                 Box(
-                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp))
+                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md))
                         .background(theme.valueBg())
                         .clickable { focusGranted = false; editText = currentValue.label() }
-                        .padding(horizontal = 5.dp, vertical = 2.dp),
+                        .padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm),
                     contentAlignment = Alignment.Center,
                 ) { BasicText(currentValue.label(), style = appTheme.typography.nodeLabel.copy(color = theme.valueText())) }
             }
@@ -98,7 +99,7 @@ internal fun InputRow(
 @Composable
 internal fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp),
+        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))

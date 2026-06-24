@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
@@ -54,7 +55,7 @@ internal fun NumericRow(
         onValueChange(parsed)
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl), verticalAlignment = Alignment.CenterVertically) {
         BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         if (currentValue != null) {
             Spacer(Modifier.weight(1f))
@@ -66,7 +67,7 @@ internal fun NumericRow(
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                     textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center),
                     decorationBox = { inner ->
-                        Box(Modifier.clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) { inner() }
+                        Box(Modifier.clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm), Alignment.Center) { inner() }
                     },
                 )
             } else {
@@ -89,18 +90,18 @@ private fun StepperChip(
     onPlus: () -> Unit,
 ) {
     Row(
-        Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()),
+        Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.clickable(onClick = onMinus).padding(horizontal = 5.dp, vertical = 2.dp)) {
+        Box(Modifier.clickable(onClick = onMinus).padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm)) {
             BasicText("−", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
-        Box(Modifier.width(1.dp).height(10.dp).background(theme.divider()))
-        Box(Modifier.widthIn(min = 24.dp).clickable(onClick = onEdit).padding(horizontal = 4.dp, vertical = 2.dp), Alignment.Center) {
+        Box(Modifier.width(GraphynSpacingValues.spacing.xs).height(GraphynSpacingValues.spacing.huge).background(theme.divider()))
+        Box(Modifier.widthIn(min = GraphynSpacingValues.spacing.cardRow).clickable(onClick = onEdit).padding(horizontal = GraphynSpacingValues.spacing.lg, vertical = GraphynSpacingValues.spacing.sm), Alignment.Center) {
             BasicText(label, style = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center))
         }
-        Box(Modifier.width(1.dp).height(10.dp).background(theme.divider()))
-        Box(Modifier.clickable(onClick = onPlus).padding(horizontal = 5.dp, vertical = 2.dp)) {
+        Box(Modifier.width(GraphynSpacingValues.spacing.xs).height(GraphynSpacingValues.spacing.huge).background(theme.divider()))
+        Box(Modifier.clickable(onClick = onPlus).padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm)) {
             BasicText("+", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
     }

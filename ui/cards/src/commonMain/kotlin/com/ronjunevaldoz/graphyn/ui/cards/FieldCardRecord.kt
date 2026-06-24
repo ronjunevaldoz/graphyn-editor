@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
@@ -42,11 +43,11 @@ internal fun RecordRow(
     var showPopup by remember { mutableStateOf(false) }
     val fields = (currentValue as? WorkflowValue.RecordValue)?.fields ?: emptyMap()
     val label = when (fieldTypes.size) { 1 -> "1 field"; else -> "${fieldTypes.size} fields" }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = appTheme.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
         BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
-            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = 5.dp, vertical = appTheme.spacing.xxs), Alignment.Center) {
+            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
                 BasicText("{ $label } ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
             if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { showPopup = false }) {
@@ -63,7 +64,7 @@ private fun RecordPopup(
     theme: FieldNodeTheme,
     onChange: (Map<String, WorkflowValue>) -> Unit,
 ) {
-    Column(Modifier.widthIn(min = RECORD_POPUP_MIN_DP.dp, max = RECORD_POPUP_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.md)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md)).padding(vertical = appTheme.spacing.xs)) {
+    Column(Modifier.widthIn(min = RECORD_POPUP_MIN_DP.dp, max = RECORD_POPUP_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.md)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md)).padding(vertical = GraphynSpacingValues.spacing.xs)) {
         fieldTypes.forEach { (key, type) ->
             RecordFieldRow(
                 key = key,
@@ -91,10 +92,10 @@ private fun RecordFieldRow(
         val raw = editText ?: return; editText = null
         parseRecordField(type, raw)?.let(onEdit)
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = appTheme.spacing.sm, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = GraphynSpacingValues.spacing.sm, vertical = GraphynSpacingValues.spacing.md), verticalAlignment = Alignment.CenterVertically) {
         BasicText(key, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(GraphynSpacingValues.spacing.xxl))
         if (type == WorkflowType.BooleanType && value is WorkflowValue.BooleanValue) {
             val on = value.value
             val activeBg = appTheme.colors.primary

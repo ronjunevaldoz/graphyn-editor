@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
@@ -34,7 +35,7 @@ import kotlin.math.roundToInt
 internal fun FieldHeader(label: String, theme: FieldNodeTheme, onMove: ((IntOffset) -> Unit)? = null) {
     Box(
         modifier = Modifier.fillMaxWidth().height(HEADER_DP.dp).background(theme.headerBackground())
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = GraphynSpacingValues.spacing.huge)
             .then(if (onMove != null) Modifier.pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
@@ -78,7 +79,7 @@ internal fun FieldBody(
 @Composable
 internal fun FieldFooter(outputs: List<PortSpec>, theme: FieldNodeTheme) {
     Box(Modifier.fillMaxWidth().height(FOOTER_DIVIDER_DP.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(theme.divider()))
+        Box(Modifier.fillMaxWidth().height(GraphynSpacingValues.spacing.xs).background(theme.divider()))
     }
     outputs.forEach { output -> OutputRow(output = output, theme = theme) }
 }
