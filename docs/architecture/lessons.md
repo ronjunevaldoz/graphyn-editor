@@ -1049,3 +1049,39 @@ plugins {
 ### Rule
 
 Any module that touches a `@Composable`-typed API surface from another module **must** apply the Compose compiler plugin, even if it only *constructs* the type and never writes a composable itself. Prefer the `graphyn-kmp-compose-library` convention plugin for new Compose-consuming modules so this can't be forgotten. When you see a `NoSuchMethodError` whose only delta is `FunctionN` vs `FunctionN+2`, suspect a missing Compose compiler plugin — not a stale build.
+
+---
+
+## A canvas card's layout width must equal the width its port anchors assume
+
+**Category:** Canvas rendering — node/port alignment
+**Applies to:** Any `NodeCanvasFactory` whose `nodeWidth` / `portAnchorY` are computed from a fixed shape size while the card content can be wider
+
+### Symptom
+
+Gmail/LinkedIn circle nodes had their connection dots floating to the left of the circle. `GraphynNodeLayer` draws input ports at `position.x` and output ports at `position.x + factory.nodeWidth`, and `ShapeCardFactory.nodeWidth` is the *shape* size (48dp). But `ShapeCard` laid the shape + label in a `CenterHorizontally` `Column` with **no width constraint**, so a label wider than the shape (e.g. "Fetch Emails") grew the column to the label width and re-centered the circle inside it. The circle ended up around `[22, 70]` while the ports stayed anchored to `[0, 48]`.
+
+### Root cause
+
+The card is placed in `Box(Modifier.offset { position })` — unconstrained width. A centered `Column` then takes the width of its widest child (the label), shifting every narrower child (the shape) right by `(labelWidth - shapeWidth) / 2`. The port-anchor math (`nodeWidth`, `portAnchorY`) had no idea the visual shape had moved.
+
+### Fix
+
+Constrain the card's layout width to the shape size and let the label *overflow* without affecting layout:
+```kotlin
+val cardWidth = if (hasWidgets) max(size.value.toInt(), CARD_WIDTH_DP).dp else size
+Box(Modifier.width(cardWidth)) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.size(size)...)            // shape now fixed at [0, size]
+        BasicText(
+            label,
+            modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally, unbounded = true),
+        )
+    }
+}
+```
+`wrapContentWidth(..., unbounded = true)` lets the text measure at its natural width and paint wider than the `size`-wide column while staying centered on the shape — so it never widens the card or moves the shape.
+
+### Rule
+
+Whenever a factory reports a fixed `nodeWidth`/`portAnchorY`, the card composable must actually occupy that width. Any content that can exceed it (labels, badges) must overflow via `wrapContentWidth(unbounded = true)` or an overlay, never by growing the layout. Verify with a Roborazzi capture that overlays port-anchor markers at `x=0` and `x=nodeWidth` (`ShapeNodeAlignmentTest`) — the shape edges must line up with the markers across varying label widths.
