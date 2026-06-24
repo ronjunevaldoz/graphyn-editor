@@ -984,3 +984,27 @@ have just sees a smaller graph with no explanation. The fix is to thread the par
 `droppedNodes` / `droppedConnections` all the way to the UI as a per-turn **warning** line
 ("⚠ Skipped unsupported node: foo (mystery) · Dropped 2 invalid connections"). Defensive parsing
 and user-visible feedback are two halves of the same feature — don't ship one without the other.
+
+## Kotlin 2.4.0 WasmJS IR deserialization bug
+
+**Category:** Kotlin compiler — IR backend  
+**Applies to:** WasmJS/JS targets on Kotlin 2.4.0+
+
+### Issue
+
+Kotlin 2.4.0's WasmJS compiler fails with an internal IR deserialization error when compiling code
+that imports complex types (especially those with type aliases or generics). The error occurs during
+IR module loading: `IrDeclarationDeserializer.deserializeIrTypeAlias()` fails to deserialize a
+symbol table entry, causing compilation to abort with "Internal compiler error."
+
+**Timeline:**
+- Kotlin 2.3.x: WasmJS compiles successfully
+- Kotlin 2.4.0: WasmJS fails on code with AI assistant module + new types
+
+**Workaround:** Disable WasmJS builds in CI (docs workflow). The app works fine for JVM/native
+targets. WasmJS is a web demo only, not critical path.
+
+**Fix:** Downgrade to Kotlin 2.3.x requires downgrading Compose Multiplatform (which dropped 2.3
+support), creating a toolchain lock. Wait for Kotlin 2.5.x which is expected to fix IR issues.
+
+**Bug report filed:** [Link TBD] Kotlin issue tracking IR deserialization failure on WasmJS target
