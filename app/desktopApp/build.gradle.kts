@@ -9,6 +9,8 @@ plugins {
 dependencies {
     implementation(projects.app.demo)
     implementation(projects.plugins.script)
+    implementation(projects.plugins.gmail)
+    implementation(projects.plugins.linkedin)
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutinesSwing)

@@ -49,6 +49,18 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
         }
+        jvmMain.dependencies {
+            implementation(projects.plugins.gmail)
+            implementation(projects.plugins.linkedin)
+        }
+        jsMain.dependencies {
+            implementation(projects.plugins.gmail)
+            implementation(projects.plugins.linkedin)
+        }
+        androidMain.dependencies {
+            implementation(projects.plugins.gmail)
+            implementation(projects.plugins.linkedin)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
