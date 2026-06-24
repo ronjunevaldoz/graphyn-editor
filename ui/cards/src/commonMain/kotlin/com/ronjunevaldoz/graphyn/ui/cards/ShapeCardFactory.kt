@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -82,11 +83,14 @@ private fun ShapeCard(
     val bg = theme.background()
     val borderColor = if (ctx.selected) theme.selectedBorder() else bg
     val hasWidgets = inlineInputRows > 0
-    val cardWidth = if (hasWidgets) max(size.value.toInt(), CARD_WIDTH_DP).dp else null
+    // The card's layout width must equal the shape's own width so the port anchors
+    // (input at x=0, output at x=nodeWidth) line up with the shape's edges. A label wider
+    // than the shape must overflow without widening the card (see label modifier below).
+    val cardWidth = if (hasWidgets) max(size.value.toInt(), CARD_WIDTH_DP).dp else size
 
-    Box(modifier = if (cardWidth != null) Modifier.width(cardWidth) else Modifier) {
+    Box(modifier = Modifier.width(cardWidth)) {
         Column(
-            modifier = Modifier.then(if (hasWidgets) Modifier.fillMaxWidth() else Modifier),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
@@ -118,6 +122,8 @@ private fun ShapeCard(
             }
             BasicText(
                 ctx.spec.label,
+                modifier = if (hasWidgets) Modifier
+                else Modifier.wrapContentWidth(align = Alignment.CenterHorizontally, unbounded = true),
                 style = appTheme.typography.nodeLabel.copy(color = theme.labelColor(), fontWeight = FontWeight.Medium),
             )
             if (hasWidgets) {
