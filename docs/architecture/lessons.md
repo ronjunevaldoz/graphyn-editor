@@ -1008,3 +1008,44 @@ targets. WasmJS is a web demo only, not critical path.
 support), creating a toolchain lock. Wait for Kotlin 2.5.x which is expected to fix IR issues.
 
 **Bug report filed:** [Link TBD] Kotlin issue tracking IR deserialization failure on WasmJS target
+
+---
+
+## A `@Composable` param's ABI is `FunctionN+2` — a consumer module without the Compose compiler plugin sees the wrong arity
+
+**Category:** Compose compiler — cross-module ABI, Gradle plugin setup
+**Applies to:** Any module that *constructs* or *calls* a type from another module whose public API includes a `@Composable` function-type parameter (e.g. `ui:cards`'s `ShapeCardFactory(avatar: (@Composable (NodeRef, NodeSpec) -> Unit)?)`)
+
+### Symptom
+
+Runtime `NoSuchMethodError` on a constructor/method, where the **only** difference between the requested and available signature is the function-type arity:
+```
+NoSuchMethodError: 'void ShapeCardFactory.<init>(Shape, float, ShapeNodeTheme, NodeShape,
+    kotlin.jvm.functions.Function2,  ← consumer thinks Function2
+    int, FieldNodeTheme, int, DefaultConstructorMarker)'
+  at plugins.gmail.GmailEditorPlugin.register(GmailEditorPlugin.kt:22)
+```
+…but the producer class actually declares `kotlin.jvm.functions.Function4` for that param.
+
+### Root cause (NOT stale builds)
+
+The Compose compiler plugin rewrites every `@Composable` function type by appending two params: `Composer` and a `changed: Int`. So `@Composable (A, B) -> Unit` becomes `Function4`, not `Function2`. A module that depends on `ui:cards` but **does not apply the Compose compiler plugin** does not perform this rewrite when *reading* the dependency's metadata — it sees the raw `(A, B) -> Unit` as `Function2` and emits a call to a constructor that doesn't exist. The producer (`ui:cards`, which has the plugin) emits `Function4`. Mismatch → `NoSuchMethodError` at first use.
+
+This survives `clean`, `--no-build-cache`, and `--rerun-tasks` because it is a *correct* compilation of a module with the *wrong plugin set* — not staleness. The decisive diagnostic is `javap -c` on the consumer's `.class`: if the emitted `<init>` reference uses `FunctionN` while the producer uses `FunctionN+2`, the consumer is missing the Compose compiler plugin.
+
+### Fix
+
+Apply both Compose Gradle plugins to the consumer module (`plugins/gmail`, `plugins/linkedin`):
+```kotlin
+plugins {
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.composeMultiplatform)  // org.jetbrains.compose
+    alias(libs.plugins.composeCompiler)       // org.jetbrains.kotlin.plugin.compose — the one that fixes the ABI
+    alias(libs.plugins.mavenPublish)
+}
+```
+(`composeCompiler` is the load-bearing one; `composeMultiplatform` keeps the setup consistent with `sample-style-nodes`, which uses the `graphyn-kmp-compose-library` convention plugin that bundles both.)
+
+### Rule
+
+Any module that touches a `@Composable`-typed API surface from another module **must** apply the Compose compiler plugin, even if it only *constructs* the type and never writes a composable itself. Prefer the `graphyn-kmp-compose-library` convention plugin for new Compose-consuming modules so this can't be forgotten. When you see a `NoSuchMethodError` whose only delta is `FunctionN` vs `FunctionN+2`, suspect a missing Compose compiler plugin — not a stale build.
