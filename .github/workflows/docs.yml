@@ -51,10 +51,11 @@ jobs:
       #     mkdir -p site/app
       #     cp -r app/webApp/build/dist/wasmJs/productionExecutable/. site/app/
 
-      - name: Copy API docs to site/api/
-        run: |
-          mkdir -p site/api
-          cp -r build/dokka/htmlMultiModule/. site/api/
+      # TODO: Fix Dokka output directory issue in CI
+      # - name: Copy API docs to site/api/
+      #   run: |
+      #     mkdir -p site/api
+      #     cp -r build/dokka/htmlMultiModule/. site/api/
 
       # ── Deploy to gh-pages ───────────────────────────────────────────
       - name: Deploy to GitHub Pages
