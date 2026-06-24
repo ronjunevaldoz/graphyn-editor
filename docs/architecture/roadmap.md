@@ -69,11 +69,25 @@ Items discovered during development that are not yet built. Ordered by impact.
 
 ---
 
+## Service Integrations (Next Phase)
+
+See [integration-plan-social.md](./integration-plan-social.md) for detailed scope.
+
+| Plugin | Nodes | Release | Status |
+|---|---|---|---|
+| LinkedIn | 7 (post, fetch profile, get connections, send DM, like, search) | v0.2.2 | 📋 planned |
+| Twitter/X | 8 (post, timeline, trending, search, like, retweet, DM, user info) | v0.2.3 | 📋 planned |
+| Discord | TBD | v0.2.4 | 📋 planned |
+| Telegram | TBD | v0.2.5 | 📋 planned |
+| Google Sheets | TBD | v0.2.6 | 📋 planned |
+
+---
+
 ## Cross-platform integration
 
 | Target | Scope | Status |
 |---|---|---|
-| React Native plugin | Use Graphyn as a reusable library in RN apps via native bridge | 📋 planned |
-| Flutter plugin | Use Graphyn as a reusable library in Flutter apps via platform channels | 📋 planned |
-| Server-side execution | Node orchestration + credential management for backend workflows | 📋 planned |
-| OAuth flows | Client-side credential providers for Gmail, Discord, Telegram, etc. | 📋 planned |
+| React Native plugin | Use Graphyn as a reusable library in RN apps via native bridge | 📋 planned (post-v0.3) |
+| Flutter plugin | Use Graphyn as a reusable library in Flutter apps via platform channels | 📋 planned (post-v0.3) |
+| Server-side execution | Node orchestration + credential management for backend workflows | 📋 planned (v0.3) |
+| OAuth flows | Client-side credential providers with secure token refresh | 📋 planned (post-v0.2.3) |
