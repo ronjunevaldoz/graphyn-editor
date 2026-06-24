@@ -61,6 +61,10 @@ kotlin {
             implementation(projects.plugins.gmail)
             implementation(projects.plugins.linkedin)
         }
+        wasmJsMain.dependencies {
+            implementation(projects.plugins.gmail)
+            implementation(projects.plugins.linkedin)
+        }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }

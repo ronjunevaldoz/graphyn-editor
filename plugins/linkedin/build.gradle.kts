@@ -8,6 +8,9 @@ kotlin {
     js {
         browser()
     }
+    wasmJs {
+        browser()
+    }
     iosArm64()
     iosSimulatorArm64()
 
@@ -30,6 +33,10 @@ kotlin {
         }
 
         jsMain.dependencies {
+            implementation(libs.ktor.clientJs)
+        }
+
+        wasmJsMain.dependencies {
             implementation(libs.ktor.clientJs)
         }
 

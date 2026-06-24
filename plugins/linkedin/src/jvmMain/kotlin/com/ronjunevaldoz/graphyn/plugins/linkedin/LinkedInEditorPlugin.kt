@@ -6,6 +6,7 @@ import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginRegistrar
 import com.ronjunevaldoz.graphyn.ui.cards.ShapeCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.ShapeNodeTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.CircleShape
 
@@ -20,7 +21,8 @@ object LinkedInEditorPlugin : GraphynEditorPlugin {
     override fun register(registrar: GraphynEditorPluginRegistrar) {
         val shapeFactory = ShapeCardFactory(
             shape = CircleShape,
-            size = 48.dp
+            size = 48.dp,
+            theme = ShapeNodeTheme()
         )
 
         LinkedInNodeSpecs.all.forEach { spec ->
