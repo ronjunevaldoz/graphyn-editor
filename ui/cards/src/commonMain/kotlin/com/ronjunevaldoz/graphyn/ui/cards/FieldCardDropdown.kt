@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
@@ -39,7 +40,7 @@ internal fun SingleSelectRow(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val selected = (currentValue as? WorkflowValue.StringValue)?.value
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl), verticalAlignment = Alignment.CenterVertically) {
         BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
@@ -68,7 +69,7 @@ internal fun MultiSelectRow(
             ?.map { it.value }?.toSet() ?: emptySet()
     }
     val label = when (selectedSet.size) { 0 -> "—"; 1 -> selectedSet.first(); else -> "${selectedSet.size} selected" }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl), verticalAlignment = Alignment.CenterVertically) {
         BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
@@ -87,15 +88,15 @@ internal fun MultiSelectRow(
 
 @Composable
 private fun ValueChip(label: String, theme: FieldNodeTheme, onClick: () -> Unit) =
-    Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable(onClick = onClick).padding(horizontal = 5.dp, vertical = 2.dp), Alignment.Center) {
+    Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable(onClick = onClick).padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm), Alignment.Center) {
         BasicText(label, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
     }
 
 @Composable
 private fun DropdownMenu(options: List<String>, theme: FieldNodeTheme, onSelect: (String) -> Unit) {
-    Column(Modifier.widthIn(min = 80.dp, max = 160.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
+    Column(Modifier.widthIn(min = GraphynSpacingValues.spacing.fieldWidth, max = GraphynSpacingValues.spacing.fieldMaxWidth).clip(RoundedCornerShape(GraphynSpacingValues.spacing.xxl)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(GraphynSpacingValues.spacing.xxl)).padding(vertical = GraphynSpacingValues.spacing.lg)) {
         options.forEach { option ->
-            Box(Modifier.fillMaxWidth().clickable { onSelect(option) }.padding(horizontal = 8.dp, vertical = 5.dp)) {
+            Box(Modifier.fillMaxWidth().clickable { onSelect(option) }.padding(horizontal = GraphynSpacingValues.spacing.xxxl, vertical = GraphynSpacingValues.spacing.xl)) {
                 BasicText(option, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()), maxLines = 1)
             }
         }
@@ -104,11 +105,11 @@ private fun DropdownMenu(options: List<String>, theme: FieldNodeTheme, onSelect:
 
 @Composable
 private fun MultiDropdownMenu(options: List<String>, selected: Set<String>, theme: FieldNodeTheme, onToggle: (String) -> Unit) {
-    Column(Modifier.widthIn(min = 80.dp, max = 160.dp).clip(RoundedCornerShape(6.dp)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(6.dp)).padding(vertical = 4.dp)) {
+    Column(Modifier.widthIn(min = GraphynSpacingValues.spacing.fieldWidth, max = GraphynSpacingValues.spacing.fieldMaxWidth).clip(RoundedCornerShape(GraphynSpacingValues.spacing.xxl)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(GraphynSpacingValues.spacing.xxl)).padding(vertical = GraphynSpacingValues.spacing.lg)) {
         options.forEach { option ->
-            Row(Modifier.fillMaxWidth().clickable { onToggle(option) }.padding(horizontal = 8.dp, vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(if (option in selected) theme.selectedBorder() else theme.valueBg()).border(1.dp, theme.border(), RoundedCornerShape(2.dp)))
-                Spacer(Modifier.width(6.dp))
+            Row(Modifier.fillMaxWidth().clickable { onToggle(option) }.padding(horizontal = GraphynSpacingValues.spacing.xxxl, vertical = GraphynSpacingValues.spacing.xl), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(GraphynSpacingValues.spacing.huge).clip(RoundedCornerShape(GraphynSpacingValues.spacing.sm)).background(if (option in selected) theme.selectedBorder() else theme.valueBg()).border(1.dp, theme.border(), RoundedCornerShape(GraphynSpacingValues.spacing.sm)))
+                Spacer(Modifier.width(GraphynSpacingValues.spacing.xxl))
                 BasicText(option, style = appTheme.typography.nodeLabel.copy(color = theme.valueText()), maxLines = 1)
             }
         }

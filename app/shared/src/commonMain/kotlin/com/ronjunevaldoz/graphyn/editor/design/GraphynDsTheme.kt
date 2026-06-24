@@ -9,6 +9,8 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.AppTheme
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacing
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.LocalGraphynSpacing
 
 object GraphynDs {
     val colors: GraphynDsColors
@@ -75,6 +77,7 @@ fun GraphynDsTheme(
             CompositionLocalProvider(
                 LocalGraphynDsColors provides colors,
                 LocalGraphynDsTypography provides typography,
+                LocalGraphynSpacing provides GraphynSpacing(),
                 content = content,
             )
         }

@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
@@ -43,11 +44,11 @@ internal fun ListRow(
     var showPopup by remember { mutableStateOf(false) }
     val items = (currentValue as? WorkflowValue.ListValue)?.items ?: emptyList()
     val label = when (items.size) { 0 -> "empty"; 1 -> "1 item"; else -> "${items.size} items" }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = appTheme.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
         BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
         Spacer(Modifier.weight(1f))
         Box {
-            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(3.dp)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = 5.dp, vertical = appTheme.spacing.xxs), Alignment.Center) {
+            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
                 BasicText("$label ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
             if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { showPopup = false }) {
@@ -59,7 +60,7 @@ internal fun ListRow(
 
 @Composable
 private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, theme: FieldNodeTheme, onChange: (List<WorkflowValue>) -> Unit) {
-    Column(Modifier.widthIn(min = LIST_POPUP_MIN_DP.dp, max = LIST_POPUP_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.md)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md)).padding(vertical = appTheme.spacing.xs)) {
+    Column(Modifier.widthIn(min = LIST_POPUP_MIN_DP.dp, max = LIST_POPUP_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.md)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md)).padding(vertical = GraphynSpacingValues.spacing.xs)) {
         items.forEachIndexed { i, item ->
             key(i) {
                 ListItemRow(item, elementType, theme,
@@ -68,7 +69,7 @@ private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, the
                 )
             }
         }
-        Box(Modifier.fillMaxWidth().clickable { onChange(items + defaultItem(elementType)) }.padding(horizontal = appTheme.spacing.sm, vertical = 5.dp)) {
+        Box(Modifier.fillMaxWidth().clickable { onChange(items + defaultItem(elementType)) }.padding(horizontal = GraphynSpacingValues.spacing.sm, vertical = GraphynSpacingValues.spacing.xl)) {
             BasicText("+ Add", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
     }
@@ -82,7 +83,7 @@ private fun ListItemRow(value: WorkflowValue, elementType: WorkflowType, theme: 
         val raw = editText ?: return; editText = null
         parseListItem(elementType, raw)?.let(onEdit)
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = GraphynSpacingValues.spacing.xxl, vertical = GraphynSpacingValues.spacing.md), verticalAlignment = Alignment.CenterVertically) {
         if (elementType == WorkflowType.BooleanType && value is WorkflowValue.BooleanValue) {
             val on = value.value
             val activeBg = appTheme.colors.primary
@@ -107,7 +108,7 @@ private fun ListItemRow(value: WorkflowValue, elementType: WorkflowType, theme: 
                 BasicText(value.label(), style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
         }
-        Spacer(Modifier.width(appTheme.spacing.xs))
+        Spacer(Modifier.width(GraphynSpacingValues.spacing.xs))
         Box(Modifier.clickable(onClick = onRemove).padding(appTheme.spacing.xxs)) {
             BasicText("×", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
