@@ -65,3 +65,15 @@ Items discovered during development that are not yet built. Ordered by impact.
 | `plugins/types` | cast, validate, schema | ✅ done |
 | `plugins/text` | format, split, regex | ✅ done |
 | `plugins/io` | http-request, file-read, file-write | ✅ done |
+| `plugins/gmail` | Gmail integration (fetch, send, reply, parse) | ✅ done (0.2.1) |
+
+---
+
+## Cross-platform integration
+
+| Target | Scope | Status |
+|---|---|---|
+| React Native plugin | Use Graphyn as a reusable library in RN apps via native bridge | 📋 planned |
+| Flutter plugin | Use Graphyn as a reusable library in Flutter apps via platform channels | 📋 planned |
+| Server-side execution | Node orchestration + credential management for backend workflows | 📋 planned |
+| OAuth flows | Client-side credential providers for Gmail, Discord, Telegram, etc. | 📋 planned |
