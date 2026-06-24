@@ -25,8 +25,9 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       # ── WasmJS web app ────────────────────────────────────────────────
-      - name: Build WasmJS web app
-        run: ./gradlew :app:webApp:wasmJsBrowserProductionWebpack --no-daemon
+      # TODO: Fix Kotlin compiler issue with WasmJS target (internal compiler error)
+      # - name: Build WasmJS web app
+      #   run: ./gradlew :app:webApp:wasmJsBrowserProductionWebpack --no-daemon
 
       # ── API docs (Dokka) ──────────────────────────────────────────────
       - name: Generate API docs
@@ -44,10 +45,11 @@ jobs:
         run: mkdocs build --strict
 
       # ── Merge outputs into site/ ──────────────────────────────────────
-      - name: Copy WasmJS app to site/app/
-        run: |
-          mkdir -p site/app
-          cp -r app/webApp/build/dist/wasmJs/productionExecutable/. site/app/
+      # Skip WasmJS app copy due to build blocker
+      # - name: Copy WasmJS app to site/app/
+      #   run: |
+      #     mkdir -p site/app
+      #     cp -r app/webApp/build/dist/wasmJs/productionExecutable/. site/app/
 
       - name: Copy API docs to site/api/
         run: |
