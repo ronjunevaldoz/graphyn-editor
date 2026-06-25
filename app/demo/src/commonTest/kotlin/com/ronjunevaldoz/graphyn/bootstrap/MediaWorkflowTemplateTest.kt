@@ -23,6 +23,7 @@ class MediaWorkflowTemplateTest {
                 DemoScene.AudioMix,
                 DemoScene.SmartEncode,
                 DemoScene.VideoStitch,
+                DemoScene.Captioned,
             ),
             mediaScenes,
         )
@@ -226,6 +227,44 @@ class MediaWorkflowTemplateTest {
         assertConfig(
             workflow.node("encode"),
             "output_path" to stringValue("stitched.mp4"),
+            "bitrate" to stringValue("high"),
+        )
+    }
+
+    @Test
+    fun captionedVideoTemplateIsConfiguredAndWired() {
+        val workflow = DemoScene.Captioned.workflow
+
+        assertTemplate(
+            workflow = workflow,
+            expectedId = "captioned-video",
+            expectedName = "Captioned Video",
+            expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
+                "resolveVideo" to "io.resolve_path",
+                "import_video" to "media.video_import",
+                "extract_audio" to "media.audio_extract",
+                "transcribe" to "media.speech_to_text",
+                "caption_style" to "media.caption_style",
+                "caption_overlay" to "media.caption_overlay",
+                "encode" to "media.video_encode",
+                "output" to "media.file_output",
+            ),
+            expectedConnections = setOf(
+                connection("resolveVideo", "resolved_path", "import_video", "path"),
+                connection("import_video", "video", "extract_audio", "video"),
+                connection("extract_audio", "audio", "transcribe", "audio"),
+                connection("transcribe", "segments", "caption_overlay", "captions"),
+                connection("caption_style", "style_config", "caption_overlay", "style_config"),
+                connection("import_video", "video", "caption_overlay", "video"),
+                connection("caption_overlay", "video", "encode", "video"),
+                connection("encode", "file_path", "output", "file_path"),
+            ),
+        )
+        assertResolver(workflow.node("resolveVideo"), "input.mp4")
+        assertConfig(
+            workflow.node("encode"),
+            "output_path" to stringValue("captioned.mp4"),
             "bitrate" to stringValue("high"),
         )
     }

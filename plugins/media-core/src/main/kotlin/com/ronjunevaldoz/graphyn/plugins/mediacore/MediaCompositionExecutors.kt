@@ -3,7 +3,16 @@ package com.ronjunevaldoz.graphyn.plugins.mediacore
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutor
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
-/** Executor factories for the Phase 2 composition nodes, registered by [MediaCorePlugin]. */
+/** Executor factories for the Phase 2 image/composition nodes, registered by [MediaCorePlugin]. */
+internal fun imageImportExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
+    val metadata = backend.inspectImage(inputs.string("path"))
+    mapOf(
+        "image" to MediaTypes.imageValue(metadata.path),
+        "width" to WorkflowValue.IntValue(metadata.width),
+        "height" to WorkflowValue.IntValue(metadata.height),
+    )
+}
+
 internal fun captionOverlayExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
     val captions = inputs.list("captions").map { it.toCaption() }
     val metadata = backend.overlayCaptions(

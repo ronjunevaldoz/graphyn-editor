@@ -21,6 +21,7 @@ This page covers the demo workflows that ship with Graphyn and the node types th
 
 Phase 2 (captioning & composition) adds:
 
+- `media.image_import` (loads an image handle + dimensions; produces the handle OCR consumes)
 - `media.caption_overlay` (burns timed captions into a video)
 - `media.video_compose` (layers overlay clips over a base video)
 - `media.timing_controller` (averages sync points into delays)
@@ -33,8 +34,10 @@ Phase 1 media workflows are implemented for JVM/Desktop and are covered by both 
 contract tests and workflow execution tests.
 
 Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
-availability-guarded FFmpeg backend tests. They are registered in the palette but are not yet wired
-into any shipped demo template.
+availability-guarded FFmpeg backend tests. The **Captioned Video** demo wires the captioning chain
+(`speech_to_text → caption_overlay`, plus `caption_style`) end-to-end. `video_compose`,
+`timing_controller`, `image_import`, and `ocr` are registered in the palette but not yet used in a
+shipped demo.
 
 ## Node Status
 
@@ -54,11 +57,12 @@ into any shipped demo template.
 | `media.file_output` | preview | implemented | no dedicated direct unit test yet | yes | yes | Pass-through file preview; only video-encode terminals expose a `file_path` |
 | `preview.view` | preview | implemented | yes (`PreviewPluginTest`) | yes | yes | Generic opaque preview; used to surface TTS/mix audio handles |
 | `graphyn.sticky_note` | sticky-notes | implemented | n/a (annotation) | yes | yes | No-op executor so an embedded guide note never fails execution |
-| `media.caption_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | no (no demo yet) | n/a | Burns captions via the `ass` filter; **requires FFmpeg built with libass** |
+| `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | no | n/a | FFprobe-backed image handle + dimensions; the producer `media.ocr` consumes |
+| `media.caption_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Captioned Video) | yes | Burns captions via the `ass` filter; **requires FFmpeg built with libass** |
 | `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | no | n/a | Overlay-filter chain with per-overlay timing + opacity |
 | `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | no | n/a | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
-| `media.speech_to_text` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | no | n/a | CLI adapter `GRAPHYN_STT_EXECUTABLE`; emits caption segments |
-| `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | no | n/a | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; needs an image handle producer (Phase 3) |
+| `media.speech_to_text` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Captioned Video) | yes | CLI adapter `GRAPHYN_STT_EXECUTABLE`; emits caption segments |
+| `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | no | n/a | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; pair with `media.image_import` |
 
 ## Template Coverage
 
@@ -69,6 +73,7 @@ into any shipped demo template.
 | Audio Mix | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Video → extract + TTS → mix; caption-style metadata. Output preview via `preview.view` |
 | Smart Video Encode | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Script-driven bitrate selection before encode. Output preview via `media.file_output` |
 | Video Stitch | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Clip ordering, stitching, encode. Output preview via `media.file_output` |
+| Captioned Video | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: transcribe → style → burn-in captions → encode. Output via `media.file_output` |
 
 Every template also carries a `graphyn.sticky_note` guide node (title, flow, use-cases, tips) and
 ends in an output-preview node. Templates ship without positions; the editor runs auto-layout on
@@ -113,11 +118,12 @@ Run the full demo JVM suite:
 - No audio encode/save node yet, so audio-only templates cannot terminate in `media.file_output`
   (they use `preview.view`).
 - `media.video_stitch` supports only the `cut` transition in Phase 1.
-- **Phase 2 nodes are not yet wired into a demo template** — they are registered and unit-tested but
-  there is no end-to-end captioning/composition scene yet.
-- **`media.ocr` has no image-handle producer yet.** Image import / frame-extract nodes are Phase 3,
-  so OCR is currently only reachable from an image handle built upstream by hand or by a script.
+- **`media.video_compose` and `media.timing_controller` are not yet in a demo template** — they are
+  registered and unit-tested but no shipped scene wires them.
+- **`media.ocr` has no demo yet.** `media.image_import` now produces the image handle OCR needs, but
+  no scene wires `image_import → ocr` (it also requires `GRAPHYN_OCR_EXECUTABLE` to run).
 - `media.video_compose` overlays are video handles only; image and text overlays are deferred.
+- `media.image_import` reads only dimensions (no color space / frame extraction yet).
 - Phase 3 nodes (image ops, audio encode, advanced encoding) remain planned in
   `media-workflow-plan.md`.
 

@@ -27,6 +27,7 @@ class MediaCorePlugin(
         registrar.registerExecutor(MediaCoreSpecs.videosList.type, mediaListExecutor("video", "videos"))
         registrar.registerExecutor(MediaCoreSpecs.videoStitch.type, videoStitchExecutor())
         registrar.registerExecutor(MediaCoreSpecs.videoEncode.type, videoEncodeExecutor())
+        registrar.registerExecutor(MediaCompositionSpecs.imageImport.type, imageImportExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.captionOverlay.type, captionOverlayExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.videoCompose.type, videoComposeExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.timingController.type, timingControllerExecutor())

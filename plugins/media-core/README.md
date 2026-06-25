@@ -21,6 +21,7 @@ Phase 1 — decode / encode:
 
 Phase 2 — captioning / composition:
 
+- `media.image_import` — loads an image handle and reads its pixel dimensions (producer for OCR)
 - `media.caption_overlay` — burns timed captions onto a video using a caption style
 - `media.video_compose` — layers overlay clips over a base video with per-overlay timing + opacity
 - `media.timing_controller` — averages measured `(source_ms, target_ms)` sync points into delays
