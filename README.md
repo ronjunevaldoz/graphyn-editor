@@ -64,21 +64,27 @@ Graphyn is a **Kotlin Multiplatform library** that gives your app a fully-featur
          │ Panels     │  │ Executors   │
          └───────┬────┘  └──────┬──────┘
                  │              │
-              ┌──▼──────────────▼──┐
-              │       core         │
-              │ Model · Types      │
-              │ Validation · Exec  │
-              └────────────────────┘
+          ┌──────▼───────────────▼──────┐
+          │   core (aggregator)          │
+          │  model · execution           │
+          │  serialization · data        │
+          └──────────────────────────────┘
 
 ui/cards (ShapeCardFactory, FieldCardFactory)
 plugins/* (node definitions + executors)
 ```
 
+`core` is a folder of focused, layered modules. `:core` itself is a thin aggregator that re-exports the four submodules via `api`, so hosts can depend on `projects.core` (or the published `graphyn-core`) and get everything. Contract modules depend only on the submodules they actually expose (`core:model` + `core:execution`).
+
 | Module | What | Status |
 |---|---|---|
-| `core` | Workflow model, types, execution | Library |
-| `editor-api` | Canvas card + panel contracts | Library |
-| `plugin-api` | Node spec + executor contracts | Library |
+| `core:model` | Workflow model, types, validation, registry, `NodeGroups` | Library |
+| `core:execution` | Execution engine, executors, events | Library |
+| `core:serialization` | Workflow document codec | Library |
+| `core:data` | Workflow stores + platform persistence | Library |
+| `core` | Aggregator re-exporting the four above | Library |
+| `editor-api` | Canvas card + panel contracts (→ core:model, core:execution) | Library |
+| `plugin-api` | Node spec + executor contracts (→ core:model, core:execution) | Library |
 | `ui/cards` | Ready-made card shapes | Library |
 | `app/shared` | Canvas + editor UI | App |
 | `plugins/gmail` | Gmail integration (fetch, send, reply) | 0.2.1 ✅ |
@@ -381,7 +387,8 @@ Set `GRAPHYN_API_KEY=<secret>` in the environment to enable Bearer-token auth. A
 ## Testing
 
 ```bash
-./gradlew :core:check                 # model, validation, and execution tests
+# core is split into submodules — check each (plus :core for the integration test)
+./gradlew :core:model:check :core:execution:check :core:serialization:check :core:data:check :core:check
 ./gradlew :app:shared:jvmTest         # canvas + editor UI tests (Roborazzi)
 ./gradlew :plugins:io:jvmTest         # I/O plugin tests
 ./gradlew :server:test                # server route tests
