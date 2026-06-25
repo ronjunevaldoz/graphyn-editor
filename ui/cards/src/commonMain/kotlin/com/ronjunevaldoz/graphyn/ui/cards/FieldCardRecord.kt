@@ -45,14 +45,29 @@ internal fun RecordRow(
 ) {
     var showPopup by remember { mutableStateOf(false) }
     val fields = (currentValue as? WorkflowValue.RecordValue)?.fields ?: emptyMap()
+    var draftFields by remember { mutableStateOf<Map<String, WorkflowValue>?>(null) }
     val label = when (fieldTypes.size) { 1 -> "1 field"; else -> "${fieldTypes.size} fields" }
+    fun dismiss(commit: Boolean) {
+        if (commit) draftFields?.let { onValueChange(WorkflowValue.RecordValue(it)) }
+        showPopup = false
+        draftFields = null
+    }
     FieldRow(name = input.name) {
         Box {
-            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
+            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable {
+                draftFields = fields
+                showPopup = true
+            }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
                 BasicText("{ $label } ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
-            if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { showPopup = false }) {
-                RecordPopup(fields, fieldTypes, theme) { onValueChange(WorkflowValue.RecordValue(it)) }
+            if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { dismiss(commit = true) }) {
+                RecordPopup(
+                    fields = draftFields ?: fields,
+                    fieldTypes = fieldTypes,
+                    theme = theme,
+                    onChange = { draftFields = it },
+                    onDone = { dismiss(commit = true) },
+                )
             }
         }
     }
@@ -64,6 +79,7 @@ private fun RecordPopup(
     fieldTypes: Map<String, WorkflowType>,
     theme: FieldNodeTheme,
     onChange: (Map<String, WorkflowValue>) -> Unit,
+    onDone: () -> Unit,
 ) {
     Column(Modifier.widthIn(min = RECORD_POPUP_MIN_DP.dp, max = RECORD_POPUP_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.md)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md)).padding(vertical = GraphynSpacingValues.spacing.xs)) {
         fieldTypes.forEach { (key, type) ->
@@ -75,11 +91,18 @@ private fun RecordPopup(
                 onEdit = { updated -> onChange(fields + (key to updated)) },
             )
         }
+        Box(
+            Modifier.fillMaxWidth().clickable(onClick = onDone)
+                .padding(horizontal = GraphynSpacingValues.spacing.sm, vertical = GraphynSpacingValues.spacing.md),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            BasicText("Done", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
+        }
     }
 }
 
 @Composable
-private fun RecordFieldRow(
+internal fun RecordFieldRow(
     key: String,
     value: WorkflowValue?,
     type: WorkflowType,
@@ -132,7 +155,7 @@ private fun RecordFieldRow(
     }
 }
 
-private fun parseRecordField(type: WorkflowType, raw: String): WorkflowValue? = when (type) {
+internal fun parseRecordField(type: WorkflowType, raw: String): WorkflowValue? = when (type) {
     WorkflowType.IntType -> raw.toIntOrNull()?.let { WorkflowValue.IntValue(it) }
     WorkflowType.DoubleType -> raw.toDoubleOrNull()?.let { WorkflowValue.DoubleValue(it) }
     WorkflowType.BooleanType -> raw.toBooleanStrictOrNull()?.let { WorkflowValue.BooleanValue(it) }
