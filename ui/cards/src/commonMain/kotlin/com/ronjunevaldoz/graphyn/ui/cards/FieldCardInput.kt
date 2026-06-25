@@ -25,6 +25,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
@@ -71,6 +72,7 @@ internal fun InputRow(
                 BasicTextField(
                     value = editText!!,
                     onValueChange = { editText = it },
+                    singleLine = true,
                     modifier = Modifier.width(VALUE_DP.dp)
                         .focusRequester(focusRequester)
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
@@ -90,7 +92,14 @@ internal fun InputRow(
                         .clickable { focusGranted = false; editText = currentValue.label() }
                         .padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm),
                     contentAlignment = Alignment.Center,
-                ) { BasicText(currentValue.label(), style = appTheme.typography.nodeLabel.copy(color = theme.valueText())) }
+                ) {
+                    BasicText(
+                        currentValue.label(),
+                        style = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

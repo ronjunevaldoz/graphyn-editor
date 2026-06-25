@@ -18,6 +18,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.resolveNodeFactory
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
@@ -41,7 +42,7 @@ internal fun GraphynConnectionMidpoints(
         val toPos = state.nodePosition(toNode.id, toIndex)
 
         val fromSpec = nodeSpecs.resolve(fromNode.type)
-        val fromFactory = canvasCards?.resolve(fromNode.type)
+        val fromFactory = resolveNodeFactory(fromNode, canvasCards, nodeSpecs)
         val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
         val fromNodeWidth = fromFactory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width
         val fromAnchorY = fromSpec?.let {
@@ -49,7 +50,7 @@ internal fun GraphynConnectionMidpoints(
         } ?: GraphynCanvasMetrics.portAnchorY(fromPortIndex)
 
         val toSpec = nodeSpecs.resolve(toNode.type)
-        val toFactory = canvasCards?.resolve(toNode.type)
+        val toFactory = resolveNodeFactory(toNode, canvasCards, nodeSpecs)
         val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
         val toAnchorY = toSpec?.let {
             toFactory?.portAnchorY(toPortIndex, true, it) ?: GraphynCanvasMetrics.portAnchorY(toPortIndex)
