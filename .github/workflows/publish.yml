@@ -9,6 +9,8 @@ on:
 jobs:
   publish:
     runs-on: macos-latest
+    permissions:
+      contents: write   # required for the Create GitHub Release step
 
     env:
       ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
