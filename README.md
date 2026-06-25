@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Compose-Multiplatform-3DDC84?logo=jetpackcompose&logoColor=white" alt="Compose Multiplatform"/>
   <img src="https://img.shields.io/badge/platforms-Android%20·%20Desktop%20·%20Web%20·%20iOS-0095D5" alt="Platforms"/>
-  <img src="https://img.shields.io/badge/release-0.2.1-blue" alt="Release"/>
+  <img src="https://img.shields.io/badge/release-0.3.0-blue" alt="Release"/>
 </p>
 
 ---
@@ -86,7 +86,7 @@ plugins/* (node definitions + executors)
 | `plugin-api` | Node spec + executor contracts (→ core:model, core:execution) | Library |
 | `ui/cards` | Ready-made card shapes | Library |
 | `app/shared` | Canvas + editor UI | App |
-| `plugins/gmail` | Gmail integration (fetch, send, reply) | 0.2.1 ✅ |
+| `plugins/gmail` | Gmail integration (fetch, send, reply) | 0.3.0 ✅ |
 | `plugins/linkedin` | LinkedIn nodes — only `GET /v2/me` is a live call; rest are placeholder endpoints | Sample |
 | `plugins/io` | HTTP, file, env, webhook | Sample |
 | `plugins/control` | Branch, loop, merge | Sample |
@@ -101,7 +101,7 @@ plugins/* (node definitions + executors)
 ```kotlin
 // gradle/libs.versions.toml
 [versions]
-graphyn = "0.2.1"
+graphyn = "0.3.0"
 
 [libraries]
 graphyn-editor     = { module = "io.github.ronjunevaldoz:graphyn-editor",         version.ref = "graphyn" }

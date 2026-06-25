@@ -21,10 +21,10 @@ Each submodule is published independently to Maven Central (the old aggregate
 `graphyn-core` artifact was replaced by these):
 
 ```kotlin
-implementation("io.github.ronjunevaldoz:graphyn-core-model:0.2.1")
-implementation("io.github.ronjunevaldoz:graphyn-core-execution:0.2.1")     // if you execute workflows
-implementation("io.github.ronjunevaldoz:graphyn-core-serialization:0.2.1") // if you (de)serialize
-implementation("io.github.ronjunevaldoz:graphyn-core-data:0.2.1")          // if you persist
+implementation("io.github.ronjunevaldoz:graphyn-core-model:0.3.0")
+implementation("io.github.ronjunevaldoz:graphyn-core-execution:0.3.0")     // if you execute workflows
+implementation("io.github.ronjunevaldoz:graphyn-core-serialization:0.3.0") // if you (de)serialize
+implementation("io.github.ronjunevaldoz:graphyn-core-data:0.3.0")          // if you persist
 ```
 
 Within this repo, depend by project path instead: `implementation(projects.core.model)`, etc.
