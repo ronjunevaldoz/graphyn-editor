@@ -4,6 +4,12 @@ All notable changes to Graphyn are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-06-26
+
+### Bug Fixes
+
+- **cards:** Support editable structured fields
+
 ## [0.4.0] — 2026-06-26
 
 ### Bug Fixes
@@ -306,4 +312,3 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Testing
 
 - **drag:** Add two-node independent drag verification + Roborazzi baseline
-
