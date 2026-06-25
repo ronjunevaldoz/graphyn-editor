@@ -19,7 +19,7 @@ class MediaWorkflowExecutionTest {
 
         val result = fixture.execute(DemoScene.SimpleTts)
 
-        result.assertFullSuccess(expectedNodeCount = 3)
+        result.assertFullSuccess(expectedNodeCount = 5)
         assertEquals(listOf("Text from input.txt"), fixture.ttsTexts)
         assertEquals(
             "/generated/default.wav",
@@ -33,7 +33,7 @@ class MediaWorkflowExecutionTest {
 
         val result = fixture.execute(DemoScene.VideoNarration)
 
-        result.assertFullSuccess(expectedNodeCount = 9)
+        result.assertFullSuccess(expectedNodeCount = 11)
         assertEquals(listOf("Narration from narration.txt"), fixture.ttsTexts)
         assertEquals(
             listOf("/generated/input-extracted.wav", "/generated/narrator.wav"),
@@ -58,9 +58,9 @@ class MediaWorkflowExecutionTest {
 
         val result = fixture.execute(DemoScene.AudioMix)
 
-        result.assertFullSuccess(expectedNodeCount = 5)
+        result.assertFullSuccess(expectedNodeCount = 9)
         assertEquals(
-            listOf("/generated/extracted.wav", "/generated/speaker.wav"),
+            listOf("/generated/input-extracted.wav", "/generated/speaker.wav"),
             fixture.lastAudioMixPaths,
         )
         assertEquals(
@@ -76,7 +76,7 @@ class MediaWorkflowExecutionTest {
 
         val result = fixture.execute(DemoScene.SmartEncode)
 
-        result.assertFullSuccess(expectedNodeCount = 4)
+        result.assertFullSuccess(expectedNodeCount = 6)
         assertEquals(
             listOf<WorkflowValue>(WorkflowValue.DoubleValue(90_000.0)),
             fixture.scriptInputs,
@@ -100,7 +100,7 @@ class MediaWorkflowExecutionTest {
 
         val result = fixture.execute(DemoScene.VideoStitch)
 
-        result.assertFullSuccess(expectedNodeCount = 8)
+        result.assertFullSuccess(expectedNodeCount = 9)
         assertEquals(
             listOf("/fixtures/clip1.mp4", "/fixtures/clip2.mp4"),
             fixture.lastStitchPaths,
@@ -115,7 +115,7 @@ class MediaWorkflowExecutionTest {
             ),
             fixture.lastEncodeCall,
         )
-        assertEquals(stringValue("stitched.mp4"), result.output("preview", "file_path"))
+        assertEquals(stringValue("stitched.mp4"), result.output("output", "file_path"))
     }
 }
 
@@ -236,6 +236,11 @@ private class MediaExecutionFixture {
         register("media.file_output") { inputs ->
             mapOf("file_path" to inputs.getValue("file_path"))
         }
+        register("preview.view") { inputs ->
+            mapOf("value" to (inputs["value"] ?: WorkflowValue.NullValue))
+        }
+        // Annotation node: no data ports, executes as a no-op (mirrors StickyNotePlugin).
+        register("graphyn.sticky_note") { emptyMap() }
     }
 
     suspend fun execute(scene: DemoScene): WorkflowExecutionResult =
