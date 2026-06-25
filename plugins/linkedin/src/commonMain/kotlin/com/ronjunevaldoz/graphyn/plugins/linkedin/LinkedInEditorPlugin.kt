@@ -13,7 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 object LinkedInEditorPlugin : GraphynEditorPlugin {
     override val metadata = GraphynEditorPluginMetadata(
         id = "graphyn.linkedin.editor",
-        displayName = "LinkedIn Editor",
+        displayName = "LinkedIn Editor (Sample)",
         version = "0.2.2",
         apiVersion = GRAPHYN_EDITOR_PLUGIN_API_VERSION,
     )
