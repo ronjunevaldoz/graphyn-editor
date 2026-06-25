@@ -17,17 +17,17 @@ Package names are unchanged (`com.ronjunevaldoz.graphyn.core.*`).
 
 ## Dependency
 
-Consumed by Gradle project path:
+Each submodule is published independently to Maven Central (the old aggregate
+`graphyn-core` artifact was replaced by these):
 
 ```kotlin
-implementation(projects.core.model)
-implementation(projects.core.execution)     // if you execute workflows
-implementation(projects.core.serialization) // if you (de)serialize
-implementation(projects.core.data)          // if you persist
+implementation("io.github.ronjunevaldoz:graphyn-core-model:0.2.1")
+implementation("io.github.ronjunevaldoz:graphyn-core-execution:0.2.1")     // if you execute workflows
+implementation("io.github.ronjunevaldoz:graphyn-core-serialization:0.2.1") // if you (de)serialize
+implementation("io.github.ronjunevaldoz:graphyn-core-data:0.2.1")          // if you persist
 ```
 
-> Maven Central publishing is per-submodule and is being reworked after the split
-> (the previous aggregate `graphyn-core` artifact was removed).
+Within this repo, depend by project path instead: `implementation(projects.core.model)`, etc.
 
 ## Usage
 

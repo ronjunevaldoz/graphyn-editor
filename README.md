@@ -103,10 +103,11 @@ plugins/* (node definitions + executors)
 graphyn = "0.2.1"
 
 [libraries]
-graphyn-editor     = { module = "io.github.ronjunevaldoz:graphyn-editor",     version.ref = "graphyn" }
-graphyn-ui-cards   = { module = "io.github.ronjunevaldoz:graphyn-ui-cards",   version.ref = "graphyn" }
-graphyn-plugin-api = { module = "io.github.ronjunevaldoz:graphyn-plugin-api", version.ref = "graphyn" }
-graphyn-core       = { module = "io.github.ronjunevaldoz:graphyn-core",        version.ref = "graphyn" }
+graphyn-editor     = { module = "io.github.ronjunevaldoz:graphyn-editor",         version.ref = "graphyn" }
+graphyn-ui-cards   = { module = "io.github.ronjunevaldoz:graphyn-ui-cards",       version.ref = "graphyn" }
+graphyn-plugin-api = { module = "io.github.ronjunevaldoz:graphyn-plugin-api",     version.ref = "graphyn" }
+graphyn-core-model = { module = "io.github.ronjunevaldoz:graphyn-core-model",     version.ref = "graphyn" }
+# core is published per-submodule: graphyn-core-{model,execution,serialization,data}
 ```
 
 ```kotlin
@@ -122,7 +123,7 @@ commonMain.dependencies {
 | Card UI kit | `graphyn-ui-cards` |
 | Build a runtime plugin | `graphyn-plugin-api` |
 | Build an editor plugin | `graphyn-editor-api` |
-| Workflow model only | `graphyn-core` |
+| Workflow model only | `graphyn-core-model` (+ `-execution` / `-serialization` / `-data` as needed) |
 
 ---
 
