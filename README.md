@@ -87,6 +87,7 @@ plugins/* (node definitions + executors)
 | `ui/cards` | Ready-made card shapes | Library |
 | `app/shared` | Canvas + editor UI | App |
 | `plugins/gmail` | Gmail integration (fetch, send, reply) | 0.2.1 ✅ |
+| `plugins/linkedin` | LinkedIn nodes — only `GET /v2/me` is a live call; rest are placeholder endpoints | Sample |
 | `plugins/io` | HTTP, file, env, webhook | Sample |
 | `plugins/control` | Branch, loop, merge | Sample |
 | `plugins/text` | Format, split, regex | Sample |

@@ -7,10 +7,16 @@ import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginMetadata
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginRegistrar
 
+/**
+ * **Sample plugin.** Demonstrates a multi-node social integration shape. Only `Fetch Profile`
+ * (`GET /v2/me`) maps to a generally-available LinkedIn endpoint; feed/connections/search/messaging
+ * target partner-gated or non-public APIs (see [LinkedInApiClient]). Treat this as a template to
+ * finalise against real LinkedIn access, not a working production integration.
+ */
 object LinkedInPlugin : GraphynPlugin {
     override val metadata = GraphynPluginMetadata(
         id = "graphyn.linkedin",
-        displayName = "LinkedIn Integration",
+        displayName = "LinkedIn (Sample)",
         version = "0.2.2",
         apiVersion = GRAPHYN_PLUGIN_API_VERSION,
     )
