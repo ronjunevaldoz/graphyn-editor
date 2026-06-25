@@ -43,7 +43,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(projects.core)
+            // The editor contract exposes model + execution-status types only.
+            // Stores/serialization (core:data, core:serialization) are host concerns, not editor ones.
+            api(projects.core.model)
+            api(projects.core.execution)
             api(libs.kotlinx.coroutinesCore)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
