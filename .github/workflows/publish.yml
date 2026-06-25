@@ -42,6 +42,9 @@ jobs:
       - name: Publish editor-api
         run: ./gradlew :editor-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      - name: Publish ui-cards
+        run: ./gradlew :ui:cards:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
       - name: Publish graphyn-editor (app/shared)
         run: ./gradlew :app:shared:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
