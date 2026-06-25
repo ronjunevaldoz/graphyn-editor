@@ -400,3 +400,10 @@ Flapdoodle test. Both levels cover different bugs — do not treat one as suffic
 
 Keep the snippet to one repository method. Map to the user's actual collection and document names when provided.
 
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

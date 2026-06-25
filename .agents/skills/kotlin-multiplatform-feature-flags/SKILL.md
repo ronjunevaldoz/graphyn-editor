@@ -324,3 +324,11 @@ When implementing feature flags, respond in this order:
 5. **Startup fetch** — `fetchAndActivate()` on app launch
 6. **Koin wiring** — platform modules
 7. **FakeFeatureFlagProvider + test** — both branches covered
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

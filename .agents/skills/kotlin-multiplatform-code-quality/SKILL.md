@@ -289,3 +289,11 @@ When asked about code quality, linting, or formatting for KMP, respond in this o
 3. CI job snippet
 4. which tool enforces what (table)
 5. how to fix violations locally before pushing
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-18 | Initial release. |

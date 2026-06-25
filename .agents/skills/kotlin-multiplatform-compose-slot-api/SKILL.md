@@ -39,7 +39,8 @@ Use when you need to:
 
 **Trigger keywords:** slot API, content lambda, composable slot, named slots, scoped content,
 trailing lambda, flexible component, scaffold pattern, component design, RowScope slot,
-inversion of control Compose.
+inversion of control Compose, redesign component, component redesign, flexible layout,
+reusable component, component architecture, component pattern, composable design.
 
 **Freshness rule:** Compose Multiplatform slot conventions track CMP releases — recheck the
 JetBrains CMP docs before using or copying snippets into a new project.
@@ -522,3 +523,11 @@ When asked about slots or component design, respond in this order:
 4. main alternative (CompositionLocal, or props)
 
 Keep snippets small. If the user provides a component name, use it in the example.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

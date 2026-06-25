@@ -39,7 +39,8 @@ Use when:
 **Trigger keywords:** accessibility, a11y, TalkBack, VoiceOver, contentDescription,
 semantics, screen reader, semantic role, mergeDescendants, touch target, WCAG,
 accessibility test, Roborazzi a11y, traversal order, live region, role = button,
-accessibility label, semantic tree.
+accessibility label, semantic tree, accessible, screen reader support, accessible app,
+a11y compliance, accessibility audit, accessible design, make accessible.
 
 **Freshness rule:** Roborazzi a11y snapshot support (`captureRoboImage` with
 `accessibilityCapture()`) was added in Roborazzi 1.7. The Compose
@@ -319,3 +320,11 @@ When implementing accessibility, respond in this order:
 5. **mergeDescendants** — group related row/card children
 6. **Roborazzi a11y snapshot** — one test per screen
 7. **Checklist** — confirm each row is satisfied
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

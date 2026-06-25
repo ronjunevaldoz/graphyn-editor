@@ -1,22 +1,25 @@
 ---
 name: kotlin-multiplatform-logging
 description: >
-  Sets up Kermit KMP-native logging: log levels, pluggable writers per platform,
-  crash boundary integration (Firebase Crashlytics, Sentry), and Koin wiring so
-  every layer gets a logger without importing Kermit directly.
+  Sets up kotlin-logging or Kermit for KMP projects: log levels, logger factories per
+  target, crash boundary integration (Firebase Crashlytics, Sentry), and Koin wiring so
+  every layer gets a logger without constructing it directly.
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-18'
+  last-updated: '2026-06-24'
   keywords:
     - Kermit
+    - kotlin-logging
+    - KotlinLogging
     - logging
     - KMP
     - Kotlin Multiplatform
     - log levels
     - crash reporting
     - Koin
-    - pluggable writers
+    - logger factories
+    - crash bridges
     - Crashlytics
     - Sentry
 ---
@@ -25,31 +28,61 @@ metadata:
 
 Use when you need to:
 - Add structured logging to a KMP project
-- Configure different log severity per build variant (debug vs release)
-- Route logs to Crashlytics or Sentry in production
-- Wire a logger into Koin so feature modules don't import Kermit directly
-- Silence logs in unit tests
+- Configure different log levels per build variant or environment
+- Route breadcrumbs to Crashlytics or Sentry
+- Wire a logger factory into Koin so feature modules do not construct loggers directly
+- Keep test output quiet without disabling diagnostics in production
 
-**Trigger keywords:** logging, Kermit, log levels, KMP logging, crash reporting,
+**Trigger keywords:** logging, kotlin-logging, Kermit, KMP logging, crash reporting,
 logger setup, Crashlytics logging, Sentry logging, Koin logger, production logs.
 
-**Freshness rule:** Kermit API and its crash reporting extensions (`kermit-crashlytics`,
-`kermit-sentry`) change between minor versions — recheck the TouchLab GitHub releases before pinning.
+**Freshness rule:** kotlin-logging modules and Kermit releases change between minor
+versions. Recheck the [kotlin-logging repository](https://github.com/oshai/kotlin-logging)
+and the [Kermit repository](https://github.com/touchlab/Kermit) before pinning a version.
 
 ---
 
 ## Recommendation First
 
-Default to **Kermit with `LogWriter` per platform: `LogcatWriter` on Android debug,
-`NSLogWriter` on iOS, `CrashlyticsLogWriter` on Android/iOS release**.
+Default to **one public logging wrapper per project**.
 
 Why:
-- Kermit is KMP-native — no `expect/actual` wrappers needed, one API across all targets
-- pluggable `LogWriter` means the logging destination changes without touching call sites
-- Koin-injected logger means feature modules never import Kermit; they receive `Logger` from DI
-- Crash writers (Kermit-Crashlytics, Kermit-Sentry) automatically attach logs to crash reports
+- a wrapper keeps feature code stable even if the backing library changes later
+- kotlin-logging is KMP-supported and gives you a consistent Kotlin-style facade across targets
+- Kermit is also KMP-native and remains a good fit for existing projects already on it
+- lazy lambda messages keep expensive strings out of hot paths
+- a logger factory can be injected once and reused everywhere
+- crash breadcrumbs stay separate from the logging facade, which keeps the architecture clean
 
-Use `StaticConfig` for global severity and `MutableLoggerConfig` for per-feature overrides.
+Feature code should only know about the wrapper. The wrapper owns the backend choice and
+adapts either `kotlin-logging` or Kermit under the hood. If the project already uses one
+backend, keep that path consistent instead of mixing both facades inside the same module
+graph.
+
+---
+
+## Wrapper Contract
+
+Use a tiny interface in `commonMain` so the rest of the app never depends on a specific
+logging library:
+
+```kotlin
+interface LoggerFacade {
+    fun debug(message: () -> String)
+    fun info(message: () -> String)
+    fun warn(message: () -> String, throwable: Throwable? = null)
+    fun error(message: () -> String, throwable: Throwable? = null)
+}
+
+fun interface LoggerFactory {
+    fun create(tag: String): LoggerFacade
+}
+```
+
+Keep the wrapper small on purpose:
+- the wrapper stays stable if the backend changes
+- feature modules inject `LoggerFacade`, not `KotlinLogging` or `Logger`
+- backend-specific imports stay in the logging infrastructure module
 
 ---
 
@@ -59,219 +92,190 @@ Use `StaticConfig` for global severity and `MutableLoggerConfig` for per-feature
 
 ```toml
 [versions]
-kermit = "2.0.4"
+kotlin-logging = "8.0.4"
+kermit = "2.1.0"
 
 [libraries]
+kotlin-logging = { module = "io.github.oshai:kotlin-logging", version.ref = "kotlin-logging" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
-kermit-crashlytics = { module = "co.touchlab:kermit-crashlytics", version.ref = "kermit" }
 ```
 
-### `build-logic` — add to `GROUP_ID.core.gradle.kts`
+### `build-logic` - add to `GROUP_ID.core.gradle.kts`
 
 ```kotlin
 sourceSets {
     commonMain.dependencies {
-        implementation(libs.kermit)
+        implementation(libs.kotlin.logging) // or libs.kermit, behind the wrapper
     }
 }
 ```
 
-Feature modules receive Kermit transitively via `:core:common`. Do not add it per-feature.
+Feature modules receive the wrapper transitively via `:core:common` or `:core:logging`.
+Do not add logging dependencies per feature. Pick one backend for the project and keep
+it uniform behind the wrapper.
 
 ---
 
-## Initialization
+## Logger Usage
 
-### `commonMain` — `AppLogger.kt` in `:core:common`
+### Wrapper usage in shared code
 
 ```kotlin
-object AppLogger {
-    fun init(writers: List<LogWriter>) {
-        Logger.setLogWriters(writers)
-        Logger.setMinSeverity(Severity.Debug)
+class AuthViewModel(
+    private val loggerFactory: LoggerFactory,
+) : ViewModel() {
+    private val logger = loggerFactory.create("AuthViewModel")
+
+    fun loadUser(userId: String) {
+        logger.info { "Loading user $userId" }
     }
 }
 ```
 
-### Android — `Application.kt`
+### kotlin-logging adapter
 
 ```kotlin
-class App : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        val writers = if (BuildConfig.DEBUG) {
-            listOf(LogcatWriter())
-        } else {
-            listOf(CrashlyticsLogWriter())   // kermit-crashlytics
-        }
-        AppLogger.init(writers)
-        startKoin { /* ... */ }
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
+
+class KotlinLoggingFacade(
+    private val logger: KLogger,
+) : LoggerFacade {
+    override fun debug(message: () -> String) = logger.debug(message)
+    override fun info(message: () -> String) = logger.info(message)
+    override fun warn(message: () -> String, throwable: Throwable?) = logger.warn(throwable) { message() }
+    override fun error(message: () -> String, throwable: Throwable?) = logger.error(throwable) { message() }
+}
+```
+
+### Kermit adapter
+
+```kotlin
+import co.touchlab.kermit.Logger
+
+class KermitFacade(
+    private val logger: Logger,
+) : LoggerFacade {
+    override fun debug(message: () -> String) = logger.d { message() }
+    override fun info(message: () -> String) = logger.i { message() }
+    override fun warn(message: () -> String, throwable: Throwable?) {
+        logger.w(throwable) { message() }
+    }
+    override fun error(message: () -> String, throwable: Throwable?) {
+        logger.e(throwable) { message() }
     }
 }
 ```
 
-### iOS — `AppDelegate.swift` (or `@main` entry)
-
-```swift
-AppLogger().init(writers: [
-    if DEBUG { NSLogWriter() } else { CrashlyticsLogWriter() }
-])
-```
-
----
-
-## Log Levels
+### Log levels
 
 | Level | Use for |
 |---|---|
-| `Verbose` | Highly detailed trace — only during development |
-| `Debug` | Flow control, variable values — development builds |
-| `Info` | Key lifecycle events — user sign-in, app start |
-| `Warn` | Recoverable issues — retry triggered, fallback used |
-| `Error` | Unrecoverable errors — attach to crash reports |
-| `Assert` | Invariant violations — should never happen |
+| `trace` | Highly detailed trace - only during development |
+| `debug` | Flow control, variable values - development builds |
+| `info` | Key lifecycle events - sign-in, app start |
+| `warn` | Recoverable issues - retry triggered, fallback used |
+| `error` | Unrecoverable errors - route to crash reporters |
 
-```kotlin
-Logger.d("AuthViewModel") { "Loading user $userId" }
-Logger.i("AuthViewModel") { "User loaded successfully" }
-Logger.e("AuthViewModel", throwable) { "Failed to load user" }
-```
+Keep message formatting inside the lambda so expensive work is skipped when the level
+is disabled.
 
 ---
 
 ## Koin Wiring
 
-Inject a tagged `Logger` per class instead of importing Kermit globally:
+Inject a logger factory instead of scattering direct logger construction across the codebase:
 
 ```kotlin
-// :core:common — CoreModule.kt
+// :core:common - CoreModule.kt
 val coreModule = module {
-    // Provide a factory so each consumer gets a logger tagged with its class name
-    factory { (tag: String) -> Logger.withTag(tag) }
+    factory<LoggerFactory> {
+        LoggerFactory { tag ->
+            KotlinLoggingFacade(KotlinLogging.logger(tag))
+        }
+    }
 }
 ```
 
 ### Consuming in a ViewModel
 
-```kotlin
-// :feature:auth:presenter
-class AuthViewModel(
-    private val getUser: GetUserUseCase,
-    private val logger: Logger,
-) : ViewModel() {
-
-    private fun loadUser(id: String) {
-        viewModelScope.launch {
-            logger.d { "Loading user $id" }
-            getUser(id)
-                .catch { logger.e(it) { "Failed to load user $id" } }
-                .collect { _uiState.value = AuthUiState.Success(it) }
-        }
-    }
-}
-
-// Koin binding
-@KoinViewModel
-class AuthViewModel(
-    getUser: GetUserUseCase,
-    logger: Logger = Logger.withTag("AuthViewModel"),
-) : ViewModel() { ... }
-```
+Inject `LoggerFacade` or `LoggerFactory` and keep backend-specific code out of features.
 
 ---
 
 ## Crash Boundary
 
-Attach a `CrashlyticsLogWriter` (or `SentryLogWriter`) in release builds so `Warn`/`Error`
-logs appear in crash reports automatically:
+If you need breadcrumbs in crash reports, add a small bridge from your logger facade to
+the crash reporter. Keep that bridge in infrastructure, not in feature modules.
 
 ```kotlin
-// Production writer — logs at Warn+ are sent to Crashlytics
-CrashlyticsLogWriter(
-    minSeverity = Severity.Warn,
-    minCrashSeverity = Severity.Error,
-)
+interface BreadcrumbSink {
+    fun breadcrumb(level: String, tag: String, message: String, throwable: Throwable? = null)
+}
+
+class CrashReporterBreadcrumbSink(
+    private val reporter: CrashReporter,
+) : BreadcrumbSink {
+    override fun breadcrumb(level: String, tag: String, message: String, throwable: Throwable?) {
+        reporter.addBreadcrumb("[$tag] $message", category = level)
+        if (throwable != null) reporter.recordException(throwable, mapOf("tag" to tag))
+    }
+}
 ```
 
-This means every `Logger.e(...)` call automatically attaches context to the crash report
-without extra instrumentation.
+Route `warn` and `error` messages through the bridge when the project wants crash context.
+The bridge should live beside the logger wrapper so you can swap logging backends without
+touching feature modules.
 
 ---
 
 ## Silencing Logs in Tests
 
-```kotlin
-// :core:testing — add to test setup
-Logger.setLogWriters(NoTagWriter())   // suppress all Kermit output during tests
-Logger.setMinSeverity(Severity.Assert)
-```
-
-Or in a `@BeforeTest`:
-```kotlin
-@BeforeTest
-fun setup() {
-    Logger.setMinSeverity(Severity.Assert)
-}
-```
+Keep tests quiet by injecting a no-op `LoggerFacade` or by configuring the test backend
+to suppress output. Do not use production logging configuration in `commonTest`.
 
 ---
 
 ## Related Skills
 
-- `kotlin-multiplatform-feature-scaffold` — Kermit lives in `:core:common`; feature modules consume it via Koin
-- `kotlin-multiplatform-unit-testing` — silence Kermit in `commonTest` to keep test output clean
-- `kotlin-multiplatform-dependency-injection` — Koin wiring for the `Logger` factory
+- `kotlin-multiplatform-feature-scaffold` - logger wrapper lives in `:core:common`
+- `kotlin-multiplatform-unit-testing` - use a quiet test logger or no-op sink in `commonTest`
+- `kotlin-multiplatform-dependency-injection` - Koin wiring for the logger factory
+- `kotlin-multiplatform-crash-reporting` - breadcrumb bridge for crash reports
 
 ---
 
 ## Testing
 
+Test your own logging adapter or crash bridge rather than the logging library itself:
+
 ```kotlin
-class FakeLogWriter : LogWriter() {
-    data class Entry(val severity: Severity, val message: String, val tag: String)
+class RecordingBreadcrumbSink : BreadcrumbSink {
+    data class Entry(val level: String, val tag: String, val message: String)
     val entries = mutableListOf<Entry>()
 
-    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
-        entries += Entry(severity, message, tag)
+    override fun breadcrumb(level: String, tag: String, message: String, throwable: Throwable?) {
+        entries += Entry(level, tag, message)
     }
 }
-
-@Test fun `error log is recorded with correct severity`() = runTest {
-    val writer = FakeLogWriter()
-    val kermit = Kermit(writer)
-    kermit.e("Auth") { "token expired" }
-    assertEquals(1, writer.entries.size)
-    assertEquals(Severity.Error, writer.entries.first().severity)
-    assertTrue(writer.entries.first().message.contains("token expired"))
-}
-
-@Test fun `verbose log below min severity is suppressed`() = runTest {
-    val writer = FakeLogWriter()
-    val kermit = Kermit(StaticConfig(minSeverity = Severity.Warn, logWriterList = listOf(writer)))
-    kermit.v("Tag") { "verbose noise" }
-    assertTrue(writer.entries.isEmpty())
-}
-
-@Test fun `tag is forwarded to writer`() = runTest {
-    val writer = FakeLogWriter()
-    val kermit = Kermit(writer)
-    kermit.i("UserRepo") { "loaded" }
-    assertEquals("UserRepo", writer.entries.first().tag)
-}
 ```
+
+Verify that `warn` and `error` paths produce breadcrumbs, and that quiet-test configuration
+does not leak production output into unit tests.
 
 ---
 
 ## Common Anti-Patterns
 
-- importing `Logger` directly in feature modules — inject it via Koin; direct imports scatter the logging config
-- using `println` or `System.out.println` for debug output — Kermit is already in the project; use it
-- enabling `Verbose` severity in release builds — floods crash reports with noise
-- not tagging logs — `Logger.d { "..." }` without a tag makes logs impossible to filter in Logcat
-- forgetting to silence Kermit in tests — noisy test output hides failures
+- exposing backend logger types in feature modules - only the wrapper belongs there
+- constructing loggers inside tight loops - create them once and inject them
+- using `println` or `System.out.println` for debug output - keep a real logger wrapper
+- logging secrets or tokens - redact sensitive values before emitting them
+- enabling verbose logging in release builds - it creates noise and hides signal
+- coupling feature modules directly to crash SDK APIs - keep the bridge in infrastructure
 
-If logs are not appearing in release, check that the crash writer's `minSeverity` is set
-to `Severity.Warn` or lower and that the crash SDK is initialized before `AppLogger.init`.
+If logs are not appearing where expected, check the selected backend artifact for that
+target and make sure the wrapper factory is wired before feature code executes.
 
 ---
 
@@ -279,7 +283,15 @@ to `Severity.Warn` or lower and that the crash SDK is initialized before `AppLog
 
 When asked about logging in KMP, respond in this order:
 1. Gradle dependency (toml + convention plugin)
-2. initialization in the app entry point (Android + iOS)
+2. wrapper contract in shared code
 3. log level guidelines
-4. Koin injection pattern (factory with tag)
-5. crash boundary writer (CrashlyticsLogWriter or SentryLogWriter)
+4. Koin injection pattern (factory with tag/name)
+5. crash breadcrumb bridge if the project needs crash context
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-24 | Added a logger wrapper contract so kotlin-logging or Kermit can be swapped behind one stable facade. |

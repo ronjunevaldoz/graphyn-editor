@@ -244,3 +244,11 @@ When asked about Kotlin RPC, respond in this order:
 5. main alternative (REST, gRPC)
 
 Lead with the fit/no-fit decision. Keep the code snippet to the interface and one route binding.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

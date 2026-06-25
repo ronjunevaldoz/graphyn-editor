@@ -403,3 +403,11 @@ When asked about persisting settings or replacing SharedPreferences in KMP, resp
 3. expect/actual `createDataStore {}` platform factory
 4. Koin wiring (platform-specific modules for the factory, common module for the interface binding)
 5. ViewModel consumption pattern (inject interface, collect as StateFlow)
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-18 | Initial release. |

@@ -372,3 +372,11 @@ When implementing background tasks, respond in this order:
 4. **iOS impl** — `BackgroundScheduler`, AppDelegate handler registration, Info.plist keys
 5. **Chain** — Android-only chained work (if requested)
 6. **FakeBackgroundScheduler + tests** — scheduling side effects verified in ViewModel tests
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

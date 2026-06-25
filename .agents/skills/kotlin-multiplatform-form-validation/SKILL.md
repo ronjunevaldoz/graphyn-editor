@@ -32,7 +32,9 @@ Use when:
 
 **Trigger keywords:** form validation, field validation, required field, email validation,
 inline error, validation rule, form error, submit disabled, async validation, validate form,
-ValidationResult, FieldState, form state KMP, input validation, field error message.
+ValidationResult, FieldState, form state KMP, input validation, field error message,
+form, validate, validation, form field, input validation, form handling, form state,
+error message, check input, validate input, form submission.
 
 **Freshness rule:** No external library is required — this pattern uses only `kotlinx.coroutines`
 and Compose. If you choose to add a validation library (Valiktor, Konform), verify its KMP
@@ -346,3 +348,11 @@ When implementing form validation, respond in this order:
 4. **Async validators** — if any field needs a network check, add debounce pattern
 5. **ValidatedTextField** — reusable composable with inline error display
 6. **Tests** — validator unit tests and a ViewModel submit test
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-06'
+  last-updated: '2026-06-24'
   keywords:
     - Navigation Compose
     - KMP navigation
@@ -45,7 +45,10 @@ Use this skill when you need to:
 **Trigger keywords:** navigation, nav graph, navhost, route, deep link, bottom nav,
 KMP navigation, type-safe routes, Decompose, Navigation Compose,
 navigate to screen, go to screen, back stack, push screen, pop back,
-navigate back, pass arguments, route arguments, nested navigation, screen transition.
+navigate back, pass arguments, route arguments, nested navigation, screen transition,
+web routing, browser fragment, hash navigation, wasmJs routing,
+navigate, routing, move between screens, switch screens, go to, page navigation,
+navigate from screen, pass data between screens, link screens.
 
 **Freshness rule:** recheck the JetBrains Navigation Compose docs before upgrading or
 copying snippets into a new project.
@@ -301,6 +304,21 @@ Add intent filters in `AndroidManifest.xml`:
 </activity>
 ```
 
+#### Web and WasmJs browser links
+
+Compose Multiplatform web keeps navigation in the browser fragment. When a route is
+opened or generated for `wasmJsMain` or `jsMain`, the URL should start with `#` so the
+app handles it as an in-app destination instead of a server path.
+
+Example:
+
+```text
+https://example.com/#login
+```
+
+If you customize route-to-URL mapping, keep generated routes fragment-safe and use the
+browser fragment as the source of truth for manual entry and copy/paste.
+
 ---
 
 ### Step 7: Pass NavController to feature ViewModels via Koin (optional)
@@ -476,3 +494,12 @@ When asked about navigation or routing, respond in this order:
 5. main alternative (Decompose, manual back stack)
 
 Keep each snippet to one route and one composable destination. Map to the user's actual screen and feature names when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-24 | Added web/WasmJs browser fragment routing guidance and hash-navigation keywords. |
+| 2026-06-06 | Initial release. |

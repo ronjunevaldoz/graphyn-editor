@@ -479,3 +479,11 @@ When asked about state containers or state survival, respond in this order:
 5. main alternative
 
 Keep the survival matrix reference tight. Map to actual state names when the user provides them.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

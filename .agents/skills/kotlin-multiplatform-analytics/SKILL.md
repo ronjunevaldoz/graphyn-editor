@@ -287,3 +287,11 @@ When implementing analytics, respond in this order:
 5. **ViewModel integration** — where `analytics.track(...)` is called
 6. **Screen tracking** — `DisposableEffect` in NavHost
 7. **FakeAnalytics** — for unit tests
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

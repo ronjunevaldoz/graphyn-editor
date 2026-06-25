@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-06'
+  last-updated: '2026-06-21'
   keywords:
     - BuildKonfig
     - multi-environment
@@ -117,7 +117,9 @@ buildkonfig {
     packageName = "GROUP_ID"
 
     // Default config (required — used as base, overridden by flavor)
+    // APP_VERSION reads from gradle.properties — the single source of truth for the version
     defaultConfigs {
+        buildConfigField(STRING,  "APP_VERSION",  project.property("VERSION_NAME") as String)
         buildConfigField(STRING,  "BASE_URL",     "https://api.example.com")
         buildConfigField(STRING,  "ENVIRONMENT",  "prod")
         buildConfigField(BOOLEAN, "DEBUG",         "false")
@@ -160,6 +162,7 @@ BuildKonfig generates:
 package GROUP_ID
 
 internal object BuildKonfig {
+    val APP_VERSION: String = /* value from gradle.properties VERSION_NAME */
     val BASE_URL: String = /* value from active flavor/build type */
     val ENVIRONMENT: String = /* "dev" | "staging" | "prod" */
     val DEBUG: Boolean = /* true | false */
@@ -179,9 +182,10 @@ package GROUP_ID.core.config
  * so the generated class stays internal.
  */
 object AppConfig {
-    val baseUrl: String       get() = BuildKonfig.BASE_URL
-    val environment: String   get() = BuildKonfig.ENVIRONMENT
-    val isDebug: Boolean      get() = BuildKonfig.DEBUG
+    val versionName: String    get() = BuildKonfig.APP_VERSION
+    val baseUrl: String        get() = BuildKonfig.BASE_URL
+    val environment: String    get() = BuildKonfig.ENVIRONMENT
+    val isDebug: Boolean       get() = BuildKonfig.DEBUG
     val enableLogging: Boolean get() = BuildKonfig.ENABLE_LOGGING
 
     val isDev: Boolean     get() = environment == "dev"
@@ -422,3 +426,12 @@ When asked about environment config or BuildKonfig, respond in this order:
 4. main alternative (manual expect/actual, environment-injected constants)
 
 Keep the snippet focused on one flavor. Map to the user's actual base URL and environment names when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | **Improved** — `APP_VERSION` added to `defaultConfigs` block (reads from `gradle.properties VERSION_NAME`); `AppConfig.versionName` exposed in the public facade. |
+| 2026-06-06 | Initial release. |

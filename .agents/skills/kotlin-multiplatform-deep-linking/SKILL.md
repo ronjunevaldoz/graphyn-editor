@@ -341,3 +341,11 @@ When implementing deep linking, respond in this order:
 5. **Android Activity** — `LaunchedEffect(intent)` + `onNewIntent`
 6. **iOS** — `continue userActivity` + `open url` handlers
 7. **Server files** — `assetlinks.json` and `apple-app-site-association` templates
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

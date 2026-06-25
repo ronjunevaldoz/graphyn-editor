@@ -11,7 +11,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-13'
+  last-updated: '2026-06-24'
   keywords:
     - KMP audit
     - project audit
@@ -50,7 +50,8 @@ Use this skill when you need to:
 **Trigger keywords:** audit repo, review architecture, project health, boundary check,
 module review, KMP audit, clean architecture review, readiness review, architecture drift,
 what is wrong with this project, inspect this repo, audit skills repo, script hygiene,
-freshness check, deprecation risk, references audit.
+freshness check, deprecation risk, references audit, governance, CI enforcement,
+governance check, enforce skills, compliance, fail on violation, .kmm-skills.
 
 **Freshness rule:** the audit checklist references Compose, MVI, network, and database patterns —
 recheck the `kotlin-multiplatform-expert` skill map and this collection's PLAN.md before auditing
@@ -118,8 +119,22 @@ the user and the other skills what to do next.
 - Verify tokens, palette rules, and typography are consistent
 - Check whether components use the right pattern for the repo's chosen UI system
 - Flag hardcoded colors, sizes, and text styles
+- Require a preview stub for each `*Content.kt` in a feature `ui/` module so the
+  preview workflow stays part of the scaffold, not a manual afterthought
+- **Layout pattern consistency** — every `*Content.kt` in the same feature `ui/` dir must use the same top-level layout pattern (flat `Column`/`LazyColumn`, card-sectioned `AppCard`, or tabbed `TabRow`+`HorizontalPager`); mixed patterns are a `layout_inconsistency` violation. Run `scan_design_violations.py <project_root>` — it detects this cross-screen.
 
-### 6) Skills repo hygiene
+### 6) Native / JNI boundary (only if `*-jni.cpp`, `*-wrapper.cpp`, or `CMakeLists.txt` exist)
+- 3rd-party C++ (`vendor/`, `third_party/`, submodules, `FetchContent`) is **read-only** —
+  flag ANY edit to a vendored `.cpp`/`.h`. Hand off to `kotlin-multiplatform-jni-pro`.
+- Every opaque native handle stored as a Kotlin `Long` has a matching `dispose()`/`close()`
+  → JNI `_free`. Flag any `_create` with no `_free` (memory leak).
+- Every `GetStringUTFChars`/`Get*ArrayElements` has a release on all exit paths.
+- JNI bridge contains type-conversion only — flag native logic or reimplemented library
+  algorithms (route to `kotlin-multiplatform-jni-pro` Phase 0 discovery).
+- Complex headers (templates, `std::function`, overloads, exceptions) are wrapped via a
+  flat `extern "C"` C-shim, not mapped directly. Full gate: `kotlin-multiplatform-jni-pro`.
+
+### 7) Skills repo hygiene
 - Ensure every skill has `name`, `description`, and `metadata.last-updated`
 - Ensure trigger guidance is explicit enough to fire in practice
 - Prefer references for fast-moving topics and keep examples only when they clarify
@@ -156,10 +171,36 @@ Ask before creating any issue draft. Do not auto-file issues from an audit witho
 explicit confirmation from the user.
 
 Every draft should include:
-- a short title
-- the evidence that triggered it
+- a title following the format `[category] short problem description` — see categories below
+- the evidence that triggered it (file path, line, or script output)
 - the recommended fix or follow-up skill
 - an attribution footer such as `Suggested by kotlin-multiplatform-audit`
+
+### Issue Title Format
+
+Use `[category] short problem description`. Keep titles under 72 characters.
+The description names the symptom, not the fix.
+
+| Category | Use for |
+|---|---|
+| `[arch]` | Layer boundary violations, wrong module placement |
+| `[mvi]` | Effect replay, state copy race, wrong state container |
+| `[presenter]` | ViewModel has Compose import, wrong scope, missing test |
+| `[data]` | Pass-through repository, DTO escaping layer, no cache |
+| `[ui]` | Stateless composable violates, missing Preview stub, design drift |
+| `[di]` | Koin module scope wrong, missing factory/viewModel registration |
+| `[build]` | Convention plugin misconfiguration, version drift |
+| `[test]` | Missing test coverage, mock instead of fake, wrong scope |
+
+**Examples:**
+```
+[arch] DTO from :data escapes to :feature:todo:ui
+[mvi] Effect replayed on recomposition in TodoListScreen
+[presenter] ViewModel imports Compose in :feature:todo:presenter
+[data] Repository is pass-through — no local cache
+[ui] AddTodoContent missing Preview stub for error state
+[di] TodoListViewModel registered as factory instead of viewModel
+```
 
 ## Common Anti-Patterns
 
@@ -173,10 +214,86 @@ An audit should produce findings that are actionable. If a finding doesn't map t
 
 ---
 
+## Governance & CI Enforcement
+
+Run the governance check in a consumer project's CI so violations block the build automatically — no manual audit required.
+
+### Step 1 — Add a `.kmm-skills` version file to the consumer project root
+
+```json
+{
+  "skills_repo": "ronjunevaldoz/kmm-agent-skills",
+  "version": "1.24.1"
+}
+```
+
+Commit this file. It declares which skills collection version the project targets and
+must pin a release tag, not a mutable ref like `main`. The governance check prints it
+on every run and fails if the file is missing or the version is not tag-pinned.
+
+### Step 2 — Wire the reusable workflow
+
+Create `.github/workflows/governance.yml` in the consumer project:
+
+```yaml
+name: KMM Governance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  kmm-governance:
+    uses: ronjunevaldoz/kmm-agent-skills/.github/workflows/kmm-audit.yml@main
+    with:
+      project_root: .
+      fail_on: HIGH
+      skills_ref: v1.24.1   # pin to a tag for reproducibility
+```
+
+That is the complete consumer setup — no scripts to copy, no dependencies to install beyond Python 3.12 (provided by the workflow).
+
+### What the governance check runs
+
+| Scanner | Detects | Severity |
+|---|---|---|
+| `scan_design_violations.py` | Hardcoded colors, dp literals, Material theme usage, TextStyle construction, nested containers, layout inconsistency | HIGH (error), MEDIUM (warning) |
+| `audit_project.py` | State copy races, SharedFlow replay effects, NetworkResult in UI state, DTO import in UI layer, magic color literals, hardcoded spacing, missing preview stubs | HIGH |
+| `validate_module_graph.py` | Missing feature module files, missing `androidApp` UI link, missing `*ContentPreview.kt` stub beside feature UI content | HIGH |
+
+Findings at or above `fail_on` exit non-zero and fail the CI job. Findings below the threshold are reported but do not fail.
+
+### Threshold guide
+
+| `fail_on` value | When to use |
+|---|---|
+| `HIGH` | Default. Fails only on correctness violations and architecture boundary breaks. |
+| `MEDIUM` | Stricter. Also fails on design-token warnings and layout inconsistencies. Recommended once the project is stable. |
+| `LOW` | Full enforcement. Fails on any finding. Use for highly regulated or greenfield projects. |
+
+### Running locally before pushing
+
+```bash
+# From inside the skills repo (development)
+python3 skills/kotlin-multiplatform-audit/scripts/governance_check.py /path/to/consumer/project
+
+# From a consumer project with the skills repo checked out alongside it
+python3 ../kmm-agent-skills/skills/kotlin-multiplatform-audit/scripts/governance_check.py .
+```
+
+---
+
 ## Bundled Script
 
+- `scripts/governance_check.py` — CI enforcement orchestrator. Runs both scanners, reads
+  `.kmm-skills` for version pinning, fails on missing or mutable pins, and exits non-zero
+  on findings at or above the threshold.
+  Used by the reusable workflow at `.github/workflows/kmm-audit.yml`.
 - `scripts/audit_project.py` — runs a lightweight scan for a few common KMP architecture
   smells such as effect replay bugs, state copy races, and obvious UI/data boundary leaks.
+- `scripts/validate_module_graph.py` — checks an existing project’s feature module layout and
+  requires a preview stub for each `*Content.kt` in `:feature:*:ui`.
 - `scripts/audit_skills_repo.py` — checks the skills repo for metadata, freshness, scripts,
   and documentation gaps.
 - `scripts/draft_issue.py` — renders a GitHub-ready issue or question draft with an
@@ -191,6 +308,7 @@ An audit should produce findings that are actionable. If a finding doesn't map t
 - `kotlin-multiplatform-mvi` — most `state copy race` and `sharedflow replay effect` findings require this skill to fix correctly
 - `kotlin-multiplatform-roborazzi` — replacement for `manual screen capture` findings
 - `kotlin-multiplatform-design-system` — replacement for `magic color literal` and `hardcoded spacing` findings
+- `kotlin-multiplatform-jni-pro` — owns every native/JNI finding (3rd-party C++ immutability, opaque-handle cleanup, C-shim wrapping); hand off section 6 findings here
 
 ---
 
@@ -205,3 +323,15 @@ When asked to audit a project or the skills repo, respond in this order:
 6. skills to use next
 
 Ask before converting findings to issue drafts. Keep implementation advice minimal — this skill routes work, it doesn't implement it.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-24 | Added a skills-version pin guard to governance: `.kmm-skills` must exist and must point at a release tag, not `main` or another mutable ref. |
+| 2026-06-23 | Added "Governance & CI Enforcement" section: governance_check.py, reusable workflow, .kmm-skills version file, threshold guide. |
+| 2026-06-22 | Added "Native / JNI boundary" inspection section (#6): 3rd-party C++ immutability, opaque-handle cleanup, acquire/release pairing, C-shim wrapping — closes the cross-skill enforcement gap for the immutability rule. Hands off to kotlin-multiplatform-jni-pro. |
+| 2026-06-21 | GitHub issue title format defined: `[category] short description`. Category table added with 8 categories (`[arch]`, `[mvi]`, `[presenter]`, `[data]`, `[ui]`, `[di]`, `[build]`, `[test]`). |
+| 2026-06-18 | Initial release — architecture audit checklist, `audit_project.py`, `audit_skills_repo.py`, `draft_issue.py`. |

@@ -354,3 +354,11 @@ When asked about XCFramework or SPM distribution, respond in this order:
 5. main alternative (CocoaPods, manual xcframework embedding)
 
 Keep the snippet to the Gradle task and one Package.swift block. Map to the user's actual framework name and repo URL when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

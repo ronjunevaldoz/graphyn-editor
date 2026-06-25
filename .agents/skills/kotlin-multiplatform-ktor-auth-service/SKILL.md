@@ -233,3 +233,10 @@ When asked about Ktor auth, respond in this order:
 
 Keep the snippet to one install block and one guarded route. Map to the user's actual route names when provided.
 
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-13 | Initial release. |

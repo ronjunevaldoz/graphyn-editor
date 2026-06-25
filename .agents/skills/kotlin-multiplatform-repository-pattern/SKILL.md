@@ -43,7 +43,8 @@ Use when you need to:
 
 **Trigger keywords:** repository pattern, data layer, offline-first, cache-first, network-first,
 single source of truth, local cache, domain mapping, repository implementation, data source,
-optimistic update, sync strategy.
+optimistic update, sync strategy, data redundancy, content management, data handling,
+cache strategy, data consistency, data sync, fetch strategy, content duplication.
 
 **Freshness rule:** Ktor and SQLDelight APIs change — recheck both before using this skill
 with a version upgrade, and verify the fetch-strategy examples against the current driver APIs.
@@ -547,3 +548,11 @@ When asked about the repository pattern or data layer, respond in this order:
 5. main alternative (different fetch strategy, or direct data source)
 
 Keep the snippet to one repository method. Map to the user's actual entity and domain names when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

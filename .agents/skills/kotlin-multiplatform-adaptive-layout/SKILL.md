@@ -41,10 +41,14 @@ Use when:
   newly added screen does not
 
 **Trigger keywords:** adaptive layout, responsive layout, WindowSizeClass, ListDetailPane,
-tablet layout, desktop layout, split screen, list detail, side panel, navigation rail,
-navigation drawer, window size, Compact Medium Expanded, adaptive navigation,
-calculateWindowSizeClass, different layout phone tablet, responsive composable,
-multi-pane layout, master detail KMP.
+tablet layout, desktop layout, mobile layout, phone layout, split screen, detail split,
+list detail, side panel, navigation rail, navigation drawer, window size,
+Compact Medium Expanded, adaptive navigation, calculateWindowSizeClass,
+different layout phone tablet, different layout phone desktop, responsive composable,
+multi-pane layout, master detail KMP, pane layout, screen size breakpoint,
+layout per screen size, detect all screen layouts, all screen sizes,
+page layout, layout consistency, consistent layout, screen consistency,
+redesign page, layout redesign, page consistency, uniform layout, layout patterns.
 
 **Freshness rule:** `material3-adaptive` is still evolving — recheck the API when upgrading
 `androidx.compose.material3.adaptive`. `calculateWindowSizeClass()` moved packages between
@@ -344,3 +348,11 @@ When implementing adaptive layout, respond in this order:
 4. **Navigation** — whether `AdaptiveNavScaffold` needs updating for the new screen
 5. **Roborazzi tests** — compact+dark, compact+light, expanded+dark, expanded+light
 6. **Pipeline-context update** — set `adaptive_layout_established: true` if this is the first
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |
