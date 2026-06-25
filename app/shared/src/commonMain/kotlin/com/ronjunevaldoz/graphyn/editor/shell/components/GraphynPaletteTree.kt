@@ -24,7 +24,7 @@ internal fun PaletteCategoryTree(
     val folders = visible.filter { it.value.group != null }.groupBy { it.value.group!! }
     val loose = visible.filter { it.value.group == null }.sortedBy { it.value.label }
 
-    folders.toSortedMap().forEach { (folderName, cats) ->
+    folders.entries.sortedBy { it.key }.forEach { (folderName, cats) ->
         val folderKey = "group:$folderName"
         val folderExpanded = folderKey in expanded
         PaletteFolderHeader(label = folderName, expanded = folderExpanded) { onToggle(folderKey) }
