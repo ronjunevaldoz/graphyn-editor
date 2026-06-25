@@ -16,8 +16,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "GraphynEditor",
-            url: "https://github.com/ronjunevaldoz/graphyn-editor/releases/download/0.1.0/GraphynEditor.xcframework.zip",
-            checksum: "0000000000000000000000000000000000000000000000000000000000000000"
+            url: "https://github.com/ronjunevaldoz/graphyn-editor/releases/download/v0.4.1/GraphynEditor.xcframework.zip",
+            checksum: "1fcf9ef38a733c58b94ebbae457d7f94008a1e6d6c753b444463cc8cf321efad"
         ),
     ]
 )
