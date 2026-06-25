@@ -77,8 +77,7 @@ class GmailApiClient(
                 appendLine("Content-Type: text/plain; charset=\"UTF-8\"")
             }
             val message = "$headers\n$body"
-            // TODO: Implement Base64 encoding for email message
-            val encoded = message
+            val encoded = GmailBase64.encode(message)
 
             val request = SendMessageRequest(
                 raw = encoded,
@@ -117,8 +116,7 @@ class GmailApiClient(
                 appendLine("Content-Type: text/plain; charset=\"UTF-8\"")
             }
             val message = "$headers\n$body"
-            // TODO: Implement Base64 encoding for email message
-            val encoded = message
+            val encoded = GmailBase64.encode(message)
 
             val request = SendMessageRequest(raw = encoded)
 

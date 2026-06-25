@@ -14,6 +14,14 @@ import kotlinx.serialization.json.Json
 
 /**
  * LinkedIn API v2 client.
+ *
+ * **API availability:** LinkedIn's public API is heavily partner-gated. [getProfile]
+ * (`GET /v2/me`) works with a standard OAuth token. The remaining calls (feed read,
+ * connections, search, messaging, reactions) target endpoints that require restricted
+ * partner programs or use shapes that differ from the public docs — treat them as
+ * integration placeholders to be finalised against whatever access the deployment has,
+ * not as verified working calls. Each fails gracefully (returns null/empty) rather than
+ * throwing, so a workflow degrades instead of crashing when an endpoint is unavailable.
  */
 class LinkedInApiClient(
     private val token: String,

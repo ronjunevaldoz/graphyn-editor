@@ -34,81 +34,70 @@ object GmailPlugin : GraphynPlugin {
 
 object GmailExecutors {
     val fetchEmails = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val label = (input["label"] as? WorkflowValue.StringValue)?.value ?: "INBOX"
-        val limit = (input["limit"] as? WorkflowValue.IntValue)?.value ?: 10
-
-        val result = executeFetchEmails(credential, label, limit)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is List<*> -> WorkflowValue.StringValue(v.toString()) // TODO: proper list conversion
-                is Int -> WorkflowValue.IntValue(v)
-                is String -> WorkflowValue.StringValue(v)
-                is Boolean -> WorkflowValue.BooleanValue(v)
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeFetchEmails(
+            token = input.str("credential"),
+            label = input.str("label").ifEmpty { "INBOX" },
+            limit = (input["limit"] as? WorkflowValue.IntValue)?.value ?: 10,
+        ).outputs.toWorkflowOutputs()
     }
 
     val sendEmail = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val to = (input["to"] as? WorkflowValue.StringValue)?.value ?: ""
-        val subject = (input["subject"] as? WorkflowValue.StringValue)?.value ?: ""
-        val body = (input["body"] as? WorkflowValue.StringValue)?.value ?: ""
-        val cc = (input["cc"] as? WorkflowValue.StringValue)?.value
-
-        val result = executeSendEmail(credential, to, subject, body, cc)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is String -> WorkflowValue.StringValue(v)
-                is Boolean -> WorkflowValue.BooleanValue(v)
-                null -> WorkflowValue.StringValue("")
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeSendEmail(
+            token = input.str("credential"),
+            to = input.str("to"),
+            subject = input.str("subject"),
+            body = input.str("body"),
+            cc = (input["cc"] as? WorkflowValue.StringValue)?.value,
+        ).outputs.toWorkflowOutputs()
     }
 
     val parseEmail = NodeExecutor { input ->
-        // Extract email record from input
-        @Suppress("UNCHECKED_CAST")
-        val emailRecord = (input["email"] as? Map<String, Any?>) ?: emptyMap()
-
-        val result = executeParseEmail(emailRecord)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is String -> WorkflowValue.StringValue(v ?: "")
-                null -> WorkflowValue.StringValue("")
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        val emailRecord = (input["email"] as? WorkflowValue.RecordValue)
+            ?.fields?.mapValues { (_, v) -> fromWorkflowValue(v) } ?: emptyMap()
+        executeParseEmail(emailRecord).outputs.toWorkflowOutputs()
     }
 
     val getLabels = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-
-        val result = executeGetLabels(credential)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is List<*> -> WorkflowValue.StringValue(v.toString()) // TODO: proper list conversion
-                is Int -> WorkflowValue.IntValue(v)
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeGetLabels(input.str("credential")).outputs.toWorkflowOutputs()
     }
 
     val replyEmail = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val messageId = (input["message_id"] as? WorkflowValue.StringValue)?.value ?: ""
-        val body = (input["body"] as? WorkflowValue.StringValue)?.value ?: ""
-
-        val result = executeReplyEmail(credential, messageId, body)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is String -> WorkflowValue.StringValue(v ?: "")
-                is Boolean -> WorkflowValue.BooleanValue(v)
-                null -> WorkflowValue.StringValue("")
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeReplyEmail(
+            token = input.str("credential"),
+            messageId = input.str("message_id"),
+            body = input.str("body"),
+        ).outputs.toWorkflowOutputs()
     }
+}
+
+private fun Map<String, WorkflowValue>.str(key: String): String =
+    (this[key] as? WorkflowValue.StringValue)?.value ?: ""
+
+/** Convert raw handler outputs (Kotlin primitives, lists, maps) into wireable [WorkflowValue]s. */
+private fun Map<String, Any?>.toWorkflowOutputs(): Map<String, WorkflowValue> =
+    mapValues { (_, v) -> toWorkflowValue(v) }
+
+private fun toWorkflowValue(v: Any?): WorkflowValue = when (v) {
+    null -> WorkflowValue.NullValue
+    is WorkflowValue -> v
+    is String -> WorkflowValue.StringValue(v)
+    is Boolean -> WorkflowValue.BooleanValue(v)
+    is Int -> WorkflowValue.IntValue(v)
+    is Long -> WorkflowValue.IntValue(v.toInt())
+    is Double -> WorkflowValue.DoubleValue(v)
+    is Float -> WorkflowValue.DoubleValue(v.toDouble())
+    is Map<*, *> -> WorkflowValue.RecordValue(v.entries.associate { (k, value) -> k.toString() to toWorkflowValue(value) })
+    is List<*> -> WorkflowValue.ListValue(v.map { toWorkflowValue(it) })
+    else -> WorkflowValue.StringValue(v.toString())
+}
+
+private fun fromWorkflowValue(v: WorkflowValue): Any? = when (v) {
+    is WorkflowValue.StringValue -> v.value
+    is WorkflowValue.IntValue -> v.value
+    is WorkflowValue.DoubleValue -> v.value
+    is WorkflowValue.BooleanValue -> v.value
+    is WorkflowValue.ListValue -> v.items.map { fromWorkflowValue(it) }
+    is WorkflowValue.RecordValue -> v.fields.mapValues { (_, value) -> fromWorkflowValue(value) }
+    WorkflowValue.NullValue -> null
+    WorkflowValue.OpaqueValue -> null
 }
