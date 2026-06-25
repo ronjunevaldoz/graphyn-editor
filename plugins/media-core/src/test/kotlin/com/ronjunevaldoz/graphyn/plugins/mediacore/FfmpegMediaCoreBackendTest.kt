@@ -54,4 +54,44 @@ class FfmpegMediaCoreBackendTest {
         assertTrue(File(encoded.path).isFile)
         assertTrue(encoded.sizeBytes > 0)
     }
+
+    @Test
+    fun burnsCaptionsAndComposesOverlaysWhenFfmpegIsAvailable() = runTest {
+        val directory = Files.createTempDirectory("graphyn-media-compose-test").toFile()
+        val backend = FfmpegMediaCoreBackend(tempDirectory = directory)
+        if (!backend.isAvailable()) return@runTest
+
+        val base = makeClip(directory, "base.mp4", "color=c=blue:s=160x90:d=1:r=10")
+        val overlay = makeClip(directory, "overlay.mp4", "color=c=red:s=40x40:d=1:r=10")
+        if (base == null || overlay == null) return@runTest
+
+        // Caption burn-in needs libass; skip that leg on FFmpeg builds without the `ass` filter.
+        if (backend.supportsFilter("ass")) {
+            val captioned = backend.overlayCaptions(
+                videoPath = base,
+                captions = listOf(Caption("Hello", 0.0, 500.0), Caption("World", 500.0, 1000.0)),
+                style = CaptionStyle(color = "#FFFFFF", backgroundColor = "#80000000", fontSize = 18, position = "bottom"),
+            )
+            assertTrue(File(captioned.path).isFile)
+            assertEquals(160, captioned.width)
+        }
+
+        val composed = backend.composeVideo(
+            baseVideoPath = base,
+            overlays = listOf(VideoOverlay(overlay, x = 10, y = 10, startMs = 0.0, endMs = 1000.0, opacity = 0.5)),
+        )
+        assertTrue(File(composed.path).isFile)
+        assertEquals(160, composed.width)
+    }
+
+    private fun makeClip(directory: File, name: String, source: String): String? {
+        val file = File(directory, name)
+        val exit = ProcessBuilder(
+            "ffmpeg", "-v", "error", "-y",
+            "-f", "lavfi", "-i", source,
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            file.absolutePath,
+        ).start().waitFor()
+        return file.absolutePath.takeIf { exit == 0 && file.isFile }
+    }
 }

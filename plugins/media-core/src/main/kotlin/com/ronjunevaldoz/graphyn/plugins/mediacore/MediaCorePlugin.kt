@@ -13,12 +13,13 @@ class MediaCorePlugin(
     override val metadata = GraphynPluginMetadata(
         id = "graphyn.media.core",
         displayName = "Media Core",
-        version = "0.4.0",
+        version = "0.5.0",
         apiVersion = GRAPHYN_PLUGIN_API_VERSION,
     )
 
     override fun register(registrar: GraphynPluginRegistrar) {
         MediaCoreSpecs.all.forEach(registrar::registerNodeSpec)
+        MediaCompositionSpecs.all.forEach(registrar::registerNodeSpec)
         registrar.registerExecutor(MediaCoreSpecs.videoImport.type, videoImportExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioExtract.type, audioExtractExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioMix.type, audioMixExecutor())
@@ -26,6 +27,9 @@ class MediaCorePlugin(
         registrar.registerExecutor(MediaCoreSpecs.videosList.type, mediaListExecutor("video", "videos"))
         registrar.registerExecutor(MediaCoreSpecs.videoStitch.type, videoStitchExecutor())
         registrar.registerExecutor(MediaCoreSpecs.videoEncode.type, videoEncodeExecutor())
+        registrar.registerExecutor(MediaCompositionSpecs.captionOverlay.type, captionOverlayExecutor(backend))
+        registrar.registerExecutor(MediaCompositionSpecs.videoCompose.type, videoComposeExecutor(backend))
+        registrar.registerExecutor(MediaCompositionSpecs.timingController.type, timingControllerExecutor())
     }
 
     private fun videoImportExecutor() = NodeExecutor { inputs ->
@@ -102,17 +106,3 @@ class MediaCorePlugin(
         )
     }
 }
-
-private fun Map<String, WorkflowValue>.string(key: String): String =
-    (this[key] as? WorkflowValue.StringValue)?.value
-        ?.takeIf(String::isNotBlank)
-        ?: error("Missing required string input '$key'.")
-
-private fun Map<String, WorkflowValue>.stringOr(key: String, default: String): String =
-    (this[key] as? WorkflowValue.StringValue)?.value ?: default
-
-private fun Map<String, WorkflowValue>.list(key: String): List<WorkflowValue> =
-    (this[key] as? WorkflowValue.ListValue)?.items ?: error("Missing required list input '$key'.")
-
-private fun Map<String, WorkflowValue>.listOrEmpty(key: String): List<WorkflowValue> =
-    (this[key] as? WorkflowValue.ListValue)?.items.orEmpty()

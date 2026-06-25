@@ -6,16 +6,19 @@ import com.ronjunevaldoz.graphyn.pluginapi.GRAPHYN_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginMetadata
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginRegistrar
+import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCompositionTypes
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaTypes
 
 class MediaAiPlugin(
     private val textToSpeechEngine: TextToSpeechEngine = CommandTextToSpeechEngine(),
     private val ttsCache: TtsCache = TtsCache(),
+    private val speechToTextEngine: SpeechToTextEngine = CommandSpeechToTextEngine(),
+    private val ocrEngine: OcrEngine = CommandOcrEngine(),
 ) : GraphynPlugin {
     override val metadata = GraphynPluginMetadata(
         id = "graphyn.media.ai",
         displayName = "Media AI",
-        version = "0.4.0",
+        version = "0.5.0",
         apiVersion = GRAPHYN_PLUGIN_API_VERSION,
     )
 
@@ -23,6 +26,35 @@ class MediaAiPlugin(
         MediaAiSpecs.all.forEach(registrar::registerNodeSpec)
         registrar.registerExecutor(MediaAiSpecs.textToSpeech.type, textToSpeechExecutor())
         registrar.registerExecutor(MediaAiSpecs.captionStyle.type, captionStyleExecutor)
+        registrar.registerExecutor(MediaAiSpecs.speechToText.type, speechToTextExecutor())
+        registrar.registerExecutor(MediaAiSpecs.ocr.type, ocrExecutor())
+    }
+
+    private fun speechToTextExecutor() = NodeExecutor { inputs ->
+        val result = speechToTextEngine.transcribe(
+            SpeechToTextRequest(
+                audioPath = MediaTypes.path(inputs["audio"], "audio"),
+                language = inputs.stringOr("language", "en"),
+            ),
+        )
+        mapOf(
+            "text" to WorkflowValue.StringValue(result.text),
+            "confidence" to WorkflowValue.DoubleValue(result.confidence),
+            "segments" to MediaCompositionTypes.captionList(
+                result.segments.map { Triple(it.text, it.startMs, it.endMs) },
+            ),
+        )
+    }
+
+    private fun ocrExecutor() = NodeExecutor { inputs ->
+        val result = ocrEngine.recognize(
+            imagePath = MediaTypes.path(inputs["image"], "image"),
+            language = inputs.stringOr("language", "en"),
+        )
+        mapOf(
+            "text" to WorkflowValue.StringValue(result.text),
+            "blocks" to WorkflowValue.ListValue(result.blocks.map { it.toRecordValue() }),
+        )
     }
 
     private fun textToSpeechExecutor() = NodeExecutor { inputs ->
@@ -81,3 +113,14 @@ private fun Map<String, WorkflowValue>.intOr(key: String, default: Int): Int =
 
 private fun String.isHexColor(): Boolean =
     (length == 7 || length == 9) && startsWith("#") && drop(1).all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }
+
+private fun OcrBlock.toRecordValue(): WorkflowValue.RecordValue = WorkflowValue.RecordValue(
+    mapOf(
+        "text" to WorkflowValue.StringValue(text),
+        "x" to WorkflowValue.IntValue(x),
+        "y" to WorkflowValue.IntValue(y),
+        "width" to WorkflowValue.IntValue(width),
+        "height" to WorkflowValue.IntValue(height),
+        "confidence" to WorkflowValue.DoubleValue(confidence),
+    ),
+)

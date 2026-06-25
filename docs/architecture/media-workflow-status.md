@@ -19,10 +19,22 @@ This page covers the demo workflows that ship with Graphyn and the node types th
 - `preview.view` (generic value preview, used to surface audio handles)
 - `graphyn.sticky_note` (on-canvas guide annotation embedded in each template)
 
+Phase 2 (captioning & composition) adds:
+
+- `media.caption_overlay` (burns timed captions into a video)
+- `media.video_compose` (layers overlay clips over a base video)
+- `media.timing_controller` (averages sync points into delays)
+- `media.speech_to_text` (audio → text + timed caption segments)
+- `media.ocr` (image → text + bounding blocks)
+
 ## Current Status
 
 Phase 1 media workflows are implemented for JVM/Desktop and are covered by both template
 contract tests and workflow execution tests.
+
+Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
+availability-guarded FFmpeg backend tests. They are registered in the palette but are not yet wired
+into any shipped demo template.
 
 ## Node Status
 
@@ -42,6 +54,11 @@ contract tests and workflow execution tests.
 | `media.file_output` | preview | implemented | no dedicated direct unit test yet | yes | yes | Pass-through file preview; only video-encode terminals expose a `file_path` |
 | `preview.view` | preview | implemented | yes (`PreviewPluginTest`) | yes | yes | Generic opaque preview; used to surface TTS/mix audio handles |
 | `graphyn.sticky_note` | sticky-notes | implemented | n/a (annotation) | yes | yes | No-op executor so an embedded guide note never fails execution |
+| `media.caption_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | no (no demo yet) | n/a | Burns captions via the `ass` filter; **requires FFmpeg built with libass** |
+| `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | no | n/a | Overlay-filter chain with per-overlay timing + opacity |
+| `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | no | n/a | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
+| `media.speech_to_text` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | no | n/a | CLI adapter `GRAPHYN_STT_EXECUTABLE`; emits caption segments |
+| `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | no | n/a | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; needs an image handle producer (Phase 3) |
 
 ## Template Coverage
 
@@ -78,6 +95,7 @@ Run the focused media checks:
 ```bash
 ./gradlew :app:demo:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowTemplateTest
 ./gradlew :app:demo:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowExecutionTest
+./gradlew :plugins:media-core:test :plugins:media-ai:test
 ```
 
 Run the full demo JVM suite:
@@ -95,14 +113,23 @@ Run the full demo JVM suite:
 - No audio encode/save node yet, so audio-only templates cannot terminate in `media.file_output`
   (they use `preview.view`).
 - `media.video_stitch` supports only the `cut` transition in Phase 1.
-- Phase 2 and Phase 3 nodes (captions, OCR, compositing, image ops) remain planned in
+- **Phase 2 nodes are not yet wired into a demo template** — they are registered and unit-tested but
+  there is no end-to-end captioning/composition scene yet.
+- **`media.ocr` has no image-handle producer yet.** Image import / frame-extract nodes are Phase 3,
+  so OCR is currently only reachable from an image handle built upstream by hand or by a script.
+- `media.video_compose` overlays are video handles only; image and text overlays are deferred.
+- Phase 3 nodes (image ops, audio encode, advanced encoding) remain planned in
   `media-workflow-plan.md`.
 
 ## Known Bugs / Constraints
 
 - **System dependencies required for real runs.** `media-core` shells out to FFmpeg/FFprobe and
-  `media-ai` to the TTS binary. If these are absent on `PATH`, real execution fails at the node;
-  the deterministic tests still pass because they fake the executors.
+  `media-ai` to the TTS/STT/OCR binaries (`GRAPHYN_TTS_EXECUTABLE`, `GRAPHYN_STT_EXECUTABLE`,
+  `GRAPHYN_OCR_EXECUTABLE`). If these are absent, real execution fails at the node; the deterministic
+  tests still pass because they fake the executors/engines.
+- **`media.caption_overlay` needs FFmpeg built with libass.** It burns subtitles via the `ass`
+  filter. On a stripped FFmpeg the executor fails fast with a clear message
+  (`FfmpegMediaCoreBackend.supportsFilter("ass")`), and the backend test skips that leg.
 - **Working directory sensitivity.** `media.video_encode`'s `output_path` and resolved input paths
   are interpreted relative to the process working directory. The desktop app runs from
   `app/desktopApp/`, which is why templates resolve inputs via `io.resolve_path` against
