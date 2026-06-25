@@ -136,6 +136,23 @@ internal val apiIngestionDemoWorkflow = WorkflowDefinition(
     ),
 )
 
+// Media sample fixtures live under app/demo resources; paths resolve via io.resolve_path so they
+// work regardless of the process working directory.
+private const val MEDIA_DIR = "../../app/demo/src/commonMain/resources/media"
+
+/**
+ * On-canvas guide note shown beside each media template. Auto-layout parks annotation nodes in a
+ * column to the left of the graph, so this reads as a legend.
+ */
+private fun guideNote(text: String, width: Int = 300, height: Int = 240): NodeRef = NodeRef(
+    "guide", "graphyn.sticky_note",
+    config = mapOf(
+        "text" to WorkflowValue.StringValue(text.trimIndent()),
+        "__w" to WorkflowValue.IntValue(width),
+        "__h" to WorkflowValue.IntValue(height),
+    ),
+)
+
 /**
  * Simple text-to-speech workflow.
  *
@@ -145,8 +162,19 @@ internal val apiIngestionDemoWorkflow = WorkflowDefinition(
 internal val simpleTtsWorkflow = WorkflowDefinition(
     id = "simple-tts", name = "Text to Speech",
     nodes = listOf(
+        guideNote(
+            """
+            Text to Speech
+
+            Reads a text file and synthesizes spoken audio.
+
+            Flow: Resolve Path → File Read → Text to Speech → Preview
+            Use cases: voiceover, narration drafts, accessibility audio.
+            Tips: set voice_id/speed on the TTS node; results are cached.
+            """,
+        ),
         NodeRef("resolvePath", "io.resolve_path", config = mapOf(
-            "base_dir" to WorkflowValue.StringValue("../../app/demo/src/commonMain/resources/media"),
+            "base_dir" to WorkflowValue.StringValue(MEDIA_DIR),
             "relative_path" to WorkflowValue.StringValue("input.txt"),
         )),
         NodeRef("text", "io.file_read"),
@@ -155,10 +183,12 @@ internal val simpleTtsWorkflow = WorkflowDefinition(
             "voice_id" to WorkflowValue.StringValue("default"),
             "speed" to WorkflowValue.DoubleValue(1.0),
         )),
+        NodeRef("preview", "preview.view"),
     ),
     connections = listOf(
         ConnectionRef("resolvePath", "resolved_path", "text", "path"),
         ConnectionRef("text", "content", "tts", "text"),
+        ConnectionRef("tts", "audio", "preview", "value"),
     ),
 )
 
@@ -173,12 +203,25 @@ internal val simpleTtsWorkflow = WorkflowDefinition(
 internal val videoNarrationWorkflow = WorkflowDefinition(
     id = "video-narration", name = "Video Narration",
     nodes = listOf(
+        guideNote(
+            """
+            Video Narration
+
+            Adds a synthesized narration track to a video.
+
+            Flow: import video + read script → extract original audio +
+            synthesize TTS → mix both tracks → encode → Media Output.
+            Use cases: explainer videos, dubbed clips, auto voiceover.
+            Tips: the audio mix balances the original track and narration.
+            """,
+            height = 260,
+        ),
         NodeRef("resolveVideo", "io.resolve_path", config = mapOf(
-            "base_dir" to WorkflowValue.StringValue("../../app/demo/src/commonMain/resources/media"),
+            "base_dir" to WorkflowValue.StringValue(MEDIA_DIR),
             "relative_path" to WorkflowValue.StringValue("input.mp4"),
         )),
         NodeRef("resolveText", "io.resolve_path", config = mapOf(
-            "base_dir" to WorkflowValue.StringValue("../../app/demo/src/commonMain/resources/media"),
+            "base_dir" to WorkflowValue.StringValue(MEDIA_DIR),
             "relative_path" to WorkflowValue.StringValue("narration.txt"),
         )),
         NodeRef("import_video", "media.video_import"),
@@ -196,6 +239,7 @@ internal val videoNarrationWorkflow = WorkflowDefinition(
             "bitrate" to WorkflowValue.StringValue("high"),
             "codec" to WorkflowValue.StringValue("h264"),
         )),
+        NodeRef("output", "media.file_output"),
     ),
     connections = listOf(
         ConnectionRef("resolveVideo", "resolved_path", "import_video", "path"),
@@ -207,6 +251,7 @@ internal val videoNarrationWorkflow = WorkflowDefinition(
         ConnectionRef("collect_audio",  "audios", "mix_audio",     "audio_tracks"),
         ConnectionRef("import_video",   "video",  "encode",        "video"),
         ConnectionRef("mix_audio",      "audio",  "encode",        "audio"),
+        ConnectionRef("encode",         "file_path", "output",     "file_path"),
     ),
 )
 
@@ -219,6 +264,25 @@ internal val videoNarrationWorkflow = WorkflowDefinition(
 internal val audioMixWorkflow = WorkflowDefinition(
     id = "audio-mix", name = "Audio Mix",
     nodes = listOf(
+        guideNote(
+            """
+            Audio Mix
+
+            Blends a background track (extracted from a video) with a
+            synthesized voice, and defines a caption style for later use.
+
+            Flow: import video → extract audio + synthesize TTS →
+            collect → mix → Preview.
+            Use cases: podcasts, voiced slideshows, narrated b-roll.
+            Tips: caption_style is a metadata node consumed downstream.
+            """,
+            height = 260,
+        ),
+        NodeRef("resolveVideo", "io.resolve_path", config = mapOf(
+            "base_dir" to WorkflowValue.StringValue(MEDIA_DIR),
+            "relative_path" to WorkflowValue.StringValue("input.mp4"),
+        )),
+        NodeRef("import_video", "media.video_import"),
         NodeRef("background", "media.audio_extract"),
         NodeRef("foreground", "media.text_to_speech", config = mapOf(
             "language" to WorkflowValue.StringValue("en"),
@@ -233,11 +297,15 @@ internal val audioMixWorkflow = WorkflowDefinition(
             "font_size" to WorkflowValue.IntValue(24),
             "position" to WorkflowValue.StringValue("bottom"),
         )),
+        NodeRef("preview", "preview.view"),
     ),
     connections = listOf(
+        ConnectionRef("resolveVideo", "resolved_path", "import_video", "path"),
+        ConnectionRef("import_video", "video", "background", "video"),
         ConnectionRef("background", "audio", "collect", "audio1"),
         ConnectionRef("foreground", "audio", "collect", "audio2"),
         ConnectionRef("collect", "audios", "mix", "audio_tracks"),
+        ConnectionRef("mix", "audio", "preview", "value"),
     ),
 )
 
@@ -253,8 +321,22 @@ internal val audioMixWorkflow = WorkflowDefinition(
 internal val smartEncodeWorkflow = WorkflowDefinition(
     id = "smart-encode", name = "Smart Video Encode",
     nodes = listOf(
+        guideNote(
+            """
+            Smart Video Encode
+
+            Picks an encoding bitrate from the source duration using a
+            Kotlin Script node, then encodes.
+
+            Flow: Resolve Path → Video Import → Script (decide bitrate) →
+            Video Encode → Media Output.
+            Use cases: adaptive exports, batch transcoding presets.
+            Tips: edit the script to change the duration→bitrate rules.
+            """,
+            height = 260,
+        ),
         NodeRef("resolvePath", "io.resolve_path", config = mapOf(
-            "base_dir" to WorkflowValue.StringValue("../../app/demo/src/commonMain/resources/media"),
+            "base_dir" to WorkflowValue.StringValue(MEDIA_DIR),
             "relative_path" to WorkflowValue.StringValue("input.mp4"),
         )),
         NodeRef("import", "media.video_import"),
@@ -283,12 +365,14 @@ internal val smartEncodeWorkflow = WorkflowDefinition(
         NodeRef("encode", "media.video_encode", config = mapOf(
             "output_path" to WorkflowValue.StringValue("smart_encoded.mp4"),
         )),
+        NodeRef("output", "media.file_output"),
     ),
     connections = listOf(
         ConnectionRef("resolvePath", "resolved_path", "import", "path"),
         ConnectionRef("import", "duration_ms", "decide", "input"),
         // Note: In real workflows, script result would be parsed to extract bitrate
         ConnectionRef("import", "video", "encode", "video"),
+        ConnectionRef("encode", "file_path", "output", "file_path"),
     ),
 )
 
@@ -304,12 +388,26 @@ internal val smartEncodeWorkflow = WorkflowDefinition(
 internal val videoStitchWorkflow = WorkflowDefinition(
     id = "video-stitch", name = "Video Stitch",
     nodes = listOf(
+        guideNote(
+            """
+            Video Stitch
+
+            Concatenates multiple clips with hard cuts and exports one MP4.
+
+            Flow: Resolve Path ×2 → Video Import ×2 → Videos List →
+            Video Stitch → Video Encode → Media Output.
+            Use cases: reels, montages, joining recorded segments.
+            Tips: Videos List collects individual clips into the list the
+            stitch node expects; add more clips via video3/video4.
+            """,
+            height = 260,
+        ),
         NodeRef("resolvePath1", "io.resolve_path", config = mapOf(
-            "base_dir" to WorkflowValue.StringValue("../../app/demo/src/commonMain/resources/media"),
+            "base_dir" to WorkflowValue.StringValue(MEDIA_DIR),
             "relative_path" to WorkflowValue.StringValue("clip1.mp4"),
         )),
         NodeRef("resolvePath2", "io.resolve_path", config = mapOf(
-            "base_dir" to WorkflowValue.StringValue("../../app/demo/src/commonMain/resources/media"),
+            "base_dir" to WorkflowValue.StringValue(MEDIA_DIR),
             "relative_path" to WorkflowValue.StringValue("clip2.mp4"),
         )),
         NodeRef("import1", "media.video_import"),
@@ -322,7 +420,7 @@ internal val videoStitchWorkflow = WorkflowDefinition(
             "output_path" to WorkflowValue.StringValue("stitched.mp4"),
             "bitrate" to WorkflowValue.StringValue("high"),
         )),
-        NodeRef("preview", "media.file_output"),
+        NodeRef("output", "media.file_output"),
     ),
     connections = listOf(
         ConnectionRef("resolvePath1", "resolved_path", "import1", "path"),
@@ -331,6 +429,6 @@ internal val videoStitchWorkflow = WorkflowDefinition(
         ConnectionRef("import2", "video", "collect", "video2"),
         ConnectionRef("collect", "videos", "stitch",  "videos"),
         ConnectionRef("stitch",  "video",  "encode",  "video"),
-        ConnectionRef("encode",  "file_path", "preview", "file_path"),
+        ConnectionRef("encode",  "file_path", "output", "file_path"),
     ),
 )

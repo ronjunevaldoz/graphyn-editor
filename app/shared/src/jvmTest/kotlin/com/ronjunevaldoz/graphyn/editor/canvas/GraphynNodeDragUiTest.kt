@@ -2,7 +2,7 @@ package com.ronjunevaldoz.graphyn.editor.canvas
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.IntOffset
@@ -69,7 +69,7 @@ class GraphynNodeDragUiTest {
 
         rule.waitForIdle()
 
-        rule.onNodeWithText("logger-1").performTouchInput {
+        rule.onNodeWithTag("node-header-logger-1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(12) { moveBy(Offset(10f, 0f)) }
             up()
@@ -99,7 +99,7 @@ class GraphynNodeDragUiTest {
         rule.waitForIdle()
 
         // Drag in small steps so we can verify smooth accumulation (no slop jump).
-        rule.onNodeWithText("logger-1").performTouchInput {
+        rule.onNodeWithTag("node-header-logger-1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(10) { moveBy(Offset(10f, 0f)) }
             up()
@@ -134,7 +134,7 @@ class GraphynNodeDragUiTest {
         val startPos2 = state.nodePosition("logger-2", 1)
 
         // Drag node-1 right
-        rule.onNodeWithText("logger-1").performTouchInput {
+        rule.onNodeWithTag("node-header-logger-1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(6) { moveBy(Offset(20f, 0f)) }
             up()
@@ -150,7 +150,7 @@ class GraphynNodeDragUiTest {
         assertEquals(startPos2, afterDrag1Pos2, "node-2 should not have moved when dragging node-1")
 
         // Drag node-2 down
-        rule.onNodeWithText("logger-2").performTouchInput {
+        rule.onNodeWithTag("node-header-logger-2", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(6) { moveBy(Offset(0f, 20f)) }
             up()
@@ -181,7 +181,7 @@ class GraphynNodeDragUiTest {
         rule.waitForIdle()
 
         // Drag node-1 to the right and slightly down
-        rule.onNodeWithText("logger-1").performTouchInput {
+        rule.onNodeWithTag("node-header-logger-1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(5) { moveBy(Offset(20f, 10f)) }
             up()
@@ -191,7 +191,7 @@ class GraphynNodeDragUiTest {
         }
 
         // Drag node-2 to the left and slightly down
-        rule.onNodeWithText("logger-2").performTouchInput {
+        rule.onNodeWithTag("node-header-logger-2", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(5) { moveBy(Offset(-20f, 10f)) }
             up()
@@ -218,7 +218,7 @@ class GraphynNodeDragUiTest {
 
         rule.waitForIdle()
 
-        rule.onNodeWithText("logger-1").performTouchInput {
+        rule.onNodeWithTag("node-header-logger-1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(8) { moveBy(Offset(15f, 0f)) }
             up()

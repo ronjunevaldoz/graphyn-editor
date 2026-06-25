@@ -106,10 +106,12 @@ fun DemoApp(
                     canvasBounds = canvasBounds,
                     store = store,
                 )
-                if (wf.id == DemoScene.Script.workflow.id) {
-                    LaunchedEffect(Unit) {
-                        snapshotFlow { state.canvasSize to state.hasCanvasCards }
-                            .first { (size, ready) -> size.width > 0 && size.height > 0 && ready }
+                // Templates ship without positions; lay them out once the canvas is measured.
+                // Guarded on empty positions so a stored/edited layout is never clobbered.
+                LaunchedEffect(Unit) {
+                    snapshotFlow { state.canvasSize to state.hasCanvasCards }
+                        .first { (size, ready) -> size.width > 0 && size.height > 0 && ready }
+                    if (state.nodePositionsByNodeId.isEmpty()) {
                         state.dispatch(GraphynEditorIntent.AutoLayout)
                     }
                 }

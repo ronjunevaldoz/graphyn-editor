@@ -124,16 +124,30 @@ internal data class AutoLayoutResult(
 internal fun GraphynEditorState.performAutoLayout(): AutoLayoutResult? {
     val wf = workflow ?: return null
     val registry = canvasCards
-    val layoutNodes = wf.nodes.filter { registry?.resolve(it.type)?.isAnnotation != true }
-    if (layoutNodes.size > GraphynAutoLayout.MAX_NODES) {
-        log.push("Auto-layout skipped: ${layoutNodes.size} nodes exceeds limit of ${GraphynAutoLayout.MAX_NODES}")
-        return null
-    }
     val nodeSize: (String) -> IntSize = { type ->
         registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) } ?: GraphynCanvasMetrics.NodeSize
     }
-    val positions = GraphynAutoLayout.computePositions(layoutNodes, wf.connections, nodeSize)
+    // Annotations (sticky notes, frames) are not part of the dataflow DAG; lay out the graph
+    // nodes, then park annotations in a column to the left so they read as a legend.
+    val (annotationNodes, graphNodes) = wf.nodes.partition { registry?.resolve(it.type)?.isAnnotation == true }
+    if (graphNodes.size > GraphynAutoLayout.MAX_NODES) {
+        log.push("Auto-layout skipped: ${graphNodes.size} nodes exceeds limit of ${GraphynAutoLayout.MAX_NODES}")
+        return null
+    }
+    val positions = GraphynAutoLayout.computePositions(graphNodes, wf.connections, nodeSize).toMutableMap()
+    if (annotationNodes.isNotEmpty()) {
+        val gap = GraphynCanvasMetrics.NodeSize.width
+        val maxAnnW = annotationNodes.maxOf { nodeSize(it.type).width }
+        val graphMinX = positions.values.minOfOrNull { it.x } ?: 0
+        val graphMinY = positions.values.minOfOrNull { it.y } ?: 0
+        val annX = graphMinX - maxAnnW - gap
+        var annY = graphMinY
+        annotationNodes.forEach { ann ->
+            positions[ann.id] = IntOffset(annX, annY)
+            annY += nodeSize(ann.type).height + GraphynCanvasMetrics.NodeSize.height
+        }
+    }
     positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
-    val sizes = layoutNodes.associate { it.id to nodeSize(it.type) }
+    val sizes = wf.nodes.associate { it.id to nodeSize(it.type) }
     return AutoLayoutResult(positions, sizes)
 }

@@ -94,7 +94,7 @@ private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
             .clickable { ctx.onSelect() },
     ) {
         Column {
-            FieldHeader(ctx.spec.label, theme, onMove = ctx.onMove)
+            FieldHeader(ctx.spec.label, theme, onMove = ctx.onMove, nodeId = ctx.node.id)
             FieldBody(
                 inputs = ctx.spec.inputs,
                 values = ctx.spec.defaultValues + ctx.node.config,

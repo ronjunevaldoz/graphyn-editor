@@ -37,13 +37,16 @@ class MediaWorkflowTemplateTest {
             expectedId = "simple-tts",
             expectedName = "Text to Speech",
             expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
                 "resolvePath" to "io.resolve_path",
                 "text" to "io.file_read",
                 "tts" to "media.text_to_speech",
+                "preview" to "preview.view",
             ),
             expectedConnections = setOf(
                 connection("resolvePath", "resolved_path", "text", "path"),
                 connection("text", "content", "tts", "text"),
+                connection("tts", "audio", "preview", "value"),
             ),
         )
         assertConfig(
@@ -68,6 +71,7 @@ class MediaWorkflowTemplateTest {
             expectedId = "video-narration",
             expectedName = "Video Narration",
             expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
                 "resolveVideo" to "io.resolve_path",
                 "resolveText" to "io.resolve_path",
                 "import_video" to "media.video_import",
@@ -77,6 +81,7 @@ class MediaWorkflowTemplateTest {
                 "collect_audio" to "media.audios_list",
                 "mix_audio" to "media.audio_mix",
                 "encode" to "media.video_encode",
+                "output" to "media.file_output",
             ),
             expectedConnections = setOf(
                 connection("resolveVideo", "resolved_path", "import_video", "path"),
@@ -88,6 +93,7 @@ class MediaWorkflowTemplateTest {
                 connection("collect_audio", "audios", "mix_audio", "audio_tracks"),
                 connection("import_video", "video", "encode", "video"),
                 connection("mix_audio", "audio", "encode", "audio"),
+                connection("encode", "file_path", "output", "file_path"),
             ),
         )
         assertResolver(workflow.node("resolveVideo"), "input.mp4")
@@ -115,18 +121,26 @@ class MediaWorkflowTemplateTest {
             expectedId = "audio-mix",
             expectedName = "Audio Mix",
             expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
+                "resolveVideo" to "io.resolve_path",
+                "import_video" to "media.video_import",
                 "background" to "media.audio_extract",
                 "foreground" to "media.text_to_speech",
                 "collect" to "media.audios_list",
                 "mix" to "media.audio_mix",
                 "caption_style" to "media.caption_style",
+                "preview" to "preview.view",
             ),
             expectedConnections = setOf(
+                connection("resolveVideo", "resolved_path", "import_video", "path"),
+                connection("import_video", "video", "background", "video"),
                 connection("background", "audio", "collect", "audio1"),
                 connection("foreground", "audio", "collect", "audio2"),
                 connection("collect", "audios", "mix", "audio_tracks"),
+                connection("mix", "audio", "preview", "value"),
             ),
         )
+        assertResolver(workflow.node("resolveVideo"), "input.mp4")
         assertConfig(
             workflow.node("foreground"),
             "language" to stringValue("en"),
@@ -151,15 +165,18 @@ class MediaWorkflowTemplateTest {
             expectedId = "smart-encode",
             expectedName = "Smart Video Encode",
             expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
                 "resolvePath" to "io.resolve_path",
                 "import" to "media.video_import",
                 "decide" to "script.eval",
                 "encode" to "media.video_encode",
+                "output" to "media.file_output",
             ),
             expectedConnections = setOf(
                 connection("resolvePath", "resolved_path", "import", "path"),
                 connection("import", "duration_ms", "decide", "input"),
                 connection("import", "video", "encode", "video"),
+                connection("encode", "file_path", "output", "file_path"),
             ),
         )
         assertResolver(workflow.node("resolvePath"), "input.mp4")
@@ -180,6 +197,7 @@ class MediaWorkflowTemplateTest {
             expectedId = "video-stitch",
             expectedName = "Video Stitch",
             expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
                 "resolvePath1" to "io.resolve_path",
                 "resolvePath2" to "io.resolve_path",
                 "import1" to "media.video_import",
@@ -187,7 +205,7 @@ class MediaWorkflowTemplateTest {
                 "collect" to "media.videos_list",
                 "stitch" to "media.video_stitch",
                 "encode" to "media.video_encode",
-                "preview" to "media.file_output",
+                "output" to "media.file_output",
             ),
             expectedConnections = setOf(
                 connection("resolvePath1", "resolved_path", "import1", "path"),
@@ -196,7 +214,7 @@ class MediaWorkflowTemplateTest {
                 connection("import2", "video", "collect", "video2"),
                 connection("collect", "videos", "stitch", "videos"),
                 connection("stitch", "video", "encode", "video"),
-                connection("encode", "file_path", "preview", "file_path"),
+                connection("encode", "file_path", "output", "file_path"),
             ),
         )
         assertResolver(workflow.node("resolvePath1"), "clip1.mp4")

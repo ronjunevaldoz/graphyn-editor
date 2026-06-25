@@ -2,7 +2,7 @@ package com.ronjunevaldoz.graphyn.editor.canvas
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.IntOffset
@@ -77,7 +77,7 @@ class GraphynNodeDragScenariosTest {
         }
         rule.waitForIdle()
 
-        rule.onNodeWithText("n1").performTouchInput {
+        rule.onNodeWithTag("node-header-n1", useUnmergedTree = true).performTouchInput {
             down(center)
             moveBy(Offset(6f, 0f))  // well below any touch slop
             up()
@@ -97,7 +97,7 @@ class GraphynNodeDragScenariosTest {
         }
 
         val changes = recordPositions(s) {
-            rule.onNodeWithText("n1").performTouchInput {
+            rule.onNodeWithTag("node-header-n1", useUnmergedTree = true).performTouchInput {
                 down(center)
                 repeat(40) { moveBy(Offset(5f, 0f)) }  // 200px total in 5px steps
                 up()
@@ -126,7 +126,7 @@ class GraphynNodeDragScenariosTest {
         }
 
         val changes = recordPositions(s) {
-            rule.onNodeWithText("n1").performTouchInput {
+            rule.onNodeWithTag("node-header-n1", useUnmergedTree = true).performTouchInput {
                 down(center)
                 repeat(20) { moveBy(Offset(5f, 0f)) }  // 100px total in 5px steps
                 up()
@@ -155,7 +155,7 @@ class GraphynNodeDragScenariosTest {
         }
         rule.waitForIdle()
 
-        rule.onNodeWithText("n1").performTouchInput {
+        rule.onNodeWithTag("node-header-n1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(10) { moveBy(Offset(10f, 10f)) }
             up()
@@ -178,7 +178,7 @@ class GraphynNodeDragScenariosTest {
         }
         rule.waitForIdle()
 
-        rule.onNodeWithText("n1").performTouchInput {
+        rule.onNodeWithTag("node-header-n1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(10) { moveBy(Offset(-10f, 0f)) }
             up()
@@ -198,7 +198,7 @@ class GraphynNodeDragScenariosTest {
         }
         rule.waitForIdle()
 
-        rule.onNodeWithText("n1").performTouchInput {
+        rule.onNodeWithTag("node-header-n1", useUnmergedTree = true).performTouchInput {
             down(center)
             repeat(10) { moveBy(Offset(10f, 0f)) }  // +100px
             repeat(10) { moveBy(Offset(-10f, 0f)) } // -100px
@@ -222,7 +222,7 @@ class GraphynNodeDragScenariosTest {
         rule.waitForIdle()
 
         repeat(3) {
-            rule.onNodeWithText("n1").performTouchInput {
+            rule.onNodeWithTag("node-header-n1", useUnmergedTree = true).performTouchInput {
                 down(center)
                 repeat(6) { moveBy(Offset(10f, 0f)) }
                 up()

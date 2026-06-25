@@ -15,5 +15,9 @@ object StickyNotePlugin : GraphynPlugin {
 
     override fun register(registrar: GraphynPluginRegistrar) {
         registrar.registerNodeSpec(StickyNoteSpec)
+        // A sticky note is a canvas annotation with no data ports. Register a no-op executor so a
+        // note embedded in an executable workflow is a harmless pass-through instead of failing
+        // with "no executor registered".
+        registrar.registerExecutor(STICKY_NOTE_TYPE) { emptyMap() }
     }
 }
