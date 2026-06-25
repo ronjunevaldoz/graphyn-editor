@@ -4,9 +4,9 @@ Pure Kotlin workflow model — no Compose, no Android, no UI dependency.
 
 ## What's here
 
-`core` is a folder of focused, layered modules. `:core` itself is a thin aggregator
-that re-exports the four submodules via `api`. Package names are unchanged
-(`com.ronjunevaldoz.graphyn.core.*`), so the split is transparent to source code.
+`core` is a folder of focused, layered modules — there is no umbrella `:core` module.
+Depend on the specific submodule(s) you need; everything builds up from `core:model`.
+Package names are unchanged (`com.ronjunevaldoz.graphyn.core.*`).
 
 | Module | Packages | Contents |
 |---|---|---|
@@ -17,10 +17,17 @@ that re-exports the four submodules via `api`. Package names are unchanged
 
 ## Dependency
 
+Consumed by Gradle project path:
+
 ```kotlin
-// Aggregator — pulls in all four submodules:
-implementation("io.github.ronjunevaldoz:graphyn-core:0.2.1")
+implementation(projects.core.model)
+implementation(projects.core.execution)     // if you execute workflows
+implementation(projects.core.serialization) // if you (de)serialize
+implementation(projects.core.data)          // if you persist
 ```
+
+> Maven Central publishing is per-submodule and is being reworked after the split
+> (the previous aggregate `graphyn-core` artifact was removed).
 
 ## Usage
 

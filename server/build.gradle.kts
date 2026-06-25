@@ -12,7 +12,10 @@ application {
 
 dependencies {
     api(projects.pluginApi)
-    api(projects.core)
+    api(projects.core.model)
+    api(projects.core.execution)
+    api(projects.core.serialization)
+    api(projects.core.data)
     api(projects.runtime)
     implementation(libs.logback)
     implementation(libs.ktor.serverCore)

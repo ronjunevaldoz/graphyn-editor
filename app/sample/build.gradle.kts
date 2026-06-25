@@ -8,6 +8,7 @@ plugins {
 
 dependencies {
     implementation(projects.app.shared)
+    implementation(projects.core.serialization)
     implementation(projects.plugins.sampleMath)
     implementation(projects.plugins.script)
     implementation(compose.desktop.currentOs)

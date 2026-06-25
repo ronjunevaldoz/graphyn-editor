@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.JavaExec
+
 plugins {
     id("graphyn-kmp-library")
     alias(libs.plugins.serialization)
@@ -14,5 +16,22 @@ kotlin {
             implementation(libs.serialization.json)
             implementation(libs.kotlinx.coroutinesCore)
         }
+        commonTest.dependencies {
+            // CoreWorkflowTest is a full-stack integration test (build → validate →
+            // execute → serialize round-trip), so it needs the serialization module too.
+            implementation(projects.core.serialization)
+            implementation(libs.serialization.json)
+        }
     }
+}
+
+tasks.register<JavaExec>("benchmarkCore") {
+    group = "verification"
+    description = "Runs the Graphyn core benchmark snapshot."
+    dependsOn("jvmTestClasses")
+    mainClass.set("com.ronjunevaldoz.graphyn.core.benchmark.CoreBenchmarkKt")
+    classpath = files(
+        layout.buildDirectory.dir("classes/kotlin/jvm/test"),
+        configurations.getByName("jvmTestRuntimeClasspath"),
+    )
 }

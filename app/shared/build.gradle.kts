@@ -54,7 +54,9 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
         }
         commonMain.dependencies {
-            api(projects.core)
+            api(projects.core.model)
+            api(projects.core.execution)
+            api(projects.core.data)
             api(projects.core.designsystem)
             api(projects.ai)
             api(projects.editorApi)
