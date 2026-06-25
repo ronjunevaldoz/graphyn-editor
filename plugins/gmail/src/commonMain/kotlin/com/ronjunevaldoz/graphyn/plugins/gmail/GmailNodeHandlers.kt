@@ -192,17 +192,15 @@ private fun getMessageBody(detail: GmailMessageDetail): String {
     val payload = detail.payload ?: return ""
 
     // Try to get body from main payload
-    payload.body?.data?.let { data ->
-        // TODO: Implement Base64 decoding
-        return data
+    payload.body?.data?.takeIf { it.isNotEmpty() }?.let { data ->
+        return GmailBase64.decode(data)
     }
 
     // Try to find body in parts (multipart message)
     payload.parts.forEach { part ->
         if (part.mimeType == "text/plain" || part.mimeType == "text/html") {
-            part.body?.data?.let { data ->
-                // TODO: Implement Base64 decoding
-                return data
+            part.body?.data?.takeIf { it.isNotEmpty() }?.let { data ->
+                return GmailBase64.decode(data)
             }
         }
     }

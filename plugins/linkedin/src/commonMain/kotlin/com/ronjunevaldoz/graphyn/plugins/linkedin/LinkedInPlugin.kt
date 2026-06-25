@@ -30,104 +30,66 @@ object LinkedInPlugin : GraphynPlugin {
 
 object LinkedInExecutors {
     val fetchProfile = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val result = executeFetchProfile(credential)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is String -> WorkflowValue.StringValue(v)
-                null -> WorkflowValue.StringValue("")
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeFetchProfile(input.str("credential")).outputs.toWorkflowOutputs()
     }
 
     val postFeed = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val text = (input["text"] as? WorkflowValue.StringValue)?.value ?: ""
-        val imageUrl = (input["image_url"] as? WorkflowValue.StringValue)?.value
-
-        val result = executePostFeed(credential, text, imageUrl)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is String -> WorkflowValue.StringValue(v ?: "")
-                is Boolean -> WorkflowValue.BooleanValue(v)
-                null -> WorkflowValue.StringValue("")
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executePostFeed(
+            token = input.str("credential"),
+            text = input.str("text"),
+            imageUrl = (input["image_url"] as? WorkflowValue.StringValue)?.value,
+        ).outputs.toWorkflowOutputs()
     }
 
     val getFeed = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val limit = (input["limit"] as? WorkflowValue.IntValue)?.value ?: 10
-
-        val result = executeGetFeed(credential, limit)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is List<*> -> WorkflowValue.StringValue(v.toString())
-                is Int -> WorkflowValue.IntValue(v)
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeGetFeed(input.str("credential"), input.intOr("limit", 10)).outputs.toWorkflowOutputs()
     }
 
     val getConnections = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val limit = (input["limit"] as? WorkflowValue.IntValue)?.value ?: 10
-
-        val result = executeGetConnections(credential, limit)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is List<*> -> WorkflowValue.StringValue(v.toString())
-                is Int -> WorkflowValue.IntValue(v)
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeGetConnections(input.str("credential"), input.intOr("limit", 10)).outputs.toWorkflowOutputs()
     }
 
     val sendMessage = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val recipientId = (input["recipient_id"] as? WorkflowValue.StringValue)?.value ?: ""
-        val message = (input["message"] as? WorkflowValue.StringValue)?.value ?: ""
-
-        val result = executeSendMessage(credential, recipientId, message)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is String -> WorkflowValue.StringValue(v ?: "")
-                is Boolean -> WorkflowValue.BooleanValue(v)
-                null -> WorkflowValue.StringValue("")
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeSendMessage(
+            token = input.str("credential"),
+            recipientId = input.str("recipient_id"),
+            message = input.str("message"),
+        ).outputs.toWorkflowOutputs()
     }
 
     val likePost = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val postId = (input["post_id"] as? WorkflowValue.StringValue)?.value ?: ""
-
-        val result = executeLikePost(credential, postId)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is Boolean -> WorkflowValue.BooleanValue(v)
-                is String -> WorkflowValue.StringValue(v ?: "")
-                null -> WorkflowValue.StringValue("")
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeLikePost(input.str("credential"), input.str("post_id")).outputs.toWorkflowOutputs()
     }
 
     val searchPosts = NodeExecutor { input ->
-        val credential = (input["credential"] as? WorkflowValue.StringValue)?.value ?: ""
-        val query = (input["query"] as? WorkflowValue.StringValue)?.value ?: ""
-        val limit = (input["limit"] as? WorkflowValue.IntValue)?.value ?: 10
-
-        val result = executeSearchPosts(credential, query, limit)
-        result.outputs.mapValues { (_, v) ->
-            when (v) {
-                is List<*> -> WorkflowValue.StringValue(v.toString())
-                is Int -> WorkflowValue.IntValue(v)
-                else -> WorkflowValue.StringValue(v.toString())
-            }
-        }
+        executeSearchPosts(
+            token = input.str("credential"),
+            query = input.str("query"),
+            limit = input.intOr("limit", 10),
+        ).outputs.toWorkflowOutputs()
     }
+}
+
+private fun Map<String, WorkflowValue>.str(key: String): String =
+    (this[key] as? WorkflowValue.StringValue)?.value ?: ""
+
+private fun Map<String, WorkflowValue>.intOr(key: String, default: Int): Int =
+    (this[key] as? WorkflowValue.IntValue)?.value ?: default
+
+/** Convert raw handler outputs (Kotlin primitives, lists, maps) into wireable [WorkflowValue]s. */
+private fun Map<String, Any?>.toWorkflowOutputs(): Map<String, WorkflowValue> =
+    mapValues { (_, v) -> toWorkflowValue(v) }
+
+private fun toWorkflowValue(v: Any?): WorkflowValue = when (v) {
+    null -> WorkflowValue.NullValue
+    is WorkflowValue -> v
+    is String -> WorkflowValue.StringValue(v)
+    is Boolean -> WorkflowValue.BooleanValue(v)
+    is Int -> WorkflowValue.IntValue(v)
+    is Long -> WorkflowValue.IntValue(v.toInt())
+    is Double -> WorkflowValue.DoubleValue(v)
+    is Float -> WorkflowValue.DoubleValue(v.toDouble())
+    is Map<*, *> -> WorkflowValue.RecordValue(v.entries.associate { (k, value) -> k.toString() to toWorkflowValue(value) })
+    is List<*> -> WorkflowValue.ListValue(v.map { toWorkflowValue(it) })
+    else -> WorkflowValue.StringValue(v.toString())
 }
