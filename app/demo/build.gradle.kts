@@ -52,6 +52,8 @@ kotlin {
         jvmMain.dependencies {
             implementation(projects.plugins.gmail)
             implementation(projects.plugins.linkedin)
+            implementation(projects.plugins.mediaCore)
+            implementation(projects.plugins.mediaAi)
         }
         jsMain.dependencies {
             implementation(projects.plugins.gmail)

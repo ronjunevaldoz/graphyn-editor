@@ -2,7 +2,7 @@ package com.ronjunevaldoz.graphyn.core.store
 
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import kotlinx.browser.localStorage
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.json.Json
 
 private val storeJson = Json { encodeDefaults = false; ignoreUnknownKeys = true }

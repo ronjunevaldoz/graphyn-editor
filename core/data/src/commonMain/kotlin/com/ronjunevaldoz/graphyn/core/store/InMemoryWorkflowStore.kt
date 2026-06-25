@@ -3,7 +3,7 @@ package com.ronjunevaldoz.graphyn.core.store
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * In-memory [WorkflowStore] — state is lost on process restart.
