@@ -19,7 +19,6 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core"))
-            implementation(project(":editor-api"))
             implementation(project(":plugin-api"))
             implementation(project(":ui:cards"))
             implementation(libs.kotlinx.coroutinesCore)
