@@ -87,3 +87,16 @@ internal val specEnvRead = NodeSpec(
     ),
     defaultValues = mapOf("name" to WorkflowValue.StringValue("")),
 )
+
+internal val specResolvePath = NodeSpec(
+    type = "io.resolve_path", label = "Resolve Path", category = CATEGORY_IO,
+    description = "Resolves a relative file path against a base directory, expanding ~ and environment variables.",
+    inputs = listOf(
+        PortSpec("base_dir", WorkflowType.StringType, description = "Base directory (e.g., '~/media' or from env var)"),
+        PortSpec("relative_path", WorkflowType.StringType, description = "Relative path to append (e.g., 'clip1.mp4')"),
+    ),
+    outputs = listOf(
+        PortSpec("resolved_path", WorkflowType.StringType, description = "Absolute resolved file path"),
+    ),
+    defaultValues = mapOf("base_dir" to WorkflowValue.StringValue(""), "relative_path" to WorkflowValue.StringValue("")),
+)

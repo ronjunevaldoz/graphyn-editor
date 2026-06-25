@@ -22,6 +22,8 @@ class MediaCorePlugin(
         registrar.registerExecutor(MediaCoreSpecs.videoImport.type, videoImportExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioExtract.type, audioExtractExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioMix.type, audioMixExecutor())
+        registrar.registerExecutor(MediaCoreSpecs.audiosList.type, mediaListExecutor("audio", "audios"))
+        registrar.registerExecutor(MediaCoreSpecs.videosList.type, mediaListExecutor("video", "videos"))
         registrar.registerExecutor(MediaCoreSpecs.videoStitch.type, videoStitchExecutor())
         registrar.registerExecutor(MediaCoreSpecs.videoEncode.type, videoEncodeExecutor())
     }
@@ -60,6 +62,15 @@ class MediaCorePlugin(
             "audio" to MediaTypes.audioValue(metadata.path),
             "duration_ms" to WorkflowValue.DoubleValue(metadata.durationMs),
         )
+    }
+
+    private fun mediaListExecutor(handleType: String, outputName: String) = NodeExecutor { inputs ->
+        val handles = (1..4).mapNotNull { index ->
+            inputs["$handleType$index"]?.takeUnless { it == WorkflowValue.NullValue }
+        }
+        require(handles.isNotEmpty()) { "${handleType.replaceFirstChar(Char::uppercase)}s List requires at least one $handleType." }
+        handles.forEach { MediaTypes.path(it, handleType) }
+        mapOf(outputName to WorkflowValue.ListValue(handles))
     }
 
     private fun videoStitchExecutor() = NodeExecutor { inputs ->

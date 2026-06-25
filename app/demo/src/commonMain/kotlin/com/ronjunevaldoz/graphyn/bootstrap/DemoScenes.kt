@@ -37,4 +37,9 @@ enum class DemoScene(val label: String, val workflow: WorkflowDefinition) {
     Subgraph("Subgraph",                subgraphDemoWorkflow),
     Script("Script",                    scriptDemoWorkflow),
     ApiIngestion("API Ingestion",       apiIngestionDemoWorkflow),
+    SimpleTts("Text to Speech",         simpleTtsWorkflow),
+    VideoNarration("Video Narration",   videoNarrationWorkflow),
+    AudioMix("Audio Mix",               audioMixWorkflow),
+    SmartEncode("Smart Encode",         smartEncodeWorkflow),
+    VideoStitch("Video Stitch",         videoStitchWorkflow),
 }

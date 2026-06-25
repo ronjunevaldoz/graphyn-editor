@@ -20,5 +20,10 @@ object PreviewPlugin : GraphynPlugin {
         registrar.registerExecutor(specPreviewView.type) { input ->
             mapOf("value" to (input["value"] ?: WorkflowValue.NullValue))
         }
+
+        registrar.registerNodeSpec(specMediaFileOutput)
+        registrar.registerExecutor(specMediaFileOutput.type) { input ->
+            mapOf("file_path" to (input["file_path"] ?: WorkflowValue.StringValue("")))
+        }
     }
 }

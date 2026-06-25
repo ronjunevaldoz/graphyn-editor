@@ -92,3 +92,4 @@ GraphynEditorShell(
 - [Roadmap](architecture/roadmap.md)
 - [Test coverage](architecture/test-coverage.md)
 - [Lessons learned](architecture/lessons.md)
+- [Media workflow status](architecture/media-workflow-status.md)

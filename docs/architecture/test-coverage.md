@@ -70,6 +70,8 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Canvas — full demo app renders (screenshot baseline)** | | | | 🖼 |
 | **Plugin — SampleLogger installs and executes** | ✅ | | | |
 | **Plugin — SampleLoggerUI registers panel** | ✅ | | | |
+| **Demo — media workflow template wiring** | ✅ | | | |
+| **Demo — media workflow execution (fake executors)** | ✅ | | | |
 
 ---
 
@@ -100,3 +102,5 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
 | `plugins/sample-logger-ui/.../SampleLoggerEditorPluginTest.kt` | `commonTest` | Unit |
+| `app/demo/.../MediaWorkflowTemplateTest.kt` | `commonTest` | Unit |
+| `app/demo/.../MediaWorkflowExecutionTest.kt` | `jvmTest` | Unit |

@@ -21,3 +21,7 @@ node_modules/
 /.playwright-mcp/
 /kotlin-js-store/
 .env
+
+# Workflow run outputs written to the desktop app working dir
+/app/desktopApp/*.mp4
+/app/desktopApp/*.wav
