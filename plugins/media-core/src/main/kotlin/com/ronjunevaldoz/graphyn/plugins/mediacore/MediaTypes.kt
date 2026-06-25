@@ -20,11 +20,22 @@ object MediaTypes {
         ),
     )
 
+    val imageHandle = WorkflowType.RecordType(
+        mapOf(
+            "kind" to WorkflowType.EnumType(listOf("image")),
+            "path" to WorkflowType.StringType,
+            "mime_type" to WorkflowType.StringType,
+        ),
+    )
+
     fun videoValue(path: String, mimeType: String = "video/mp4"): WorkflowValue.RecordValue =
         mediaValue(kind = "video", path = path, mimeType = mimeType)
 
     fun audioValue(path: String, mimeType: String = "audio/wav"): WorkflowValue.RecordValue =
         mediaValue(kind = "audio", path = path, mimeType = mimeType)
+
+    fun imageValue(path: String, mimeType: String = "image/png"): WorkflowValue.RecordValue =
+        mediaValue(kind = "image", path = path, mimeType = mimeType)
 
     fun path(value: WorkflowValue?, expectedKind: String): String {
         val fields = (value as? WorkflowValue.RecordValue)?.fields

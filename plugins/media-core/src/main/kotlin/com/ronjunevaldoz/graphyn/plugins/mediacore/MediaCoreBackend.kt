@@ -23,6 +23,31 @@ data class EncodedVideo(
     val durationMs: Double,
 )
 
+/** A single timed caption line, in milliseconds relative to the start of the video. */
+data class Caption(
+    val text: String,
+    val startMs: Double,
+    val endMs: Double,
+)
+
+/** Resolved caption appearance passed to the backend when burning subtitles in. */
+data class CaptionStyle(
+    val color: String,
+    val backgroundColor: String,
+    val fontSize: Int,
+    val position: String,
+)
+
+/** One overlay layer placed over a base video, in pixels and milliseconds. */
+data class VideoOverlay(
+    val sourcePath: String,
+    val x: Int,
+    val y: Int,
+    val startMs: Double,
+    val endMs: Double,
+    val opacity: Double,
+)
+
 interface MediaCoreBackend {
     suspend fun inspectVideo(path: String): VideoMetadata
     suspend fun extractAudio(videoPath: String): AudioMetadata
@@ -35,6 +60,17 @@ interface MediaCoreBackend {
         bitrate: String,
         codec: String,
     ): EncodedVideo
+
+    suspend fun overlayCaptions(
+        videoPath: String,
+        captions: List<Caption>,
+        style: CaptionStyle,
+    ): VideoMetadata
+
+    suspend fun composeVideo(
+        baseVideoPath: String,
+        overlays: List<VideoOverlay>,
+    ): VideoMetadata
 }
 
 internal object GraphynMediaPaths {

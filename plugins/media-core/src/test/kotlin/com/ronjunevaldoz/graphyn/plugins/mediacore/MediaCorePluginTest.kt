@@ -14,16 +14,89 @@ import kotlin.test.assertNotNull
 
 class MediaCorePluginTest {
     @Test
-    fun registersSevenSpecsAndExecutors() {
+    fun registersAllSpecsAndExecutors() {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(7, registry.nodeSpecs.all().size)
-        MediaCoreSpecs.all.forEach {
+        assertEquals(10, registry.nodeSpecs.all().size)
+        (MediaCoreSpecs.all + MediaCompositionSpecs.all).forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
         }
     }
+
+    @Test
+    fun captionOverlayAndComposePassTypedHandlesToBackend() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        registry.nodeExecutors.resolve(MediaCompositionSpecs.captionOverlay.type)!!.execute(
+            mapOf(
+                "video" to MediaTypes.videoValue("/media/base.mp4"),
+                "captions" to MediaCompositionTypes.captionList(
+                    listOf(Triple("Hello", 0.0, 1000.0), Triple("World", 1000.0, 2000.0)),
+                ),
+                "style_config" to WorkflowValue.RecordValue(
+                    mapOf(
+                        "color" to WorkflowValue.StringValue("#FFFFFF"),
+                        "background_color" to WorkflowValue.StringValue("#000000"),
+                        "font_size" to WorkflowValue.IntValue(24),
+                        "position" to WorkflowValue.StringValue("bottom"),
+                    ),
+                ),
+            ),
+        )
+        assertEquals(listOf("Hello", "World"), backend.lastCaptions.map { it.text })
+
+        registry.nodeExecutors.resolve(MediaCompositionSpecs.videoCompose.type)!!.execute(
+            mapOf(
+                "base_video" to MediaTypes.videoValue("/media/base.mp4"),
+                "overlays" to WorkflowValue.ListValue(
+                    listOf(
+                        WorkflowValue.RecordValue(
+                            mapOf(
+                                "source" to MediaTypes.videoValue("/media/logo.mp4"),
+                                "x" to WorkflowValue.IntValue(10),
+                                "y" to WorkflowValue.IntValue(20),
+                                "start_ms" to WorkflowValue.DoubleValue(0.0),
+                                "end_ms" to WorkflowValue.DoubleValue(500.0),
+                                "opacity" to WorkflowValue.DoubleValue(0.5),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        assertEquals(listOf("/media/logo.mp4"), backend.lastOverlays.map { it.sourcePath })
+        assertEquals(0.5, backend.lastOverlays.single().opacity)
+    }
+
+    @Test
+    fun timingControllerAveragesSyncPoints() = runTest {
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(FakeMediaCoreBackend())) }
+        val config = registry.nodeExecutors.resolve(MediaCompositionSpecs.timingController.type)!!.execute(
+            mapOf(
+                "base_video" to MediaTypes.videoValue("/media/base.mp4"),
+                "sync_points" to WorkflowValue.ListValue(
+                    listOf(
+                        syncPoint(source = 0.0, target = 100.0),
+                        syncPoint(source = 1000.0, target = 1200.0),
+                    ),
+                ),
+            ),
+        )
+        val record = config.getValue("config") as WorkflowValue.RecordValue
+        assertEquals(WorkflowValue.DoubleValue(150.0), record.fields["audio_delay_ms"])
+        assertEquals(WorkflowValue.DoubleValue(150.0), record.fields["caption_offset_ms"])
+        assertEquals(WorkflowValue.DoubleValue(0.0), record.fields["video_delay_ms"])
+    }
+
+    private fun syncPoint(source: Double, target: Double) = WorkflowValue.RecordValue(
+        mapOf(
+            "source_ms" to WorkflowValue.DoubleValue(source),
+            "target_ms" to WorkflowValue.DoubleValue(target),
+        ),
+    )
 
     @Test
     fun audioAndVideoHandlesAreNotConnectionCompatible() {
@@ -105,6 +178,8 @@ private class FakeMediaCoreBackend : MediaCoreBackend {
     var lastAudioPaths: List<String> = emptyList()
     var lastVolumes: List<Double> = emptyList()
     var lastBitrate: String? = null
+    var lastCaptions: List<Caption> = emptyList()
+    var lastOverlays: List<VideoOverlay> = emptyList()
 
     override suspend fun inspectVideo(path: String) =
         VideoMetadata(path, width = 1920, height = 1080, durationMs = 1_000.0, fps = 30.0, frameCount = 30)
@@ -130,5 +205,22 @@ private class FakeMediaCoreBackend : MediaCoreBackend {
     ): EncodedVideo {
         lastBitrate = bitrate
         return EncodedVideo(outputPath, sizeBytes = 1234, durationMs = 1_000.0)
+    }
+
+    override suspend fun overlayCaptions(
+        videoPath: String,
+        captions: List<Caption>,
+        style: CaptionStyle,
+    ): VideoMetadata {
+        lastCaptions = captions
+        return VideoMetadata("/media/captioned.mp4", 1920, 1080, 2_000.0, 30.0, 60)
+    }
+
+    override suspend fun composeVideo(
+        baseVideoPath: String,
+        overlays: List<VideoOverlay>,
+    ): VideoMetadata {
+        lastOverlays = overlays
+        return VideoMetadata("/media/composed.mp4", 1920, 1080, 2_000.0, 30.0, 60)
     }
 }

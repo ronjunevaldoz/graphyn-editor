@@ -14,15 +14,82 @@ import kotlin.test.assertNotNull
 
 class MediaAiPluginTest {
     @Test
-    fun registersBothSpecsAndExecutors() {
+    fun registersAllSpecsAndExecutors() {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaAiPlugin())
 
-        assertEquals(2, registry.nodeSpecs.all().size)
+        assertEquals(4, registry.nodeSpecs.all().size)
         MediaAiSpecs.all.forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
         }
+    }
+
+    @Test
+    fun speechToTextEmitsTextAndTimedSegments() = runTest {
+        val engine = SpeechToTextEngine { request ->
+            assertEquals("en", request.language)
+            SpeechToTextResult(
+                text = "hello world",
+                confidence = 0.9,
+                segments = listOf(
+                    SpeechSegment("hello", 0.0, 500.0),
+                    SpeechSegment("world", 500.0, 1000.0),
+                ),
+            )
+        }
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaAiPlugin(speechToTextEngine = engine))
+        }
+        val result = registry.nodeExecutors.resolve(MediaAiSpecs.speechToText.type)!!.execute(
+            mapOf(
+                "audio" to MediaTypes.audioValue("/media/voice.wav"),
+                "language" to WorkflowValue.StringValue("en"),
+            ),
+        )
+        assertEquals(WorkflowValue.StringValue("hello world"), result["text"])
+        assertEquals(WorkflowValue.DoubleValue(0.9), result["confidence"])
+        val segments = (result["segments"] as WorkflowValue.ListValue).items
+        assertEquals(2, segments.size)
+        val first = (segments.first() as WorkflowValue.RecordValue).fields
+        assertEquals(WorkflowValue.StringValue("hello"), first["text"])
+        assertEquals(WorkflowValue.DoubleValue(500.0), first["end_ms"])
+    }
+
+    @Test
+    fun ocrEmitsTextAndBlocks() = runTest {
+        val engine = OcrEngine { imagePath, _ ->
+            assertEquals("/media/frame.png", imagePath)
+            OcrResult(
+                text = "INVOICE",
+                blocks = listOf(OcrBlock("INVOICE", x = 5, y = 6, width = 80, height = 20, confidence = 0.95)),
+            )
+        }
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaAiPlugin(ocrEngine = engine))
+        }
+        val result = registry.nodeExecutors.resolve(MediaAiSpecs.ocr.type)!!.execute(
+            mapOf("image" to MediaTypes.imageValue("/media/frame.png")),
+        )
+        assertEquals(WorkflowValue.StringValue("INVOICE"), result["text"])
+        val blocks = (result["blocks"] as WorkflowValue.ListValue).items
+        val block = (blocks.single() as WorkflowValue.RecordValue).fields
+        assertEquals(WorkflowValue.IntValue(80), block["width"])
+        assertEquals(WorkflowValue.DoubleValue(0.95), block["confidence"])
+    }
+
+    @Test
+    fun jsonAdaptersParseSegmentsAndBlocks() {
+        val stt = parseSttJson(
+            """{"text":"hi","confidence":0.8,"segments":[{"text":"hi","start_ms":0,"end_ms":250}]}""",
+        )
+        assertEquals("hi", stt.text)
+        assertEquals(250.0, stt.segments.single().endMs)
+
+        val ocr = parseOcrJson(
+            """{"text":"A","blocks":[{"text":"A","x":1,"y":2,"width":3,"height":4,"confidence":0.5}]}""",
+        )
+        assertEquals(3, ocr.blocks.single().width)
     }
 
     @Test

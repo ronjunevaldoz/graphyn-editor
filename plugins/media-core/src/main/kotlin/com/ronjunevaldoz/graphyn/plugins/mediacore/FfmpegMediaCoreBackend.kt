@@ -12,7 +12,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 class FfmpegMediaCoreBackend(
-    private val ffmpeg: String = System.getenv("GRAPHYN_FFMPEG")?.takeIf(String::isNotBlank) ?: "ffmpeg",
+    internal val ffmpeg: String = System.getenv("GRAPHYN_FFMPEG")?.takeIf(String::isNotBlank) ?: "ffmpeg",
     private val ffprobe: String = System.getenv("GRAPHYN_FFPROBE")?.takeIf(String::isNotBlank) ?: "ffprobe",
     private val tempDirectory: File = GraphynMediaPaths.temp(),
 ) : MediaCoreBackend {
@@ -141,6 +141,17 @@ class FfmpegMediaCoreBackend(
         )
     }
 
+    override suspend fun overlayCaptions(
+        videoPath: String,
+        captions: List<Caption>,
+        style: CaptionStyle,
+    ): VideoMetadata = renderCaptionOverlay(videoPath, captions, style)
+
+    override suspend fun composeVideo(
+        baseVideoPath: String,
+        overlays: List<VideoOverlay>,
+    ): VideoMetadata = renderVideoCompose(baseVideoPath, overlays)
+
     suspend fun inspectAudio(path: String): AudioMetadata {
         val source = requireFile(path, "Audio")
         val root = probe(
@@ -155,6 +166,13 @@ class FfmpegMediaCoreBackend(
             sampleRate = stream.int("sample_rate"),
             durationMs = root.formatDurationMs(),
         )
+    }
+
+    /** True when this FFmpeg build exposes [name] in `-filters` (e.g. `ass`, which needs libass). */
+    internal suspend fun supportsFilter(name: String): Boolean = try {
+        run(ffmpeg, "-hide_banner", "-filters").lineSequence().any { it.contains(" $name ") }
+    } catch (_: Exception) {
+        false
     }
 
     fun isAvailable(): Boolean = try {
@@ -173,7 +191,7 @@ class FfmpegMediaCoreBackend(
         return Json.parseToJsonElement(result).jsonObject
     }
 
-    private suspend fun run(vararg command: String): String = withContext(Dispatchers.IO) {
+    internal suspend fun run(vararg command: String): String = withContext(Dispatchers.IO) {
         val process = try {
             ProcessBuilder(command.toList())
                 .redirectErrorStream(true)
@@ -192,13 +210,13 @@ class FfmpegMediaCoreBackend(
         output
     }
 
-    private fun tempFile(prefix: String, extension: String): File {
+    internal fun tempFile(prefix: String, extension: String): File {
         tempDirectory.mkdirs()
         return File(tempDirectory, "$prefix-${UUID.randomUUID()}.$extension")
     }
 }
 
-private fun requireFile(path: String, label: String): File {
+internal fun requireFile(path: String, label: String): File {
     require(path.isNotBlank()) { "$label path must not be blank." }
     return File(path).absoluteFile.also {
         require(it.isFile) { "$label file does not exist: ${it.absolutePath}" }

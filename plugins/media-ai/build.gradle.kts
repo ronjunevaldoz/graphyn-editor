@@ -1,8 +1,9 @@
-// JVM/Desktop only: Phase 1 uses a command adapter for the configured TTS provider.
+// JVM/Desktop only: command adapters for the configured TTS, STT, and OCR providers.
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.serialization)
 }
 
 dependencies {
@@ -13,6 +14,7 @@ dependencies {
     implementation(libs.compose.runtime)
     implementation(libs.compose.foundation)
     implementation(libs.kotlinx.coroutinesCore)
+    implementation(libs.serialization.json)
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutinesTest)

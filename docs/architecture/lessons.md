@@ -1122,3 +1122,16 @@ shows the spec label, not the node id, so text matching is ambiguous).
 escape its own template variables as `$$name`, otherwise the host compiler interpolates them at
 build time. JVM-only APIs (e.g. `String.format`) are fine inside the script — it runs on the JVM,
 not in commonMain. See `ScriptSpec` KDoc.
+
+## FFmpeg builds vary wildly — probe for filters, don't assume them
+
+The Phase 2 `media.caption_overlay` node burns subtitles with the `ass` filter, which is only
+present when FFmpeg is compiled with libass. Many minimal builds (including some Homebrew/CI ones)
+ship without libass — and also without `subtitles` and `drawtext` — so the filter fails at parse
+time with a confusing `No such filter: 'ass'` / `Error parsing filterchain`. The fix is twofold:
+the backend exposes `supportsFilter(name)` (parses `ffmpeg -hide_banner -filters`) and
+`renderCaptionOverlay` checks it up front to throw a clear precondition error; the
+availability-guarded backend test skips the caption leg when `ass` is absent (the `overlay`,
+`format`, and `colorchannelmixer` filters used by `video_compose` are part of core FFmpeg and are
+safe to assume). Rule: any node that depends on an optional FFmpeg filter must probe for it rather
+than assume it, and its test must degrade to a no-op when the filter is missing.

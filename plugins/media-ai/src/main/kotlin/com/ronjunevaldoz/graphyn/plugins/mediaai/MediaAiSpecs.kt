@@ -4,11 +4,25 @@ import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCompositionTypes
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaTypes
 
 const val CATEGORY_MEDIA_AI = "graphyn.media.ai"
 
+private val STT_LANGUAGES = listOf("en", "zh", "es", "fr", "de", "ja", "ko")
+
 object MediaAiSpecs {
+    val ocrBlockType = WorkflowType.RecordType(
+        mapOf(
+            "text" to WorkflowType.StringType,
+            "x" to WorkflowType.IntType,
+            "y" to WorkflowType.IntType,
+            "width" to WorkflowType.IntType,
+            "height" to WorkflowType.IntType,
+            "confidence" to WorkflowType.DoubleType,
+        ),
+    )
+
     val captionStyleType = WorkflowType.RecordType(
         mapOf(
             "color" to WorkflowType.StringType,
@@ -68,5 +82,38 @@ object MediaAiSpecs {
         ),
     )
 
-    val all = listOf(textToSpeech, captionStyle)
+    val speechToText = NodeSpec(
+        type = "media.speech_to_text",
+        label = "Speech to Text",
+        description = "Transcribes audio into text plus timed caption segments via GRAPHYN_STT_EXECUTABLE.",
+        category = CATEGORY_MEDIA_AI,
+        inputs = listOf(
+            PortSpec("audio", MediaTypes.audioHandle),
+            PortSpec("language", WorkflowType.EnumType(STT_LANGUAGES)),
+        ),
+        outputs = listOf(
+            PortSpec("text", WorkflowType.StringType),
+            PortSpec("confidence", WorkflowType.DoubleType),
+            PortSpec("segments", MediaCompositionTypes.captions),
+        ),
+        defaultValues = mapOf("language" to WorkflowValue.StringValue("en")),
+    )
+
+    val ocr = NodeSpec(
+        type = "media.ocr",
+        label = "OCR",
+        description = "Extracts text and bounding blocks from an image via GRAPHYN_OCR_EXECUTABLE.",
+        category = CATEGORY_MEDIA_AI,
+        inputs = listOf(
+            PortSpec("image", MediaTypes.imageHandle),
+            PortSpec("language", WorkflowType.EnumType(STT_LANGUAGES)),
+        ),
+        outputs = listOf(
+            PortSpec("text", WorkflowType.StringType),
+            PortSpec("blocks", WorkflowType.ListType(ocrBlockType)),
+        ),
+        defaultValues = mapOf("language" to WorkflowValue.StringValue("en")),
+    )
+
+    val all = listOf(textToSpeech, captionStyle, speechToText, ocr)
 }
