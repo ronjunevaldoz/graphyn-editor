@@ -4,7 +4,12 @@
 
 Kotlin Multiplatform (KMP) library-first workflow editor. Targets: Android, Desktop (JVM), Web (JS/WASM), iOS, Server.
 
-- `core/` — pure Kotlin types, no Compose dependency
+- `core/` — folder of pure-Kotlin modules, no Compose dependency. Split by concern:
+  - `core:model` — workflow graph/types/values, registry, validation, sync, `NodeGroups` (palette folder names)
+  - `core:execution` — execution engine, executors, events (depends on `core:model`)
+  - `core:serialization` — workflow document codec (depends on `core:model`)
+  - `core:data` — workflow stores + platform persistence actuals (depends on `core:model`)
+  - `:core` itself is a thin aggregator that `api`-re-exports the four above, so consumers can keep depending on `projects.core`
 - `editor-api/` — editor plugin contracts
 - `plugin-api/` — node plugin contracts
 - `app/shared/` — Compose Multiplatform UI (canvas, shell, state)

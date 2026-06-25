@@ -16,14 +16,15 @@ internal suspend fun <T> runWithPolicy(
     block: suspend () -> T,
 ): T {
     val attempts = node.maxRetries.coerceAtLeast(0) + 1
+    val timeoutMs = node.timeoutMs
     var lastError: Throwable = WorkflowExecutionException("No attempts made")
     repeat(attempts) {
         try {
-            return if (node.timeoutMs != null) {
+            return if (timeoutMs != null) {
                 try {
-                    withTimeout(node.timeoutMs) { block() }
+                    withTimeout(timeoutMs) { block() }
                 } catch (e: TimeoutCancellationException) {
-                    throw WorkflowExecutionException("Node '${node.id}' timed out after ${node.timeoutMs}ms")
+                    throw WorkflowExecutionException("Node '${node.id}' timed out after ${timeoutMs}ms")
                 }
             } else {
                 block()
