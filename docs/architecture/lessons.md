@@ -1085,3 +1085,40 @@ Box(Modifier.width(cardWidth)) {
 ### Rule
 
 Whenever a factory reports a fixed `nodeWidth`/`portAnchorY`, the card composable must actually occupy that width. Any content that can exceed it (labels, badges) must overflow via `wrapContentWidth(unbounded = true)` or an overlay, never by growing the layout. Verify with a Roborazzi capture that overlays port-anchor markers at `x=0` and `x=nodeWidth` (`ShapeNodeAlignmentTest`) — the shape edges must line up with the markers across varying label widths.
+
+## Canvas geometry must resolve factories the same way the node layer does
+
+When `GraphynNodeCard` was retired in favor of a default `FieldCardFactory`, nodes without a
+registered card (e.g. `io.resolve_path`) started rendering through the spec-sized default factory.
+But `GraphynConnectionLayer`, `GraphynConnectionMidpoints`, and `GraphynMinimapDebugger` still
+resolved the factory with `canvasCards.resolve(type)` directly — which returns null for those
+nodes and falls back to `GraphynCanvasMetrics` geometry (width 280 vs the card's 240, different
+port anchors). The result was connection lines that started ~40dp off the output dot and at the
+wrong height ("broken wires"). **Rule:** any code computing node geometry (width, port anchors)
+must go through `resolveNodeFactory(node, canvasCards, nodeSpecs)`, never `canvasCards.resolve`
+directly, so it agrees with what the node layer actually rendered.
+
+## Annotation nodes need a no-op executor to live in an executable workflow
+
+`isAnnotation` is an editor-api concept (on the card factory); the core `WorkflowExecutionEngine`
+doesn't know about it and **throws** `"No executor registered for node type '…'"` for any node
+lacking an executor. So embedding a `graphyn.sticky_note` guide directly in a template's
+`WorkflowDefinition` would fail execution. Fix: `StickyNotePlugin` registers a no-op executor
+(`{ emptyMap() }`) so the annotation is a harmless pass-through. Same applies to any annotation you
+want to ship inside an executable template.
+
+## FieldCard's clickable merges child semantics — UI tests need useUnmergedTree
+
+The `FieldCard` root has `.clickable { onSelect() }`, which creates a merging semantics boundary.
+A `testTag` placed on an inner element (e.g. the header drag handle, `node-header-<id>`) is not
+addressable from the merged tree — `onNodeWithTag(tag)` fails with "could not find … However, the
+unmerged tree contains 1 node that matches." Use `onNodeWithTag(tag, useUnmergedTree = true)`.
+Per-node header tags are also how you disambiguate two nodes that share a label (the default card
+shows the spec label, not the node id, so text matching is ambiguous).
+
+## $$ escaping for Kotlin Script embedded in workflow definitions
+
+`script.eval` code written in a triple-quoted Kotlin string inside a `WorkflowDefinition` must
+escape its own template variables as `$$name`, otherwise the host compiler interpolates them at
+build time. JVM-only APIs (e.g. `String.format`) are fine inside the script — it runs on the JVM,
+not in commonMain. See `ScriptSpec` KDoc.
