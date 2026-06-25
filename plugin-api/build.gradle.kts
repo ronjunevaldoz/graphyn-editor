@@ -41,7 +41,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(projects.core)
+            // Only the model + execution contracts belong in the plugin API surface.
+            // Stores/serialization (core:data, core:serialization) are host concerns, not plugin ones.
+            api(projects.core.model)
+            api(projects.core.execution)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
