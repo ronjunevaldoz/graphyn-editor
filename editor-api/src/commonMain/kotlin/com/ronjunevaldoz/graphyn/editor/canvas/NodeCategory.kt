@@ -6,11 +6,15 @@ package com.ronjunevaldoz.graphyn.editor.canvas
  * @param label Human-readable category name shown above the group in the palette.
  * @param color ARGB color used to tint the category header and node type badges.
  * @param icon Optional emoji or single-character icon rendered next to [label].
+ * @param group Optional parent folder name. Categories that share the same [group] are nested
+ *   under a single collapsible folder in the palette (e.g. "Socials" containing Gmail and
+ *   LinkedIn). When null the category sits at the palette's top level.
  */
 data class NodeCategoryMeta(
     val label: String,
     val color: Long,
     val icon: String = "",
+    val group: String? = null,
 )
 
 /**

@@ -33,10 +33,11 @@ object GmailEditorPlugin : GraphynEditorPlugin {
         // Register category
         registrar.registerCategory(
             GMAIL_CATEGORY,
-            NodeCategoryMeta("Gmail", COLOR_GMAIL)
+            NodeCategoryMeta("Gmail", COLOR_GMAIL, group = SOCIALS_GROUP)
         )
     }
 }
 
 private const val GMAIL_CATEGORY = "graphyn.gmail"
+private const val SOCIALS_GROUP = "Socials"
 private const val COLOR_GMAIL = 0xFF4285F4  // Gmail blue
