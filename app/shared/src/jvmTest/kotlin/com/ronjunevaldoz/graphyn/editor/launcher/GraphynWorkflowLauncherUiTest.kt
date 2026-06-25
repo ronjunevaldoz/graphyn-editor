@@ -87,6 +87,7 @@ class GraphynWorkflowLauncherUiTest {
         }
         rule.onNodeWithText("RECENT").assertExists()
         rule.onNodeWithText("Past Run").assertExists()
+        rule.onNodeWithText("Starter").assertDoesNotExist()
     }
 
     @Test
@@ -100,5 +101,20 @@ class GraphynWorkflowLauncherUiTest {
         }
         rule.onNodeWithText("Past Run").performClick()
         assertEquals("wf-99", opened?.workflow?.id)
+    }
+
+    @Test
+    fun templatesAreSeparatedFromSavedAndRecentWorkflows() {
+        val recent = listOf(
+            WorkflowTemplate("Past Run", null, WorkflowDefinition("wf-99", "Past Run", emptyList(), emptyList())),
+        )
+        rule.setContent {
+            GraphynTheme { GraphynWorkflowLauncher(templates = templates, recentWorkflows = recent, onOpen = {}) }
+        }
+
+        rule.onNodeWithText("Starter").assertDoesNotExist()
+        rule.onNodeWithText("Templates  2").performClick()
+        rule.onNodeWithText("Starter").assertExists()
+        rule.onNodeWithText("Past Run").assertDoesNotExist()
     }
 }

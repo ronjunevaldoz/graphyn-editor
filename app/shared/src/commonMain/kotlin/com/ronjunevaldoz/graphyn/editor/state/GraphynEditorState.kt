@@ -12,12 +12,12 @@ import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.core.store.WorkflowStore
 import com.ronjunevaldoz.graphyn.core.sync.WorkflowDataStore
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
@@ -34,8 +34,15 @@ class GraphynEditorState(
     internal val nodeSpecs: NodeSpecRegistry? = null,
     store: WorkflowStore? = null,
 ) : GraphynEditorStateView {
+    private val workflowState = mutableStateOf(initialWorkflow)
+    private val _workflowFlow = MutableStateFlow(initialWorkflow)
+
     internal val viewportState = GraphynViewportState(canvasBounds)
-    internal val layout = GraphynNodeLayoutState(canvasBounds, viewportScale = { viewportState.viewport.scale })
+    internal val layout = GraphynNodeLayoutState(
+        canvasBounds = canvasBounds,
+        viewportScale = { viewportState.viewport.scale },
+        onPositionsChanged = ::persistNodePositions,
+    )
     internal val log = GraphynDebugLogState()
     internal val telemetry = GraphynDebugLogState()
     internal val dataStore = WorkflowDataStore(initialWorkflow)
@@ -46,8 +53,6 @@ class GraphynEditorState(
     internal val history = GraphynHistoryState()
     internal val clipboard = GraphynClipboardState()
 
-    private val workflowState = mutableStateOf(initialWorkflow)
-    private val _workflowFlow = MutableStateFlow(initialWorkflow)
     override val workflowFlow: StateFlow<WorkflowDefinition?> = _workflowFlow.asStateFlow()
 
     override var workflow: WorkflowDefinition?
@@ -57,6 +62,12 @@ class GraphynEditorState(
             _workflowFlow.value = value
             dataStore.updateWorkflow(value)
             viewportState.refresh(value?.nodes?.mapTo(mutableSetOf()) { it.id }.orEmpty())
+            val restored = value?.nodePositions.orEmpty().mapValues { (_, position) ->
+                IntOffset(position.x, position.y)
+            }
+            if (restored != layout.nodePositionsByNodeId) {
+                layout.restorePositions(restored)
+            }
         }
 
     override var selectedNodeId by mutableStateOf<String?>(null)
@@ -95,11 +106,23 @@ class GraphynEditorState(
 
     init {
         val nodes = initialWorkflow?.nodes.orEmpty()
-        nodes.forEachIndexed { index, node ->
-            layout.setNodePosition(node.id, GraphynCanvasLayout.fallbackPosition(index))
-        }
+        layout.restorePositions(initialWorkflow?.nodePositions.orEmpty().mapValues { (_, position) ->
+            IntOffset(position.x, position.y)
+        })
         viewportState.refresh(nodes.mapTo(mutableSetOf()) { it.id })
         if (store != null) initAutoSave(store)
+    }
+
+    private fun persistNodePositions(positions: Map<String, IntOffset>) {
+        val current = workflowState.value ?: return
+        val persisted = positions.mapValues { (_, position) ->
+            WorkflowNodePosition(position.x, position.y)
+        }
+        if (current.nodePositions == persisted) return
+        val updated = current.copy(nodePositions = persisted)
+        workflowState.value = updated
+        _workflowFlow.value = updated
+        dataStore.updateWorkflow(updated)
     }
 
     fun dispatch(intent: GraphynEditorIntent) = handleDispatch(intent)

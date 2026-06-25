@@ -3,9 +3,18 @@ package com.ronjunevaldoz.graphyn.editor.state
 import androidx.compose.ui.unit.IntOffset
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasLayout
+
+internal fun GraphynEditorState.moveNode(nodeId: String, delta: IntOffset) {
+    if (nodeId !in layout.nodePositionsByNodeId) {
+        val index = workflow?.nodes?.indexOfFirst { it.id == nodeId } ?: -1
+        if (index >= 0) layout.setNodePosition(nodeId, GraphynCanvasLayout.fallbackPosition(index))
+    }
+    layout.moveNode(nodeId, delta)
+}
 
 internal fun GraphynEditorState.moveSelectedNodes(delta: IntOffset) {
-    effectiveSelectedNodeIds.forEach { nodeId -> layout.moveNode(nodeId, delta) }
+    effectiveSelectedNodeIds.forEach { nodeId -> moveNode(nodeId, delta) }
 }
 
 internal fun GraphynEditorState.toggleNodeSelection(nodeId: String) {

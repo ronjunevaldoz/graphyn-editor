@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -23,6 +24,7 @@ data class WorkflowDocumentWorkflow(
     val name: String,
     val nodes: List<WorkflowDocumentNode>,
     val connections: List<WorkflowDocumentConnection>,
+    val nodePositions: Map<String, WorkflowNodePosition> = emptyMap(),
 )
 
 @Serializable
@@ -84,6 +86,7 @@ object DefaultWorkflowDocumentCodec : WorkflowDocumentCodec {
                         toPort = connection.toPort,
                     )
                 },
+                nodePositions = workflow.nodePositions,
             ),
         )
     }
@@ -107,6 +110,7 @@ object DefaultWorkflowDocumentCodec : WorkflowDocumentCodec {
                     toPort = connection.toPort,
                 )
             },
+            nodePositions = document.workflow.nodePositions,
         )
     }
 }

@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import com.ronjunevaldoz.graphyn.core.serialization.GRAPHYN_WORKFLOW_FORMAT_VERSION
 import com.ronjunevaldoz.graphyn.core.serialization.toJson
 import com.ronjunevaldoz.graphyn.core.serialization.workflowFromJson
@@ -86,6 +87,18 @@ class WorkflowSerializerTest {
         )
         val restored = workflowFromJson(workflow.toJson())
         assertEquals(workflow.connections, restored.connections)
+    }
+
+    @Test
+    fun nodePositionsSurviveRoundTrip() {
+        val workflow = minimal().copy(
+            nodePositions = mapOf(
+                "source" to WorkflowNodePosition(120, 240),
+                "sink" to WorkflowNodePosition(640, 240),
+            ),
+        )
+
+        assertEquals(workflow.nodePositions, workflowFromJson(workflow.toJson()).nodePositions)
     }
 
     @Test
