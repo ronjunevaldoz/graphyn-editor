@@ -43,13 +43,18 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.serialization.json)
-            implementation(libs.kotlinx.coroutinesCore)
-            implementation(libs.kotlinx.datetime)
+            // Aggregator: re-export the split core modules so existing consumers keep using `:core`.
+            api(projects.core.model)
+            api(projects.core.execution)
+            api(projects.core.serialization)
+            api(projects.core.data)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutinesTest)
+            implementation(libs.serialization.json)
+            implementation(libs.kotlinx.coroutinesCore)
+            implementation(libs.kotlinx.datetime)
         }
     }
 }
