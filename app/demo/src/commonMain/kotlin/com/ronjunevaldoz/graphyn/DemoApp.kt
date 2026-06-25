@@ -48,7 +48,9 @@ fun DemoApp(
     workflowGenerator: WorkflowGenerator? = null,
 ) {
     val templates = remember {
-        DemoScene.entries.map { WorkflowTemplate(it.label, null, it.workflow) }
+        DemoScene.entries
+            .sortedBy { it.category.ordinal }
+            .map { WorkflowTemplate(it.label, it.description, it.workflow, it.category) }
     }
     var recentWorkflows by remember { mutableStateOf(emptyList<WorkflowTemplate>()) }
     var savedWorkflows by remember { mutableStateOf(emptyList<WorkflowMeta>()) }

@@ -71,6 +71,8 @@ class DemoSceneWorkflowTest {
         "media.audios_list",
         "media.caption_overlay",
         "media.caption_style",
+        "media.image_import",
+        "media.ocr",
         "media.speech_to_text",
         "media.text_to_speech",
         "media.video_encode",
@@ -108,6 +110,7 @@ class DemoSceneWorkflowTest {
             DemoScene.SmartEncode,
             DemoScene.VideoStitch,
             DemoScene.Captioned,
+            DemoScene.OcrExtract,
         )
         DemoScene.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes

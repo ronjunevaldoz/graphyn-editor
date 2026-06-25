@@ -139,6 +139,17 @@ class MediaWorkflowExecutionTest {
         )
         assertEquals(stringValue("captioned.mp4"), result.output("encode", "file_path"))
     }
+
+    @Test
+    fun documentOcrExecutesEndToEnd() = runTest {
+        val fixture = MediaExecutionFixture()
+
+        val result = fixture.execute(DemoScene.OcrExtract)
+
+        result.assertFullSuccess(expectedNodeCount = 5)
+        assertEquals("sample.png", fixture.lastOcrImage)
+        assertEquals(stringValue("INVOICE"), result.output("ocr", "text"))
+    }
 }
 
 private class MediaExecutionFixture {
@@ -148,6 +159,7 @@ private class MediaExecutionFixture {
     var lastStitchPaths: List<String> = emptyList()
     var lastEncodeCall: EncodeCall? = null
     var lastCaptionCount: Int = 0
+    var lastOcrImage: String? = null
 
     private val executors = DefaultNodeExecutorRegistry().apply {
         register("io.resolve_path") { inputs ->
@@ -277,6 +289,20 @@ private class MediaExecutionFixture {
             mapOf(
                 "video" to MediaTypes.videoValue("/generated/captioned.mp4"),
                 "duration_ms" to WorkflowValue.DoubleValue(90_000.0),
+            )
+        }
+        register("media.image_import") { inputs ->
+            mapOf(
+                "image" to MediaTypes.imageValue(inputs.string("path")),
+                "width" to WorkflowValue.IntValue(1024),
+                "height" to WorkflowValue.IntValue(768),
+            )
+        }
+        register("media.ocr") { inputs ->
+            lastOcrImage = MediaTypes.path(inputs["image"], "image").substringAfterLast('/')
+            mapOf(
+                "text" to stringValue("INVOICE"),
+                "blocks" to WorkflowValue.ListValue(emptyList()),
             )
         }
         // Annotation node: no data ports, executes as a no-op (mirrors StickyNotePlugin).

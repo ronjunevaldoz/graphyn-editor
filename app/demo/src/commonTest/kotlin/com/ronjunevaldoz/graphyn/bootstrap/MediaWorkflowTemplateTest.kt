@@ -24,6 +24,7 @@ class MediaWorkflowTemplateTest {
                 DemoScene.SmartEncode,
                 DemoScene.VideoStitch,
                 DemoScene.Captioned,
+                DemoScene.OcrExtract,
             ),
             mediaScenes,
         )
@@ -267,6 +268,30 @@ class MediaWorkflowTemplateTest {
             "output_path" to stringValue("captioned.mp4"),
             "bitrate" to stringValue("high"),
         )
+    }
+
+    @Test
+    fun documentOcrTemplateIsConfiguredAndWired() {
+        val workflow = DemoScene.OcrExtract.workflow
+
+        assertTemplate(
+            workflow = workflow,
+            expectedId = "document-ocr",
+            expectedName = "Document Text Extract",
+            expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
+                "resolveImage" to "io.resolve_path",
+                "import_image" to "media.image_import",
+                "ocr" to "media.ocr",
+                "preview" to "preview.view",
+            ),
+            expectedConnections = setOf(
+                connection("resolveImage", "resolved_path", "import_image", "path"),
+                connection("import_image", "image", "ocr", "image"),
+                connection("ocr", "text", "preview", "value"),
+            ),
+        )
+        assertResolver(workflow.node("resolveImage"), "sample.png")
     }
 
     private fun assertTemplate(
