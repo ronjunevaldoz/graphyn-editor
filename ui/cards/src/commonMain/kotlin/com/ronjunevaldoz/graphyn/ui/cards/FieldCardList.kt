@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import androidx.compose.ui.window.Popup
@@ -43,21 +46,42 @@ internal fun ListRow(
 ) {
     var showPopup by remember { mutableStateOf(false) }
     val items = (currentValue as? WorkflowValue.ListValue)?.items ?: emptyList()
+    var draftItems by remember { mutableStateOf<List<WorkflowValue>?>(null) }
     val label = when (items.size) { 0 -> "empty"; 1 -> "1 item"; else -> "${items.size} items" }
+    fun dismiss(commit: Boolean) {
+        if (commit) draftItems?.let { onValueChange(WorkflowValue.ListValue(it)) }
+        showPopup = false
+        draftItems = null
+    }
     FieldRow(name = input.name) {
         Box {
-            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
+            Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable {
+                draftItems = items
+                showPopup = true
+            }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
                 BasicText("$label ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
             }
-            if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { showPopup = false }) {
-                ListPopup(items, elementType, theme) { onValueChange(WorkflowValue.ListValue(it)) }
+            if (showPopup) Popup(alignment = Alignment.BottomStart, onDismissRequest = { dismiss(commit = true) }) {
+                ListPopup(
+                    items = draftItems ?: items,
+                    elementType = elementType,
+                    theme = theme,
+                    onChange = { draftItems = it },
+                    onDone = { dismiss(commit = true) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, theme: FieldNodeTheme, onChange: (List<WorkflowValue>) -> Unit) {
+private fun ListPopup(
+    items: List<WorkflowValue>,
+    elementType: WorkflowType,
+    theme: FieldNodeTheme,
+    onChange: (List<WorkflowValue>) -> Unit,
+    onDone: () -> Unit,
+) {
     Column(Modifier.widthIn(min = LIST_POPUP_MIN_DP.dp, max = LIST_POPUP_MAX_DP.dp).clip(RoundedCornerShape(appTheme.shapes.md)).background(theme.background()).border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md)).padding(vertical = GraphynSpacingValues.spacing.xs)) {
         items.forEachIndexed { i, item ->
             key(i) {
@@ -70,6 +94,13 @@ private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, the
         Box(Modifier.fillMaxWidth().clickable { onChange(items + defaultItem(elementType)) }.padding(horizontal = GraphynSpacingValues.spacing.sm, vertical = GraphynSpacingValues.spacing.xl)) {
             BasicText("+ Add", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
+        Box(
+            Modifier.fillMaxWidth().clickable(onClick = onDone)
+                .padding(horizontal = GraphynSpacingValues.spacing.sm, vertical = GraphynSpacingValues.spacing.md),
+            contentAlignment = Alignment.CenterEnd,
+        ) {
+            BasicText("Done", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
+        }
     }
 }
 
@@ -77,9 +108,45 @@ private fun ListPopup(items: List<WorkflowValue>, elementType: WorkflowType, the
 private fun ListItemRow(value: WorkflowValue, elementType: WorkflowType, theme: FieldNodeTheme, onEdit: (WorkflowValue) -> Unit, onRemove: () -> Unit) {
     var editText by remember { mutableStateOf<String?>(null) }
     var focusGranted by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     fun commit() {
         val raw = editText ?: return; editText = null
         parseListItem(elementType, raw)?.let(onEdit)
+    }
+    LaunchedEffect(editText != null) {
+        if (editText != null) focusRequester.requestFocus()
+    }
+    if (elementType is WorkflowType.RecordType) {
+        val fields = (value as? WorkflowValue.RecordValue)?.fields.orEmpty()
+        Column(
+            Modifier.fillMaxWidth().padding(
+                horizontal = GraphynSpacingValues.spacing.sm,
+                vertical = GraphynSpacingValues.spacing.md,
+            ),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                BasicText(
+                    "{ ${elementType.fields.size} fields }",
+                    style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()),
+                )
+                Spacer(Modifier.weight(1f))
+                Box(Modifier.clickable(onClick = onRemove).padding(appTheme.spacing.xxs)) {
+                    BasicText("×", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
+                }
+            }
+            elementType.fields.forEach { (fieldName, fieldType) ->
+                RecordFieldRow(
+                    key = fieldName,
+                    value = fields[fieldName],
+                    type = fieldType,
+                    theme = theme,
+                    onEdit = { updated ->
+                        onEdit(WorkflowValue.RecordValue(fields + (fieldName to updated)))
+                    },
+                )
+            }
+        }
+        return
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = GraphynSpacingValues.spacing.xxl, vertical = GraphynSpacingValues.spacing.md), verticalAlignment = Alignment.CenterVertically) {
         if (elementType == WorkflowType.BooleanType && value is WorkflowValue.BooleanValue) {
@@ -96,7 +163,9 @@ private fun ListItemRow(value: WorkflowValue, elementType: WorkflowType, theme: 
             BasicTextField(
                 value = editText!!,
                 onValueChange = { editText = it },
-                modifier = Modifier.weight(1f).onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
+                modifier = Modifier.weight(1f)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                 textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
                 decorationBox = { inner -> Box(Modifier.clip(RoundedCornerShape(appTheme.shapes.xs)).background(theme.valueBg()).padding(appTheme.spacing.xxs)) { inner() } },
                 singleLine = true,
@@ -113,10 +182,14 @@ private fun ListItemRow(value: WorkflowValue, elementType: WorkflowType, theme: 
     }
 }
 
-private fun defaultItem(elementType: WorkflowType): WorkflowValue = when (elementType) {
+internal fun defaultItem(elementType: WorkflowType): WorkflowValue = when (elementType) {
     WorkflowType.IntType -> WorkflowValue.IntValue(0)
     WorkflowType.DoubleType -> WorkflowValue.DoubleValue(0.0)
     WorkflowType.BooleanType -> WorkflowValue.BooleanValue(false)
+    is WorkflowType.RecordType -> WorkflowValue.RecordValue(
+        elementType.fields.mapValues { (_, fieldType) -> defaultItem(fieldType) },
+    )
+    is WorkflowType.ListType -> WorkflowValue.ListValue(emptyList())
     else -> WorkflowValue.StringValue("")
 }
 
