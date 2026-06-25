@@ -13,6 +13,9 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
  */
 
 object GmailNodeSpecs {
+    /** Palette category id shared with [GmailEditorPlugin] so specs group under the Gmail category. */
+    const val CATEGORY = "graphyn.gmail"
+
     private val gmailFetchEmailsInputs = listOf(
         PortSpec(name = "credential", type = WorkflowType.StringType, required = true),
         PortSpec(name = "label", type = WorkflowType.StringType, required = false),
@@ -43,6 +46,7 @@ object GmailNodeSpecs {
     val gmailFetchEmails = NodeSpec(
         type = "gmail.fetch_emails",
         label = "Fetch Gmail Emails",
+        category = CATEGORY,
         inputs = gmailFetchEmailsInputs,
         outputs = gmailFetchEmailsOutputs,
         defaultValues = gmailFetchEmailsDefaults,
@@ -65,6 +69,7 @@ object GmailNodeSpecs {
     val gmailSendEmail = NodeSpec(
         type = "gmail.send_email",
         label = "Send Gmail Email",
+        category = CATEGORY,
         inputs = gmailSendEmailInputs,
         outputs = gmailSendEmailOutputs,
     )
@@ -91,6 +96,7 @@ object GmailNodeSpecs {
     val gmailParseEmail = NodeSpec(
         type = "gmail.parse_email",
         label = "Parse Email",
+        category = CATEGORY,
         inputs = gmailParseEmailInputs,
         outputs = gmailParseEmailOutputs,
     )
@@ -107,6 +113,7 @@ object GmailNodeSpecs {
     val gmailGetLabels = NodeSpec(
         type = "gmail.get_labels",
         label = "Get Gmail Labels",
+        category = CATEGORY,
         inputs = gmailGetLabelsInputs,
         outputs = gmailGetLabelsOutputs,
     )
@@ -126,6 +133,7 @@ object GmailNodeSpecs {
     val gmailReplyEmail = NodeSpec(
         type = "gmail.reply_email",
         label = "Reply to Email",
+        category = CATEGORY,
         inputs = gmailReplyEmailInputs,
         outputs = gmailReplyEmailOutputs,
     )

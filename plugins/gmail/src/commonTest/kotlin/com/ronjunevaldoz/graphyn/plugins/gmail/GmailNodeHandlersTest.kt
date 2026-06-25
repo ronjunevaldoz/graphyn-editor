@@ -8,6 +8,15 @@ import kotlin.test.assertNotNull
 class GmailNodeHandlersTest {
 
     @Test
+    fun allSpecsCarryGmailCategory() {
+        // Without a category the palette can't group the nodes under the Gmail / Socials folder.
+        assertEquals(
+            emptyList(),
+            GmailNodeSpecs.all.filter { it.category != GmailNodeSpecs.CATEGORY }.map { it.type },
+        )
+    }
+
+    @Test
     fun testParseEmailExtractsFields() = runTest {
         val emailRecord = mapOf(
             "id" to "abc123",
