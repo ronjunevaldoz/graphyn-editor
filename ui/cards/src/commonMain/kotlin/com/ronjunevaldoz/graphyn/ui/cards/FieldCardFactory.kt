@@ -81,7 +81,7 @@ class FieldCardFactory(
         if (isInput) {
             HEADER_DP + portIndex * ROW_DP + ROW_DP / 2
         } else {
-            HEADER_DP + spec.inputs.size * ROW_DP + portIndex * ROW_DP + ROW_DP / 2
+            HEADER_DP + spec.inputs.size * ROW_DP + FOOTER_DIVIDER_DP + portIndex * ROW_DP + ROW_DP / 2
         }
 
     @Composable

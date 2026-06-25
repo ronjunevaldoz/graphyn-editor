@@ -12,7 +12,7 @@ internal fun GraphynEditorState.handleDispatch(intent: GraphynEditorIntent) {
         GraphynEditorIntent.DeleteSelectedNode -> withHistory { deleteSelectedNode() }
         is GraphynEditorIntent.SelectConnection -> selectConnection(intent.connection)
         GraphynEditorIntent.DeleteSelectedConnection -> withHistory { deleteSelectedConnection() }
-        is GraphynEditorIntent.MoveNode -> layout.moveNode(intent.nodeId, intent.delta)
+        is GraphynEditorIntent.MoveNode -> moveNode(intent.nodeId, intent.delta)
         is GraphynEditorIntent.MoveSelectedNodes -> moveSelectedNodes(intent.delta)
         GraphynEditorIntent.Undo -> restoreSnapshot(history.undo(snapshot()))
         GraphynEditorIntent.Redo -> restoreSnapshot(history.redo(snapshot()))

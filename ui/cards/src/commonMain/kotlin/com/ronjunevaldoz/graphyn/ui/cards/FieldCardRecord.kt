@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import androidx.compose.ui.window.Popup
@@ -85,10 +88,10 @@ private fun RecordFieldRow(
 ) {
     var editText by remember { mutableStateOf<String?>(null) }
     var focusGranted by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     val display = value?.label() ?: ""
-    fun commit() {
-        val raw = editText ?: return; editText = null
-        parseRecordField(type, raw)?.let(onEdit)
+    LaunchedEffect(editText != null) {
+        if (editText != null) focusRequester.requestFocus()
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = GraphynSpacingValues.spacing.sm, vertical = GraphynSpacingValues.spacing.md), verticalAlignment = Alignment.CenterVertically) {
         BasicText(key, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
@@ -107,9 +110,16 @@ private fun RecordFieldRow(
         } else if (editText != null) {
             BasicTextField(
                 value = editText!!,
-                onValueChange = { editText = it },
+                onValueChange = { raw ->
+                    editText = raw
+                    parseRecordField(type, raw)?.let(onEdit)
+                },
                 modifier = Modifier.widthIn(min = VALUE_MIN_DP.dp, max = VALUE_MAX_DP.dp)
-                    .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
+                    .focusRequester(focusRequester)
+                    .onFocusChanged {
+                        if (it.isFocused) focusGranted = true
+                        else if (focusGranted) editText = null
+                    },
                 textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
                 decorationBox = { inner -> Box(Modifier.clip(RoundedCornerShape(appTheme.shapes.xs)).background(theme.valueBg()).padding(horizontal = appTheme.spacing.xs, vertical = appTheme.spacing.xxs)) { inner() } },
                 singleLine = true,

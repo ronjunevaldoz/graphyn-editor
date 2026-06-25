@@ -17,6 +17,7 @@ import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 internal class GraphynNodeLayoutState(
     private val canvasBounds: GraphynCanvasBounds,
     private val viewportScale: () -> Float,
+    private val onPositionsChanged: (Map<String, IntOffset>) -> Unit = {},
 ) {
     var nodePositionsByNodeId by mutableStateOf<Map<String, IntOffset>>(emptyMap())
     private val nodeDragRemaindersByNodeId = mutableMapOf<String, Offset>()
@@ -24,6 +25,7 @@ internal class GraphynNodeLayoutState(
     fun setNodePosition(nodeId: String, position: IntOffset, clearDragRemainder: Boolean = true) {
         nodePositionsByNodeId = nodePositionsByNodeId + (nodeId to clamp(nodeId, position))
         if (clearDragRemainder) nodeDragRemaindersByNodeId.remove(nodeId)
+        onPositionsChanged(nodePositionsByNodeId)
     }
 
     fun moveNode(nodeId: String, delta: IntOffset) {
@@ -45,6 +47,12 @@ internal class GraphynNodeLayoutState(
     fun removeNode(nodeId: String) {
         nodePositionsByNodeId = nodePositionsByNodeId - nodeId
         nodeDragRemaindersByNodeId.remove(nodeId)
+        onPositionsChanged(nodePositionsByNodeId)
+    }
+
+    fun restorePositions(positions: Map<String, IntOffset>) {
+        nodePositionsByNodeId = positions.mapValues { (id, position) -> clamp(id, position) }
+        nodeDragRemaindersByNodeId.clear()
     }
 
     fun nodePosition(nodeId: String, index: Int): IntOffset =
@@ -77,4 +85,3 @@ internal fun buildNodeId(spec: NodeSpec, nodes: List<NodeRef>): String {
     while ("$prefix-$suffix" in existing) suffix++
     return "$prefix-$suffix"
 }
-

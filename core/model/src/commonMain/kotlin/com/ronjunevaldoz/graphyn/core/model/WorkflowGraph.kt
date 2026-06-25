@@ -71,6 +71,13 @@ data class ConnectionRef(
     val toPort: String,
 )
 
+/** Serializable canvas position for a node in a workflow. */
+@Serializable
+data class WorkflowNodePosition(
+    val x: Int,
+    val y: Int,
+)
+
 /** Complete, serializable description of a workflow — nodes and the edges between them. */
 @Serializable
 data class WorkflowDefinition(
@@ -78,4 +85,5 @@ data class WorkflowDefinition(
     val name: String,
     val nodes: List<NodeRef>,
     val connections: List<ConnectionRef>,
+    val nodePositions: Map<String, WorkflowNodePosition> = emptyMap(),
 )
