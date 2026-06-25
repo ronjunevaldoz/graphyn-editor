@@ -47,7 +47,7 @@ Source: [`app/sample/src/main/kotlin/com/ronjunevaldoz/graphyn/sample/SampleApp.
 A KMP library module, not a standalone app. It:
 - Registers all first-party plugins into a `GraphynBootstrap` helper
 - Defines demo `WorkflowDefinition` scenes used by `app/desktopApp`
-- Hosts `DemoApp` — the top-level composable `app/desktopApp` calls
+- Hosts `GraphynApp` — the top-level composable `app/desktopApp` calls
 
 Do not add persistence, file management, or production features here. Those belong in
 `app/desktopApp`. Do not add registered node specs for demo purposes only — use local

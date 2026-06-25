@@ -44,7 +44,7 @@ class ScriptSceneLayoutTest {
         val runtimePlugins = GraphynBootstrap.runtimePlugins(extraPlugins = listOf(ScriptPlugin))
         val editorRegistry = DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
         val pluginRegistry = DefaultGraphynPluginRegistry().apply { installAll(runtimePlugins) }
-        val state = GraphynEditorState(DemoScene.Script.workflow)
+        val state = GraphynEditorState(WorkflowCatalog.Script.workflow)
 
         setContent {
             GraphynTheme {
@@ -59,7 +59,7 @@ class ScriptSceneLayoutTest {
             }
         }
 
-        // Mirror the exact readiness gate used in DemoApp: both canvas size and canvasCards must be ready.
+        // Mirror the exact readiness gate used in GraphynApp: both canvas size and canvasCards must be ready.
         runBlocking {
             snapshotFlow { state.canvasSize to state.hasCanvasCards }
                 .first { (size, ready) -> size.width > 0 && size.height > 0 && ready }
@@ -73,7 +73,7 @@ class ScriptSceneLayoutTest {
         runOnIdle {
             val registry = editorRegistry.canvasCards
             val positions = state.nodePositionsByNodeId
-            val nodes = DemoScene.Script.workflow.nodes
+            val nodes = WorkflowCatalog.Script.workflow.nodes
             val rects = nodes.mapNotNull { node ->
                 val pos = positions[node.id] ?: return@mapNotNull null
                 val size = registry.resolve(node.type)

@@ -148,7 +148,7 @@ For a fully custom card, implement `NodeCanvasFactory` directly. See [Custom Car
 
 ## 5. Register in the app
 
-In your bootstrap / `DemoApp` equivalent:
+In your bootstrap / `GraphynApp` equivalent:
 
 ```kotlin
 val runtimePlugins = listOf(MyPlugin, /* other plugins */)

@@ -20,13 +20,13 @@ class DemoSceneWorkflowTest {
 
     @Test
     fun allScenesHaveUniqueWorkflowIds() {
-        val ids = DemoScene.entries.map { it.workflow.id }
+        val ids = WorkflowCatalog.entries.map { it.workflow.id }
         assertEquals(ids.size, ids.distinct().size, "Duplicate workflow ids: ${ids.groupBy { it }.filterValues { it.size > 1 }.keys}")
     }
 
     @Test
     fun allScenesHaveNonBlankNameAndId() {
-        DemoScene.entries.forEach { scene ->
+        WorkflowCatalog.entries.forEach { scene ->
             assertTrue(scene.workflow.id.isNotBlank(),   "${scene.name}: workflow id is blank")
             assertTrue(scene.workflow.name.isNotBlank(), "${scene.name}: workflow name is blank")
         }
@@ -34,14 +34,14 @@ class DemoSceneWorkflowTest {
 
     @Test
     fun allScenesHaveAtLeastOneNode() {
-        DemoScene.entries.forEach { scene ->
+        WorkflowCatalog.entries.forEach { scene ->
             assertTrue(scene.workflow.nodes.isNotEmpty(), "${scene.name}: workflow has no nodes")
         }
     }
 
     @Test
     fun allNodeIdsWithinWorkflowAreUnique() {
-        DemoScene.entries.forEach { scene ->
+        WorkflowCatalog.entries.forEach { scene ->
             val ids = scene.workflow.nodes.map { it.id }
             assertEquals(ids.size, ids.distinct().size, "${scene.name}: duplicate node ids $ids")
         }
@@ -49,7 +49,7 @@ class DemoSceneWorkflowTest {
 
     @Test
     fun allConnectionsReferenceExistingNodeIds() {
-        DemoScene.entries.forEach { scene ->
+        WorkflowCatalog.entries.forEach { scene ->
             val wf = scene.workflow
             val nodeIds = wf.nodes.map { it.id }.toSet()
             wf.connections.forEach { conn ->
@@ -83,7 +83,7 @@ class DemoSceneWorkflowTest {
 
     @Test
     fun allNodeTypesAreRegisteredInDemoPlugins() {
-        DemoScene.entries.forEach { scene ->
+        WorkflowCatalog.entries.forEach { scene ->
             scene.workflow.nodes
                 .filter { it.type !in jvmOnlyTypes }
                 .forEach { node ->
@@ -103,16 +103,16 @@ class DemoSceneWorkflowTest {
         // - missing_required_input: ports intentionally left unwired in visual showcases
         val ignoredCodes = setOf("missing_required_input", "type_mismatch")
         val jvmOnlyScenes = setOf(
-            DemoScene.Script,
-            DemoScene.SimpleTts,
-            DemoScene.VideoNarration,
-            DemoScene.AudioMix,
-            DemoScene.SmartEncode,
-            DemoScene.VideoStitch,
-            DemoScene.Captioned,
-            DemoScene.OcrExtract,
+            WorkflowCatalog.Script,
+            WorkflowCatalog.SimpleTts,
+            WorkflowCatalog.VideoNarration,
+            WorkflowCatalog.AudioMix,
+            WorkflowCatalog.SmartEncode,
+            WorkflowCatalog.VideoStitch,
+            WorkflowCatalog.Captioned,
+            WorkflowCatalog.OcrExtract,
         )
-        DemoScene.entries.forEach { scene ->
+        WorkflowCatalog.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes
             val errors = validator.validate(scene.workflow).filterNot { it.code in sceneIgnored }
             assertTrue(errors.isEmpty(),

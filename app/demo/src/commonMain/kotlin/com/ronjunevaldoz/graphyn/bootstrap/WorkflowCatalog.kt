@@ -33,7 +33,7 @@ private val scriptDemoWorkflow = WorkflowDefinition(
  * [category] and a one-line [description]; production templates use [Media]/[DataAndIo] and
  * node-type showcases use [Examples].
  */
-enum class DemoScene(
+enum class WorkflowCatalog(
     val label: String,
     val workflow: WorkflowDefinition,
     val category: WorkflowCategory,

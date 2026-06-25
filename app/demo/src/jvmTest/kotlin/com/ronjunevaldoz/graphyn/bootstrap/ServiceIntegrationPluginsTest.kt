@@ -45,7 +45,7 @@ class ServiceIntegrationPluginsTest {
         val editorRegistry = DefaultGraphynEditorPluginRegistry().apply { installAll(GraphynBootstrap.editorPlugins()) }
         val pluginRegistry = DefaultGraphynPluginRegistry().apply { installAll(runtimePlugins) }
 
-        val state = GraphynEditorState(DemoScene.Script.workflow)
+        val state = GraphynEditorState(WorkflowCatalog.Script.workflow)
 
         setContent {
             GraphynTheme {

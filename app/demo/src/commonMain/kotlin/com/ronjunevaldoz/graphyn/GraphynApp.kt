@@ -10,7 +10,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.ronjunevaldoz.graphyn.bootstrap.DemoScene
+import com.ronjunevaldoz.graphyn.bootstrap.WorkflowCatalog
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import kotlin.random.Random
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
@@ -38,7 +38,7 @@ import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import kotlinx.coroutines.flow.first
 
 @Composable
-fun DemoApp(
+fun GraphynApp(
     branding: GraphynBranding = GraphynBranding(),
     runtimePlugins: List<GraphynPlugin> = GraphynBootstrap.runtimePlugins(),
     editorPlugins: List<GraphynEditorPlugin> = GraphynBootstrap.editorPlugins(),
@@ -48,7 +48,7 @@ fun DemoApp(
     workflowGenerator: WorkflowGenerator? = null,
 ) {
     val templates = remember {
-        DemoScene.entries
+        WorkflowCatalog.entries
             .sortedBy { it.category.ordinal }
             .map { WorkflowTemplate(it.label, it.description, it.workflow, it.category) }
     }
@@ -136,5 +136,5 @@ fun DemoApp(
     }
 }
 
-/** Ollama host used by the demo's AI workflow generation. Override via [DemoApp]'s workflowGenerator. */
+/** Ollama host used by the demo's AI workflow generation. Override via [GraphynApp]'s workflowGenerator. */
 private const val DEMO_OLLAMA_HOST = "https://ron-local-home.duckdns.org/ollama/"

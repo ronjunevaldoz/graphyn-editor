@@ -42,7 +42,7 @@ class SubgraphSceneLayoutTest {
         val runtimePlugins = GraphynBootstrap.runtimePlugins()
         val editorRegistry = DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
         val pluginRegistry = DefaultGraphynPluginRegistry().apply { installAll(runtimePlugins) }
-        val state = GraphynEditorState(DemoScene.Subgraph.workflow)
+        val state = GraphynEditorState(WorkflowCatalog.Subgraph.workflow)
 
         setContent {
             GraphynTheme {
@@ -69,7 +69,7 @@ class SubgraphSceneLayoutTest {
         runOnIdle {
             val registry = editorRegistry.canvasCards
             val positions = state.nodePositionsByNodeId
-            val nodes = DemoScene.Subgraph.workflow.nodes
+            val nodes = WorkflowCatalog.Subgraph.workflow.nodes
             val rects = nodes.mapNotNull { node ->
                 val pos = positions[node.id] ?: return@mapNotNull null
                 val size = registry.resolve(node.type)

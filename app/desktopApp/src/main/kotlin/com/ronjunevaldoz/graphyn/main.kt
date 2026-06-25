@@ -16,7 +16,7 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "Graphyn",
     ) {
-        DemoApp(
+        GraphynApp(
             runtimePlugins = GraphynBootstrap.runtimePlugins(
                 extraPlugins = listOf(ScriptPlugin, GmailPlugin, LinkedInPlugin) +
                     GraphynBootstrapJvm.mediaRuntimePlugins,

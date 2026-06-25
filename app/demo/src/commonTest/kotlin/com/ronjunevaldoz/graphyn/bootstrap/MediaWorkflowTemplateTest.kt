@@ -12,19 +12,19 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun allMediaTemplatesHaveDedicatedCoverage() {
-        val mediaScenes = DemoScene.entries
+        val mediaScenes = WorkflowCatalog.entries
             .filter { scene -> scene.workflow.nodes.any { it.type.startsWith("media.") } }
             .toSet()
 
         assertEquals(
             setOf(
-                DemoScene.SimpleTts,
-                DemoScene.VideoNarration,
-                DemoScene.AudioMix,
-                DemoScene.SmartEncode,
-                DemoScene.VideoStitch,
-                DemoScene.Captioned,
-                DemoScene.OcrExtract,
+                WorkflowCatalog.SimpleTts,
+                WorkflowCatalog.VideoNarration,
+                WorkflowCatalog.AudioMix,
+                WorkflowCatalog.SmartEncode,
+                WorkflowCatalog.VideoStitch,
+                WorkflowCatalog.Captioned,
+                WorkflowCatalog.OcrExtract,
             ),
             mediaScenes,
         )
@@ -32,7 +32,7 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun simpleTextToSpeechTemplateIsConfiguredAndWired() {
-        val workflow = DemoScene.SimpleTts.workflow
+        val workflow = WorkflowCatalog.SimpleTts.workflow
 
         assertTemplate(
             workflow = workflow,
@@ -66,7 +66,7 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun videoNarrationTemplateIsConfiguredAndWired() {
-        val workflow = DemoScene.VideoNarration.workflow
+        val workflow = WorkflowCatalog.VideoNarration.workflow
 
         assertTemplate(
             workflow = workflow,
@@ -116,7 +116,7 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun audioMixTemplateIsConfiguredAndWired() {
-        val workflow = DemoScene.AudioMix.workflow
+        val workflow = WorkflowCatalog.AudioMix.workflow
 
         assertTemplate(
             workflow = workflow,
@@ -160,7 +160,7 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun smartEncodeTemplateIsConfiguredAndWired() {
-        val workflow = DemoScene.SmartEncode.workflow
+        val workflow = WorkflowCatalog.SmartEncode.workflow
 
         assertTemplate(
             workflow = workflow,
@@ -192,7 +192,7 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun videoStitchTemplateIsConfiguredAndWired() {
-        val workflow = DemoScene.VideoStitch.workflow
+        val workflow = WorkflowCatalog.VideoStitch.workflow
 
         assertTemplate(
             workflow = workflow,
@@ -234,7 +234,7 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun captionedVideoTemplateIsConfiguredAndWired() {
-        val workflow = DemoScene.Captioned.workflow
+        val workflow = WorkflowCatalog.Captioned.workflow
 
         assertTemplate(
             workflow = workflow,
@@ -272,7 +272,7 @@ class MediaWorkflowTemplateTest {
 
     @Test
     fun documentOcrTemplateIsConfiguredAndWired() {
-        val workflow = DemoScene.OcrExtract.workflow
+        val workflow = WorkflowCatalog.OcrExtract.workflow
 
         assertTemplate(
             workflow = workflow,

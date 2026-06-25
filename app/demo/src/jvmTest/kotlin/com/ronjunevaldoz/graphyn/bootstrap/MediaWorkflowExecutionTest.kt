@@ -18,7 +18,7 @@ class MediaWorkflowExecutionTest {
     fun simpleTextToSpeechExecutesEndToEnd() = runTest {
         val fixture = MediaExecutionFixture()
 
-        val result = fixture.execute(DemoScene.SimpleTts)
+        val result = fixture.execute(WorkflowCatalog.SimpleTts)
 
         result.assertFullSuccess(expectedNodeCount = 5)
         assertEquals(listOf("Text from input.txt"), fixture.ttsTexts)
@@ -32,7 +32,7 @@ class MediaWorkflowExecutionTest {
     fun videoNarrationExecutesEndToEnd() = runTest {
         val fixture = MediaExecutionFixture()
 
-        val result = fixture.execute(DemoScene.VideoNarration)
+        val result = fixture.execute(WorkflowCatalog.VideoNarration)
 
         result.assertFullSuccess(expectedNodeCount = 11)
         assertEquals(listOf("Narration from narration.txt"), fixture.ttsTexts)
@@ -57,7 +57,7 @@ class MediaWorkflowExecutionTest {
     fun audioMixExecutesEndToEnd() = runTest {
         val fixture = MediaExecutionFixture()
 
-        val result = fixture.execute(DemoScene.AudioMix)
+        val result = fixture.execute(WorkflowCatalog.AudioMix)
 
         result.assertFullSuccess(expectedNodeCount = 9)
         assertEquals(
@@ -75,7 +75,7 @@ class MediaWorkflowExecutionTest {
     fun smartEncodeExecutesEndToEnd() = runTest {
         val fixture = MediaExecutionFixture()
 
-        val result = fixture.execute(DemoScene.SmartEncode)
+        val result = fixture.execute(WorkflowCatalog.SmartEncode)
 
         result.assertFullSuccess(expectedNodeCount = 6)
         assertEquals(
@@ -99,7 +99,7 @@ class MediaWorkflowExecutionTest {
     fun videoStitchExecutesEndToEnd() = runTest {
         val fixture = MediaExecutionFixture()
 
-        val result = fixture.execute(DemoScene.VideoStitch)
+        val result = fixture.execute(WorkflowCatalog.VideoStitch)
 
         result.assertFullSuccess(expectedNodeCount = 9)
         assertEquals(
@@ -123,7 +123,7 @@ class MediaWorkflowExecutionTest {
     fun captionedVideoExecutesEndToEnd() = runTest {
         val fixture = MediaExecutionFixture()
 
-        val result = fixture.execute(DemoScene.Captioned)
+        val result = fixture.execute(WorkflowCatalog.Captioned)
 
         result.assertFullSuccess(expectedNodeCount = 9)
         assertEquals(2, fixture.lastCaptionCount)
@@ -144,7 +144,7 @@ class MediaWorkflowExecutionTest {
     fun documentOcrExecutesEndToEnd() = runTest {
         val fixture = MediaExecutionFixture()
 
-        val result = fixture.execute(DemoScene.OcrExtract)
+        val result = fixture.execute(WorkflowCatalog.OcrExtract)
 
         result.assertFullSuccess(expectedNodeCount = 5)
         assertEquals("sample.png", fixture.lastOcrImage)
@@ -309,7 +309,7 @@ private class MediaExecutionFixture {
         register("graphyn.sticky_note") { emptyMap() }
     }
 
-    suspend fun execute(scene: DemoScene): WorkflowExecutionResult =
+    suspend fun execute(scene: WorkflowCatalog): WorkflowExecutionResult =
         WorkflowExecutionEngine(executors).execute(scene.workflow)
 }
 

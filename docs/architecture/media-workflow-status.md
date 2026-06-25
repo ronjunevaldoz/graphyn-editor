@@ -34,10 +34,10 @@ Phase 1 media workflows are implemented for JVM/Desktop and are covered by both 
 contract tests and workflow execution tests.
 
 Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
-availability-guarded FFmpeg backend tests. The **Captioned Video** demo wires the captioning chain
-(`speech_to_text → caption_overlay`, plus `caption_style`) end-to-end. `video_compose`,
-`timing_controller`, `image_import`, and `ocr` are registered in the palette but not yet used in a
-shipped demo.
+availability-guarded FFmpeg backend tests. The **Captioned Video** template wires the captioning
+chain (`speech_to_text → caption_overlay`, plus `caption_style`) and **Document Text Extract** wires
+`image_import → ocr`, both end-to-end. `video_compose` and `timing_controller` are registered in the
+palette but not yet used in a shipped template (they need a record-builder node first).
 
 ## Node Status
 
@@ -84,7 +84,7 @@ first load (see Editor Behavior).
 ## Editor Behavior
 
 - **Auto-layout on load.** Demo templates have no stored node positions, so the editor dispatches
-  `AutoLayout` once the canvas is measured (`DemoApp`), guarded so a saved/edited layout is never
+  `AutoLayout` once the canvas is measured (`GraphynApp`), guarded so a saved/edited layout is never
   clobbered. Triggered for all scenes, not just one.
 - **Annotation parking.** `performAutoLayout` lays out the dataflow DAG, then parks annotation
   nodes (sticky guides) in a column to the left of the graph so they read as a legend. Annotation
