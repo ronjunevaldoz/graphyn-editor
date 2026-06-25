@@ -63,8 +63,19 @@ class DemoSceneWorkflowTest {
 
     // --- plugin registration ---
 
-    // script.eval is JVM-only and not in GraphynDemoPlugins — skip it in the KMP test
-    private val jvmOnlyTypes = setOf("script.eval")
+    // Script and media execution depend on JVM-only plugins installed by the desktop host.
+    private val jvmOnlyTypes = setOf(
+        "script.eval",
+        "media.audio_extract",
+        "media.audio_mix",
+        "media.audios_list",
+        "media.caption_style",
+        "media.text_to_speech",
+        "media.video_encode",
+        "media.video_import",
+        "media.video_stitch",
+        "media.videos_list",
+    )
 
     @Test
     fun allNodeTypesAreRegisteredInDemoPlugins() {
@@ -87,8 +98,14 @@ class DemoSceneWorkflowTest {
         // Demo scenes choose nodes for narrative clarity, not production type safety:
         // - missing_required_input: ports intentionally left unwired in visual showcases
         val ignoredCodes = setOf("missing_required_input", "type_mismatch")
-        // Script scene uses JVM-only nodes unregistered in the KMP test registry
-        val jvmOnlyScenes = setOf(DemoScene.Script)
+        val jvmOnlyScenes = setOf(
+            DemoScene.Script,
+            DemoScene.SimpleTts,
+            DemoScene.VideoNarration,
+            DemoScene.AudioMix,
+            DemoScene.SmartEncode,
+            DemoScene.VideoStitch,
+        )
         DemoScene.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes
             val errors = validator.validate(scene.workflow).filterNot { it.code in sceneIgnored }

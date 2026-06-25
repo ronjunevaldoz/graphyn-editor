@@ -2,6 +2,10 @@
 
 Tracks test and implementation completeness across all registered node types.
 
+Media workflow nodes and demo template coverage are tracked in
+[Media Workflow Status](./media-workflow-status.md) so this matrix can stay focused on the
+broader repo surface.
+
 **Legend**
 - ✅ covered / implemented
 - ❌ missing

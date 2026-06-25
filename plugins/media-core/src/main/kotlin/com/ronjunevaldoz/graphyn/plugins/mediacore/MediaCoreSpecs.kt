@@ -61,6 +61,38 @@ object MediaCoreSpecs {
         defaultValues = mapOf("volumes" to WorkflowValue.ListValue(emptyList())),
     )
 
+    val audiosList = NodeSpec(
+        type = "media.audios_list",
+        label = "Audios List",
+        description = "Collects individual audio handles into a list for mixing.",
+        category = CATEGORY_MEDIA_AUDIO,
+        inputs = listOf(
+            PortSpec("audio1", MediaTypes.audioHandle),
+            PortSpec("audio2", MediaTypes.audioHandle, required = false),
+            PortSpec("audio3", MediaTypes.audioHandle, required = false),
+            PortSpec("audio4", MediaTypes.audioHandle, required = false),
+        ),
+        outputs = listOf(
+            PortSpec("audios", WorkflowType.ListType(MediaTypes.audioHandle)),
+        ),
+    )
+
+    val videosList = NodeSpec(
+        type = "media.videos_list",
+        label = "Videos List",
+        description = "Collects individual video handles into a list for multi-clip operations.",
+        category = CATEGORY_MEDIA_VIDEO,
+        inputs = listOf(
+            PortSpec("video1", MediaTypes.videoHandle),
+            PortSpec("video2", MediaTypes.videoHandle, required = false),
+            PortSpec("video3", MediaTypes.videoHandle, required = false),
+            PortSpec("video4", MediaTypes.videoHandle, required = false),
+        ),
+        outputs = listOf(
+            PortSpec("videos", WorkflowType.ListType(MediaTypes.videoHandle)),
+        ),
+    )
+
     val videoStitch = NodeSpec(
         type = "media.video_stitch",
         label = "Video Stitch",
@@ -107,5 +139,5 @@ object MediaCoreSpecs {
         ),
     )
 
-    val all = listOf(videoImport, audioExtract, audioMix, videoStitch, videoEncode)
+    val all = listOf(videoImport, audioExtract, audioMix, audiosList, videosList, videoStitch, videoEncode)
 }

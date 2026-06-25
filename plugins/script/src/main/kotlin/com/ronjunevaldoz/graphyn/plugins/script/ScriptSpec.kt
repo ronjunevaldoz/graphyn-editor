@@ -15,10 +15,25 @@ internal const val CATEGORY_SCRIPT = "script"
  * Kotlin type (`String`, `Int`, `Boolean`, `List`, `Map`, or `null`).
  * The last expression in the script becomes `result`.
  *
+ * **String template escaping in workflow definitions**: When defining script code in a
+ * triple-quoted Kotlin string (e.g., in `WorkflowDefinition`), use `$$variable` instead of
+ * `$variable` to prevent the outer Kotlin compiler from interpolating the string. The script
+ * evaluator will then see the literal `$variable` and interpolate it at runtime.
+ *
  * Example script:
  * ```kotlin
  * import java.time.LocalDate
  * "Hello from ${LocalDate.now()} — input was: $input"
+ * ```
+ *
+ * Example in workflow definition (triple-quoted):
+ * ```kotlin
+ * WorkflowValue.StringValue(
+ *   """
+ *   val formatted = String.format("%.1f", input as Double)
+ *   "Result: $$formatted"
+ *   """.trimIndent()
+ * )
  * ```
  */
 internal val specScriptEval = NodeSpec(

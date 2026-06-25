@@ -25,6 +25,7 @@ Related:
 - [Preview-Driven Development](./previews.md)
 - [Test Coverage Matrix](./test-coverage.md)
 - [Code Audit — File Size](./code-audit.md)
+- [Media Workflow Status](./media-workflow-status.md)
 - [Plans](../plans/README.md)
 
 Feature Plans:

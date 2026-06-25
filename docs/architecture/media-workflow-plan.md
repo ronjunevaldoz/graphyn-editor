@@ -2,8 +2,10 @@
 
 ## Status
 
-Phase 1 was implemented for JVM/Desktop on June 25, 2026. Later phases remain planned and
-must not expand the core workflow format until their platform backends are known.
+Phase 1 was implemented for JVM/Desktop on June 25, 2026. Current node status, unit test
+coverage, and workflow execution coverage are tracked in
+[Media Workflow Status](./media-workflow-status.md). Later phases remain planned and must not
+expand the core workflow format until their platform backends are known.
 
 ## Review Findings
 

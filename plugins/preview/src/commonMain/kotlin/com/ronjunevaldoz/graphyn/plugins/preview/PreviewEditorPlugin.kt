@@ -17,6 +17,7 @@ object PreviewEditorPlugin : GraphynEditorPlugin {
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
         registrar.registerCanvasCard(specPreviewView.type, PreviewCardFactory)
+        registrar.registerCanvasCard(specMediaFileOutput.type, MediaOutputCardFactoryCommon)
         registrar.registerCategory(CATEGORY_PREVIEW, NodeCategoryMeta("Preview", 0xFF94E2D5L))
     }
 }

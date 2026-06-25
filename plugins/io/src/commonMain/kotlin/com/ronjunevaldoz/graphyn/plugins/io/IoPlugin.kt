@@ -24,7 +24,7 @@ object IoPlugin : GraphynPlugin {
     private val httpClient by lazy { createHttpClient() }
 
     override fun register(registrar: GraphynPluginRegistrar) {
-        listOf(specHttpRequest, specFileRead, specFileWrite, specFileBrowse, specFolderBrowse, specWebhookPost, specEnvRead)
+        listOf(specHttpRequest, specFileRead, specFileWrite, specFileBrowse, specFolderBrowse, specWebhookPost, specEnvRead, specResolvePath)
             .forEach { registrar.registerNodeSpec(it) }
 
         registrar.registerExecutor(specHttpRequest.type) { inputs ->
@@ -85,6 +85,13 @@ object IoPlugin : GraphynPlugin {
             val name = (inputs["name"] as? WorkflowValue.StringValue)?.value ?: ""
             val value = if (name.isNotBlank()) EnvReader.get(name) else null
             mapOf("value" to (value?.let { WorkflowValue.StringValue(it) } ?: WorkflowValue.NullValue), "found" to WorkflowValue.BooleanValue(value != null))
+        }
+
+        registrar.registerExecutor(specResolvePath.type) { inputs ->
+            val baseDir = (inputs["base_dir"] as? WorkflowValue.StringValue)?.value ?: ""
+            val relativePath = (inputs["relative_path"] as? WorkflowValue.StringValue)?.value ?: ""
+            val resolvedPath = FileIO.resolvePath(baseDir, relativePath)
+            mapOf("resolved_path" to WorkflowValue.StringValue(resolvedPath))
         }
     }
 }

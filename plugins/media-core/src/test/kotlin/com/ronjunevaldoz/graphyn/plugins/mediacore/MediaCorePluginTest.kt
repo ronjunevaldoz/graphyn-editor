@@ -14,11 +14,11 @@ import kotlin.test.assertNotNull
 
 class MediaCorePluginTest {
     @Test
-    fun registersFiveSpecsAndExecutors() {
+    fun registersSevenSpecsAndExecutors() {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(5, registry.nodeSpecs.all().size)
+        assertEquals(7, registry.nodeSpecs.all().size)
         MediaCoreSpecs.all.forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
@@ -60,6 +60,31 @@ class MediaCorePluginTest {
         assertEquals(listOf("/media/a.wav", "/media/b.wav"), backend.lastAudioPaths)
         assertEquals(listOf(1.0, 0.5), backend.lastVolumes)
         assertIs<WorkflowValue.RecordValue>(mixed["audio"])
+
+        val collected = registry.nodeExecutors.resolve(MediaCoreSpecs.videosList.type)!!.execute(
+            mapOf(
+                "video1" to MediaTypes.videoValue("/media/first.mp4"),
+                "video2" to WorkflowValue.NullValue,
+                "video3" to MediaTypes.videoValue("/media/third.mp4"),
+            ),
+        )
+        val videos = assertIs<WorkflowValue.ListValue>(collected["videos"]).items
+        assertEquals(
+            listOf("/media/first.mp4", "/media/third.mp4"),
+            videos.map { MediaTypes.path(it, "video") },
+        )
+
+        val collectedAudio = registry.nodeExecutors.resolve(MediaCoreSpecs.audiosList.type)!!.execute(
+            mapOf(
+                "audio1" to MediaTypes.audioValue("/media/voice.wav"),
+                "audio2" to MediaTypes.audioValue("/media/music.wav"),
+            ),
+        )
+        val audios = assertIs<WorkflowValue.ListValue>(collectedAudio["audios"]).items
+        assertEquals(
+            listOf("/media/voice.wav", "/media/music.wav"),
+            audios.map { MediaTypes.path(it, "audio") },
+        )
 
         val encoded = registry.nodeExecutors.resolve(MediaCoreSpecs.videoEncode.type)!!.execute(
             mapOf(
