@@ -26,7 +26,7 @@ jobs:
         run: ./gradlew :app:shared:compileCommonMainKotlinMetadata --no-daemon
 
       - name: Run core tests
-        run: ./gradlew :core:check --no-daemon
+        run: ./gradlew :core:model:check :core:execution:check :core:serialization:check :core:data:check --no-daemon
 
       - name: Run plugin-api tests
         run: ./gradlew :plugin-api:jvmTest --no-daemon
