@@ -55,10 +55,8 @@ internal fun NumericRow(
         onValueChange(parsed)
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
+    FieldRow(name = input.name, hasValue = currentValue != null) {
         if (currentValue != null) {
-            Spacer(Modifier.weight(1f))
             if (editText != null) {
                 BasicTextField(
                     value = editText!!,

@@ -38,7 +38,7 @@ internal fun InputRow(
     input: PortSpec,
     currentValue: WorkflowValue?,
     onValueChange: (WorkflowValue) -> Unit,
-    theme: FieldNodeTheme,
+    theme: FieldNodeTheme
 ) {
     var editText by remember { mutableStateOf<String?>(null) }
     var focusGranted by remember { mutableStateOf(false) }
@@ -50,13 +50,8 @@ internal fun InputRow(
         onValueChange(parsed)
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
-    Row(
-        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
+    FieldRow(name = input.name) {
         if (currentValue != null) {
-            Spacer(Modifier.weight(1f))
             if (input.type == WorkflowType.BooleanType && currentValue is WorkflowValue.BooleanValue) {
                 val on = currentValue.value
                 val activeBg = appTheme.colors.primary
@@ -108,7 +103,7 @@ internal fun InputRow(
 @Composable
 internal fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl),
+        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp) ,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))

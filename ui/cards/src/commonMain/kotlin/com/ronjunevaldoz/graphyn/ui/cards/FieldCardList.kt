@@ -44,9 +44,7 @@ internal fun ListRow(
     var showPopup by remember { mutableStateOf(false) }
     val items = (currentValue as? WorkflowValue.ListValue)?.items ?: emptyList()
     val label = when (items.size) { 0 -> "empty"; 1 -> "1 item"; else -> "${items.size} items" }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
-        Spacer(Modifier.weight(1f))
+    FieldRow(name = input.name) {
         Box {
             Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
                 BasicText("$label ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
