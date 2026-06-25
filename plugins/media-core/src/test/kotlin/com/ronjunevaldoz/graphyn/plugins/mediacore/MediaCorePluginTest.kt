@@ -1,0 +1,109 @@
+@file:OptIn(com.ronjunevaldoz.graphyn.core.GraphynExperimentalApi::class)
+
+package com.ronjunevaldoz.graphyn.plugins.mediacore
+
+import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
+import kotlinx.coroutines.test.runTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+
+class MediaCorePluginTest {
+    @Test
+    fun registersFiveSpecsAndExecutors() {
+        val registry = DefaultGraphynPluginRegistry()
+        registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
+
+        assertEquals(5, registry.nodeSpecs.all().size)
+        MediaCoreSpecs.all.forEach {
+            assertNotNull(registry.nodeSpecs.resolve(it.type))
+            assertNotNull(registry.nodeExecutors.resolve(it.type))
+        }
+    }
+
+    @Test
+    fun audioAndVideoHandlesAreNotConnectionCompatible() {
+        assertFalse(WorkflowTypeCompatibility.isCompatible(MediaTypes.videoHandle, MediaTypes.audioHandle))
+        assertFalse(WorkflowTypeCompatibility.isCompatible(MediaTypes.audioHandle, MediaTypes.videoHandle))
+    }
+
+    @Test
+    fun executorsMapTypedInputsAndOutputs() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaCorePlugin(backend))
+        }
+
+        val imported = registry.nodeExecutors.resolve(MediaCoreSpecs.videoImport.type)!!.execute(
+            mapOf("path" to WorkflowValue.StringValue("/media/input.mp4")),
+        )
+        assertEquals(WorkflowValue.IntValue(1920), imported["width"])
+        assertEquals("/media/input.mp4", MediaTypes.path(imported["video"], "video"))
+
+        val mixed = registry.nodeExecutors.resolve(MediaCoreSpecs.audioMix.type)!!.execute(
+            mapOf(
+                "audio_tracks" to WorkflowValue.ListValue(
+                    listOf(
+                        MediaTypes.audioValue("/media/a.wav"),
+                        MediaTypes.audioValue("/media/b.wav"),
+                    ),
+                ),
+                "volumes" to WorkflowValue.ListValue(
+                    listOf(WorkflowValue.DoubleValue(1.0), WorkflowValue.DoubleValue(0.5)),
+                ),
+            ),
+        )
+        assertEquals(listOf("/media/a.wav", "/media/b.wav"), backend.lastAudioPaths)
+        assertEquals(listOf(1.0, 0.5), backend.lastVolumes)
+        assertIs<WorkflowValue.RecordValue>(mixed["audio"])
+
+        val encoded = registry.nodeExecutors.resolve(MediaCoreSpecs.videoEncode.type)!!.execute(
+            mapOf(
+                "video" to MediaTypes.videoValue("/media/input.mp4"),
+                "audio" to MediaTypes.audioValue("/media/a.wav"),
+                "output_path" to WorkflowValue.StringValue("/media/output.mp4"),
+                "bitrate" to WorkflowValue.StringValue("medium"),
+                "codec" to WorkflowValue.StringValue("h264"),
+            ),
+        )
+        assertEquals(WorkflowValue.StringValue("/media/output.mp4"), encoded["file_path"])
+        assertEquals(WorkflowValue.DoubleValue(1234.0), encoded["size_bytes"])
+        assertEquals("medium", backend.lastBitrate)
+    }
+}
+
+private class FakeMediaCoreBackend : MediaCoreBackend {
+    var lastAudioPaths: List<String> = emptyList()
+    var lastVolumes: List<Double> = emptyList()
+    var lastBitrate: String? = null
+
+    override suspend fun inspectVideo(path: String) =
+        VideoMetadata(path, width = 1920, height = 1080, durationMs = 1_000.0, fps = 30.0, frameCount = 30)
+
+    override suspend fun extractAudio(videoPath: String) =
+        AudioMetadata("/media/extracted.wav", sampleRate = 48_000, durationMs = 1_000.0)
+
+    override suspend fun mixAudio(audioPaths: List<String>, volumes: List<Double>): AudioMetadata {
+        lastAudioPaths = audioPaths
+        lastVolumes = volumes
+        return AudioMetadata("/media/mixed.wav", sampleRate = 48_000, durationMs = 1_000.0)
+    }
+
+    override suspend fun stitchVideos(videoPaths: List<String>) =
+        VideoMetadata("/media/stitched.mp4", 1920, 1080, 2_000.0, 30.0, 60)
+
+    override suspend fun encodeVideo(
+        videoPath: String,
+        audioPath: String?,
+        outputPath: String,
+        bitrate: String,
+        codec: String,
+    ): EncodedVideo {
+        lastBitrate = bitrate
+        return EncodedVideo(outputPath, sizeBytes = 1234, durationMs = 1_000.0)
+    }
+}

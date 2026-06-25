@@ -26,3 +26,6 @@ Related:
 - [Test Coverage Matrix](./test-coverage.md)
 - [Code Audit — File Size](./code-audit.md)
 - [Plans](../plans/README.md)
+
+Feature Plans:
+- [Media Workflow Plugin Suite](./media-workflow-plan.md) — Phase 1: video/audio I/O + TTS; Phase 2: captions & composition; Phase 3: advanced processing

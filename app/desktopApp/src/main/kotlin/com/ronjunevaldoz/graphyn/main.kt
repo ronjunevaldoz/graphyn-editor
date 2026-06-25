@@ -17,7 +17,10 @@ fun main() = application {
         title = "Graphyn",
     ) {
         DemoApp(
-            runtimePlugins = GraphynBootstrap.runtimePlugins(extraPlugins = listOf(ScriptPlugin, GmailPlugin, LinkedInPlugin)),
+            runtimePlugins = GraphynBootstrap.runtimePlugins(
+                extraPlugins = listOf(ScriptPlugin, GmailPlugin, LinkedInPlugin) +
+                    GraphynBootstrapJvm.mediaRuntimePlugins,
+            ),
             editorPlugins  = GraphynBootstrap.editorPlugins(extraPlugins = listOf(ScriptEditorPlugin) + GraphynBootstrapJvm.serviceIntegrationEditorPlugins),
             store = store,
         )

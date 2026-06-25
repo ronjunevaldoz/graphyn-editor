@@ -1,7 +1,7 @@
 package com.ronjunevaldoz.graphyn.core.store
 
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
