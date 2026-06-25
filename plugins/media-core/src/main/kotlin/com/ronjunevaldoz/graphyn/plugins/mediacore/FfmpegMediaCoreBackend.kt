@@ -39,6 +39,18 @@ class FfmpegMediaCoreBackend(
         )
     }
 
+    override suspend fun inspectImage(path: String): ImageMetadata {
+        val source = requireFile(path, "Image")
+        val root = probe(
+            "-select_streams", "v:0",
+            "-show_entries", "stream=width,height",
+            source.absolutePath,
+        )
+        val stream = root["streams"]?.jsonArray?.firstOrNull()?.jsonObject
+            ?: error("No image stream found in ${source.absolutePath}.")
+        return ImageMetadata(path = source.absolutePath, width = stream.int("width"), height = stream.int("height"))
+    }
+
     override suspend fun extractAudio(videoPath: String): AudioMetadata {
         val source = requireFile(videoPath, "Video")
         val output = tempFile("audio-extract", "wav")

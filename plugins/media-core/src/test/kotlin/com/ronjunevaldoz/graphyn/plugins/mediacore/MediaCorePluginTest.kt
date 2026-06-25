@@ -18,7 +18,7 @@ class MediaCorePluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(10, registry.nodeSpecs.all().size)
+        assertEquals(11, registry.nodeSpecs.all().size)
         (MediaCoreSpecs.all + MediaCompositionSpecs.all).forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
@@ -183,6 +183,8 @@ private class FakeMediaCoreBackend : MediaCoreBackend {
 
     override suspend fun inspectVideo(path: String) =
         VideoMetadata(path, width = 1920, height = 1080, durationMs = 1_000.0, fps = 30.0, frameCount = 30)
+
+    override suspend fun inspectImage(path: String) = ImageMetadata(path, width = 640, height = 480)
 
     override suspend fun extractAudio(videoPath: String) =
         AudioMetadata("/media/extracted.wav", sampleRate = 48_000, durationMs = 1_000.0)

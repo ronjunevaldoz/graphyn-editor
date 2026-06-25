@@ -23,6 +23,12 @@ data class EncodedVideo(
     val durationMs: Double,
 )
 
+data class ImageMetadata(
+    val path: String,
+    val width: Int,
+    val height: Int,
+)
+
 /** A single timed caption line, in milliseconds relative to the start of the video. */
 data class Caption(
     val text: String,
@@ -50,6 +56,7 @@ data class VideoOverlay(
 
 interface MediaCoreBackend {
     suspend fun inspectVideo(path: String): VideoMetadata
+    suspend fun inspectImage(path: String): ImageMetadata
     suspend fun extractAudio(videoPath: String): AudioMetadata
     suspend fun mixAudio(audioPaths: List<String>, volumes: List<Double>): AudioMetadata
     suspend fun stitchVideos(videoPaths: List<String>): VideoMetadata

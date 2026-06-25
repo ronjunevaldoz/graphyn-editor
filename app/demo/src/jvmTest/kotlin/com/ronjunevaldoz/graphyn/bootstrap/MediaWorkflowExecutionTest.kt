@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.execution.DefaultNodeExecutorRegistry
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionResult
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCompositionTypes
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaTypes
 import java.util.Collections
 import kotlinx.coroutines.test.runTest
@@ -117,6 +118,27 @@ class MediaWorkflowExecutionTest {
         )
         assertEquals(stringValue("stitched.mp4"), result.output("output", "file_path"))
     }
+
+    @Test
+    fun captionedVideoExecutesEndToEnd() = runTest {
+        val fixture = MediaExecutionFixture()
+
+        val result = fixture.execute(DemoScene.Captioned)
+
+        result.assertFullSuccess(expectedNodeCount = 9)
+        assertEquals(2, fixture.lastCaptionCount)
+        assertEquals(
+            EncodeCall(
+                videoPath = "/generated/captioned.mp4",
+                audioPath = null,
+                outputPath = "captioned.mp4",
+                bitrate = "high",
+                codec = "h264",
+            ),
+            fixture.lastEncodeCall,
+        )
+        assertEquals(stringValue("captioned.mp4"), result.output("encode", "file_path"))
+    }
 }
 
 private class MediaExecutionFixture {
@@ -125,6 +147,7 @@ private class MediaExecutionFixture {
     var lastAudioMixPaths: List<String> = emptyList()
     var lastStitchPaths: List<String> = emptyList()
     var lastEncodeCall: EncodeCall? = null
+    var lastCaptionCount: Int = 0
 
     private val executors = DefaultNodeExecutorRegistry().apply {
         register("io.resolve_path") { inputs ->
@@ -238,6 +261,23 @@ private class MediaExecutionFixture {
         }
         register("preview.view") { inputs ->
             mapOf("value" to (inputs["value"] ?: WorkflowValue.NullValue))
+        }
+        register("media.speech_to_text") { inputs ->
+            val audioName = MediaTypes.path(inputs["audio"], "audio").substringAfterLast('/')
+            mapOf(
+                "text" to stringValue("transcript of $audioName"),
+                "confidence" to WorkflowValue.DoubleValue(0.9),
+                "segments" to MediaCompositionTypes.captionList(
+                    listOf(Triple("hello", 0.0, 1_000.0), Triple("world", 1_000.0, 2_000.0)),
+                ),
+            )
+        }
+        register("media.caption_overlay") { inputs ->
+            lastCaptionCount = (inputs["captions"] as WorkflowValue.ListValue).items.size
+            mapOf(
+                "video" to MediaTypes.videoValue("/generated/captioned.mp4"),
+                "duration_ms" to WorkflowValue.DoubleValue(90_000.0),
+            )
         }
         // Annotation node: no data ports, executes as a no-op (mirrors StickyNotePlugin).
         register("graphyn.sticky_note") { emptyMap() }

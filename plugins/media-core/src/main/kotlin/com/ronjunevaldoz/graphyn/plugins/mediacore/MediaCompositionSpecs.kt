@@ -5,10 +5,24 @@ import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 
 /**
- * Phase 2 captioning and composition specs. Kept in a dedicated object so [MediaCoreSpecs] stays
- * focused on the Phase 1 decode/encode primitives and every spec file stays under the size ceiling.
+ * Phase 2 captioning, composition, and image specs. Kept in a dedicated object so [MediaCoreSpecs]
+ * stays focused on the Phase 1 decode/encode primitives and every spec file stays under the size
+ * ceiling.
  */
 object MediaCompositionSpecs {
+    val imageImport = NodeSpec(
+        type = "media.image_import",
+        label = "Image Import",
+        description = "Loads a local image handle and reads its pixel dimensions with ffprobe.",
+        category = CATEGORY_MEDIA_VIDEO,
+        inputs = listOf(PortSpec("path", WorkflowType.StringType, description = "Local image path")),
+        outputs = listOf(
+            PortSpec("image", MediaTypes.imageHandle),
+            PortSpec("width", WorkflowType.IntType),
+            PortSpec("height", WorkflowType.IntType),
+        ),
+    )
+
     val captionStyleType = WorkflowType.RecordType(
         mapOf(
             "color" to WorkflowType.StringType,
@@ -62,5 +76,5 @@ object MediaCompositionSpecs {
         outputs = listOf(PortSpec("config", MediaCompositionTypes.timingConfig)),
     )
 
-    val all = listOf(captionOverlay, videoCompose, timingController)
+    val all = listOf(imageImport, captionOverlay, videoCompose, timingController)
 }

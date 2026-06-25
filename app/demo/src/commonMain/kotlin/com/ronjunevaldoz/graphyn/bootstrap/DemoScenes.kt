@@ -42,4 +42,5 @@ enum class DemoScene(val label: String, val workflow: WorkflowDefinition) {
     AudioMix("Audio Mix",               audioMixWorkflow),
     SmartEncode("Smart Encode",         smartEncodeWorkflow),
     VideoStitch("Video Stitch",         videoStitchWorkflow),
+    Captioned("Captioned Video",        captionedVideoWorkflow),
 }
