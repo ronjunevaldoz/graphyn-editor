@@ -11,16 +11,11 @@ import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCard
-import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardFooter
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardHeader
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardPorts
-import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodeCardSlots
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodePortDots
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
+import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
 
 @Composable
 internal fun GraphynNodeLayer(
@@ -37,90 +32,64 @@ internal fun GraphynNodeLayer(
         val factory = canvasCards?.resolve(node.type) ?: return@forEachIndexed
         if (!factory.isAnnotation) return@forEachIndexed
         val position = state.nodePosition(node.id, index)
-        val ctx = NodeCanvasContext(
-            node = node, spec = spec,
-            selected = state.selectedNodeId == node.id,
-            executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
-            onSelect = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
-            onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
-            onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
-            contentColor = GraphynDs.colors.textPrimary,
-            onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
-            executionOutputs = state.outputsFor(node.id),
-        )
+        val ctx = nodeCanvasContext(node, spec, state, onEnterSubgraph)
         Box(modifier = Modifier.offset { position }) {
             with(factory) { NodeCanvas(ctx) }
         }
     }
 
-    // Pass 2: regular nodes on top
+    // Pass 2: regular nodes on top. Every node resolves to a factory — a host-registered card,
+    // a subgraph card, or a default FieldCardFactory sized from its spec.
     workflow.nodes.forEachIndexed { index, node ->
         val spec = resolveSpec(node, nodeSpecs)
         val position = state.nodePosition(node.id, index)
-        val factory = spec?.let { resolveNodeFactory(node, canvasCards, nodeSpecs) }
-        if (factory?.isAnnotation == true) return@forEachIndexed
+        val factory = resolveNodeFactory(node, canvasCards, nodeSpecs)
+            ?: FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+        if (factory.isAnnotation) return@forEachIndexed
 
-        if (factory != null && spec != null) {
-            val ctx = NodeCanvasContext(
-                node = node,
-                spec = spec,
-                selected = state.selectedNodeId == node.id,
-                executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
-                onSelect = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
-                onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
-                onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
-                contentColor = GraphynDs.colors.textPrimary,
-                onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
-                executionOutputs = state.outputsFor(node.id),
-            )
-            Box(modifier = Modifier.offset { position }) {
-                with(factory) { NodeCanvas(ctx) }
-            }
-        } else {
-            GraphynNodeCard(
-                modifier = Modifier.offset { position },
-                selected = state.selectedNodeId == node.id,
-                executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
-                onClick = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
-                onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
-                slots = GraphynNodeCardSlots(
-                    header = { GraphynNodeCardHeader(node = node, spec = spec) },
-                    ports = { GraphynNodeCardPorts(spec = spec) },
-                    footer = {
-                        GraphynNodeCardFooter(
-                            outputs = state.outputsFor(node.id),
-                            flattenedOutputs = state.flattenedOutputsFor(node.id),
-                            isConnectingFrom = state.connectionDraft?.fromNodeId == node.id,
-                        )
-                    },
-                ),
-            )
+        val ctx = nodeCanvasContext(node, spec, state, onEnterSubgraph)
+        Box(modifier = Modifier.offset { position }) {
+            with(factory) { NodeCanvas(ctx) }
         }
 
-        if (spec != null) {
-            val nodeWidthDp = factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width
-            val inputAnchorYs = spec.inputs.mapIndexed { i, _ ->
-                factory?.portAnchorY(i, true, spec) ?: GraphynCanvasMetrics.portAnchorY(i)
-            }
-            val outputAnchorYs = spec.outputs.mapIndexed { i, _ ->
-                factory?.portAnchorY(i, false, spec) ?: GraphynCanvasMetrics.portAnchorY(i)
-            }
-            GraphynNodePortDots(
-                node = node, position = position, spec = spec,
-                inputAnchorYs = inputAnchorYs,
-                outputAnchorYs = outputAnchorYs,
-                nodeWidthDp = nodeWidthDp,
-                state = state, workflow = workflow, nodeSpecs = nodeSpecs,
-                surfaceColor = surfaceColor,
-            )
-        }
+        val inputAnchorYs = spec.inputs.mapIndexed { i, _ -> factory.portAnchorY(i, true, spec) }
+        val outputAnchorYs = spec.outputs.mapIndexed { i, _ -> factory.portAnchorY(i, false, spec) }
+        GraphynNodePortDots(
+            node = node, position = position, spec = spec,
+            inputAnchorYs = inputAnchorYs,
+            outputAnchorYs = outputAnchorYs,
+            nodeWidthDp = factory.nodeWidth,
+            state = state, workflow = workflow, nodeSpecs = nodeSpecs,
+            surfaceColor = surfaceColor,
+        )
     }
 }
 
+@Composable
+private fun nodeCanvasContext(
+    node: NodeRef,
+    spec: NodeSpec,
+    state: GraphynEditorState,
+    onEnterSubgraph: ((label: String, inner: WorkflowDefinition) -> Unit)?,
+): NodeCanvasContext = NodeCanvasContext(
+    node = node,
+    spec = spec,
+    selected = state.selectedNodeId == node.id,
+    executionStatus = state.executionStatusByNodeId[node.id] ?: NodeExecutionStatus.Idle,
+    onSelect = { state.dispatch(GraphynEditorIntent.SelectNode(node.id)) },
+    onMove = { delta -> state.dispatch(GraphynEditorIntent.MoveNode(nodeId = node.id, delta = delta)) },
+    onConfigChange = { key, value -> state.dispatch(GraphynEditorIntent.UpdateNodeConfig(node.id, key, value)) },
+    contentColor = GraphynDs.colors.textPrimary,
+    onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
+    executionOutputs = state.outputsFor(node.id),
+)
+
 /**
  * Resolves a node's spec, falling back to a boundary-derived spec for editor-created subgraph
- * nodes (which have no statically-registered spec). A registered spec always wins, so demo
- * subgraph nodes with their own spec are unaffected.
+ * nodes (which have no statically-registered spec), and finally to a minimal placeholder spec for
+ * an unknown node type so it still renders as an empty titled card. A registered spec always wins.
  */
-private fun resolveSpec(node: NodeRef, nodeSpecs: NodeSpecRegistry): NodeSpec? =
-    nodeSpecs.resolve(node.type) ?: deriveSubgraphSpec(node, nodeSpecs)
+private fun resolveSpec(node: NodeRef, nodeSpecs: NodeSpecRegistry): NodeSpec =
+    nodeSpecs.resolve(node.type)
+        ?: deriveSubgraphSpec(node, nodeSpecs)
+        ?: NodeSpec(type = node.type, label = node.type, inputs = emptyList(), outputs = emptyList())

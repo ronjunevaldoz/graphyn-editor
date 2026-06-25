@@ -31,6 +31,7 @@ import kotlinx.coroutines.delay
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeShape
+import com.ronjunevaldoz.graphyn.editor.canvas.resolveNodeFactory
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.calculateMinimapLayout
@@ -110,7 +111,7 @@ internal fun GraphynMinimapDebugger(
             val nodes = workflow?.nodes.orEmpty()
             nodes.forEachIndexed { index, node ->
                 val position = nodePositions.getOrNull(index) ?: return@forEachIndexed
-                val factory = canvasCards?.resolve(node.type)
+                val factory = resolveNodeFactory(node, canvasCards, state.nodeSpecs)
                 if (factory?.isAnnotation == true) return@forEachIndexed
                 val nodeW = (factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width).toFloat()
                 val nodeH = (factory?.nodeHeight ?: GraphynCanvasMetrics.NodeSize.height).toFloat()

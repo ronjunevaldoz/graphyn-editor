@@ -61,6 +61,7 @@ kotlin {
             api(projects.ai)
             api(projects.editorApi)
             api(projects.pluginApi)
+            api(projects.ui.cards)
             implementation(projects.plugins.sampleLogger)
             implementation(projects.plugins.sampleLoggerUi)
             implementation(libs.compose.runtime)

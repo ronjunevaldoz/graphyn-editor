@@ -7,7 +7,8 @@ object GraphynCanvasMetrics {
     const val PortDotDiameter = 12
     const val PortDotRadius = PortDotDiameter / 2
 
-    // Estimated dp offsets from card top matching GraphynNodeCard layout:
+    // Estimated dp offsets from card top, used only as a fallback for nodes with no resolved
+    // canvas factory (e.g. unknown node types):
     // 16dp top padding + ~44dp header + 10dp gap = 70dp to port section
     // labelMedium 16dp + 6dp gap + half bubble (16dp) = 38dp to first port center
     private const val PortSectionTopDp = 70
