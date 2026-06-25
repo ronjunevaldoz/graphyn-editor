@@ -16,14 +16,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 
 @Composable
-internal fun PaletteNodeItem(spec: NodeSpec, onAdd: (NodeSpec) -> Unit) {
+internal fun PaletteNodeItem(spec: NodeSpec, indent: Dp = 0.dp, onAdd: (NodeSpec) -> Unit) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
     val interactionSource = remember { MutableInteractionSource() }
@@ -31,7 +31,7 @@ internal fun PaletteNodeItem(spec: NodeSpec, onAdd: (NodeSpec) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(interactionSource = interactionSource, indication = null) { onAdd(spec) }
-            .padding(start = 24.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = 24.dp + indent, end = 12.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -45,15 +45,11 @@ internal fun PaletteNodeItem(spec: NodeSpec, onAdd: (NodeSpec) -> Unit) {
     }
 }
 
+/** A collapsible parent folder grouping several categories (e.g. "Socials"). */
 @Composable
-internal fun PaletteCategoryHeader(
-    meta: NodeCategoryMeta,
-    expanded: Boolean,
-    onToggle: () -> Unit,
-) {
+internal fun PaletteFolderHeader(label: String, expanded: Boolean, onToggle: () -> Unit) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
-    val accent = Color(meta.color)
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
@@ -63,11 +59,39 @@ internal fun PaletteCategoryHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        BasicText(text = if (expanded) "▾" else "▸", style = type.bodySmall.copy(color = colors.textDisabled))
+        BasicText(
+            text = label,
+            style = type.panelTitle.copy(color = colors.textSecondary),
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+internal fun PaletteCategoryHeader(
+    meta: NodeCategoryMeta,
+    expanded: Boolean,
+    indent: Dp = 0.dp,
+    onToggle: () -> Unit,
+) {
+    val colors = GraphynDs.colors
+    val type = GraphynDs.type
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onToggle)
+            .padding(start = 12.dp + indent, end = 12.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Neutral marker — category identity comes from the label, not a per-brand colour.
         Box(
             modifier = Modifier
                 .size(8.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(accent),
+                .background(colors.textDisabled),
         )
         BasicText(
             text = meta.label,

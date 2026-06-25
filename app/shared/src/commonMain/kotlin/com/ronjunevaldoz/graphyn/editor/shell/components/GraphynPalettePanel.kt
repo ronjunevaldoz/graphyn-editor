@@ -89,23 +89,13 @@ internal fun GraphynPalettePanel(
             if (query.isNotBlank() || categoryRegistry == null) {
                 filtered.forEach { PaletteNodeItem(spec = it, onAdd = onAddNode) }
             } else {
-                val grouped = filtered.groupBy { it.category }
-                val uncategorized = grouped[null].orEmpty()
-                val allCategories = categoryRegistry.all()
-                val categorized = allCategories.entries
-                    .filter { (id, _) -> grouped.containsKey(id) }
-                    .sortedBy { it.value.label }
-
-                categorized.forEach { (id, meta) ->
-                    val isExpanded = id in expanded
-                    PaletteCategoryHeader(meta = meta, expanded = isExpanded) {
-                        expanded = if (isExpanded) expanded - id else expanded + id
-                    }
-                    if (isExpanded) {
-                        grouped[id]?.forEach { PaletteNodeItem(spec = it, onAdd = onAddNode) }
-                    }
-                }
-                uncategorized.forEach { PaletteNodeItem(spec = it, onAdd = onAddNode) }
+                PaletteCategoryTree(
+                    grouped = filtered.groupBy { it.category },
+                    categories = categoryRegistry.all(),
+                    expanded = expanded,
+                    onToggle = { key -> expanded = if (key in expanded) expanded - key else expanded + key },
+                    onAddNode = onAddNode,
+                )
             }
         }
     }
