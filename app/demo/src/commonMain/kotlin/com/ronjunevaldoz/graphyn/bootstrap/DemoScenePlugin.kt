@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.bootstrap
 
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -91,8 +92,8 @@ object DemoSceneEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(specFilterIf.type, shape)
         registrar.registerCanvasCard(specHttpRequestDemo.type, ShapeCardFactory(inlineInputRows = 2))
         registrar.registerCanvasCard(specLogOutput.type, shape)
-        registrar.registerCategory(CATEGORY_AI,         NodeCategoryMeta("AI",         PORT_MODEL))
-        registrar.registerCategory(CATEGORY_GEOMETRY,   NodeCategoryMeta("Geometry",   0xFF3DC95AL))
-        registrar.registerCategory(CATEGORY_AUTOMATION, NodeCategoryMeta("Automation", 0xFFFF9900L))
+        registrar.registerCategory(CATEGORY_AI,         NodeCategoryMeta("AI",         PORT_MODEL,   group = NodeGroups.CREATIVE))
+        registrar.registerCategory(CATEGORY_GEOMETRY,   NodeCategoryMeta("Geometry",   0xFF3DC95AL, group = NodeGroups.CREATIVE))
+        registrar.registerCategory(CATEGORY_AUTOMATION, NodeCategoryMeta("Automation", 0xFFFF9900L, group = NodeGroups.FLOW))
     }
 }

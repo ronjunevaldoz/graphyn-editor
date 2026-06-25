@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.json
 
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -19,6 +20,6 @@ object JsonEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(specJsonParse.type, FieldCardFactory(inputRows = 1, outputRows = 2))
         registrar.registerCanvasCard(specJsonStringify.type, FieldCardFactory(inputRows = 2, outputRows = 1))
         registrar.registerCanvasCard(specJsonPath.type, FieldCardFactory(inputRows = 2, outputRows = 2))
-        registrar.registerCategory(CATEGORY_JSON, NodeCategoryMeta("JSON", 0xFFFBBF24L))
+        registrar.registerCategory(CATEGORY_JSON, NodeCategoryMeta("JSON", 0xFFFBBF24L, group = NodeGroups.DATA))
     }
 }
