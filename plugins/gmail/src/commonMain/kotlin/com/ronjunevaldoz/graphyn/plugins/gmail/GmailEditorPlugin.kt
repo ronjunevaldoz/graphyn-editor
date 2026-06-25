@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.gmail
 
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -33,10 +34,9 @@ object GmailEditorPlugin : GraphynEditorPlugin {
         // Register category
         registrar.registerCategory(
             GmailNodeSpecs.CATEGORY,
-            NodeCategoryMeta("Gmail", COLOR_GMAIL, group = SOCIALS_GROUP)
+            NodeCategoryMeta("Gmail", COLOR_GMAIL, group = NodeGroups.SOCIALS)
         )
     }
 }
 
-private const val SOCIALS_GROUP = "Socials"
 private const val COLOR_GMAIL = 0xFF4285F4  // Gmail blue

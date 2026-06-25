@@ -18,6 +18,18 @@ data class NodeCategoryMeta(
 )
 
 /**
+ * Standard parent-folder names for [NodeCategoryMeta.group]. Categories that pass the same value
+ * nest under one collapsible folder in the palette. Using these constants — instead of repeating
+ * raw strings per plugin — keeps the palette taxonomy consistent and renameable in one place.
+ */
+object NodeGroups {
+    const val SOCIALS = "Socials"
+    const val DATA = "Data"
+    const val FLOW = "Flow"
+    const val CREATIVE = "Creative"
+}
+
+/**
  * Maps category id strings to their [NodeCategoryMeta] for palette grouping.
  *
  * Register categories via [GraphynEditorPluginRegistrar.registerCategory].

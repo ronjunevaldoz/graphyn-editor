@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.script
 
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -17,6 +18,6 @@ object ScriptEditorPlugin : GraphynEditorPlugin {
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
         registrar.registerCanvasCard(specScriptEval.type, ScriptCardFactory)
-        registrar.registerCategory(CATEGORY_SCRIPT, NodeCategoryMeta("Script", 0xFFA78BFAL))
+        registrar.registerCategory(CATEGORY_SCRIPT, NodeCategoryMeta("Script", 0xFFA78BFAL, group = NodeGroups.FLOW))
     }
 }

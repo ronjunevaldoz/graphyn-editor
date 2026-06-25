@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.types
 
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -19,6 +20,6 @@ object TypesEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(specCast.type, FieldCardFactory(inputRows = 2, outputRows = 1))
         registrar.registerCanvasCard(specValidate.type, FieldCardFactory(inputRows = 2, outputRows = 2))
         registrar.registerCanvasCard(specSchema.type, FieldCardFactory(inputRows = 1, outputRows = 1))
-        registrar.registerCategory(CATEGORY_TYPES, NodeCategoryMeta("Types", 0xFF4ADE80L))
+        registrar.registerCategory(CATEGORY_TYPES, NodeCategoryMeta("Types", 0xFF4ADE80L, group = NodeGroups.DATA))
     }
 }

@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.linkedin
 
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -29,10 +30,9 @@ object LinkedInEditorPlugin : GraphynEditorPlugin {
 
         registrar.registerCategory(
             LinkedInNodeSpecs.CATEGORY,
-            NodeCategoryMeta("LinkedIn", COLOR_LINKEDIN, group = SOCIALS_GROUP)
+            NodeCategoryMeta("LinkedIn", COLOR_LINKEDIN, group = NodeGroups.SOCIALS)
         )
     }
 }
 
-private const val SOCIALS_GROUP = "Socials"
 private const val COLOR_LINKEDIN = 0xFF0A66C2  // LinkedIn blue

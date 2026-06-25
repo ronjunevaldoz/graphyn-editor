@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.stylenodes
 
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -24,11 +25,11 @@ object StyleNodesEditorPlugin : GraphynEditorPlugin {
             FieldCardFactory(inputRows = 5, outputRows = 1)
         )
         registrar.registerCanvasCard(StyleNodesSpecs.webhook.type, ShapeCardFactory())
-        registrar.registerCategory(CATEGORY_AI, NodeCategoryMeta("AI", COLOR_MODEL))
-        registrar.registerCategory(CATEGORY_GEOMETRY, NodeCategoryMeta("Geometry", COLOR_GEOMETRY))
+        registrar.registerCategory(CATEGORY_AI, NodeCategoryMeta("AI", COLOR_MODEL, group = NodeGroups.CREATIVE))
+        registrar.registerCategory(CATEGORY_GEOMETRY, NodeCategoryMeta("Geometry", COLOR_GEOMETRY, group = NodeGroups.CREATIVE))
         registrar.registerCategory(
             CATEGORY_AUTOMATION,
-            NodeCategoryMeta("Automation", COLOR_CONDITIONING)
+            NodeCategoryMeta("Automation", COLOR_CONDITIONING, group = NodeGroups.FLOW)
         )
     }
 }

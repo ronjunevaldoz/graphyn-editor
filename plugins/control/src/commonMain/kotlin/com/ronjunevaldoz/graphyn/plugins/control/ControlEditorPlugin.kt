@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.control
 
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
+import com.ronjunevaldoz.graphyn.editor.canvas.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPluginMetadata
@@ -19,6 +20,6 @@ object ControlEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(specBranch.type, FieldCardFactory(inputRows = 2, outputRows = 2))
         registrar.registerCanvasCard(specMerge.type, FieldCardFactory(inputRows = 2, outputRows = 1))
         registrar.registerCanvasCard(specLoop.type, FieldCardFactory(inputRows = 1, outputRows = 2))
-        registrar.registerCategory(CATEGORY_CONTROL, NodeCategoryMeta("Control", 0xFFF9A825L))
+        registrar.registerCategory(CATEGORY_CONTROL, NodeCategoryMeta("Control", 0xFFF9A825L, group = NodeGroups.FLOW))
     }
 }
