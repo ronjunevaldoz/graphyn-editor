@@ -10,6 +10,9 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
  * Credentials referenced by scope:key (e.g., "linkedin:main") are resolved by the execution environment.
  */
 object LinkedInNodeSpecs {
+    /** Palette category id shared with [LinkedInEditorPlugin] so specs group under the LinkedIn category. */
+    const val CATEGORY = "graphyn.linkedin"
+
     private val linkedInFetchProfileInputs = listOf(
         PortSpec(name = "credential", type = WorkflowType.StringType, required = true),
     )
@@ -24,6 +27,7 @@ object LinkedInNodeSpecs {
     val linkedInFetchProfile = NodeSpec(
         type = "linkedin.fetch_profile",
         label = "Fetch Profile",
+        category = CATEGORY,
         inputs = linkedInFetchProfileInputs,
         outputs = linkedInFetchProfileOutputs,
     )
@@ -43,6 +47,7 @@ object LinkedInNodeSpecs {
     val linkedInPostFeed = NodeSpec(
         type = "linkedin.post_feed",
         label = "Post to Feed",
+        category = CATEGORY,
         inputs = linkedInPostFeedInputs,
         outputs = linkedInPostFeedOutputs,
     )
@@ -71,6 +76,7 @@ object LinkedInNodeSpecs {
     val linkedInGetFeed = NodeSpec(
         type = "linkedin.get_feed",
         label = "Get Feed",
+        category = CATEGORY,
         inputs = linkedInGetFeedInputs,
         outputs = linkedInGetFeedOutputs,
         defaultValues = linkedInGetFeedDefaults,
@@ -99,6 +105,7 @@ object LinkedInNodeSpecs {
     val linkedInGetConnections = NodeSpec(
         type = "linkedin.get_connections",
         label = "Get Connections",
+        category = CATEGORY,
         inputs = linkedInGetConnectionsInputs,
         outputs = linkedInGetConnectionsOutputs,
         defaultValues = linkedInGetConnectionsDefaults,
@@ -119,6 +126,7 @@ object LinkedInNodeSpecs {
     val linkedInSendMessage = NodeSpec(
         type = "linkedin.send_message",
         label = "Send Message",
+        category = CATEGORY,
         inputs = linkedInSendMessageInputs,
         outputs = linkedInSendMessageOutputs,
     )
@@ -136,6 +144,7 @@ object LinkedInNodeSpecs {
     val linkedInLikePost = NodeSpec(
         type = "linkedin.like_post",
         label = "Like Post",
+        category = CATEGORY,
         inputs = linkedInLikePostInputs,
         outputs = linkedInLikePostOutputs,
     )
@@ -165,6 +174,7 @@ object LinkedInNodeSpecs {
     val linkedInSearchPosts = NodeSpec(
         type = "linkedin.search_posts",
         label = "Search Posts",
+        category = CATEGORY,
         inputs = linkedInSearchInputs,
         outputs = linkedInSearchOutputs,
         defaultValues = linkedInSearchDefaults,

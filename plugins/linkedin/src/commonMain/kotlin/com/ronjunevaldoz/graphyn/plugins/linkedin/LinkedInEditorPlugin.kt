@@ -28,12 +28,11 @@ object LinkedInEditorPlugin : GraphynEditorPlugin {
         }
 
         registrar.registerCategory(
-            LINKEDIN_CATEGORY,
+            LinkedInNodeSpecs.CATEGORY,
             NodeCategoryMeta("LinkedIn", COLOR_LINKEDIN, group = SOCIALS_GROUP)
         )
     }
 }
 
-private const val LINKEDIN_CATEGORY = "graphyn.linkedin"
 private const val SOCIALS_GROUP = "Socials"
 private const val COLOR_LINKEDIN = 0xFF0A66C2  // LinkedIn blue
