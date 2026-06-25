@@ -136,9 +136,9 @@ internal val apiIngestionDemoWorkflow = WorkflowDefinition(
     ),
 )
 
-// Media sample fixtures live under app/demo resources; paths resolve via io.resolve_path so they
+// Media sample fixtures live under app/app resources; paths resolve via io.resolve_path so they
 // work regardless of the process working directory.
-internal const val MEDIA_DIR = "../../app/demo/src/commonMain/resources/media"
+internal const val MEDIA_DIR = "../../app/app/src/commonMain/resources/media"
 
 /**
  * On-canvas guide note shown beside each media template. Auto-layout parks annotation nodes in a

@@ -18,9 +18,9 @@ The full, production-grade workflow editor. This is the app you build and ship t
 - Subgraph drill-in navigation
 - Full theme / appearance controls
 
-This app is backed by `app/demo` which owns plugin registration and demo workflow definitions.
+This app is backed by `app/app` which owns plugin registration and demo workflow definitions.
 Production features (file open/save, recent files, unsaved-changes confirmation) are being
-added to `app/desktopApp` directly — not to `app/demo`.
+added to `app/desktopApp` directly — not to `app/app`.
 
 ---
 
@@ -42,7 +42,7 @@ Source: [`app/sample/src/main/kotlin/com/ronjunevaldoz/graphyn/sample/SampleApp.
 
 ---
 
-## `app/demo` — plugin showcase (not a runnable target)
+## `app/app` — plugin showcase (not a runnable target)
 
 A KMP library module, not a standalone app. It:
 - Registers all first-party plugins into a `GraphynBootstrap` helper

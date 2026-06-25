@@ -40,7 +40,7 @@ Plugin modules (`plugins/*`) are **library modules**, not sample galleries:
 
 - Each plugin contains only its production runtime and editor implementation
 - **Never** add demo workflows, placeholder node specs, or test data to any plugin module
-- If a demo or test needs illustrative nodes, define them as local `WorkflowDefinition` data in `app/demo`
+- If a demo or test needs illustrative nodes, define them as local `WorkflowDefinition` data in `app/app`
 - Plugin specs that exist solely to show a UI shape are fine — but the spec must model a real, named operation, not generic scaffolding
 
 ## style-nodes plugin
@@ -53,7 +53,7 @@ Plugin modules (`plugins/*`) are **library modules**, not sample galleries:
 | `distributePoints` | `FieldCard` | Labelled field rows |
 | `webhook` | `CircleCard` | Compact trigger/sink |
 
-**Do not add domain-specific nodes here.** If a demo needs more nodes, define them as local `WorkflowDefinition` data in `app/demo` — not as registered plugin specs. The plugin's job is to demonstrate card shapes, not to model real workflows.
+**Do not add domain-specific nodes here.** If a demo needs more nodes, define them as local `WorkflowDefinition` data in `app/app` — not as registered plugin specs. The plugin's job is to demonstrate card shapes, not to model real workflows.
 
 ## KDoc
 

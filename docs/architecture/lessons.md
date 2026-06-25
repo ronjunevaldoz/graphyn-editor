@@ -250,7 +250,7 @@ system is exposed via `api`.
 
 ### Rule
 
-**Never import `androidx.compose.material3.*` in `app/demo`.** If a new component needs
+**Never import `androidx.compose.material3.*` in `app/app`.** If a new component needs
 color or text, reach for `GraphynDs` tokens and `BasicText`.
 
 ---
@@ -269,7 +269,7 @@ plugin (15 total), making it look like a real domain library instead of a visual
 ### Rule
 
 `style-nodes` must stay at exactly **3 specs** — one per card shape. Any additional nodes
-needed for a demo live as `WorkflowDefinition` data local to `app/demo`, not as registered
+needed for a demo live as `WorkflowDefinition` data local to `app/app`, not as registered
 plugin specs. See CLAUDE.md § style-nodes plugin.
 
 ---
@@ -369,7 +369,7 @@ color, corner radius, font sizes) belong in a single shared file. Per-card ident
 
 **Problem:** Concepts not yet implemented (e.g., Subgraphs) still benefit from a visual demo. Creating a full plugin module for them (`plugins/subgraph/`) adds an unnecessary module and `settings.gradle.kts` entry for something that is demo-only.
 
-**Fix and rule:** Define demo-only node types (spec + runtime plugin + editor plugin) inside `app/demo/src/commonMain/kotlin/.../bootstrap/` as a single `*DemoPlugin.kt` file. Register them in `GraphynDemoPlugins.runtime` and `GraphynDemoPlugins.editor`. They live and die with the demo module. When a concept matures to production, extract it into a proper `plugins/` module.
+**Fix and rule:** Define demo-only node types (spec + runtime plugin + editor plugin) inside `app/app/src/commonMain/kotlin/.../bootstrap/` as a single `*DemoPlugin.kt` file. Register them in `GraphynDemoPlugins.runtime` and `GraphynDemoPlugins.editor`. They live and die with the demo module. When a concept matures to production, extract it into a proper `plugins/` module.
 
 ---
 
@@ -469,7 +469,7 @@ color, corner radius, font sizes) belong in a single shared file. Per-card ident
 
 **Problem:** `SubgraphCard` rendered `NodeStatusBadge` was completely absent — `ctx.executionStatus` was ignored. The bug was invisible because there was no test specifically for custom card execution state, and the visual gap only shows at runtime when you run a workflow.
 
-**Fix and rule:** Custom cards (`NodeCanvasFactory` implementations) must overlay `NodeStatusBadge` (or `GraphynNodeStatusBadge`) and provide a jvmTest that checks badge text (`"+"`, `"v"`, `"x"`) for each `NodeExecutionStatus` value. `app/demo` can host its own `jvmTest` source set with `compose.desktop.uiTestJUnit4` — no roborazzi plugin needed for behavior-only tests. Pattern for the overlay: wrap the card in `Box(Modifier.size(...))` and add `NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(4.dp), surfaceColor = cardBg)`.
+**Fix and rule:** Custom cards (`NodeCanvasFactory` implementations) must overlay `NodeStatusBadge` (or `GraphynNodeStatusBadge`) and provide a jvmTest that checks badge text (`"+"`, `"v"`, `"x"`) for each `NodeExecutionStatus` value. `app/app` can host its own `jvmTest` source set with `compose.desktop.uiTestJUnit4` — no roborazzi plugin needed for behavior-only tests. Pattern for the overlay: wrap the card in `Box(Modifier.size(...))` and add `NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(4.dp), surfaceColor = cardBg)`.
 
 
 ---
@@ -561,9 +561,9 @@ event — even to the same port — gets a distinct key and a fresh timer.
 
 **Category:** Plugin architecture — KMP boundary
 
-**Problem:** A JVM-only plugin (`plugins/script`) needs a custom `NodeCanvasFactory` with Compose. The plugin can't use `ui:cards` `internal` helpers, and `app/demo` is KMP so it can't host JVM-only UI.
+**Problem:** A JVM-only plugin (`plugins/script`) needs a custom `NodeCanvasFactory` with Compose. The plugin can't use `ui:cards` `internal` helpers, and `app/app` is KMP so it can't host JVM-only UI.
 
-**Fix and rule:** The JVM-only plugin (`kotlinJvm`) depends on `ui:cards` and `editor-api` and defines its own `NodeCanvasFactory` implementation (e.g., `ScriptCardFactory`). The editor plugin registers it via `registrar.registerCanvasCard(type, ScriptCardFactory)`. The KMP `app/demo` module uses the node type string `"script.eval"` with no import — it compiles on all targets. The JVM-only plugin is wired in `app/desktopApp/main.kt` which is already JVM-only.
+**Fix and rule:** The JVM-only plugin (`kotlinJvm`) depends on `ui:cards` and `editor-api` and defines its own `NodeCanvasFactory` implementation (e.g., `ScriptCardFactory`). The editor plugin registers it via `registrar.registerCanvasCard(type, ScriptCardFactory)`. The KMP `app/app` module uses the node type string `"script.eval"` with no import — it compiles on all targets. The JVM-only plugin is wired in `app/desktopApp/main.kt` which is already JVM-only.
 
 ---
 
@@ -824,9 +824,9 @@ a JetBrains library already bridges.
 **Category:** KMP — module dependency graph
 
 **Problem:** `core/build.gradle.kts` declares `implementation(libs.kotlinx.datetime)`.
-Modules that depend on `:core` via `api(projects.core)` (e.g., `app/shared`, `app/demo`)
+Modules that depend on `:core` via `api(projects.core)` (e.g., `app/shared`, `app/app`)
 do not get `Clock.System` transitively — `implementation` deps are not exported.
-Attempting to use `Clock.System.now()` in `app/demo/commonMain` fails to compile.
+Attempting to use `Clock.System.now()` in `app/app/commonMain` fails to compile.
 
 **Rule:** For IDs in `commonMain` without adding a new dep, use `kotlin.random.Random.nextLong()` from the stdlib. Only add `kotlinx-datetime` to a consuming module if it needs clock access beyond what comes through `:core`'s public API.
 

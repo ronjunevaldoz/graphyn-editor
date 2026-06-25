@@ -158,7 +158,7 @@ val pluginRegistry = DefaultGraphynPluginRegistry().apply { installAll(runtimePl
 val editorRegistry = DefaultGraphynEditorPluginRegistry().apply { installAll(editorPlugins) }
 ```
 
-Or if you're using `GraphynBootstrap` from `app/demo`, add them to `GraphynDemoPlugins`.
+Or if you're using `GraphynBootstrap` from `app/app`, add them to `GraphynDemoPlugins`.
 
 ---
 
@@ -193,6 +193,6 @@ class MyPluginTest {
 | Do | Don't |
 |---|---|
 | Model a real, named operation in each spec | Add placeholder or demo-only specs to a plugin |
-| Put demo workflows in `app/demo` | Define sample `WorkflowDefinition` data inside a plugin |
+| Put demo workflows in `app/app` | Define sample `WorkflowDefinition` data inside a plugin |
 | Keep `plugin-api` and `editor-api` separate | Import Compose in a runtime-only plugin |
 | Use `OpaqueType` for untyped pass-through ports | Use `OpaqueType` as a shortcut to avoid thinking about types |

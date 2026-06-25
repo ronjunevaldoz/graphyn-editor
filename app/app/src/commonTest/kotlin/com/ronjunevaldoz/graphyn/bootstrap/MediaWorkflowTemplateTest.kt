@@ -337,6 +337,6 @@ class MediaWorkflowTemplateTest {
     private fun stringValue(value: String) = WorkflowValue.StringValue(value)
 
     private companion object {
-        const val MEDIA_RESOURCES_DIR = "../../app/demo/src/commonMain/resources/media"
+        const val MEDIA_RESOURCES_DIR = "../../app/app/src/commonMain/resources/media"
     }
 }

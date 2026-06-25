@@ -22,7 +22,7 @@ kotlin {
     }
 
     androidLibrary {
-        namespace = "com.ronjunevaldoz.graphyn.demo"
+        namespace = "com.ronjunevaldoz.graphyn.app"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
