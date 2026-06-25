@@ -4,7 +4,77 @@ All notable changes to Graphyn are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] — 2026-06-26
+
+### Bug Fixes
+
+- **editor:** Persist layouts and streamline launcher
+
+### CI
+
+- Run core submodule checks instead of removed :core aggregate
+- **publish:** Grant contents:write so the release step can create the GitHub Release
+
+### Documentation
+
+- **lessons:** Record canvas-geometry, annotation-executor, and unmerged-tree findings
+
+### Features
+
+- **media:** Add media workflow modules and fix desktop datetime runtime
+- **media:** Workflow templates, path resolver, and output preview
+- **templates:** Per-template guides, output previews, and auto-layout on load
+- **media:** Phase 2 captioning & composition nodes
+- **media:** Phase 2.5 — image_import node + captioning demo template
+
+### Refactoring
+
+- **editor:** Retire GraphynNodeCard for a default FieldCardFactory
+- **cards:** Refine field card inputs and record editing
+
+## [0.3.0] — 2026-06-25
+
+### Bug Fixes
+
+- Resolve ShapeCardFactory signature mismatch and add WASM JS support
+- Remove ShapeNodeTheme instantiation causing NoSuchMethodError
+- **plugins:** Apply Compose compiler plugin to gmail and linkedin
+- **ui/cards:** Align ShapeCard shape with its port anchors
+- **plugins:** Assign categories to gmail/linkedin specs so they group in palette
+- **palette:** Replace JVM-only toSortedMap() with commonMain-safe sort
+
+### Build
+
+- **core:** Publish each core submodule to Maven Central
+- **release:** Prep v0.3.0 — fix publish workflow for split core
+- **release:** Publish ui:cards in the Maven Central workflow
+
+### Documentation
+
+- Simplify README, update architecture diagram, bump version to 0.2.1
+- Add React Native + Flutter plugin roadmap items
+- Add LinkedIn + Twitter/X integration plan
+- **readme:** Reflect core split in README and core/README
+- **linkedin:** Mark the LinkedIn plugin clearly as a sample
+
+### Features
+
+- **plugins/linkedin:** Add LinkedIn integration with 7 node specs
+- **plugins:** Integrate Gmail and LinkedIn into demo app
+- **palette:** Neutralize node browser colors + nest categories into folders
+- **palette:** Organize categories into folders (Data, Flow, Creative)
+- **plugins:** Make Gmail functional (base64url) + wireable outputs for gmail/linkedin
+- **gmail:** Resolve credentials from platform storage by reference
+
+### Refactoring
+
+- **plugins:** Move gmail/linkedin editor plugins to commonMain
+- **core:** Split core into model/execution/serialization/data submodules
+- **core:** Move single-concern tests into their submodules
+- **api:** Narrow editor-api/plugin-api core dependency to model+execution
+- **core:** Remove :core aggregator — core is folder-only
+
+## [0.2.1] — 2026-06-24
 
 ### Bug Fixes
 
@@ -19,6 +89,8 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **minimap,layout:** Restore * 2f node scale, widen auto layout gaps
 - **layout:** Thread auto-layout positions+sizes directly into fitToContent
 - **viewport:** Fit-to-content scale floor + auto-refit on resize
+- **ai:** Parse Ollama responses as NDJSON; docs + live integration test
+- **build:** Disable gradle configuration cache to avoid instrumentation corruption
 
 ### Build
 
@@ -26,6 +98,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Doppler-backed Maven Central publish script
 - Support DOPPLER_TOKEN in publish script
 - Load DOPPLER_TOKEN from .env file
+- **release:** Git-cliff changelog + GitHub release in publish script
+- Auto-bump patch version after publish + fix stale fallbacks
+
+### CI
+
+- Temporarily skip WasmJS build due to Kotlin compiler issue
+- Remove --strict flag from mkdocs build
+- Skip API docs copy pending Dokka output fix
 
 ### Documentation
 
@@ -35,6 +115,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Capture executor-resilience contract + nullable/required port lessons
 - Capture serialization-plugin-per-module and SSE single-line lessons
 - **lessons:** M2 learnings — @Serializable on model types, kotlinx-datetime for KMP clock
+- **lessons:** WasmJs localStorage interop and web.window matchMedia fix
+- **readme:** Reflect 0.2.0 features — persistence, parallel exec, server API, demo scenes
+- Update README + lessons for executeAsFlow and inline widgets
+- Add missing integration, extending, and reference guides to navigation
+- **lessons:** Document Kotlin 2.4.0 WasmJS IR deserialization bug
+- Kotlin bug report template for WasmJS IR deserialization issue
+- Remove kotlin bug report template (tracked in issue #6 instead)
 
 ### Features
 
@@ -58,12 +145,30 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **runtime:** Shared :runtime module — one production plugin set for all hosts
 - **server:** M3 execution API — validate, async runs, SSE event streaming
 - **store:** M2 — WorkflowStore with versioning, diffs, and auto-save
+- **m5:** Wire WorkflowStore into launcher and desktop app shell
+- **m4:** Real file I/O, webhook POST, env reader, timeout+retry
+- **m6:** Parallel node execution, server auth, concurrency limit, CI
+- **webstore:** LocalStorageWorkflowStore for wasmJs + JS web targets
+- Server /workflows CRUD API + AI/Geometry/Automation demo scenes
+- ExecuteAsFlow + ShapeCard inline config widgets
+- JVM/Android plugin auto-discovery + subgraph input injection
+- Collapse selection into subgraph + expand, with derived boundary specs
+- Styled subgraph node card with double-click drill-in
+- Keyboard shortcut configuration — data model, state, persistence
+- Wire configurable shortcuts into editor — gesture + toolbar UI
+- Ai/ module — LLM workflow generation (Ollama + placeholder)
+- New-workflow dialog with AI generation
+- **ai:** Fill node input config during generation
+- **ai:** Docked AI assistant panel with chat history; drop launcher modal
+- **plugins:** Gmail integration nodes with credential management pattern
+- **plugins/gmail:** Integrate with editor via GmailPlugin and GmailEditorPlugin
 
 ### Refactoring
 
 - **demo:** Consolidate scene workflows, remove orphaned data
 - **io:** Split io.file_browse into io.file_browse + io.folder_browse, update subgraph demo
 - **M0:** Bidirectional OpaqueType + split GraphynEditorState under 150
+- **ui:** Centralize spacing tokens in core/designsystem
 
 ### Reverts
 
@@ -201,5 +306,4 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Testing
 
 - **drag:** Add two-node independent drag verification + Roborazzi baseline
-
 
