@@ -40,9 +40,7 @@ internal fun SingleSelectRow(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val selected = (currentValue as? WorkflowValue.StringValue)?.value
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
-        Spacer(Modifier.weight(1f))
+    FieldRow(name = input.name) {
         Box {
             ValueChip(selected ?: "—", theme) { showMenu = true }
             if (showMenu) {
@@ -69,9 +67,7 @@ internal fun MultiSelectRow(
             ?.map { it.value }?.toSet() ?: emptySet()
     }
     val label = when (selectedSet.size) { 0 -> "—"; 1 -> selectedSet.first(); else -> "${selectedSet.size} selected" }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.xxxl), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
-        Spacer(Modifier.weight(1f))
+    FieldRow(name = input.name) {
         Box {
             ValueChip(label, theme) { showMenu = true }
             if (showMenu) {

@@ -5,15 +5,20 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
+import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
@@ -76,15 +81,20 @@ class FieldCardFactory(
         if (isInput) {
             HEADER_DP + portIndex * ROW_DP + ROW_DP / 2
         } else {
-            HEADER_DP + spec.inputs.size * ROW_DP + FOOTER_DIVIDER_DP + portIndex * ROW_DP + ROW_DP / 2
+            HEADER_DP + spec.inputs.size * ROW_DP + portIndex * ROW_DP + ROW_DP / 2
         }
 
     @Composable
-    override fun NodeCanvas(context: NodeCanvasContext) = FieldCard(context, theme)
+    override fun NodeCanvas(context: NodeCanvasContext) {
+        CompositionLocalProvider(LocalFieldNodeTheme provides theme) {
+            FieldCard(context)
+        }
+    }
 }
 
 @Composable
-private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
+private fun FieldCard(ctx: NodeCanvasContext) {
+    val theme = LocalFieldNodeTheme.current
     val bg = theme.background()
     val borderColor = if (ctx.selected) theme.selectedBorder() else theme.border()
     val shape = RoundedCornerShape(appTheme.shapes.md)
@@ -94,14 +104,33 @@ private fun FieldCard(ctx: NodeCanvasContext, theme: FieldNodeTheme) {
             .clickable { ctx.onSelect() },
     ) {
         Column {
-            FieldHeader(ctx.spec.label, theme, onMove = ctx.onMove, nodeId = ctx.node.id)
+            FieldHeader(
+                ctx.spec.label,
+                theme,
+                onMove = ctx.onMove,
+                nodeId = ctx.node.id
+            )
             FieldBody(
                 inputs = ctx.spec.inputs,
                 values = ctx.spec.defaultValues + ctx.node.config,
                 onValueChange = { key, value -> ctx.onConfigChange(key, value) },
                 theme = theme,
+                modifier = Modifier.padding(horizontal = 10.dp)
             )
-            FieldFooter(ctx.spec.outputs, theme)
+
+            if(ctx.spec.outputs.isNotEmpty()) {
+                Spacer(
+                    Modifier.fillMaxWidth()
+                        .height(GraphynSpacingValues.spacing.xs)
+                        .background(theme.divider())
+                )
+            }
+
+            FieldFooter(
+                outputs = ctx.spec.outputs,
+                theme = theme,
+                modifier = Modifier.padding(horizontal = 10.dp)
+            )
         }
         NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(appTheme.spacing.xs), bg)
     }

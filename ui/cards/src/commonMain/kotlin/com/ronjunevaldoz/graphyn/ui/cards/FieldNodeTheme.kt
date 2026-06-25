@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 
@@ -22,3 +23,6 @@ class FieldNodeTheme(
     val valueText: @Composable () -> Color = { appTheme.colors.onSurface },
     val divider: @Composable () -> Color = { appTheme.colors.border },
 )
+
+
+val LocalFieldNodeTheme = compositionLocalOf { FieldNodeTheme() }

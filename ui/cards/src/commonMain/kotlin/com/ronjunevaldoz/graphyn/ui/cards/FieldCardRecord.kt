@@ -43,9 +43,7 @@ internal fun RecordRow(
     var showPopup by remember { mutableStateOf(false) }
     val fields = (currentValue as? WorkflowValue.RecordValue)?.fields ?: emptyMap()
     val label = when (fieldTypes.size) { 1 -> "1 field"; else -> "${fieldTypes.size} fields" }
-    Row(Modifier.fillMaxWidth().height(ROW_DP.dp).padding(horizontal = GraphynSpacingValues.spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-        BasicText(input.name, style = appTheme.typography.nodeLabel.copy(color = theme.labelColor()))
-        Spacer(Modifier.weight(1f))
+    FieldRow(name = input.name) {
         Box {
             Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable { showPopup = true }.padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.xs), Alignment.Center) {
                 BasicText("{ $label } ▾", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
