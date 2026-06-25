@@ -256,3 +256,11 @@ When asked about graphics modifiers or custom drawing, respond in this order:
 4. main alternative
 
 Lead with the decision table when the user is choosing between tools. Keep snippets to one modifier or one Canvas block.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-13 | Initial release. |

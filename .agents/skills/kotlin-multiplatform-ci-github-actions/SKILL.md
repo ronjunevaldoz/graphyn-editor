@@ -414,3 +414,11 @@ When asked about CI setup or GitHub Actions for KMP, respond in this order:
 5. main alternative (single job, different CI provider)
 
 Keep the YAML snippet to one job. Map to the user's actual module names and signing secrets when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

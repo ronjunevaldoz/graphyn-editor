@@ -33,7 +33,9 @@ Use when you need to:
 
 **Trigger keywords:** presenter module, ViewModel testable, MVI ViewModel, KMP ViewModel,
 pure Kotlin ViewModel, JVM ViewModel test, UiState UiIntent, StateFlow ViewModel,
-presenter layer, no Compose ViewModel.
+presenter layer, no Compose ViewModel, screen logic, UI state, state management,
+screen state, ViewModel setup, test ViewModel, screen behavior, handle user input,
+form state, form handling, screen interaction.
 
 **Freshness rule:** `androidx.lifecycle.viewmodel` KMP artifact and its `commonMain` API
 change between lifecycle versions — recheck `libs.versions.toml` before wiring.
@@ -307,3 +309,11 @@ When asked to set up a presenter module or ViewModel, respond in this order:
 3. convention plugin or `build.gradle.kts` snippet
 4. Koin wiring (annotated or manual)
 5. Screen/Content split in `:ui` that consumes the ViewModel
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-18 | Initial release. |

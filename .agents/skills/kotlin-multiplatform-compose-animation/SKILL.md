@@ -40,7 +40,9 @@ Use when:
 **Trigger keywords:** animation, AnimatedVisibility, animateContentSize, Crossfade,
 AnimatedContent, animateFloatAsState, animateDpAsState, transition, enter transition,
 exit transition, shared element, spring animation, tween animation, compose animation,
-fade in, slide in, bounce, ease, reduced motion, motion accessibility.
+fade in, slide in, bounce, ease, reduced motion, motion accessibility,
+animate, animated transition, smooth transition, animate appearance, animate change,
+motion, visual transition, page transition, screen transition.
 
 **Freshness rule:** Shared element transitions were stabilized in Compose 1.7 (Compose
 Multiplatform 1.7). For earlier versions use `Crossfade` or a custom `AnimatedContent`.
@@ -377,3 +379,11 @@ When implementing animations, respond in this order:
 2. **Implementation** — composable with the animation applied
 3. **Reduced-motion** — `respectsReducedMotion()` check for non-trivial transitions
 4. **Anti-pattern note** — call out if the chosen API has a common pitfall in this context
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

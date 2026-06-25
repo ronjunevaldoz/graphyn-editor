@@ -363,3 +363,11 @@ When implementing biometric auth, respond in this order:
 5. **ViewModel** — `canAuthenticate` check, `authenticate` call, result exhaustive `when`
 6. **Koin** — platform module single
 7. **Fake + tests** — success case and not-available case
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

@@ -75,7 +75,11 @@ Use this skill when you need to:
 **Trigger keywords:** network layer, Ktor client, HTTP client, bearer auth,
 token refresh, NetworkResult, safeRequest, OkHttp, Darwin, CIO, JS engine,
 API call, HTTP request, REST API, make a request, fetch data, network call,
-call API, REST client, HTTP interceptor, API client setup, network error handling.
+call API, REST client, HTTP interceptor, API client setup, network error handling,
+data fetching, content retrieval, remote data, backend integration, API integration,
+data redundancy, content synchronization, remote content,
+handle errors, error handling, error state, catch errors, HTTP error,
+network error, request error, response error, retry, handle failure.
 
 **Freshness rule:** Ktor changes quickly, so recheck the current client engine,
 auth, and serialization docs before using or updating this skill.
@@ -579,3 +583,11 @@ When asked about the network layer or HTTP client setup, respond in this order:
 5. main alternative (Retrofit, raw HttpClient)
 
 Keep the snippet to one endpoint. Map to the user's actual base URL and response type when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

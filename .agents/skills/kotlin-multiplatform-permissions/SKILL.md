@@ -376,3 +376,11 @@ When implementing permissions, respond in this order:
 5. **ViewModel intent + state** — `checkState` in `init`, `requestPermission` intent
 6. **PermissionGate composable** — screen-level gate with rationale and settings fallback
 7. **Fake + test** — `FakePermissionController` and one ViewModel test
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

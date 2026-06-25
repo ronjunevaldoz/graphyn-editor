@@ -49,7 +49,9 @@ Use when you need to:
 UI test JVM, screenshot diff, CI visual test, testTag, test tag, compose test rule, onNodeWithTag,
 createComposeRule, interaction test, compose UI test, semantics node, visual accuracy,
 pixel-perfect, layout test, canvas test, arrangement test, layout regression, 100% accuracy,
-UI layout verification, canvas layout test, visual confirmation, test layout.
+UI layout verification, canvas layout test, visual confirmation, test layout,
+test UI, test screen, UI testing, visual test, test this screen, test the layout,
+screenshot testing, visual regression testing, UI coverage, test composable.
 
 **Freshness rule:** Roborazzi is actively developed — the Gradle plugin API and the
 `captureRoboImage` API change between minor versions. Recheck the GitHub releases page before
@@ -65,6 +67,8 @@ Default to this three-layer UI testing stack:
 1. **Test tags** on every interactive or assertable node — `Modifier.testTag(FooTestTags.LOGIN_BUTTON)`
 2. **Interaction tests** with `createComposeRule` — verify behaviour (enabled/disabled, text shown, clicks fire)
 3. **Roborazzi screenshot tests** — verify visual output (layout, color, loading/error/empty states)
+   For feature `Content` screens, cover phone, tablet, and desktop sizes, and record both
+   light and dark themes when the screen supports them.
 
 Why:
 - Test tags make tests stable — `onNodeWithTag` doesn't break when copy changes
@@ -487,6 +491,7 @@ Findings map to reviewer blockers: FAIL-level → `[THEME]` or `[LAYOUT]`; WARNI
 - running Roborazzi on Android instead of JVM — slower, needs emulator; use `jvmTest` unless Android-specific resources are required
 - one test class per state instead of one class per component — excessive boilerplate; group all states in one test class
 - forgetting to record new goldens after a planned UI change — run `-PrecordRoborazzi` and commit the updated images
+- covering only one device size in a feature screenshot test — preview coverage should span phone, tablet, and desktop
 - putting test tag constants as bare string literals in the test — define them in `object FooTestTags` in `commonMain`
 - using `assertTextContains` for copy that will be localized — use `assertIsDisplayed()` on the tagged node instead
 
@@ -502,3 +507,11 @@ When asked about UI testing, test tags, or visual regression for KMP, respond in
 3. Interaction test with `createComposeRule` + `onNodeWithTag`
 4. Roborazzi screenshot test for the same component
 5. record/verify commands and CI job
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-20 | Initial release. |

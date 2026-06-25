@@ -361,3 +361,11 @@ When implementing push notifications, respond in this order:
 5. **Token retrieval** — startup fetch + `onNewToken` → WorkManager enqueue
 6. **Notification permission** — Android 13+ permission request
 7. **Deep-link routing** — tap handler → `DeepLinkParser` → `DeepLinkEventBus`
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

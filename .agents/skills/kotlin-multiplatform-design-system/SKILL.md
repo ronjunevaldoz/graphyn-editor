@@ -7,13 +7,14 @@ description: >
   color/typography/shape/spacing
   tokens, AppTheme with light/dark support, StyleScope extensions for token access,
   shadcn-inspired sealed variant systems (ButtonVariant, CardVariant, BadgeVariant,
-  ChipVariant, TextFieldVariant), and 6 core components (AppButton, AppCard,
-  AppTextField, AppChip, AppBadge, AppText) built on BasicXxx CMP primitives.
+  ChipVariant, TextFieldVariant), AppTextStyle enum (no Compose TextStyle collision),
+  and 6 core components (AppButton, AppCard, AppTextField, AppChip, AppBadge, AppText)
+  built on BasicXxx CMP primitives.
   No Material dependency — fully custom, fully owned.
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-06'
+  last-updated: '2026-06-22'
   keywords:
     - design system
     - Compose Styles API
@@ -46,7 +47,10 @@ Use this skill when the user asks to:
 ButtonVariant, shadcn KMP, Compose Styles, ExperimentalStylesApi, custom components,
 unstyled components, dark mode tokens, color scheme, no Material,
 typography system, spacing tokens, custom button style, Material3 alternative,
-app theme setup, brand colors, design token system, custom typography.
+app theme setup, brand colors, design token system, custom typography,
+redesign, visual consistency, UI consistency, design consistency, page design,
+screen design, UI look and feel, consistent styling, style guide, branding,
+component library, theming, color palette, visual identity.
 
 **Freshness rule:** `@ExperimentalStylesApi` is experimental and the Compose Styles API
 changes between CMP releases — recheck the Compose docs before upgrading.
@@ -70,6 +74,10 @@ is not a concern.
 ---
 
 ## Screen Layout Contract
+
+> **Requires extended skill:** `AppScaffold` and `AppTopAppBar` are defined in
+> `kotlin-multiplatform-design-system-extended`. Apply that skill before using the
+> screen layout contract below.
 
 Every screen must follow this structure — no exceptions. Consistency across all pages
 depends on every feature using the same scaffold shell.
@@ -102,7 +110,7 @@ fun FooContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)            // ← prevents clipping under TopAppBar
-                .padding(horizontal = AppTheme.spacing.lg)  // ← token, never 16.dp
+                .padding(horizontal = appTheme.spacing.lg)  // ← token, never 16.dp
         ) {
             // functional content only — no title text, no duplicate action buttons
         }
@@ -118,7 +126,7 @@ fun FooContent(
 | Back / close | `AppTopAppBar(navigationIcon = { … })` | Custom button in content |
 | Primary action (save, filter, search) | `AppTopAppBar(actions = { … })` | Floating button duplicating the TopAppBar action |
 | Overflow menu | `AppTopAppBar(actions = { AppIconButton(MoreVert) { … } })` | Separate menu row inside content |
-| Horizontal content padding | `spacing.lg` (`16.dp` token) | Hardcoded `.dp` literals |
+| Horizontal content padding | `appTheme.spacing.lg` (`16.dp` token) | Hardcoded `.dp` literals |
 
 ### Why redundant UI in content hurts
 
@@ -128,6 +136,24 @@ fun FooContent(
   inevitably be wired differently or go stale
 - Not consuming `PaddingValues` clips content under the TopAppBar on devices with
   status bars
+
+### Content Layout Patterns
+
+Choose **one pattern** for a feature and apply it consistently across **all screens in that feature**.
+Mixing patterns inside the same flow is a `layout_inconsistency` violation caught by `scan_design_violations.py`.
+
+| Pattern | When to use | What goes inside `AppScaffold { paddingValues -> … }` |
+|---|---|---|
+| **Flat** | Default. Lists, feeds, forms, step-by-step flows | `Column` or `LazyColumn` directly |
+| **Card-sectioned** | Profile, settings, detail pages with distinct sections | `Column { AppCard { … }; AppCard { … } }` |
+| **Tabbed** | Genuinely multi-categorical content (Active / Completed / Archived) | `Column { TabRow(…); HorizontalPager { … } }` |
+
+Rules:
+- Do not place `AppCard` as the first-level child in a flat-pattern screen — it creates an inconsistent elevation bump vs. sibling screens
+- Tabbed screens define the chrome; **each tab page must use the same inner pattern** (all tabs flat, or all tabs card-sectioned — never mixed)
+- If two screens genuinely need different patterns, they belong in different features or flows
+
+`scan_design_violations.py --layout` flags any feature `ui/` directory where `*Content.kt` files use different patterns.
 
 ---
 
@@ -144,6 +170,61 @@ Design system layers (top-down):
       ↓ composed
   Screens (feature UIs consume AppTheme.provide { } at the top)
 ```
+
+---
+
+## Ownership Model
+
+The design system follows the shadcn model — you own the generated code, not a dependency.
+This gives full brand control without forking a library.
+
+| Layer | Ownership | Update path |
+|---|---|---|
+| `tokens/` — `AppColors`, `AppTypography`, `AppShapes`, `AppSpacing` | **Project-owned** | Customize freely — never touched by `/update-design-system` |
+| `theme/` — `AppTheme`, `StyleScopeExtensions` | **Project-owned** | Customize freely |
+| `components/` — `App*.kt` | **Skill-owned** | Run `/update-design-system` to pull in bug fixes and new variants without touching tokens |
+
+**Why not a published library?** The Compose Styles API (`@ExperimentalStylesApi`) changes
+between CMP releases. A published library would break every downstream project on CMP upgrades.
+The scaffold approach keeps each project on its own upgrade schedule.
+
+Use `/update-design-system` to compare your project's components against the latest skill
+version and selectively apply fixes. The comparison is powered by
+`scripts/update_design_system.py`, which MD5-hashes each component block from this SKILL.md
+against the project file and reports CURRENT / MODIFIED / MISSING status.
+
+Use `/fix-design` to scan an existing project for violations (hardcoded colors, dp literals,
+`MaterialTheme.*` usage, `TextStyle()` construction, nested containers, component
+reimplementations, direct token imports) and fix them file-by-file with per-file
+confirmation. Primary scanner: `detekt-rules/` (PSI-based); fallback: `scripts/scan_design_violations.py`.
+The fallback scanner also flags missing preview stubs, missing multi-device preview coverage,
+and missing Roborazzi screenshot tests for feature `*Content.kt` files so preview drift gets
+caught with the rest of the design cleanup.
+
+Use `/record-design-baselines` after fixing to record new Roborazzi golden PNGs.
+Use `/audit-design-visual` to run a vision pass over the goldens and catch spacing,
+contrast, and cross-screen consistency issues that have no code-level signal.
+
+### Project documentation template
+
+Copy `references/design-system-template.md` to `docs/design-system.md` in your project
+and fill it in. This living document records your token values, component inventory,
+detekt rule overrides, multi-device preview coverage, and audit log.
+
+The skill reads `docs/design-system.md` when it exists and uses it to:
+- Infer your component prefix (e.g. `Acme` instead of `App`)
+- Confirm your token names before generating code
+- Detect deviations you've documented as intentional
+
+```bash
+cp skills/kotlin-multiplatform-design-system/references/design-system-template.md \
+   your-project/docs/design-system.md
+```
+
+Then replace `PROJECT_NAME`, `GROUP_ID`, and `COMPONENT_PREFIX` globally and fill in
+the token values for your brand.
+
+---
 
 ## Style Rules
 
@@ -212,6 +293,9 @@ include(":core:designsystem")
 ---
 
 ## Step 2: Design Tokens
+
+> **Project-owned.** Customize `tokens/` and `theme/` freely — `/update-design-system`
+> will never modify these files. This is your brand layer.
 
 ### Palette guidance
 
@@ -541,6 +625,10 @@ val StyleScope.spacing: AppSpacing
 
 ## Step 5: Variant Systems
 
+> **Required in every style and component file:** add `@file:OptIn(ExperimentalStylesApi::class)`
+> before the `package` line and `import androidx.compose.foundation.style.ExperimentalStylesApi`
+> in the imports. The snippets below omit these for brevity — they are required for compilation.
+
 ### `styles/ButtonStyles.kt`
 
 Mirrors shadcn Button: `default | outline | secondary | ghost | destructive | link`
@@ -551,7 +639,9 @@ package GROUP_ID.core.designsystem.styles
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.style.Style
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import GROUP_ID.core.designsystem.theme.colors
 import GROUP_ID.core.designsystem.theme.shapes
 import GROUP_ID.core.designsystem.theme.spacing
@@ -681,7 +771,9 @@ package GROUP_ID.core.designsystem.styles
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.style.Style
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import GROUP_ID.core.designsystem.theme.colors
 import GROUP_ID.core.designsystem.theme.shapes
 import GROUP_ID.core.designsystem.theme.spacing
@@ -757,6 +849,7 @@ import androidx.compose.ui.unit.dp
 import GROUP_ID.core.designsystem.theme.colors
 import GROUP_ID.core.designsystem.theme.shapes
 import GROUP_ID.core.designsystem.theme.spacing
+import GROUP_ID.core.designsystem.tokens.AppSpacing
 
 sealed interface CardVariant {
     val style: Style
@@ -797,12 +890,12 @@ sealed interface CardSize {
     val headerSpacing: androidx.compose.ui.unit.Dp
 
     data object Default : CardSize {
-        override val contentPadding = 24.dp
-        override val headerSpacing  = 6.dp
+        override val contentPadding = AppSpacing().xxl  // 24.dp
+        override val headerSpacing  = AppSpacing().sm   // 8.dp
     }
     data object Sm : CardSize {
-        override val contentPadding = 16.dp
-        override val headerSpacing  = 4.dp
+        override val contentPadding = AppSpacing().lg   // 16.dp
+        override val headerSpacing  = AppSpacing().xs   // 4.dp
     }
 }
 ```
@@ -815,6 +908,7 @@ package GROUP_ID.core.designsystem.styles
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.style.Style
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import GROUP_ID.core.designsystem.theme.colors
 import GROUP_ID.core.designsystem.theme.shapes
 import GROUP_ID.core.designsystem.theme.spacing
@@ -868,6 +962,7 @@ package GROUP_ID.core.designsystem.styles
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.style.Style
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import GROUP_ID.core.designsystem.theme.colors
 import GROUP_ID.core.designsystem.theme.shapes
 import GROUP_ID.core.designsystem.theme.spacing
@@ -914,6 +1009,19 @@ sealed interface TextFieldVariant {
 ---
 
 ## Step 6: Core Components
+
+> **Skill-owned.** Components are updateable via `/update-design-system`. Avoid deep
+> customisations here — put brand-specific variants in project-level composables that
+> wrap these primitives instead.
+
+| Component | Stability | Notes |
+|---|---|---|
+| `AppButton` | **Stable** | 6 variants, 5 sizes |
+| `AppBadge` | **Stable** | 5 variants |
+| `AppCard` | **Stable** | 3 variants, 2 sizes |
+| `AppChip` | **Stable** | 3 variants, selected state |
+| `AppTextField` | **Stable** | label, placeholder, leading/trailing icon, error state |
+| `AppText` | **Stable** | `AppTextStyle` enum, muted mode |
 
 ### `components/AppButton.kt`
 
@@ -1105,10 +1213,10 @@ fun CardHeader(
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
         Column {
-            AppText(text = title, style = TextStyle.TitleSmall)
+            AppText(text = title, style = AppTextStyle.TitleSmall)
             if (description != null) {
                 Spacer(Modifier.height(4.dp))
-                AppText(text = description, style = TextStyle.BodySmall, muted = true)
+                AppText(text = description, style = AppTextStyle.BodySmall, muted = true)
             }
         }
         if (action != null) {
@@ -1182,6 +1290,120 @@ fun AppChip(
 }
 ```
 
+### `components/AppTextField.kt`
+
+```kotlin
+package GROUP_ID.core.designsystem.components
+
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.foundation.style.MutableStyleState
+import androidx.compose.foundation.style.Style
+import androidx.compose.foundation.style.styleable
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.VisualTransformation
+import GROUP_ID.core.designsystem.styles.TextFieldVariant
+import GROUP_ID.core.designsystem.theme.appTheme
+import GROUP_ID.core.designsystem.theme.colors
+
+/**
+ * Usage:
+ * ```
+ * AppTextField(value = email, onValueChange = { email = it }, label = "Email", placeholder = "you@example.com")
+ * AppTextField(value = pwd, onValueChange = { pwd = it }, label = "Password", visualTransformation = PasswordVisualTransformation())
+ * AppTextField(value = q, onValueChange = { q = it }, variant = TextFieldVariant.Ghost, placeholder = "Search…")
+ * AppTextField(value = bio, onValueChange = { bio = it }, singleLine = false, label = "Bio")
+ * ```
+ */
+@OptIn(ExperimentalStylesApi::class)
+@Composable
+fun AppTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    label: String? = null,
+    placeholder: String? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+    isError: Boolean = false,
+    supportingText: String? = null,
+    variant: TextFieldVariant = TextFieldVariant.Default,
+    style: Style = Style,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    singleLine: Boolean = true,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val styleState = remember(interactionSource) { MutableStyleState(interactionSource) }
+    styleState.enabled = enabled
+
+    val errorStyle = if (isError) Style { borderColor(colors.error) } else Style
+
+    Column(modifier = modifier) {
+        if (label != null) {
+            AppText(text = label, style = AppTextStyle.LabelLarge)
+            Spacer(Modifier.height(appTheme.spacing.xxs))
+        }
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .styleable(styleState, variant.style then errorStyle, style),
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            visualTransformation = visualTransformation,
+            singleLine = singleLine,
+            interactionSource = interactionSource,
+            decorationBox = { innerTextField ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (leadingIcon != null) {
+                        leadingIcon()
+                        Spacer(Modifier.width(appTheme.spacing.xs))
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (value.isEmpty() && placeholder != null) {
+                            AppText(placeholder, style = AppTextStyle.BodyMedium, muted = true)
+                        }
+                        innerTextField()
+                    }
+                    if (trailingIcon != null) {
+                        Spacer(Modifier.width(appTheme.spacing.xs))
+                        trailingIcon()
+                    }
+                }
+            },
+        )
+        if (supportingText != null) {
+            Spacer(Modifier.height(appTheme.spacing.xxs))
+            AppText(
+                text = supportingText,
+                style = AppTextStyle.BodySmall,
+                color = if (isError) appTheme.colors.error else appTheme.colors.onSurfaceVariant,
+            )
+        }
+    }
+}
+```
+
+---
+
 ### `components/AppText.kt`
 
 ```kotlin
@@ -1191,11 +1413,11 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle as ComposeTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import GROUP_ID.core.designsystem.theme.appTheme
 
-enum class TextStyle {
+enum class AppTextStyle {
     DisplayLarge, DisplayMedium,
     TitleLarge, TitleMedium, TitleSmall,
     BodyLarge, BodyMedium, BodySmall,
@@ -1206,15 +1428,15 @@ enum class TextStyle {
  * Usage:
  * ```
  * AppText("Hello world")
- * AppText("Title", style = TextStyle.TitleLarge)
- * AppText("Subtitle", style = TextStyle.BodySmall, muted = true)
+ * AppText("Title", style = AppTextStyle.TitleLarge)
+ * AppText("Subtitle", style = AppTextStyle.BodySmall, muted = true)
  * ```
  */
 @Composable
 fun AppText(
     text: String,
     modifier: Modifier = Modifier,
-    style: TextStyle = TextStyle.BodyMedium,
+    style: AppTextStyle = AppTextStyle.BodyMedium,
     muted: Boolean = false,
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
@@ -1222,16 +1444,16 @@ fun AppText(
 ) {
     val theme = appTheme
     val resolvedStyle = when (style) {
-        TextStyle.DisplayLarge  -> theme.typography.displayLarge
-        TextStyle.DisplayMedium -> theme.typography.displayMedium
-        TextStyle.TitleLarge    -> theme.typography.titleLarge
-        TextStyle.TitleMedium   -> theme.typography.titleMedium
-        TextStyle.TitleSmall    -> theme.typography.titleSmall
-        TextStyle.BodyLarge     -> theme.typography.bodyLarge
-        TextStyle.BodyMedium    -> theme.typography.bodyMedium
-        TextStyle.BodySmall     -> theme.typography.bodySmall
-        TextStyle.LabelLarge    -> theme.typography.labelLarge
-        TextStyle.LabelSmall    -> theme.typography.labelSmall
+        AppTextStyle.DisplayLarge  -> theme.typography.displayLarge
+        AppTextStyle.DisplayMedium -> theme.typography.displayMedium
+        AppTextStyle.TitleLarge    -> theme.typography.titleLarge
+        AppTextStyle.TitleMedium   -> theme.typography.titleMedium
+        AppTextStyle.TitleSmall    -> theme.typography.titleSmall
+        AppTextStyle.BodyLarge     -> theme.typography.bodyLarge
+        AppTextStyle.BodyMedium    -> theme.typography.bodyMedium
+        AppTextStyle.BodySmall     -> theme.typography.bodySmall
+        AppTextStyle.LabelLarge    -> theme.typography.labelLarge
+        AppTextStyle.LabelSmall    -> theme.typography.labelSmall
     }
 
     val textColor = when {
@@ -1247,6 +1469,457 @@ fun AppText(
         maxLines = maxLines,
         overflow = overflow,
     )
+}
+```
+
+---
+
+## Component Previews
+
+Each design system component ships with a dedicated preview file under `previews/`.
+These previews serve three purposes:
+
+1. **IDE design review** — visible in the Desktop preview panel
+   (`./gradlew :desktopApp:run` or Android Studio compose preview)
+2. **Roborazzi per-component goldens** — captured by
+   `./gradlew :core:designsystem:jvmTest`, producing one PNG per state
+3. **`/fix-design` verification** — after a theme token change, run
+   `:core:designsystem:jvmTest` to confirm all components still look correct
+   before running full feature tests
+
+Feature UI modules follow the same rule: every `*Content.kt` must have a preview stub and
+matching Roborazzi screenshot coverage for phone, tablet, and desktop sizes.
+
+> **Skill-owned.** Preview files follow the same ownership rule as components —
+> updateable via `/update-design-system`. Never edit preview files to reflect
+> project-specific states; create separate preview composables in the feature UI module.
+
+---
+
+### `previews/AppThemePreviewWrapper.kt`
+
+```kotlin
+@file:OptIn(ExperimentalStylesApi::class)
+package GROUP_ID.core.designsystem.previews
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import GROUP_ID.core.designsystem.theme.AppTheme
+
+/**
+ * Shared annotation for cross-device preview coverage.
+ * Generates one screenshot per size class: phone, tablet, desktop.
+ * Use on light/dark base variants. State variants (disabled, error) use plain @Preview.
+ */
+@Preview(name = "Phone",   widthDp = 360,  heightDp = 640)
+@Preview(name = "Tablet",  widthDp = 673,  heightDp = 841)
+@Preview(name = "Desktop", widthDp = 1280, heightDp = 800)
+annotation class MultiDevicePreview
+
+@Composable
+fun AppThemePreviewWrapper(
+    darkTheme: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    AppTheme(darkTheme = darkTheme) {
+        Box(modifier = Modifier.padding(16.dp)) {
+            content()
+        }
+    }
+}
+```
+
+---
+
+### `previews/AppButtonPreview.kt`
+
+```kotlin
+@file:OptIn(ExperimentalStylesApi::class)
+package GROUP_ID.core.designsystem.previews
+
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.runtime.Composable
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import GROUP_ID.core.designsystem.components.AppButton
+import GROUP_ID.core.designsystem.components.AppText
+import GROUP_ID.core.designsystem.styles.ButtonVariant
+
+@MultiDevicePreview
+@Composable
+fun AppButtonDefaultLightPreview() {
+    AppThemePreviewWrapper(darkTheme = false) {
+        AppButton(onClick = {}) { AppText("Continue") }
+    }
+}
+
+@MultiDevicePreview
+@Composable
+fun AppButtonDefaultDarkPreview() {
+    AppThemePreviewWrapper(darkTheme = true) {
+        AppButton(onClick = {}) { AppText("Continue") }
+    }
+}
+
+@Preview
+@Composable
+fun AppButtonDisabledPreview() {
+    AppThemePreviewWrapper {
+        AppButton(onClick = {}, enabled = false) { AppText("Continue") }
+    }
+}
+
+@Preview
+@Composable
+fun AppButtonOutlinePreview() {
+    AppThemePreviewWrapper {
+        AppButton(onClick = {}, variant = ButtonVariant.Outline) { AppText("Cancel") }
+    }
+}
+
+@Preview
+@Composable
+fun AppButtonDestructivePreview() {
+    AppThemePreviewWrapper {
+        AppButton(onClick = {}, variant = ButtonVariant.Destructive) { AppText("Delete account") }
+    }
+}
+
+@Preview
+@Composable
+fun AppButtonGhostPreview() {
+    AppThemePreviewWrapper {
+        AppButton(onClick = {}, variant = ButtonVariant.Ghost) { AppText("Skip") }
+    }
+}
+```
+
+---
+
+### `previews/AppBadgePreview.kt`
+
+```kotlin
+@file:OptIn(ExperimentalStylesApi::class)
+package GROUP_ID.core.designsystem.previews
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import GROUP_ID.core.designsystem.components.AppBadge
+import GROUP_ID.core.designsystem.components.AppText
+import GROUP_ID.core.designsystem.styles.BadgeVariant
+
+@MultiDevicePreview
+@Composable
+fun AppBadgeAllVariantsPreview() {
+    AppThemePreviewWrapper {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppBadge(variant = BadgeVariant.Default)    { AppText("New") }
+            AppBadge(variant = BadgeVariant.Secondary)  { AppText("Beta") }
+            AppBadge(variant = BadgeVariant.Destructive){ AppText("Error") }
+            AppBadge(variant = BadgeVariant.Outline)    { AppText("Draft") }
+            AppBadge(variant = BadgeVariant.Ghost)      { AppText("Info") }
+        }
+    }
+}
+
+@MultiDevicePreview
+@Composable
+fun AppBadgeDarkPreview() {
+    AppThemePreviewWrapper(darkTheme = true) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppBadge(variant = BadgeVariant.Default)    { AppText("New") }
+            AppBadge(variant = BadgeVariant.Destructive){ AppText("Error") }
+        }
+    }
+}
+```
+
+---
+
+### `previews/AppCardPreview.kt`
+
+```kotlin
+@file:OptIn(ExperimentalStylesApi::class)
+package GROUP_ID.core.designsystem.previews
+
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import GROUP_ID.core.designsystem.components.AppButton
+import GROUP_ID.core.designsystem.components.AppCard
+import GROUP_ID.core.designsystem.components.AppText
+import GROUP_ID.core.designsystem.styles.CardVariant
+
+@MultiDevicePreview
+@Composable
+fun AppCardDefaultPreview() {
+    AppThemePreviewWrapper {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            AppText("Card body content")
+        }
+    }
+}
+
+@Preview
+@Composable
+fun AppCardWithSlotsPreview() {
+    AppThemePreviewWrapper {
+        AppCard(
+            modifier = Modifier.fillMaxWidth(),
+            header = { AppText("Card Title") },
+            footer = { AppButton(onClick = {}) { AppText("Action") } },
+        ) {
+            AppText("This is the card body. It can be multiple lines of description text.")
+        }
+    }
+}
+
+@Preview
+@Composable
+fun AppCardElevatedPreview() {
+    AppThemePreviewWrapper {
+        AppCard(modifier = Modifier.fillMaxWidth(), variant = CardVariant.Elevated) {
+            AppText("Elevated card")
+        }
+    }
+}
+
+@MultiDevicePreview
+@Composable
+fun AppCardDarkPreview() {
+    AppThemePreviewWrapper(darkTheme = true) {
+        AppCard(modifier = Modifier.fillMaxWidth()) {
+            AppText("Dark mode card")
+        }
+    }
+}
+```
+
+---
+
+### `previews/AppChipPreview.kt`
+
+```kotlin
+@file:OptIn(ExperimentalStylesApi::class)
+package GROUP_ID.core.designsystem.previews
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import GROUP_ID.core.designsystem.components.AppChip
+import GROUP_ID.core.designsystem.styles.ChipVariant
+
+@MultiDevicePreview
+@Composable
+fun AppChipStatesPreview() {
+    AppThemePreviewWrapper {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppChip(label = "Default",  onClick = {})
+            AppChip(label = "Selected", onClick = {}, selected = true)
+            AppChip(label = "Disabled", onClick = {}, enabled = false)
+            AppChip(label = "Outline",  onClick = {}, variant = ChipVariant.Outline)
+        }
+    }
+}
+
+@MultiDevicePreview
+@Composable
+fun AppChipDarkPreview() {
+    AppThemePreviewWrapper(darkTheme = true) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppChip(label = "Default",  onClick = {})
+            AppChip(label = "Selected", onClick = {}, selected = true)
+        }
+    }
+}
+```
+
+---
+
+### `previews/AppTextFieldPreview.kt`
+
+```kotlin
+@file:OptIn(ExperimentalStylesApi::class)
+package GROUP_ID.core.designsystem.previews
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import GROUP_ID.core.designsystem.components.AppTextField
+import GROUP_ID.core.designsystem.styles.TextFieldVariant
+
+@Preview
+@Composable
+fun AppTextFieldEmptyPreview() {
+    AppThemePreviewWrapper {
+        AppTextField(
+            value = "",
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = "Enter email",
+        )
+    }
+}
+
+@MultiDevicePreview
+@Composable
+fun AppTextFieldWithLabelAndValuePreview() {
+    AppThemePreviewWrapper {
+        AppTextField(
+            value = "hello@example.com",
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            label = "Email",
+            placeholder = "you@example.com",
+        )
+    }
+}
+
+@Preview
+@Composable
+fun AppTextFieldErrorPreview() {
+    AppThemePreviewWrapper {
+        AppTextField(
+            value = "bad-email",
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            label = "Email",
+            isError = true,
+            supportingText = "Please enter a valid email address",
+        )
+    }
+}
+
+@Preview
+@Composable
+fun AppTextFieldDisabledPreview() {
+    AppThemePreviewWrapper {
+        AppTextField(
+            value = "readonly@example.com",
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            label = "Email",
+            enabled = false,
+        )
+    }
+}
+
+@Preview
+@Composable
+fun AppTextFieldGhostPreview() {
+    AppThemePreviewWrapper {
+        AppTextField(
+            value = "",
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = "Search…",
+            variant = TextFieldVariant.Ghost,
+        )
+    }
+}
+
+@MultiDevicePreview
+@Composable
+fun AppTextFieldDarkPreview() {
+    AppThemePreviewWrapper(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            AppTextField(
+                value = "",
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                label = "Email",
+                placeholder = "you@example.com",
+            )
+            AppTextField(
+                value = "bad",
+                onValueChange = {},
+                modifier = Modifier.fillMaxWidth(),
+                label = "Email",
+                isError = true,
+                supportingText = "Invalid email",
+            )
+        }
+    }
+}
+```
+
+---
+
+### `previews/AppTextPreview.kt`
+
+```kotlin
+@file:OptIn(ExperimentalStylesApi::class)
+package GROUP_ID.core.designsystem.previews
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.style.ExperimentalStylesApi
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import GROUP_ID.core.designsystem.components.AppText
+import GROUP_ID.core.designsystem.components.AppTextStyle
+
+@MultiDevicePreview
+@Composable
+fun AppTextTypescalePreview() {
+    AppThemePreviewWrapper {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            AppText("DisplayLarge",  style = AppTextStyle.DisplayLarge)
+            AppText("DisplayMedium", style = AppTextStyle.DisplayMedium)
+            AppText("TitleLarge",    style = AppTextStyle.TitleLarge)
+            AppText("TitleMedium",   style = AppTextStyle.TitleMedium)
+            AppText("TitleSmall",    style = AppTextStyle.TitleSmall)
+            AppText("BodyLarge",     style = AppTextStyle.BodyLarge)
+            AppText("BodyMedium",    style = AppTextStyle.BodyMedium)
+            AppText("BodySmall",     style = AppTextStyle.BodySmall)
+            AppText("LabelLarge",    style = AppTextStyle.LabelLarge)
+            AppText("LabelSmall",    style = AppTextStyle.LabelSmall)
+        }
+    }
+}
+
+@Preview
+@Composable
+fun AppTextMutedPreview() {
+    AppThemePreviewWrapper {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            AppText("Normal text",  style = AppTextStyle.BodyMedium)
+            AppText("Muted text",   style = AppTextStyle.BodyMedium, muted = true)
+            AppText("Normal label", style = AppTextStyle.LabelSmall)
+            AppText("Muted label",  style = AppTextStyle.LabelSmall,  muted = true)
+        }
+    }
+}
+
+@MultiDevicePreview
+@Composable
+fun AppTextDarkPreview() {
+    AppThemePreviewWrapper(darkTheme = true) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            AppText("TitleLarge dark",  style = AppTextStyle.TitleLarge)
+            AppText("BodyMedium dark",  style = AppTextStyle.BodyMedium)
+            AppText("Muted dark",       style = AppTextStyle.BodySmall, muted = true)
+        }
+    }
 }
 ```
 
@@ -1434,11 +2107,12 @@ All of these are already in `compose-multiplatform`. No new catalog entries requ
 @Test fun `color_tokens_light screenshot`() {
     captureRoboImage("ds_color_tokens_light.png") {
         AppTheme(darkTheme = false) {
-            Column(modifier = Modifier.padding(AppTheme.spacing.lg)) {
-                Box(Modifier.size(48.dp).background(AppTheme.colors.primary))
-                Box(Modifier.size(48.dp).background(AppTheme.colors.secondary))
-                Box(Modifier.size(48.dp).background(AppTheme.colors.surface))
-                Box(Modifier.size(48.dp).background(AppTheme.colors.error))
+            val t = appTheme
+            Column(modifier = Modifier.padding(t.spacing.lg)) {
+                Box(Modifier.size(48.dp).background(t.colors.primary))
+                Box(Modifier.size(48.dp).background(t.colors.secondary))
+                Box(Modifier.size(48.dp).background(t.colors.surface))
+                Box(Modifier.size(48.dp).background(t.colors.error))
             }
         }
     }
@@ -1447,11 +2121,12 @@ All of these are already in `compose-multiplatform`. No new catalog entries requ
 @Test fun `color_tokens_dark screenshot`() {
     captureRoboImage("ds_color_tokens_dark.png") {
         AppTheme(darkTheme = true) {
-            Column(modifier = Modifier.padding(AppTheme.spacing.lg)) {
-                Box(Modifier.size(48.dp).background(AppTheme.colors.primary))
-                Box(Modifier.size(48.dp).background(AppTheme.colors.secondary))
-                Box(Modifier.size(48.dp).background(AppTheme.colors.surface))
-                Box(Modifier.size(48.dp).background(AppTheme.colors.error))
+            val t = appTheme
+            Column(modifier = Modifier.padding(t.spacing.lg)) {
+                Box(Modifier.size(48.dp).background(t.colors.primary))
+                Box(Modifier.size(48.dp).background(t.colors.secondary))
+                Box(Modifier.size(48.dp).background(t.colors.surface))
+                Box(Modifier.size(48.dp).background(t.colors.error))
             }
         }
     }
@@ -1460,11 +2135,11 @@ All of these are already in `compose-multiplatform`. No new catalog entries requ
 @Test fun `typography_scale screenshot`() {
     captureRoboImage("ds_typography_scale.png") {
         AppTheme {
-            Column(modifier = Modifier.padding(AppTheme.spacing.lg)) {
-                Text("Display Large", style = AppTheme.typography.displayLarge)
-                Text("Headline Medium", style = AppTheme.typography.headlineMedium)
-                Text("Body Large", style = AppTheme.typography.bodyLarge)
-                Text("Label Small", style = AppTheme.typography.labelSmall)
+            Column(modifier = Modifier.padding(appTheme.spacing.lg)) {
+                AppText("Display Large",  style = AppTextStyle.DisplayLarge)
+                AppText("Display Medium", style = AppTextStyle.DisplayMedium)
+                AppText("Body Large",     style = AppTextStyle.BodyLarge)
+                AppText("Label Small",    style = AppTextStyle.LabelSmall)
             }
         }
     }
@@ -1472,18 +2147,137 @@ All of these are already in `compose-multiplatform`. No new catalog entries requ
 
 @Test fun `spacing tokens match expected dp values`() {
     // Assert the compile-time constants — catches accidental token renames
-    assertEquals(16.dp, AppTheme.spacing.lg)
-    assertEquals(8.dp, AppTheme.spacing.sm)
-    assertEquals(4.dp, AppTheme.spacing.xs)
+    assertEquals(16.dp, AppSpacing().lg)
+    assertEquals(8.dp,  AppSpacing().sm)
+    assertEquals(4.dp,  AppSpacing().xs)
 }
 ```
 
 ---
 
+## Detekt Rules (PSI-based scanner)
+
+The design system ships a custom detekt rule set that replaces regex-based violation
+detection with full Kotlin PSI analysis. PSI traversal resolves variable aliases,
+handles trailing-lambda syntax correctly, and enables two rules that regex cannot
+express: component reimplementation detection and import boundary enforcement.
+
+### Module location
+
+Copy `detekt-rules/` from this skill into your project's `:core:designsystem` module:
+
+```
+core/designsystem/
+├── detekt-rules/
+│   ├── build.gradle.kts
+│   ├── config/
+│   │   └── detekt-design-system.yml
+│   └── src/
+│       ├── main/kotlin/GROUP_ID/designsystem/detekt/
+│       │   ├── DesignSystemRuleSetProvider.kt
+│       │   ├── HardcodedColorRule.kt
+│       │   ├── HardcodedDpRule.kt
+│       │   ├── MaterialThemeUsageRule.kt
+│       │   ├── DirectTextStyleRule.kt
+│       │   ├── NestedContainerRule.kt
+│       │   ├── ComponentRegistryRule.kt
+│       │   ├── ImportBoundaryRule.kt
+│       │   ├── RedundantScreenTitleRule.kt
+│       │   └── HardcodedGridColumnsRule.kt
+│       └── test/kotlin/GROUP_ID/designsystem/detekt/
+│           ├── HardcodedColorRuleTest.kt
+│           ├── ComponentRegistryRuleTest.kt
+│           ├── ImportBoundaryRuleTest.kt
+│           ├── RedundantScreenTitleRuleTest.kt
+│           └── HardcodedGridColumnsRuleTest.kt
+```
+
+Replace `GROUP_ID` with your actual group ID (e.g. `com.example.myapp`) — same as your convention plugin names in `build-logic/`.
+
+### Wire into the Gradle build
+
+In `core/designsystem/build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("io.gitlab.arturbosch.detekt")
+}
+
+detekt {
+    config.setFrom("detekt-rules/config/detekt-design-system.yml")
+    buildUponDefaultConfig = true
+}
+
+dependencies {
+    detektPlugins(project(":core:designsystem:detekt-rules"))
+}
+```
+
+Add to `settings.gradle.kts`:
+
+```kotlin
+include(":core:designsystem:detekt-rules")
+```
+
+### Run
+
+```bash
+# Check violations (CI mode)
+./gradlew detekt
+
+# Fix session (re-scan after each edit)
+./gradlew detekt --rerun-tasks --continue
+```
+
+### Rules summary
+
+| Rule ID | Severity | What it catches | What regex missed |
+|---|---|---|---|
+| `HardcodedColor` | Error | `Color(0xFF…)`, `Color(r,g,b)` | Variable aliases in local scope |
+| `HardcodedDp` | Warning | `.dp` literals in layout modifiers | Modifier chains deeper than 1 level |
+| `MaterialThemeUsage` | Error | `MaterialTheme.colors.*`, `MaterialTheme.colorScheme.*` | — |
+| `DirectTextStyle` | Error | `TextStyle(…)` construction | — |
+| `NestedContainer` | Warning | `Card { Card {` and `Surface { Surface {` | Trailing-lambda form `Card { }` |
+| `ComponentRegistryViolation` | Warning | `@Composable fun MyButton` outside `core/designsystem/` | Entire class — regex can't see function definitions |
+| `DesignTokenImportBoundary` | Error | `import …tokens.AppColors` in `feature/*/ui/` | Entire class — regex can't check import context |
+| `RedundantScreenTitle` | Warning | `Text("…")` / `AppText("…")` with a string literal inside `*Content` / `*Screen` composables | Cannot infer that the composable is a screen or that a TopAppBar already shows the same string |
+| `HardcodedGridColumns` | Warning | `GridCells.Fixed(N≥2)` — fixed column count ignores screen width | Cannot count GridCells arguments or distinguish `Fixed` from `Adaptive` |
+
+### Configuration
+
+Customize `config/detekt-design-system.yml`:
+
+```yaml
+design-system:
+  ComponentRegistryRule:
+    active: true
+    # Match your project's design system prefix (default: App)
+    componentPrefix: 'App'
+  HardcodedDp:
+    active: true
+    # To disable dp warnings while keeping color/MaterialTheme errors:
+    # active: false
+```
+
+### Quick CLI fallback
+
+When detekt is not yet wired into the project, use the Python scanner for a fast check:
+
+```bash
+python3 skills/kotlin-multiplatform-design-system/scripts/scan_design_violations.py \
+  /path/to/project --json
+```
+
+The Python scanner covers rules 1–5 (`HardcodedColor` through `NestedContainer`) but
+not `ComponentRegistryViolation` or `DesignTokenImportBoundary`.
+
+---
+
 ## Common Anti-Patterns
 
-- magic color literals in composables — `Color(0xFF6200EE)` written directly inside a `@Composable` instead of `AppTheme.colors.primary`; the audit script flags `Color(0x…)` in any `/ui/` or `/presentation/` file that is not a token definition file
-- hardcoded spacing in composables — `padding(16.dp)` or `padding(horizontal = 8.dp)` written directly instead of `padding(horizontal = AppTheme.spacing.lg)`; the audit script flags `.dp` literals inside `padding(…)` calls in UI files
+- magic color literals in composables — `Color(0xFF6200EE)` written directly inside a `@Composable` instead of `appTheme.colors.primary`; the audit script flags `Color(0x…)` in any `/ui/` or `/presentation/` file that is not a token definition file
+- hardcoded spacing in composables — `padding(16.dp)` or `padding(horizontal = 8.dp)` written directly instead of `padding(horizontal = appTheme.spacing.lg)`; the audit script flags `.dp` literals inside `padding(…)` calls in UI files
+- accessing `AppTheme.colors`, `AppTheme.spacing`, or `AppTheme.typography` as static properties — these are instance properties; use the `appTheme` `@Composable` accessor or `AppTheme.LocalAppTheme.current` inside a composable
 - title text in content body — a `Text("Screen Title")` composable inside the content column when it should be `AppTopAppBar(title = "Screen Title")`; makes the title scroll away and duplicates chrome
 - action buttons outside the TopAppBar — a "Save" `AppButton` at the bottom of a form when it belongs in `AppTopAppBar(actions = { … })`; creates two interaction points for the same operation
 - not consuming `PaddingValues` from `AppScaffold` — `AppScaffold { MyContent() }` without `Modifier.padding(paddingValues)` clips the content under the TopAppBar on status-bar devices
@@ -1493,6 +2287,20 @@ All of these are already in `compose-multiplatform`. No new catalog entries requ
 - skipping the `StyleScope` extension layer — leads to token access scattered across composables
 
 If the design system feels inconsistent, check: (1) are all pages using `AppScaffold` + `AppTopAppBar`? (2) are spacing and colors coming from tokens or from hardcoded literals? (3) is there duplicated chrome (title, actions) in the content body?
+
+---
+
+## References
+
+The `references/` directory contains project-facing documents the skill uses at generation time:
+
+| File | Purpose | Usage |
+|---|---|---|
+| `references/design-system-template.md` | Living design system doc — tokens, component inventory, detekt overrides, audit log | Copy to `docs/design-system.md` in your project; fill in token values and prefix |
+
+The skill reads `docs/design-system.md` when it exists in the target project to infer
+the component prefix and token names before generating code. If the file is absent,
+defaults (`App` prefix, token names as shown in the steps) are used.
 
 ---
 
@@ -1515,3 +2323,17 @@ When asked about design system setup or components, respond in this order:
 5. main alternative (Material3 wrapper)
 
 Keep snippets small. Use the user's package name and token names when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-22 | Added `references/design-system-template.md` — project-facing living document covering tokens, component inventory, detekt overrides, multi-device preview coverage, and audit log. Wired copy instructions into Ownership Model section. |
+| 2026-06-22 | Added `RedundantScreenTitleRule` (flags `Text`/`AppText` with string literals inside `*Content`/`*Screen` composables) and `HardcodedGridColumnsRule` (flags `GridCells.Fixed(N≥2)`). Added `@MultiDevicePreview` annotation (phone 360dp / tablet 673dp / desktop 1280dp) to `AppThemePreviewWrapper.kt`; applied to base light/dark variants of all 6 core component previews. Updated `/audit-design-visual` with duplicate title check and multi-device layout table. Updated `/record-design-baselines` with multi-device PNG naming. |
+| 2026-06-22 | Added `detekt-rules/` PSI-based scanner module with 7 rules (HardcodedColor, HardcodedDp, MaterialThemeUsage, DirectTextStyle, NestedContainer, ComponentRegistryViolation, DesignTokenImportBoundary). Added `/record-design-baselines` and `/audit-design-visual` commands. Updated `/fix-design` to use detekt as primary scanner. |
+| 2026-06-22 | Added `scripts/scan_design_violations.py` and `/fix-design` command: scans Compose files for hardcoded colors/dp/MaterialTheme/nested containers, fixes file-by-file, verifies with Roborazzi vision. |
+| 2026-06-22 | Added ownership model section (project-owned tokens vs skill-owned components). Added stability tiers to component overview. Added `scripts/update_design_system.py` reference. |
+| 2026-06-22 | Added `AppTextField` component (was missing from Step 6). Renamed `TextStyle` enum → `AppTextStyle` to avoid Compose collision. Fixed test code: `AppTheme.spacing.*` → `appTheme.*`, `Text()` → `AppText()`. Added `@OptIn` note to Steps 5–6. Fixed missing `sp`/`FontWeight` imports in Button/Badge/Chip/TextField style snippets. Fixed `CardSize` hardcoded dp → `AppSpacing()` tokens. Added cross-skill note for `AppScaffold`/`AppTopAppBar`. |
+| 2026-06-06 | Initial release. |

@@ -271,3 +271,11 @@ When asked about DI, respond in this order:
 
 Keep the snippet small and direct. If the user wants a project-specific answer, map the
 bindings to the actual module names in the repo.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-13 | Initial release. |

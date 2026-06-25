@@ -479,3 +479,11 @@ When asked about expect/actual or platform-specific code, respond in this order:
 4. main alternative
 
 Lead with the decision rule. Keep snippets small — one `expect`/`actual` pair or one interface, not both.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

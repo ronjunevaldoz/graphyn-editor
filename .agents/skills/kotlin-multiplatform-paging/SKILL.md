@@ -422,3 +422,11 @@ When implementing paging, respond in this order:
 5. **ViewModel** — `Pager` with `PagingConfig`, `.cachedIn(viewModelScope)`
 6. **UI** — `collectAsLazyPagingItems`, `LazyColumn` with `key`, refresh + append load states
 7. **Tests** — first page, last page (nextKey null), and error case
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

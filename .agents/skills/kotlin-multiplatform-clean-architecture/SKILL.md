@@ -34,7 +34,9 @@ Use when you need to:
 **Trigger keywords:** clean architecture, layer contract, dependency rule, model vs api,
 internal visibility, architecture violation, Detekt architecture, layer rule, feature layers,
 module boundaries, 6-layer architecture, domain isolation, which layer, domain model,
-api contract, dependency inversion, layer ownership, where does this code go.
+api contract, dependency inversion, layer ownership, where does this code go,
+architecture design, content design, code organization, module design, project structure,
+layer design, data architecture, content strategy, code structure.
 
 **Freshness rule:** Detekt rule set API changes between minor versions — recheck the
 `ArchitectureRule` DSL when upgrading Detekt.
@@ -208,3 +210,11 @@ When asked about architecture layers or module boundaries, respond in this order
 3. concrete file/class placement
 4. how to enforce it (Gradle dep or Detekt rule)
 5. the anti-pattern it avoids
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-18 | Initial release. |

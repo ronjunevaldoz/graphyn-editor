@@ -307,3 +307,11 @@ When implementing image loading, respond in this order:
 3. **Component** — `NetworkImage`, `AvatarImage`, or `HeroImage` depending on the use case
 4. **Placeholder/error resources** — confirm they exist in `commonMain/composeResources`
 5. **Local vs remote** — `SmartImage` wrapper only if needed
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |

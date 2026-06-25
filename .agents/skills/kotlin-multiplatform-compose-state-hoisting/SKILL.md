@@ -498,3 +498,11 @@ When asked about state hoisting or composable testability, respond in this order
 4. main alternative (keep state internal, CompositionLocal)
 
 Keep snippets small. Use the user's actual composable names when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

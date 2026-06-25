@@ -448,3 +448,11 @@ When asked about shared resources or localization, respond in this order:
 5. main alternative (expect/actual resource loading, platform bundles)
 
 Keep the snippet to one resource type. Map to the user's actual resource names when provided.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-06 | Initial release. |

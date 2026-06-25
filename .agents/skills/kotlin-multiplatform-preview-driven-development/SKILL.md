@@ -43,6 +43,12 @@ IntelliJ/Android Studio plugin version needed for interactive Desktop previews.
 Default to **Desktop-first previews: write the `Content` composable, add `@Preview` functions
 targeting the Desktop JVM target, iterate in the IDE without running a build**.
 
+Make previews mandatory, not optional:
+- every `*Content.kt` should have at least one preview stub
+- feature UI modules should keep preview files alongside the screen/content code or in a
+  `previews/` sibling folder
+- the preview should exercise the states that matter for the screen, not just the happy path
+
 Why Desktop over Android previews:
 - JVM only — no `processDebugResources`, no D8, no manifest merge
 - 3–5× faster compilation than the Android target
@@ -234,6 +240,8 @@ Conceptual link:
 - skipping the `AppTheme {}` wrapper in previews — colors and typography look wrong; always wrap
 - using Android emulator to verify layout during development — Desktop preview is 3–5× faster
 - hardcoding preview data inline — use `PreviewData` object so all previews stay in sync
+- shipping a `Content` composable without a matching preview stub — that leaves the
+  preview workflow optional and is exactly how drift sneaks in
 
 If the Desktop preview doesn't render, check that the `:ui` convention plugin declares `jvm()` and
 that the Compose plugin is applied.
@@ -248,3 +256,11 @@ When asked about UI iteration, previews, or fast Compose development, respond in
 3. Desktop run command for live iteration
 4. how previews promote to Roborazzi
 5. PreviewData object placement
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-18 | Initial release. |

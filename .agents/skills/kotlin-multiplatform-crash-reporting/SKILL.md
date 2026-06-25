@@ -3,14 +3,14 @@ name: kotlin-multiplatform-crash-reporting
 description: >
   Crash reporting for Kotlin Multiplatform apps — Firebase Crashlytics on Android/iOS,
   Sentry as a cross-platform alternative, custom non-fatal event recording, and breadcrumb
-  logging. Covers: Kermit crash integration (via kermit-crashlytics / kermit-sentry),
-  symbolication setup for Kotlin/Native dSYMs, and a CrashReporter expect/actual interface
-  that keeps commonMain free of platform SDKs. Does NOT cover general structured logging
-  (see logging skill) or app analytics/events (see analytics skill).
+  logging. Covers: logger breadcrumb bridges, symbolication setup for Kotlin/Native
+  dSYMs, and a CrashReporter expect/actual interface that keeps commonMain free of
+  platform SDKs. Does NOT cover general structured logging (see logging skill) or app
+  analytics/events (see analytics skill).
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-21'
+  last-updated: '2026-06-24'
   keywords:
     - crash reporting
     - crashlytics
@@ -19,7 +19,7 @@ metadata:
     - non-fatal
     - symbolication
     - dsym
-    - kermit crash
+    - breadcrumb bridge
     - crash handler
     - breadcrumb
     - crash analytics
@@ -38,26 +38,28 @@ Do NOT use this skill when:
 - You need user behaviour analytics — use `kotlin-multiplatform-analytics`
 
 **Trigger keywords:** crash reporting, crashlytics, firebase crashes, sentry, non-fatal error,
-symbolication, dSYM, kermit crash, crash handler, crash analytics, crash tracking.
+symbolication, dSYM, breadcrumb bridge, crash handler, crash analytics, crash tracking,
+crash, exception handling, error reporting, track errors, exception tracking, app crash,
+error tracking, report errors, debug crashes, crash diagnostics.
 
 **Freshness rule:** Firebase Crashlytics and Sentry SDKs update frequently. Recheck the
 [Firebase BoM](https://firebase.google.com/support/release-notes/android) and the
 [Sentry KMP SDK changelog](https://github.com/getsentry/sentry-kotlin-multiplatform/releases)
-before adding or updating dependencies. Verify `kermit-crashlytics` and `kermit-sentry`
-versions align with the Kermit version in `libs.versions.toml`.
+before adding or updating dependencies. Keep breadcrumb bridges aligned with the logger
+facade the project actually uses.
 
 ---
 
 ## Recommendation First
 
-Default to **Firebase Crashlytics + Kermit integration** for apps already using Firebase.
+Default to **Firebase Crashlytics + a breadcrumb bridge** for apps already using Firebase.
 Use **Sentry KMP** if you need a single SDK on Android, iOS, and Desktop without Firebase.
 
 The pattern is the same for both providers:
 1. Define a `CrashReporter` interface in `commonMain`
 2. Implement it per platform using the native SDK
 3. Wire through Koin — inject into the root `App()` and your error boundaries
-4. Route Kermit log writers to the crash reporter so logs appear as breadcrumbs
+4. Route your logger wrapper to the crash reporter so logs appear as breadcrumbs
 
 ```kotlin
 // commonMain — :api
@@ -192,23 +194,22 @@ class SentryCrashReporterImpl : CrashReporter {
 
 ---
 
-## Kermit Integration (breadcrumbs from logs)
+## Logger Breadcrumb Bridge
 
-Route Kermit's `LogWriter` to the crash reporter so every log becomes a breadcrumb:
+Route your logger wrapper to the crash reporter so every log becomes a breadcrumb:
 
 ```kotlin
-class CrashReporterLogWriter(private val reporter: CrashReporter) : LogWriter() {
-    override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
-        reporter.addBreadcrumb(message = "[$tag] $message", category = severity.name.lowercase())
-        if (severity >= Severity.Error && throwable != null) {
+class CrashReporterBreadcrumbSink(private val reporter: CrashReporter) {
+    fun breadcrumb(level: String, tag: String, message: String, throwable: Throwable?) {
+        reporter.addBreadcrumb(message = "[$tag] $message", category = level)
+        if (throwable != null) {
             reporter.recordException(throwable, context = mapOf("tag" to tag))
         }
     }
 }
 
 // In your Koin module:
-single { CrashReporterLogWriter(get<CrashReporter>()) }
-single { Kermit(get<CrashReporterLogWriter>()) }
+single { CrashReporterBreadcrumbSink(get<CrashReporter>()) }
 ```
 
 ---
@@ -248,8 +249,7 @@ single<CrashReporter> { FirebaseCrashReporterImpl() }
 single<CrashReporter> { FirebaseCrashReporterImpl() }   // or SentryCrashReporterImpl()
 
 // commonMain
-single { CrashReporterLogWriter(get()) }
-single { Kermit(get<CrashReporterLogWriter>()) }
+single { CrashReporterBreadcrumbSink(get()) }
 ```
 
 Initialize the crash SDK before Koin in `Application.onCreate()` / `application(_:didFinishLaunchingWithOptions:)`.
@@ -294,11 +294,11 @@ class FakeCrashReporter : CrashReporter {
     assertNull(reporter.userId)
 }
 
-@Test fun `kermit error log forwards to crash reporter`() = runTest {
+@Test fun `logger error forwards to crash reporter`() = runTest {
     val reporter = FakeCrashReporter()
-    val writer = CrashReporterLogWriter(reporter)
+    val writer = CrashReporterBreadcrumbSink(reporter)
     val error = RuntimeException("test crash")
-    writer.log(Severity.Error, "connection failed", "Network", error)
+    writer.breadcrumb("error", "Network", "connection failed", error)
     assertEquals(1, reporter.exceptions.size)
     assertEquals(1, reporter.breadcrumbs.size)
 }
@@ -323,7 +323,7 @@ class FakeCrashReporter : CrashReporter {
 
 ## Related Skills
 
-- `kotlin-multiplatform-logging` — Kermit structured logging; wire `CrashReporterLogWriter` into Kermit
+- `kotlin-multiplatform-logging` — structured logging; wire the logger wrapper into the breadcrumb bridge
 - `kotlin-multiplatform-analytics` — event tracking; crash reporting is about exceptions, not behaviour
 - `kotlin-multiplatform-expect-actual` — alternative approach if you prefer `expect class` over interface injection
 - `kotlin-multiplatform-dependency-injection` — Koin wiring for `CrashReporter` binding per platform
@@ -336,7 +336,15 @@ When asked about crash reporting, respond in this order:
 1. recommendation (Crashlytics vs Sentry — ask if Firebase is already in the project)
 2. the `CrashReporter` interface in commonMain
 3. Android and iOS actuals (shortest viable snippet)
-4. Kermit log writer integration
+4. logger breadcrumb bridge integration
 5. dSYM symbolication reminder
 
 Lead with the interface — never put SDK imports in commonMain code.
+
+---
+
+## Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-21 | Initial release. |
