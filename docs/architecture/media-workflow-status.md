@@ -136,9 +136,11 @@ Run the full demo JVM suite:
 ## Known Gaps / Missing
 
 - `media.file_output` still lacks a dedicated direct unit test file.
-- The workflow execution tests use deterministic fakes, so they validate wiring and data flow
-  **without** launching FFmpeg or the TTS binary. There is no end-to-end test that produces a real
-  media file.
+- The workflow-level execution tests use deterministic fakes (no FFmpeg/TTS launch). Real-tool
+  coverage is per-node and availability-guarded: `FfmpegMediaCoreBackendTest` and the `say`/tesseract
+  fallback tests. There is no single end-to-end test that runs a whole template against real tools.
+- Speech-to-text has no zero-config fallback (no standard CLI), so the captioning template still
+  needs `GRAPHYN_STT_EXECUTABLE`. TTS (macOS `say`) and OCR (`tesseract`) do fall back automatically.
 - `media.video_stitch` supports only the `cut` transition in Phase 1.
 - `media.video_compose` overlays are video handles only; image and text overlays are deferred.
 - `media.image_import` reads only dimensions (no color space / frame extraction yet).
