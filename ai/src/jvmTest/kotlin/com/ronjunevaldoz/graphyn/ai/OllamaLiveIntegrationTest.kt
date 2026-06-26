@@ -11,6 +11,8 @@ import kotlin.test.assertTrue
 /**
  * Live integration test against a real Ollama host. @Ignore by default (network + model latency);
  * remove the annotation and run manually to validate the full generate → parse pipeline.
+ *
+ * Configure the host via `GRAPHYN_OLLAMA_HOST` env var (defaults to `http://localhost:11434`).
  */
 class OllamaLiveIntegrationTest {
 
@@ -26,9 +28,8 @@ class OllamaLiveIntegrationTest {
     @Ignore
     @Test
     fun generatesWorkflowFromLiveHost() = runBlocking {
-        val generator = OllamaWorkflowGenerator(
-            OllamaConfig(baseUrl = "https://ron-local-home.duckdns.org/ollama/", model = "qwen2.5-coder:14b"),
-        )
+        val host = System.getenv("GRAPHYN_OLLAMA_HOST") ?: OllamaConfig.DEFAULT_BASE_URL
+        val generator = OllamaWorkflowGenerator(OllamaConfig(baseUrl = host))
         val result = generator.generate("Fetch a URL and write the response body to a file", catalog)
         println("RESULT: $result")
         assertTrue(result is WorkflowGenerationResult.Success, "expected success, got $result")

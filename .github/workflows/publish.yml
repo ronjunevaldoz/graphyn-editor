@@ -50,6 +50,9 @@ jobs:
       - name: Publish graphyn-editor (app/shared)
         run: ./gradlew :app:shared:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      - name: Publish graphyn-server
+        run: ./gradlew :server:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

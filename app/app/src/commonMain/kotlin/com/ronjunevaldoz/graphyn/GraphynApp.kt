@@ -135,4 +135,4 @@ fun GraphynApp(
 }
 
 /** Ollama host used by the demo's AI workflow generation. Override via [GraphynApp]'s workflowGenerator. */
-private const val DEMO_OLLAMA_HOST = "https://ron-local-home.duckdns.org/ollama/"
+private const val DEMO_OLLAMA_HOST = OllamaConfig.DEFAULT_BASE_URL
