@@ -38,7 +38,8 @@ VERSION="${1:-$(grep '^VERSION=' gradle.properties | cut -d= -f2)}"
 echo "📦  Publishing version: $VERSION"
 
 # ── Module groups (published in dependency order) ─────────────────────────────
-declare -a GROUPS=(
+# Named PUBLISH_GROUPS (not GROUPS) to avoid collision with .env variables
+declare -a PUBLISH_GROUPS=(
     ":core:model :core:execution :core:serialization :core:data"
     ":plugin-api"
     ":ai"
@@ -51,12 +52,12 @@ declare -a GROUPS=(
 
 # If a specific module is requested (e.g. "server"), publish only that
 if [[ -n "${2:-}" ]]; then
-    GROUPS=(":${2}")
+    PUBLISH_GROUPS=(":${2}")
     echo "🎯  Single module: :${2}"
 fi
 
 # ── Publish each group ────────────────────────────────────────────────────────
-for group in "${GROUPS[@]}"; do
+for group in "${PUBLISH_GROUPS[@]}"; do
     TASKS=""
     for module in $group; do
         TASKS+="${module}:publishAllPublicationsToMavenCentralRepository "
@@ -64,15 +65,10 @@ for group in "${GROUPS[@]}"; do
 
     echo ""
     echo "▶️   $group"
+    # Expand TASKS in outer bash before passing to doppler --command
     DOPPLER_TOKEN="$DOPPLER_TOKEN" doppler run \
         --project maven-central --config prd \
-        --command "./gradlew $TASKS \
-            -PmavenCentralUsername=\$MAVEN_CENTRAL_USERNAME \
-            -PmavenCentralPassword=\$MAVEN_CENTRAL_PASSWORD \
-            -PsigningInMemoryKey=\$GPG_SIGNING_KEY \
-            -PsigningInMemoryKeyPassword=\$GPG_SIGNING_PASSWORD \
-            -PVERSION=$VERSION \
-            --no-daemon --no-configuration-cache"
+        --command "./gradlew $TASKS -PmavenCentralUsername=\$MAVEN_CENTRAL_USERNAME -PmavenCentralPassword=\$MAVEN_CENTRAL_PASSWORD -PsigningInMemoryKey=\$GPG_SIGNING_KEY -PsigningInMemoryKeyPassword=\$GPG_SIGNING_PASSWORD -PVERSION=$VERSION --no-daemon --no-configuration-cache"
 done
 
 echo ""
