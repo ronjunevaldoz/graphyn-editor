@@ -4,6 +4,62 @@ All notable changes to Graphyn are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-06-26
+
+### Fixed
+
+- **publishing:** Maven Central deployments never reached `repo1.maven.org` since v0.3.0 — three compounding bugs fixed:
+  - `automaticRelease = true` now set on every module (deployments previously sat PENDING in the Central Portal forever)
+  - Signing condition checks `signingInMemoryKey` (the property CI actually sets) instead of the never-set `signingKey` — `.asc` signatures are now generated
+  - Migrated to vanniktech maven-publish `0.37.0` (removed `SonatypeHost`, enabled Dokka v2 mode)
+- **publishing:** POM leaks fixed — unpublished modules (`core:designsystem`) demoted from `api()` to `implementation()` in `app:shared` and `ui:cards`
+- **plugins:preview:** `MediaOutputCardPlatform` had no `actual` for native/JS/WASM/Android — added a multiplatform `MediaOutputPlaceholderCard` fallback so `graphyn-runtime` and `graphyn-editor` publish for all KMP targets
+
+### Added
+
+- **ai:** `graphyn-ai` first published to Maven Central (`io.github.ronjunevaldoz:graphyn-ai:0.7.0`)
+- **runtime:** `graphyn-runtime` first published to Maven Central (`io.github.ronjunevaldoz:graphyn-runtime:0.7.0`)
+- **docs:** Maven publishing rules added to `CLAUDE.md` (automaticRelease, signing property, `api()`/`implementation()` POM hygiene)
+
+---
+
+## [0.6.0] — 2026-06-26
+
+### Features
+
+- **server:** `install(Graphyn)` Ktor plugin — embed the full workflow API into any existing Ktor server with a single call
+- **server:** `graphyn-server` first published to Maven Central (`io.github.ronjunevaldoz:graphyn-server:0.6.0`)
+- **server:** `GraphynKtorConfig` — typed config: `routePrefix`, `requireApiKey`, `apiKey`, `store`, `extraPlugins`
+- **server:** `GraphynAuthPlugin` now accepts explicit `apiKey` via config (falls back to `GRAPHYN_API_KEY` env var)
+
+### Security
+
+- **app:** Replaced hardcoded personal home-server URL with `GRAPHYN_OLLAMA_HOST` env var (default: `http://localhost:11434`)
+
+### Documentation
+
+- `docs/guides/server-embedding.md` — quick-start, config reference, routes, auth, custom plugins, SSE example
+- `docs/reference/compatibility-matrix.md` — artifact table, KMP target matrix, version history, tool versions
+
+---
+
+## [0.5.0] — 2026-06-26
+
+### Features
+
+- **media:** Phase 2 captioning & composition nodes (`speech_to_text`, `ocr`, `caption_overlay`, `video_compose`, `timing_controller`, `image_import`) + 4 new templates
+- **media:** Phase 3 image ops (`image_resize`, `image_crop`, `images_list`, `image_sequence_to_video`) + Image Edit + Slideshow templates
+- **media:** `media.audio_encode` node — audio templates now terminate in `media.file_output` instead of `preview.view`
+- **media:** Zero-config TTS/OCR fallbacks (`say` on macOS, `tesseract`) when `GRAPHYN_*_EXECUTABLE` env vars unset
+- **app:** Production app reframe — `app/demo → app/app`, `DemoApp → GraphynApp`, `DemoScene → WorkflowCatalog`
+- **launcher:** Platform-gated template catalog — `catalogTemplatesFor(nodeSpecs)` hides JVM-only templates on Web
+
+### Refactoring
+
+- **media-core:** Split `FfmpegMediaCoreBackend` into `FfmpegDecode`, `FfmpegEncode`, `FfmpegImage`, `MediaCompositionFilters` (all under 150-line ceiling)
+
+---
+
 ## [0.4.1] — 2026-06-26
 
 ### Bug Fixes
