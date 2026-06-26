@@ -33,7 +33,7 @@ dependencies {
 }
 
 mavenPublishing {
-    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+    publishToMavenCentral(automaticRelease = true)
     if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
     coordinates("io.github.ronjunevaldoz", "graphyn-server", libraryVersion)
     pom {
