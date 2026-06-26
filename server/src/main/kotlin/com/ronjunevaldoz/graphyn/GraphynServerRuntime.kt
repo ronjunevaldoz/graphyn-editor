@@ -5,6 +5,7 @@ package com.ronjunevaldoz.graphyn
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.validation.WorkflowGraphValidator
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
+import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginRegistry
 import com.ronjunevaldoz.graphyn.runtime.GraphynRuntime
 
@@ -19,9 +20,9 @@ data class GraphynServerRuntime(
     val validator: WorkflowGraphValidator,
 )
 
-fun createGraphynServerRuntime(): GraphynServerRuntime {
+fun createGraphynServerRuntime(extraPlugins: List<GraphynPlugin> = emptyList()): GraphynServerRuntime {
     val plugins = DefaultGraphynPluginRegistry()
-    plugins.installAll(GraphynRuntime.runtimePlugins)
+    plugins.installAll(GraphynRuntime.runtimePlugins + extraPlugins)
 
     return GraphynServerRuntime(
         plugins = plugins,
