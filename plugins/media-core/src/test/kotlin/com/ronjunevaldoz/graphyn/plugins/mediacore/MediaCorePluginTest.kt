@@ -18,11 +18,63 @@ class MediaCorePluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(11, registry.nodeSpecs.all().size)
-        (MediaCoreSpecs.all + MediaCompositionSpecs.all).forEach {
+        assertEquals(15, registry.nodeSpecs.all().size)
+        (MediaCoreSpecs.all + MediaCompositionSpecs.all + MediaBuilderSpecs.all).forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
         }
+    }
+
+    @Test
+    fun overlayBuilderAndCollectorFeedVideoCompose() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        val built = registry.nodeExecutors.resolve(MediaBuilderSpecs.videoOverlay.type)!!.execute(
+            mapOf(
+                "source" to MediaTypes.videoValue("/media/logo.mp4"),
+                "x" to WorkflowValue.IntValue(12),
+                "y" to WorkflowValue.IntValue(34),
+                "start_ms" to WorkflowValue.DoubleValue(0.0),
+                "end_ms" to WorkflowValue.DoubleValue(500.0),
+                "opacity" to WorkflowValue.DoubleValue(0.5),
+            ),
+        )
+        val collected = registry.nodeExecutors.resolve(MediaBuilderSpecs.overlaysList.type)!!.execute(
+            mapOf("overlay1" to built.getValue("overlay")),
+        )
+        registry.nodeExecutors.resolve(MediaCompositionSpecs.videoCompose.type)!!.execute(
+            mapOf(
+                "base_video" to MediaTypes.videoValue("/media/base.mp4"),
+                "overlays" to collected.getValue("overlays"),
+            ),
+        )
+        assertEquals(VideoOverlay("/media/logo.mp4", 12, 34, 0.0, 500.0, 0.5), backend.lastOverlays.single())
+    }
+
+    @Test
+    fun syncPointBuilderAndCollectorFeedTimingController() = runTest {
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(FakeMediaCoreBackend())) }
+
+        suspend fun point(source: Double, target: Double) =
+            registry.nodeExecutors.resolve(MediaBuilderSpecs.syncPoint.type)!!.execute(
+                mapOf(
+                    "source_ms" to WorkflowValue.DoubleValue(source),
+                    "target_ms" to WorkflowValue.DoubleValue(target),
+                ),
+            ).getValue("point")
+
+        val collected = registry.nodeExecutors.resolve(MediaBuilderSpecs.syncPointsList.type)!!.execute(
+            mapOf("point1" to point(0.0, 100.0), "point2" to point(1000.0, 1200.0)),
+        )
+        val config = registry.nodeExecutors.resolve(MediaCompositionSpecs.timingController.type)!!.execute(
+            mapOf(
+                "base_video" to MediaTypes.videoValue("/media/base.mp4"),
+                "sync_points" to collected.getValue("sync_points"),
+            ),
+        )
+        val record = config.getValue("config") as WorkflowValue.RecordValue
+        assertEquals(WorkflowValue.DoubleValue(150.0), record.fields["audio_delay_ms"])
     }
 
     @Test

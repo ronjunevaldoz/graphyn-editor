@@ -27,6 +27,8 @@ Phase 2 (captioning & composition) adds:
 - `media.timing_controller` (averages sync points into delays)
 - `media.speech_to_text` (audio → text + timed caption segments)
 - `media.ocr` (image → text + bounding blocks)
+- `media.video_overlay` + `media.overlays_list` (build the overlay list `video_compose` needs)
+- `media.sync_point` + `media.sync_points_list` (build the sync-point list `timing_controller` needs)
 
 ## Current Status
 
@@ -34,10 +36,11 @@ Phase 1 media workflows are implemented for JVM/Desktop and are covered by both 
 contract tests and workflow execution tests.
 
 Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
-availability-guarded FFmpeg backend tests. The **Captioned Video** template wires the captioning
-chain (`speech_to_text → caption_overlay`, plus `caption_style`) and **Document Text Extract** wires
-`image_import → ocr`, both end-to-end. `video_compose` and `timing_controller` are registered in the
-palette but not yet used in a shipped template (they need a record-builder node first).
+availability-guarded FFmpeg backend tests. All five Phase 2 capabilities now ship in a template:
+**Captioned Video** (`speech_to_text → caption_overlay` + `caption_style`), **Document Text Extract**
+(`image_import → ocr`), **Picture-in-Picture** (`video_overlay → overlays_list → video_compose`),
+and **Sync Calibration** (`sync_point → sync_points_list → timing_controller`). The builder +
+collector nodes assemble the record lists `video_compose` and `timing_controller` consume.
 
 ## Node Status
 
@@ -59,8 +62,12 @@ palette but not yet used in a shipped template (they need a record-builder node 
 | `graphyn.sticky_note` | sticky-notes | implemented | n/a (annotation) | yes | yes | No-op executor so an embedded guide note never fails execution |
 | `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Document Text Extract) | yes | FFprobe-backed image handle + dimensions; the producer `media.ocr` consumes |
 | `media.caption_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Captioned Video) | yes | Burns captions via the `ass` filter; **requires FFmpeg built with libass** |
-| `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | no | n/a | Overlay-filter chain with per-overlay timing + opacity |
-| `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | no | n/a | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
+| `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Picture-in-Picture) | yes | Overlay-filter chain with per-overlay timing + opacity |
+| `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
+| `media.video_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Picture-in-Picture) | yes | Builds one overlay record for `video_compose` |
+| `media.overlays_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Picture-in-Picture) | yes | Collects overlay records into the compose list |
+| `media.sync_point` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Builds one `(source_ms,target_ms)` record |
+| `media.sync_points_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Collects sync-point records into the timing list |
 | `media.speech_to_text` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Captioned Video) | yes | CLI adapter `GRAPHYN_STT_EXECUTABLE`; emits caption segments |
 | `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Document Text Extract) | yes | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; pairs with `media.image_import` |
 
@@ -75,6 +82,8 @@ palette but not yet used in a shipped template (they need a record-builder node 
 | Video Stitch | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Clip ordering, stitching, encode. Output preview via `media.file_output` |
 | Captioned Video | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: transcribe → style → burn-in captions → encode. Output via `media.file_output` |
 | Document Text Extract | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: import image → OCR → preview text. Needs `GRAPHYN_OCR_EXECUTABLE` to run |
+| Picture-in-Picture | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build overlay → compose over base → encode. Needs FFmpeg `overlay` filter |
+| Sync Calibration | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build sync points → average into delays → preview config. Pure compute |
 
 The launcher groups templates by `WorkflowCategory` (Media / Data & IO / Examples); media templates
 are the Media section. Every template also carries a `graphyn.sticky_note` guide node (title, flow, use-cases, tips) and
@@ -120,9 +129,6 @@ Run the full demo JVM suite:
 - No audio encode/save node yet, so audio-only templates cannot terminate in `media.file_output`
   (they use `preview.view`).
 - `media.video_stitch` supports only the `cut` transition in Phase 1.
-- **`media.video_compose` and `media.timing_controller` are not yet in a demo template.** Both
-  consume *lists of records* (overlays / sync points) that have **no in-graph producer node**, so a
-  clean demo needs an overlay/sync-point builder node first (Phase 3).
 - `media.video_compose` overlays are video handles only; image and text overlays are deferred.
 - `media.image_import` reads only dimensions (no color space / frame extraction yet).
 - Phase 3 nodes (image ops, audio encode, advanced encoding) remain planned in

@@ -73,10 +73,16 @@ class DemoSceneWorkflowTest {
         "media.caption_style",
         "media.image_import",
         "media.ocr",
+        "media.overlays_list",
         "media.speech_to_text",
+        "media.sync_point",
+        "media.sync_points_list",
         "media.text_to_speech",
+        "media.timing_controller",
+        "media.video_compose",
         "media.video_encode",
         "media.video_import",
+        "media.video_overlay",
         "media.video_stitch",
         "media.videos_list",
     )
@@ -111,6 +117,8 @@ class DemoSceneWorkflowTest {
             WorkflowCatalog.VideoStitch,
             WorkflowCatalog.Captioned,
             WorkflowCatalog.OcrExtract,
+            WorkflowCatalog.PictureInPicture,
+            WorkflowCatalog.SyncCalibration,
         )
         WorkflowCatalog.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes

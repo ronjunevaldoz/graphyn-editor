@@ -25,6 +25,8 @@ class MediaWorkflowTemplateTest {
                 WorkflowCatalog.VideoStitch,
                 WorkflowCatalog.Captioned,
                 WorkflowCatalog.OcrExtract,
+                WorkflowCatalog.PictureInPicture,
+                WorkflowCatalog.SyncCalibration,
             ),
             mediaScenes,
         )
@@ -292,6 +294,71 @@ class MediaWorkflowTemplateTest {
             ),
         )
         assertResolver(workflow.node("resolveImage"), "sample.png")
+    }
+
+    @Test
+    fun pictureInPictureTemplateIsConfiguredAndWired() {
+        val workflow = WorkflowCatalog.PictureInPicture.workflow
+
+        assertTemplate(
+            workflow = workflow,
+            expectedId = "picture-in-picture",
+            expectedName = "Picture-in-Picture",
+            expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
+                "resolveBase" to "io.resolve_path",
+                "resolveOverlay" to "io.resolve_path",
+                "import_base" to "media.video_import",
+                "import_overlay" to "media.video_import",
+                "overlay" to "media.video_overlay",
+                "overlays" to "media.overlays_list",
+                "compose" to "media.video_compose",
+                "encode" to "media.video_encode",
+                "output" to "media.file_output",
+            ),
+            expectedConnections = setOf(
+                connection("resolveBase", "resolved_path", "import_base", "path"),
+                connection("resolveOverlay", "resolved_path", "import_overlay", "path"),
+                connection("import_overlay", "video", "overlay", "source"),
+                connection("overlay", "overlay", "overlays", "overlay1"),
+                connection("import_base", "video", "compose", "base_video"),
+                connection("overlays", "overlays", "compose", "overlays"),
+                connection("compose", "video", "encode", "video"),
+                connection("encode", "file_path", "output", "file_path"),
+            ),
+        )
+        assertResolver(workflow.node("resolveBase"), "input.mp4")
+        assertResolver(workflow.node("resolveOverlay"), "clip1.mp4")
+    }
+
+    @Test
+    fun syncCalibrationTemplateIsConfiguredAndWired() {
+        val workflow = WorkflowCatalog.SyncCalibration.workflow
+
+        assertTemplate(
+            workflow = workflow,
+            expectedId = "sync-calibration",
+            expectedName = "Sync Calibration",
+            expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
+                "resolveVideo" to "io.resolve_path",
+                "import_video" to "media.video_import",
+                "point1" to "media.sync_point",
+                "point2" to "media.sync_point",
+                "points" to "media.sync_points_list",
+                "timing" to "media.timing_controller",
+                "preview" to "preview.view",
+            ),
+            expectedConnections = setOf(
+                connection("resolveVideo", "resolved_path", "import_video", "path"),
+                connection("import_video", "video", "timing", "base_video"),
+                connection("point1", "point", "points", "point1"),
+                connection("point2", "point", "points", "point2"),
+                connection("points", "sync_points", "timing", "sync_points"),
+                connection("timing", "config", "preview", "value"),
+            ),
+        )
+        assertResolver(workflow.node("resolveVideo"), "input.mp4")
     }
 
     private fun assertTemplate(

@@ -1135,3 +1135,17 @@ availability-guarded backend test skips the caption leg when `ass` is absent (th
 `format`, and `colorchannelmixer` filters used by `video_compose` are part of core FFmpeg and are
 safe to assume). Rule: any node that depends on an optional FFmpeg filter must probe for it rather
 than assume it, and its test must degrade to a no-op when the filter is missing.
+
+## A node that consumes a list-of-records needs a builder + collector to be wireable
+
+`media.video_compose` (`overlays: ListType(videoOverlay)`) and `media.timing_controller`
+(`sync_points: ListType(syncPoint)`) were implemented and unit-tested, but **could not be placed in a
+demo template** — nothing in the graph produces a `RecordType` value, let alone a list of them. The
+type system has no literal/record-constructor, so a `ListType(RecordType(...))` input is a dead port
+unless a producer node exists. The fix is the same builder + collector idiom already used for media
+handles (`audios_list`/`videos_list`): a **builder** node whose inputs are the record's fields and
+whose single output is the record (`media.video_overlay`, `media.sync_point`), plus a **collector**
+node that gathers `itemN` inputs into a `ListValue` (`media.overlays_list`, `media.sync_points_list`,
+backed by a generic `recordListExecutor(prefix, outputName, label)`). Rule: any node that consumes a
+`ListType(RecordType)` you expect users to build by hand needs a matching builder+collector pair, or
+it is only reachable from a script.

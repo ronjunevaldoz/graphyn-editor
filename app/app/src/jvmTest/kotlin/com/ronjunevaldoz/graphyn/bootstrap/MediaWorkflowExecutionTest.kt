@@ -150,6 +150,41 @@ class MediaWorkflowExecutionTest {
         assertEquals("sample.png", fixture.lastOcrImage)
         assertEquals(stringValue("INVOICE"), result.output("ocr", "text"))
     }
+
+    @Test
+    fun pictureInPictureExecutesEndToEnd() = runTest {
+        val fixture = MediaExecutionFixture()
+
+        val result = fixture.execute(WorkflowCatalog.PictureInPicture)
+
+        result.assertFullSuccess(expectedNodeCount = 10)
+        assertEquals(1, fixture.lastComposeOverlayCount)
+        assertEquals(
+            EncodeCall(
+                videoPath = "/generated/composed.mp4",
+                audioPath = null,
+                outputPath = "composed.mp4",
+                bitrate = "high",
+                codec = "h264",
+            ),
+            fixture.lastEncodeCall,
+        )
+        assertEquals(stringValue("composed.mp4"), result.output("encode", "file_path"))
+    }
+
+    @Test
+    fun syncCalibrationExecutesEndToEnd() = runTest {
+        val fixture = MediaExecutionFixture()
+
+        val result = fixture.execute(WorkflowCatalog.SyncCalibration)
+
+        result.assertFullSuccess(expectedNodeCount = 8)
+        assertEquals(150.0, fixture.lastTimingDelayMs)
+        assertEquals(
+            WorkflowValue.DoubleValue(150.0),
+            (result.output("timing", "config") as WorkflowValue.RecordValue).fields["audio_delay_ms"],
+        )
+    }
 }
 
 private class MediaExecutionFixture {
@@ -160,6 +195,8 @@ private class MediaExecutionFixture {
     var lastEncodeCall: EncodeCall? = null
     var lastCaptionCount: Int = 0
     var lastOcrImage: String? = null
+    var lastComposeOverlayCount: Int = 0
+    var lastTimingDelayMs: Double = 0.0
 
     private val executors = DefaultNodeExecutorRegistry().apply {
         register("io.resolve_path") { inputs ->
@@ -303,6 +340,46 @@ private class MediaExecutionFixture {
             mapOf(
                 "text" to stringValue("INVOICE"),
                 "blocks" to WorkflowValue.ListValue(emptyList()),
+            )
+        }
+        register("media.video_overlay") { inputs ->
+            mapOf("overlay" to WorkflowValue.RecordValue(mapOf("source" to inputs.getValue("source"))))
+        }
+        register("media.overlays_list") { inputs ->
+            mapOf("overlays" to WorkflowValue.ListValue((1..4).mapNotNull { inputs["overlay$it"] }))
+        }
+        register("media.video_compose") { inputs ->
+            lastComposeOverlayCount = (inputs["overlays"] as WorkflowValue.ListValue).items.size
+            mapOf(
+                "video" to MediaTypes.videoValue("/generated/composed.mp4"),
+                "duration_ms" to WorkflowValue.DoubleValue(90_000.0),
+            )
+        }
+        register("media.sync_point") { inputs ->
+            mapOf(
+                "point" to WorkflowValue.RecordValue(
+                    mapOf("source_ms" to inputs.getValue("source_ms"), "target_ms" to inputs.getValue("target_ms")),
+                ),
+            )
+        }
+        register("media.sync_points_list") { inputs ->
+            mapOf("sync_points" to WorkflowValue.ListValue((1..4).mapNotNull { inputs["point$it"] }))
+        }
+        register("media.timing_controller") { inputs ->
+            val points = (inputs["sync_points"] as WorkflowValue.ListValue).items.map { (it as WorkflowValue.RecordValue).fields }
+            val avg = points.map {
+                (it.getValue("target_ms") as WorkflowValue.DoubleValue).value -
+                    (it.getValue("source_ms") as WorkflowValue.DoubleValue).value
+            }.average()
+            lastTimingDelayMs = avg
+            mapOf(
+                "config" to WorkflowValue.RecordValue(
+                    mapOf(
+                        "video_delay_ms" to WorkflowValue.DoubleValue(0.0),
+                        "audio_delay_ms" to WorkflowValue.DoubleValue(avg),
+                        "caption_offset_ms" to WorkflowValue.DoubleValue(avg),
+                    ),
+                ),
             )
         }
         // Annotation node: no data ports, executes as a no-op (mirrors StickyNotePlugin).
