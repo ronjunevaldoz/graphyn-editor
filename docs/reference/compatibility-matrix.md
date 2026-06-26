@@ -16,7 +16,7 @@ All artifacts share the same version and are published to [Maven Central](https:
 | `graphyn-editor` | `io.github.ronjunevaldoz:graphyn-editor` | 0.3.0 | Compose Multiplatform editor shell, canvas, launcher |
 | `graphyn-server` | `io.github.ronjunevaldoz:graphyn-server` | **0.6.0** | Ktor server + `install(Graphyn)` embeddable plugin |
 
-> **`graphyn-server` ships in 0.6.0** — it is new in PR #14 (in review). The publish workflow is wired; once PR #14 merges and `v0.6.0` is tagged the artifact lands on Maven Central.
+> **`graphyn-server` first published in 0.6.0** — available on Maven Central as `io.github.ronjunevaldoz:graphyn-server:0.6.0`.
 
 ---
 
@@ -58,7 +58,7 @@ These ship in the repository and are depended on by the demo app. They are **not
 
 | Version | Date | Highlights |
 |---|---|---|
-| 0.6.0 | _pending PR #14_ | `graphyn-server` first publish; `install(Graphyn)` Ktor plugin |
+| 0.6.0 | 2026-06-26 | `graphyn-server` first publish; `install(Graphyn)` Ktor plugin; security: replaced hardcoded home-server URL with `GRAPHYN_OLLAMA_HOST` env var |
 | 0.5.0 | 2026-06-26 | Phase 2 & 3 media nodes; production app reframe; platform-gated catalog |
 | 0.4.1 | 2026-06-26 | Editable structured fields in cards |
 | 0.4.0 | 2026-06-26 | Media workflow modules (Phase 1); desktop datetime runtime |
