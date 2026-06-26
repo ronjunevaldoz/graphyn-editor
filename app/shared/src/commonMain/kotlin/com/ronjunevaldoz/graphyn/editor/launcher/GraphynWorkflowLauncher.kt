@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -117,17 +116,28 @@ fun GraphynWorkflowLauncher(
                             }
                         }
                     }
-                    LauncherView.Templates -> items(templates.chunked(2)) { pair ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            pair.forEach { template ->
-                                WorkflowLauncherCard(template = template, modifier = Modifier.weight(1f)) {
-                                    onOpen(template)
+                    LauncherView.Templates -> {
+                        val grouped = WorkflowCategory.entries.mapNotNull { category ->
+                            templates.filter { it.category == category }.takeIf { it.isNotEmpty() }?.let { category to it }
+                        }
+                        grouped.forEach { (category, inCategory) ->
+                            item(key = category) {
+                                LauncherSection(title = category.label) {
+                                    inCategory.chunked(2).forEach { pair ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        ) {
+                                            pair.forEach { template ->
+                                                WorkflowLauncherCard(template = template, modifier = Modifier.weight(1f)) {
+                                                    onOpen(template)
+                                                }
+                                            }
+                                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                                        }
+                                    }
                                 }
                             }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
                         }
                     }
                 }

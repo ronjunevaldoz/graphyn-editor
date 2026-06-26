@@ -27,6 +27,8 @@ Phase 2 (captioning & composition) adds:
 - `media.timing_controller` (averages sync points into delays)
 - `media.speech_to_text` (audio → text + timed caption segments)
 - `media.ocr` (image → text + bounding blocks)
+- `media.video_overlay` + `media.overlays_list` (build the overlay list `video_compose` needs)
+- `media.sync_point` + `media.sync_points_list` (build the sync-point list `timing_controller` needs)
 
 ## Current Status
 
@@ -34,10 +36,11 @@ Phase 1 media workflows are implemented for JVM/Desktop and are covered by both 
 contract tests and workflow execution tests.
 
 Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
-availability-guarded FFmpeg backend tests. The **Captioned Video** demo wires the captioning chain
-(`speech_to_text → caption_overlay`, plus `caption_style`) end-to-end. `video_compose`,
-`timing_controller`, `image_import`, and `ocr` are registered in the palette but not yet used in a
-shipped demo.
+availability-guarded FFmpeg backend tests. All five Phase 2 capabilities now ship in a template:
+**Captioned Video** (`speech_to_text → caption_overlay` + `caption_style`), **Document Text Extract**
+(`image_import → ocr`), **Picture-in-Picture** (`video_overlay → overlays_list → video_compose`),
+and **Sync Calibration** (`sync_point → sync_points_list → timing_controller`). The builder +
+collector nodes assemble the record lists `video_compose` and `timing_controller` consume.
 
 ## Node Status
 
@@ -57,12 +60,16 @@ shipped demo.
 | `media.file_output` | preview | implemented | no dedicated direct unit test yet | yes | yes | Pass-through file preview; only video-encode terminals expose a `file_path` |
 | `preview.view` | preview | implemented | yes (`PreviewPluginTest`) | yes | yes | Generic opaque preview; used to surface TTS/mix audio handles |
 | `graphyn.sticky_note` | sticky-notes | implemented | n/a (annotation) | yes | yes | No-op executor so an embedded guide note never fails execution |
-| `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | no | n/a | FFprobe-backed image handle + dimensions; the producer `media.ocr` consumes |
+| `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Document Text Extract) | yes | FFprobe-backed image handle + dimensions; the producer `media.ocr` consumes |
 | `media.caption_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Captioned Video) | yes | Burns captions via the `ass` filter; **requires FFmpeg built with libass** |
-| `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | no | n/a | Overlay-filter chain with per-overlay timing + opacity |
-| `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | no | n/a | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
+| `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Picture-in-Picture) | yes | Overlay-filter chain with per-overlay timing + opacity |
+| `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
+| `media.video_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Picture-in-Picture) | yes | Builds one overlay record for `video_compose` |
+| `media.overlays_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Picture-in-Picture) | yes | Collects overlay records into the compose list |
+| `media.sync_point` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Builds one `(source_ms,target_ms)` record |
+| `media.sync_points_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Collects sync-point records into the timing list |
 | `media.speech_to_text` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Captioned Video) | yes | CLI adapter `GRAPHYN_STT_EXECUTABLE`; emits caption segments |
-| `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | no | n/a | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; pair with `media.image_import` |
+| `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Document Text Extract) | yes | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; pairs with `media.image_import` |
 
 ## Template Coverage
 
@@ -74,15 +81,19 @@ shipped demo.
 | Smart Video Encode | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Script-driven bitrate selection before encode. Output preview via `media.file_output` |
 | Video Stitch | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Clip ordering, stitching, encode. Output preview via `media.file_output` |
 | Captioned Video | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: transcribe → style → burn-in captions → encode. Output via `media.file_output` |
+| Document Text Extract | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: import image → OCR → preview text. Needs `GRAPHYN_OCR_EXECUTABLE` to run |
+| Picture-in-Picture | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build overlay → compose over base → encode. Needs FFmpeg `overlay` filter |
+| Sync Calibration | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build sync points → average into delays → preview config. Pure compute |
 
-Every template also carries a `graphyn.sticky_note` guide node (title, flow, use-cases, tips) and
+The launcher groups templates by `WorkflowCategory` (Media / Data & IO / Examples); media templates
+are the Media section. Every template also carries a `graphyn.sticky_note` guide node (title, flow, use-cases, tips) and
 ends in an output-preview node. Templates ship without positions; the editor runs auto-layout on
 first load (see Editor Behavior).
 
 ## Editor Behavior
 
 - **Auto-layout on load.** Demo templates have no stored node positions, so the editor dispatches
-  `AutoLayout` once the canvas is measured (`DemoApp`), guarded so a saved/edited layout is never
+  `AutoLayout` once the canvas is measured (`GraphynApp`), guarded so a saved/edited layout is never
   clobbered. Triggered for all scenes, not just one.
 - **Annotation parking.** `performAutoLayout` lays out the dataflow DAG, then parks annotation
   nodes (sticky guides) in a column to the left of the graph so they read as a legend. Annotation
@@ -98,15 +109,15 @@ first load (see Editor Behavior).
 Run the focused media checks:
 
 ```bash
-./gradlew :app:demo:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowTemplateTest
-./gradlew :app:demo:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowExecutionTest
+./gradlew :app:app:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowTemplateTest
+./gradlew :app:app:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowExecutionTest
 ./gradlew :plugins:media-core:test :plugins:media-ai:test
 ```
 
 Run the full demo JVM suite:
 
 ```bash
-./gradlew :app:demo:jvmTest
+./gradlew :app:app:jvmTest
 ```
 
 ## Known Gaps / Missing
@@ -118,10 +129,6 @@ Run the full demo JVM suite:
 - No audio encode/save node yet, so audio-only templates cannot terminate in `media.file_output`
   (they use `preview.view`).
 - `media.video_stitch` supports only the `cut` transition in Phase 1.
-- **`media.video_compose` and `media.timing_controller` are not yet in a demo template** — they are
-  registered and unit-tested but no shipped scene wires them.
-- **`media.ocr` has no demo yet.** `media.image_import` now produces the image handle OCR needs, but
-  no scene wires `image_import → ocr` (it also requires `GRAPHYN_OCR_EXECUTABLE` to run).
 - `media.video_compose` overlays are video handles only; image and text overlays are deferred.
 - `media.image_import` reads only dimensions (no color space / frame extraction yet).
 - Phase 3 nodes (image ops, audio encode, advanced encoding) remain planned in
@@ -139,7 +146,7 @@ Run the full demo JVM suite:
 - **Working directory sensitivity.** `media.video_encode`'s `output_path` and resolved input paths
   are interpreted relative to the process working directory. The desktop app runs from
   `app/desktopApp/`, which is why templates resolve inputs via `io.resolve_path` against
-  `../../app/demo/src/commonMain/resources/media`. Generated outputs (`*.mp4`, `*.wav`) land in the
+  `../../app/app/src/commonMain/resources/media`. Generated outputs (`*.mp4`, `*.wav`) land in the
   desktop app dir and are git-ignored.
 - **Script string escaping.** Kotlin Script (`script.eval`) code embedded in a triple-quoted
   workflow definition must escape template variables as `$$name` so the host compiler does not

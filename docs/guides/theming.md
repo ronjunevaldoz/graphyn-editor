@@ -6,7 +6,7 @@ Graphyn ships with a dark and a light colour scheme, four palette presets, and a
 
 ## Quick start
 
-Pass `GraphynBranding` to `GraphynEditorShell` or `DemoApp`:
+Pass `GraphynBranding` to `GraphynEditorShell` or `GraphynApp`:
 
 ```kotlin
 GraphynEditorShell(
