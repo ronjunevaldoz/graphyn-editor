@@ -55,7 +55,7 @@ kotlin {
 val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.2.0"
 
 mavenPublishing {
-    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
     if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
     coordinates("io.github.ronjunevaldoz", "graphyn-plugin-api", libraryVersion)
     pom {
