@@ -1149,3 +1149,49 @@ node that gathers `itemN` inputs into a `ListValue` (`media.overlays_list`, `med
 backed by a generic `recordListExecutor(prefix, outputName, label)`). Rule: any node that consumes a
 `ListType(RecordType)` you expect users to build by hand needs a matching builder+collector pair, or
 it is only reachable from a script.
+
+## Maven Central publishing: three silent failures that produced zero artifacts
+
+From v0.3.0 through v0.6.0, every CI publish job reported success yet **nothing ever reached
+`repo1.maven.org`**. Three independent bugs compounded, each silent:
+
+1. **`automaticRelease` defaults to `false`.** The vanniktech `publishToMavenCentral()` call uploads
+   a bundle to the Sonatype Central Portal but leaves it in `PENDING`/validated-but-unreleased state
+   unless `automaticRelease = true` is passed. The build goes green; the artifact sits in the portal
+   forever. Fix: `publishToMavenCentral(automaticRelease = true)` on every module.
+
+2. **Signing was gated on a property CI never sets.** The condition was
+   `if (project.hasProperty("signingKey")) signAllPublications()`, but CI exports
+   `ORG_GRADLE_PROJECT_signingInMemoryKey` (→ Gradle property `signingInMemoryKey`). `signingKey` is
+   never set, so `signAllPublications()` was skipped and no `.asc` files were generated — the portal
+   rejects unsigned bundles. Fix: check `signingInMemoryKey`. Rule: the signing guard must name the
+   exact property your CI exports; a typo'd guard fails open (skips signing) instead of erroring.
+
+3. **The signing key was not on a public keyserver.** Even with valid `.asc` files, the portal
+   rejects them with "Could not find a public key by the key fingerprint" until the *public* half is
+   discoverable. Upload it: `keys.openpgp.org` (HTTP API `POST /vks/v1/upload` with JSON
+   `{"keytext": "..."}` — note it requires an email-verification click for the UID to appear in
+   *searches*, but the key is immediately retrievable *by fingerprint*, which is what the portal
+   uses) and `keyserver.ubuntu.com` (`POST /pks/add`, no verification). `gpg --send-keys` failed from
+   this network ("Server indicated a failure") — use the HTTP APIs.
+
+### Other publishing gotchas hit in the same session
+
+- **vanniktech 0.37.0 removed `SonatypeHost`.** Central Portal is now the implicit default;
+  `publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, ...)` no longer compiles. Drop the arg and the
+  import. 0.37.0 also requires Dokka v2: add
+  `org.jetbrains.dokka.experimental.gradle.pluginMode=V2EnabledWithHelpers` to `gradle.properties`.
+- **"Component is currently being published in another deployment".** Re-running a publish while a
+  prior bundle for the same coordinates is still `PUBLISHING` fails validation. Check the portal
+  (`GET /api/v1/publisher/deployments`) before retrying — the earlier run may already be succeeding.
+  Drop stale `FAILED` deployments with `DELETE /api/v1/publisher/deployment/{id}`.
+- **`expect`/`actual` with a missing actual only surfaces at publish time.** `jvmTest` is green
+  because the JVM `actual` exists; publishing compiles *all* KMP targets and only then fails
+  ("Expected ... has no actual declaration ... for Native"). A canvas-card `expect fun` with a
+  JVM-only actual blocked `graphyn-runtime`/`graphyn-editor` for iOS/JS/WASM/Android. Rule: an
+  `expect` needs an actual for every target the module (and every aggregator that depends on it)
+  publishes — verify with `compileKotlin{IosArm64,Js,WasmJs}` + `compileAndroidMain`, not just tests.
+- **Shell: a `declare -a GROUPS=(...)` array was clobbered by a `GROUPS` var sourced from `.env`.**
+  `set -a; source .env` ran before the array declaration; the env value won and the loop iterated a
+  stray scalar. Rule: name script-local arrays distinctly (e.g. `PUBLISH_GROUPS`) so they can't
+  collide with sourced environment variables.
