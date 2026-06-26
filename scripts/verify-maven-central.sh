@@ -20,8 +20,10 @@ BASE="https://repo1.maven.org/maven2/io/github/ronjunevaldoz"
 # Keep in sync with publishedModulePaths in build.gradle.kts and publish.yml.
 ARTIFACTS=(
     graphyn-core-model graphyn-core-execution graphyn-core-serialization graphyn-core-data
-    graphyn-plugin-api graphyn-ai graphyn-editor-api graphyn-runtime
-    graphyn-ui-cards graphyn-editor graphyn-server
+    graphyn-ui-design graphyn-plugin-api graphyn-ai graphyn-editor-api graphyn-ui-cards
+    graphyn-plugin-control graphyn-plugin-list-ops graphyn-plugin-types graphyn-plugin-text
+    graphyn-plugin-io graphyn-plugin-json graphyn-plugin-preview
+    graphyn-runtime graphyn-editor graphyn-server
 )
 
 echo "Verifying ${#ARTIFACTS[@]} artifacts at version $VERSION on Maven Central (timeout ${TIMEOUT}s)…"

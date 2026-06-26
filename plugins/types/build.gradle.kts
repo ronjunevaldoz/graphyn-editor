@@ -1,5 +1,6 @@
 plugins {
     id("graphyn-kmp-compose-library")
+    id("graphyn-maven-publish")
 }
 
 kotlin {
@@ -16,5 +17,13 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
         }
+    }
+}
+
+mavenPublishing {
+    coordinates(artifactId = "graphyn-plugin-types")
+    pom {
+        name.set("Graphyn Plugin: types")
+        description.set("First-party Graphyn plugin.")
     }
 }

@@ -19,7 +19,10 @@ plugins {
 // .github/workflows/publish.yml and scripts/publish-local.sh.
 val publishedModulePaths = setOf(
     ":core:model", ":core:execution", ":core:serialization", ":core:data",
-    ":plugin-api", ":ai", ":editor-api", ":runtime", ":ui:cards", ":app:shared", ":server",
+    ":core:designsystem", ":plugin-api", ":ai", ":editor-api", ":ui:cards",
+    ":plugins:control", ":plugins:list-ops", ":plugins:types", ":plugins:text",
+    ":plugins:io", ":plugins:json", ":plugins:preview",
+    ":runtime", ":app:shared", ":server",
 )
 
 // Run in CI on every PR. Fails fast if a published module is misconfigured, so a
@@ -42,16 +45,22 @@ tasks.register("verifyPublishing") {
             }
         }
 
-        // 2. No published module may have an api() project dependency on an unpublished
-        //    module — it leaks into the POM as a coordinate consumers cannot resolve.
+        // 2. No published module may have a project dependency on an unpublished module
+        //    via api() OR implementation() — both leak into the KMP POM (api → compile
+        //    scope, implementation → runtime scope), producing coordinates consumers
+        //    cannot resolve on Maven Central.
         publishedModulePaths.mapNotNull { rootProject.findProject(it) }.forEach { p ->
             p.configurations
-                .filter { it.name == "api" || it.name.endsWith("MainApi") }
+                .filter { cfg ->
+                    cfg.name == "api" || cfg.name.endsWith("MainApi") ||
+                    cfg.name == "implementation" || cfg.name.endsWith("MainImplementation")
+                }
                 .forEach { cfg ->
                     cfg.dependencies.withType(ProjectDependency::class.java).forEach { dep ->
                         if (dep.path !in publishedModulePaths) {
-                            problems += "${p.path} api-depends on unpublished ${dep.path} via '${cfg.name}'" +
-                                " — use implementation() so it stays off the POM."
+                            val via = if (cfg.name.contains("mplementation", ignoreCase = true)) "implementation" else "api"
+                            problems += "${p.path} depends on unpublished ${dep.path} via '$via' ('${cfg.name}')" +
+                                " — unpublished project deps always leak into the KMP POM."
                         }
                     }
                 }
@@ -69,11 +78,19 @@ tasks.register("verifyPublishing") {
             ":core:execution" to "graphyn-core-execution",
             ":core:serialization" to "graphyn-core-serialization",
             ":core:data" to "graphyn-core-data",
+            ":core:designsystem" to "graphyn-ui-design",
             ":plugin-api" to "graphyn-plugin-api",
             ":ai" to "graphyn-ai",
             ":editor-api" to "graphyn-editor-api",
-            ":runtime" to "graphyn-runtime",
             ":ui:cards" to "graphyn-ui-cards",
+            ":plugins:control" to "graphyn-plugin-control",
+            ":plugins:list-ops" to "graphyn-plugin-list-ops",
+            ":plugins:types" to "graphyn-plugin-types",
+            ":plugins:text" to "graphyn-plugin-text",
+            ":plugins:io" to "graphyn-plugin-io",
+            ":plugins:json" to "graphyn-plugin-json",
+            ":plugins:preview" to "graphyn-plugin-preview",
+            ":runtime" to "graphyn-runtime",
             ":app:shared" to "graphyn-editor",
             ":server" to "graphyn-server",
         )

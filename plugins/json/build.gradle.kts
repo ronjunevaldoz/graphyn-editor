@@ -1,5 +1,6 @@
 plugins {
     id("graphyn-kmp-compose-library")
+    id("graphyn-maven-publish")
 }
 
 kotlin {
@@ -21,5 +22,13 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutinesTest)
         }
+    }
+}
+
+mavenPublishing {
+    coordinates(artifactId = "graphyn-plugin-json")
+    pom {
+        name.set("Graphyn Plugin: json")
+        description.set("First-party Graphyn plugin.")
     }
 }
