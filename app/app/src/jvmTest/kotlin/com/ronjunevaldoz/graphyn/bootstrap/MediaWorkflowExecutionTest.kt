@@ -188,6 +188,30 @@ class MediaWorkflowExecutionTest {
             (result.output("timing", "config") as WorkflowValue.RecordValue).fields["audio_delay_ms"],
         )
     }
+
+    @Test
+    fun imageEditExecutesEndToEnd() = runTest {
+        val fixture = MediaExecutionFixture()
+
+        val result = fixture.execute(WorkflowCatalog.ImageEdit)
+
+        result.assertFullSuccess(expectedNodeCount = 6)
+        assertEquals(
+            "/generated/cropped.png",
+            MediaTypes.path(result.output("crop", "image"), "image"),
+        )
+    }
+
+    @Test
+    fun slideshowExecutesEndToEnd() = runTest {
+        val fixture = MediaExecutionFixture()
+
+        val result = fixture.execute(WorkflowCatalog.Slideshow)
+
+        result.assertFullSuccess(expectedNodeCount = 9)
+        assertEquals(2, fixture.lastSequenceFrameCount)
+        assertEquals(stringValue("slideshow.mp4"), result.output("encode", "file_path"))
+    }
 }
 
 private class MediaExecutionFixture {
@@ -201,6 +225,7 @@ private class MediaExecutionFixture {
     var lastComposeOverlayCount: Int = 0
     var lastTimingDelayMs: Double = 0.0
     var lastAudioEncode: Pair<String, String>? = null
+    var lastSequenceFrameCount: Int = 0
 
     private val executors = DefaultNodeExecutorRegistry().apply {
         register("io.resolve_path") { inputs ->
@@ -345,6 +370,32 @@ private class MediaExecutionFixture {
                 "image" to MediaTypes.imageValue(inputs.string("path")),
                 "width" to WorkflowValue.IntValue(1024),
                 "height" to WorkflowValue.IntValue(768),
+            )
+        }
+        register("media.image_resize") { inputs ->
+            mapOf(
+                "image" to MediaTypes.imageValue("/generated/resized.png"),
+                "width" to inputs.getValue("width"),
+                "height" to inputs.getValue("height"),
+            )
+        }
+        register("media.image_crop") { inputs ->
+            mapOf(
+                "image" to MediaTypes.imageValue("/generated/cropped.png"),
+                "width" to inputs.getValue("width"),
+                "height" to inputs.getValue("height"),
+            )
+        }
+        register("media.images_list") { inputs ->
+            mapOf("images" to WorkflowValue.ListValue((1..4).mapNotNull { inputs["image$it"] }))
+        }
+        register("media.image_sequence_to_video") { inputs ->
+            val frames = (inputs["images"] as WorkflowValue.ListValue).items.size
+            lastSequenceFrameCount = frames
+            mapOf(
+                "video" to MediaTypes.videoValue("/generated/slideshow.mp4"),
+                "duration_ms" to WorkflowValue.DoubleValue(frames * 1_000.0),
+                "frame_count" to WorkflowValue.IntValue(frames),
             )
         }
         register("media.ocr") { inputs ->

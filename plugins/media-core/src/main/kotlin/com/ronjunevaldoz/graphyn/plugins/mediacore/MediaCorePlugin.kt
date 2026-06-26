@@ -21,6 +21,7 @@ class MediaCorePlugin(
         MediaCoreSpecs.all.forEach(registrar::registerNodeSpec)
         MediaCompositionSpecs.all.forEach(registrar::registerNodeSpec)
         MediaBuilderSpecs.all.forEach(registrar::registerNodeSpec)
+        MediaImageSpecs.all.forEach(registrar::registerNodeSpec)
         registrar.registerExecutor(MediaCoreSpecs.videoImport.type, videoImportExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioExtract.type, audioExtractExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioMix.type, audioMixExecutor())
@@ -37,6 +38,10 @@ class MediaCorePlugin(
         registrar.registerExecutor(MediaBuilderSpecs.overlaysList.type, recordListExecutor("overlay", "overlays", "Overlays List"))
         registrar.registerExecutor(MediaBuilderSpecs.syncPoint.type, syncPointExecutor())
         registrar.registerExecutor(MediaBuilderSpecs.syncPointsList.type, recordListExecutor("point", "sync_points", "Sync Points List"))
+        registrar.registerExecutor(MediaImageSpecs.imageResize.type, imageResizeExecutor(backend))
+        registrar.registerExecutor(MediaImageSpecs.imageCrop.type, imageCropExecutor(backend))
+        registrar.registerExecutor(MediaImageSpecs.imagesList.type, mediaListExecutor("image", "images"))
+        registrar.registerExecutor(MediaImageSpecs.imageSequenceToVideo.type, imageSequenceToVideoExecutor(backend))
     }
 
     private fun videoImportExecutor() = NodeExecutor { inputs ->

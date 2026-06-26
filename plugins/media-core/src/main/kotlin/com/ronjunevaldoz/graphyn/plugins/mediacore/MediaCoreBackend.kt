@@ -90,6 +90,12 @@ interface MediaCoreBackend {
         outputPath: String,
         format: String,
     ): EncodedAudio
+
+    suspend fun resizeImage(imagePath: String, width: Int, height: Int): ImageMetadata
+
+    suspend fun cropImage(imagePath: String, x: Int, y: Int, width: Int, height: Int): ImageMetadata
+
+    suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double): VideoMetadata
 }
 
 internal object GraphynMediaPaths {

@@ -31,6 +31,11 @@ Phase 2 (captioning & composition) adds:
 - `media.sync_point` + `media.sync_points_list` (build the sync-point list `timing_controller` needs)
 - `media.audio_encode` (saves an audio handle to WAV/MP3/AAC so audio templates can output a file)
 
+Phase 3 (image ops) adds:
+
+- `media.image_resize` + `media.image_crop` (scale / trim an image)
+- `media.images_list` + `media.image_sequence_to_video` (render images into an MP4 slideshow)
+
 ## Current Status
 
 Phase 1 media workflows are implemented for JVM/Desktop and are covered by both template
@@ -72,6 +77,10 @@ collector nodes assemble the record lists `video_compose` and `timing_controller
 | `media.sync_points_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Collects sync-point records into the timing list |
 | `media.speech_to_text` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Captioned Video) | yes | CLI adapter `GRAPHYN_STT_EXECUTABLE`; emits caption segments |
 | `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Document Text Extract) | yes | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; pairs with `media.image_import` |
+| `media.image_resize` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Image Edit) | yes | FFmpeg `scale`; outputs a resized image handle |
+| `media.image_crop` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Image Edit) | yes | FFmpeg `crop`; trims to an x/y/w/h region |
+| `media.images_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Slideshow) | yes | Collects image handles for the sequence encoder |
+| `media.image_sequence_to_video` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Slideshow) | yes | Concat-demuxer slideshow at a fixed fps |
 
 ## Template Coverage
 
@@ -86,6 +95,8 @@ collector nodes assemble the record lists `video_compose` and `timing_controller
 | Document Text Extract | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: import image → OCR → preview text. Needs `GRAPHYN_OCR_EXECUTABLE` to run |
 | Picture-in-Picture | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build overlay → compose over base → encode. Needs FFmpeg `overlay` filter |
 | Sync Calibration | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build sync points → average into delays → preview config. Pure compute |
+| Image Edit | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 3: import → resize → crop → preview |
+| Slideshow | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 3: import images → images_list → sequence → encode → output |
 
 The launcher groups templates by `WorkflowCategory` (Media / Data & IO / Examples); media templates
 are the Media section. Every template also carries a `graphyn.sticky_note` guide node (title, flow, use-cases, tips) and
@@ -131,7 +142,9 @@ Run the full demo JVM suite:
 - `media.video_stitch` supports only the `cut` transition in Phase 1.
 - `media.video_compose` overlays are video handles only; image and text overlays are deferred.
 - `media.image_import` reads only dimensions (no color space / frame extraction yet).
-- Phase 3 nodes (image ops, advanced encoding) remain planned in `media-workflow-plan.md`.
+- Slideshow assumes input frames share dimensions (no auto-scale in `image_sequence_to_video`).
+- Remaining Phase 3 nodes (`audio_resample`, advanced/custom encoding) are still planned in
+  `media-workflow-plan.md`.
 
 ## Known Bugs / Constraints
 
