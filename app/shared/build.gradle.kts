@@ -8,8 +8,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.roborazzi)
-    alias(libs.plugins.mavenPublish)
     alias(libs.plugins.serialization)
+    id("graphyn-maven-publish")
 }
 
 kotlin {
@@ -98,34 +98,10 @@ dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }
 
-val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.2.0"
-
 mavenPublishing {
-    publishToMavenCentral(automaticRelease = true)
-    if (project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")) signAllPublications()
-    coordinates("io.github.ronjunevaldoz", "graphyn-editor", libraryVersion)
+    coordinates(artifactId = "graphyn-editor")
     pom {
-        name = "Graphyn Editor"
-        description = "Compose Multiplatform workflow editor canvas — canvas, palette, inspector, and gesture handling."
-        url = "https://github.com/ronjunevaldoz/graphyn-editor"
-        licenses {
-            license {
-                name = "Apache License, Version 2.0"
-                url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-                
-            }
-        }
-        developers {
-            developer {
-                id = "ronjunevaldoz"
-                name = "Ron June Valdoz"
-                email = "ronjune.lopez@gmail.com"
-            }
-        }
-        scm {
-            url = "https://github.com/ronjunevaldoz/graphyn-editor"
-            connection = "scm:git:git://github.com/ronjunevaldoz/graphyn-editor.git"
-            developerConnection = "scm:git:ssh://git@github.com/ronjunevaldoz/graphyn-editor.git"
-        }
+        name.set("Graphyn Editor")
+        description.set("Compose Multiplatform workflow editor canvas — canvas, palette, inspector, and gesture handling.")
     }
 }
