@@ -38,6 +38,9 @@ class FfmpegMediaCoreBackend(
     override suspend fun composeVideo(baseVideoPath: String, overlays: List<VideoOverlay>) =
         renderVideoCompose(baseVideoPath, overlays)
 
+    override suspend fun encodeAudio(audioPath: String, outputPath: String, format: String) =
+        encodeAudioImpl(audioPath, outputPath, format)
+
     /** Public: reused by the TTS cache to read generated audio metadata. */
     suspend fun inspectAudio(path: String) = inspectAudioImpl(path)
 

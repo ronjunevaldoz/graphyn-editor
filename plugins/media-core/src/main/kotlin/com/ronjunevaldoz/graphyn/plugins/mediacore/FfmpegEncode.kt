@@ -64,6 +64,26 @@ internal suspend fun FfmpegMediaCoreBackend.encodeVideoImpl(
     return EncodedVideo(path = output.absolutePath, sizeBytes = output.length(), durationMs = metadata.durationMs)
 }
 
+internal suspend fun FfmpegMediaCoreBackend.encodeAudioImpl(
+    audioPath: String,
+    outputPath: String,
+    format: String,
+): EncodedAudio {
+    val (codec, ext) = when (format) {
+        "wav" -> "pcm_s16le" to "wav"
+        "mp3" -> "libmp3lame" to "mp3"
+        "aac" -> "aac" to "m4a"
+        else -> error("Unsupported audio format '$format'.")
+    }
+    val source = requireFile(audioPath, "Audio")
+    val output = File(outputPath).absoluteFile
+    require(output.name.endsWith(".$ext", ignoreCase = true)) { "Audio Encode output_path for '$format' must end in .$ext." }
+    output.parentFile?.mkdirs()
+    run(ffmpeg, "-v", "error", "-y", "-i", source.absolutePath, "-c:a", codec, output.absolutePath)
+    val metadata = inspectAudio(output.absolutePath)
+    return EncodedAudio(path = output.absolutePath, sizeBytes = output.length(), durationMs = metadata.durationMs)
+}
+
 private fun String.toFfmpegBitrate(): String = when (this) {
     "low" -> "1M"
     "medium" -> "4M"
