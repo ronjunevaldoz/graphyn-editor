@@ -85,6 +85,7 @@ All public API surfaces in `core/`, `editor-api/`, `plugin-api/`, and `ui/cards/
 ### Rules
 
 - **Every published module must have** `alias(libs.plugins.dokka)` + `alias(libs.plugins.mavenPublish)` in its `plugins {}` block, a `mavenPublishing { }` block with `coordinates(...)`, and `automaticRelease = true` in the `publishToMavenCentral()` call. Missing `automaticRelease = true` silently uploads artifacts to Sonatype Central Portal without releasing them — they never reach `repo1.maven.org`.
+- **Signing condition must check `signingInMemoryKey`**, not `signingKey`. CI sets `ORG_GRADLE_PROJECT_signingInMemoryKey`; checking for `signingKey` is always false so signatures are never generated and the portal rejects the upload. Correct form: `if (project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")) signAllPublications()`
 - **`api()` deps in published modules must themselves be published.** If a project dep would appear in the POM but isn't on Maven Central, change it to `implementation()` so it stays off the POM. Consumers who need the type at compile time should add the dep directly.
 - **Source-only modules** (`plugins/*`, `core:designsystem`) must never be `api()` deps of published modules. Use `implementation()`.
 - When adding a new published module: add it to `publish.yml` (in dependency order) and to the `GROUPS` array in `scripts/publish-local.sh`.

@@ -5,7 +5,7 @@ plugins {
 
 mavenPublishing {
     publishToMavenCentral(automaticRelease = true)
-    if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
+    if (project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")) signAllPublications()
 
     pom {
         url = "https://github.com/ronjunevaldoz/graphyn-editor"

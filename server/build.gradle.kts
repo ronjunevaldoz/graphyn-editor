@@ -34,7 +34,7 @@ dependencies {
 
 mavenPublishing {
     publishToMavenCentral(automaticRelease = true)
-    if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
+    if (project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")) signAllPublications()
     coordinates("io.github.ronjunevaldoz", "graphyn-server", libraryVersion)
     pom {
         name = "Graphyn Server"
