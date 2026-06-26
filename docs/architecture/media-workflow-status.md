@@ -29,6 +29,12 @@ Phase 2 (captioning & composition) adds:
 - `media.ocr` (image → text + bounding blocks)
 - `media.video_overlay` + `media.overlays_list` (build the overlay list `video_compose` needs)
 - `media.sync_point` + `media.sync_points_list` (build the sync-point list `timing_controller` needs)
+- `media.audio_encode` (saves an audio handle to WAV/MP3/AAC so audio templates can output a file)
+
+Phase 3 (image ops) adds:
+
+- `media.image_resize` + `media.image_crop` (scale / trim an image)
+- `media.images_list` + `media.image_sequence_to_video` (render images into an MP4 slideshow)
 
 ## Current Status
 
@@ -36,7 +42,7 @@ Phase 1 media workflows are implemented for JVM/Desktop and are covered by both 
 contract tests and workflow execution tests.
 
 Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
-availability-guarded FFmpeg backend tests. All five Phase 2 capabilities now ship in a template:
+availability-guarded FFmpeg backend tests. Every Phase 2 capability now ships in a template — four flows:
 **Captioned Video** (`speech_to_text → caption_overlay` + `caption_style`), **Document Text Extract**
 (`image_import → ocr`), **Picture-in-Picture** (`video_overlay → overlays_list → video_compose`),
 and **Sync Calibration** (`sync_point → sync_points_list → timing_controller`). The builder +
@@ -55,12 +61,13 @@ collector nodes assemble the record lists `video_compose` and `timing_controller
 | `media.videos_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes | yes | Collector helper used before `media.video_stitch` |
 | `media.video_stitch` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes | yes | Cut-only concat flow in Phase 1 |
 | `media.video_encode` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes | yes | MP4 render with destination `output_path` input |
+| `media.audio_encode` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (TTS, Audio Mix) | yes | Saves audio to WAV/MP3/AAC; lets audio templates terminate in `media.file_output` |
 | `media.text_to_speech` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes | yes | Cache key includes text, language, voice, and speed |
 | `media.caption_style` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes | yes | Metadata-only node for Phase 2 caption overlays |
 | `media.file_output` | preview | implemented | no dedicated direct unit test yet | yes | yes | Pass-through file preview; only video-encode terminals expose a `file_path` |
 | `preview.view` | preview | implemented | yes (`PreviewPluginTest`) | yes | yes | Generic opaque preview; used to surface TTS/mix audio handles |
 | `graphyn.sticky_note` | sticky-notes | implemented | n/a (annotation) | yes | yes | No-op executor so an embedded guide note never fails execution |
-| `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Document Text Extract) | yes | FFprobe-backed image handle + dimensions; the producer `media.ocr` consumes |
+| `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Document Text Extract) | yes | FFprobe-backed image handle + dimensions; produces the image handle `media.ocr` consumes |
 | `media.caption_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Captioned Video) | yes | Burns captions via the `ass` filter; **requires FFmpeg built with libass** |
 | `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Picture-in-Picture) | yes | Overlay-filter chain with per-overlay timing + opacity |
 | `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
@@ -70,20 +77,26 @@ collector nodes assemble the record lists `video_compose` and `timing_controller
 | `media.sync_points_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Collects sync-point records into the timing list |
 | `media.speech_to_text` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Captioned Video) | yes | CLI adapter `GRAPHYN_STT_EXECUTABLE`; emits caption segments |
 | `media.ocr` | `media-ai` | implemented | yes (`MediaAiPluginTest`) | yes (Document Text Extract) | yes | CLI adapter `GRAPHYN_OCR_EXECUTABLE`; pairs with `media.image_import` |
+| `media.image_resize` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Image Edit) | yes | FFmpeg `scale`; outputs a resized image handle |
+| `media.image_crop` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Image Edit) | yes | FFmpeg `crop`; trims to an x/y/w/h region |
+| `media.images_list` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Slideshow) | yes | Collects image handles for the sequence encoder |
+| `media.image_sequence_to_video` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Slideshow) | yes | Concat-demuxer slideshow at a fixed fps |
 
 ## Template Coverage
 
 | Template | Status | Covered by | Notes |
 |---|---|---|---|
-| Simple Text to Speech | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Path resolution, file read, and TTS wiring are verified. Output preview via `preview.view` (audio handle) |
+| Simple Text to Speech | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Path resolution, file read, TTS → `audio_encode` (WAV) → `media.file_output` |
 | Video Narration | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Import, audio extraction, narration, mixing, encoding. Output preview via `media.file_output` |
-| Audio Mix | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Video → extract + TTS → mix; caption-style metadata. Output preview via `preview.view` |
+| Audio Mix | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Video → extract + TTS → mix → `audio_encode` (MP3) → `media.file_output`; caption-style metadata |
 | Smart Video Encode | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Script-driven bitrate selection before encode. Output preview via `media.file_output` |
 | Video Stitch | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Clip ordering, stitching, encode. Output preview via `media.file_output` |
 | Captioned Video | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: transcribe → style → burn-in captions → encode. Output via `media.file_output` |
 | Document Text Extract | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: import image → OCR → preview text. Needs `GRAPHYN_OCR_EXECUTABLE` to run |
 | Picture-in-Picture | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build overlay → compose over base → encode. Needs FFmpeg `overlay` filter |
 | Sync Calibration | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 2: build sync points → average into delays → preview config. Pure compute |
+| Image Edit | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 3: import → resize → crop → preview |
+| Slideshow | ready | `MediaWorkflowTemplateTest`, `MediaWorkflowExecutionTest` | Phase 3: import images → images_list → sequence → encode → output |
 
 The launcher groups templates by `WorkflowCategory` (Media / Data & IO / Examples); media templates
 are the Media section. Every template also carries a `graphyn.sticky_note` guide node (title, flow, use-cases, tips) and
@@ -123,15 +136,16 @@ Run the full demo JVM suite:
 ## Known Gaps / Missing
 
 - `media.file_output` still lacks a dedicated direct unit test file.
-- The workflow execution tests use deterministic fakes, so they validate wiring and data flow
-  **without** launching FFmpeg or the TTS binary. There is no end-to-end test that produces a real
-  media file.
-- No audio encode/save node yet, so audio-only templates cannot terminate in `media.file_output`
-  (they use `preview.view`).
+- The workflow-level execution tests use deterministic fakes (no FFmpeg/TTS launch). Real-tool
+  coverage is per-node and availability-guarded: `FfmpegMediaCoreBackendTest` and the `say`/tesseract
+  fallback tests. There is no single end-to-end test that runs a whole template against real tools.
+- Speech-to-text has no zero-config fallback (no standard CLI), so the captioning template still
+  needs `GRAPHYN_STT_EXECUTABLE`. TTS (macOS `say`) and OCR (`tesseract`) do fall back automatically.
 - `media.video_stitch` supports only the `cut` transition in Phase 1.
 - `media.video_compose` overlays are video handles only; image and text overlays are deferred.
 - `media.image_import` reads only dimensions (no color space / frame extraction yet).
-- Phase 3 nodes (image ops, audio encode, advanced encoding) remain planned in
+- Slideshow assumes input frames share dimensions (no auto-scale in `image_sequence_to_video`).
+- Remaining Phase 3 nodes (`audio_resample`, advanced/custom encoding) are still planned in
   `media-workflow-plan.md`.
 
 ## Known Bugs / Constraints

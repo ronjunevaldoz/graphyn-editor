@@ -66,12 +66,17 @@ class DemoSceneWorkflowTest {
     // Script and media execution depend on JVM-only plugins installed by the desktop host.
     private val jvmOnlyTypes = setOf(
         "script.eval",
+        "media.audio_encode",
         "media.audio_extract",
         "media.audio_mix",
         "media.audios_list",
         "media.caption_overlay",
         "media.caption_style",
+        "media.image_crop",
         "media.image_import",
+        "media.image_resize",
+        "media.image_sequence_to_video",
+        "media.images_list",
         "media.ocr",
         "media.overlays_list",
         "media.speech_to_text",
@@ -119,6 +124,8 @@ class DemoSceneWorkflowTest {
             WorkflowCatalog.OcrExtract,
             WorkflowCatalog.PictureInPicture,
             WorkflowCatalog.SyncCalibration,
+            WorkflowCatalog.ImageEdit,
+            WorkflowCatalog.Slideshow,
         )
         WorkflowCatalog.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes

@@ -3,13 +3,35 @@ package com.ronjunevaldoz.graphyn.plugins.mediacore
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 /**
- * Phase 2 captioning, composition, and image specs. Kept in a dedicated object so [MediaCoreSpecs]
- * stays focused on the Phase 1 decode/encode primitives and every spec file stays under the size
- * ceiling.
+ * Phase 2 captioning, composition, image, and audio-output specs. Kept in a dedicated object so
+ * [MediaCoreSpecs] stays focused on the Phase 1 decode/encode primitives and every spec file stays
+ * under the size ceiling.
  */
 object MediaCompositionSpecs {
+    val audioEncode = NodeSpec(
+        type = "media.audio_encode",
+        label = "Audio Encode",
+        description = "Encodes an audio handle to a WAV/MP3/AAC file so audio workflows can save output.",
+        category = CATEGORY_MEDIA_AUDIO,
+        inputs = listOf(
+            PortSpec("audio", MediaTypes.audioHandle),
+            PortSpec("output_path", WorkflowType.StringType),
+            PortSpec("format", WorkflowType.EnumType(listOf("wav", "mp3", "aac"))),
+        ),
+        outputs = listOf(
+            PortSpec("file_path", WorkflowType.StringType),
+            PortSpec("size_bytes", WorkflowType.DoubleType),
+            PortSpec("duration_ms", WorkflowType.DoubleType),
+        ),
+        defaultValues = mapOf(
+            "output_path" to WorkflowValue.StringValue("output.wav"),
+            "format" to WorkflowValue.StringValue("wav"),
+        ),
+    )
+
     val imageImport = NodeSpec(
         type = "media.image_import",
         label = "Image Import",
@@ -76,5 +98,5 @@ object MediaCompositionSpecs {
         outputs = listOf(PortSpec("config", MediaCompositionTypes.timingConfig)),
     )
 
-    val all = listOf(imageImport, captionOverlay, videoCompose, timingController)
+    val all = listOf(audioEncode, imageImport, captionOverlay, videoCompose, timingController)
 }

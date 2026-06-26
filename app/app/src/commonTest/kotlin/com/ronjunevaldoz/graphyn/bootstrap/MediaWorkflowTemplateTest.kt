@@ -27,6 +27,8 @@ class MediaWorkflowTemplateTest {
                 WorkflowCatalog.OcrExtract,
                 WorkflowCatalog.PictureInPicture,
                 WorkflowCatalog.SyncCalibration,
+                WorkflowCatalog.ImageEdit,
+                WorkflowCatalog.Slideshow,
             ),
             mediaScenes,
         )
@@ -45,12 +47,14 @@ class MediaWorkflowTemplateTest {
                 "resolvePath" to "io.resolve_path",
                 "text" to "io.file_read",
                 "tts" to "media.text_to_speech",
-                "preview" to "preview.view",
+                "encode" to "media.audio_encode",
+                "output" to "media.file_output",
             ),
             expectedConnections = setOf(
                 connection("resolvePath", "resolved_path", "text", "path"),
                 connection("text", "content", "tts", "text"),
-                connection("tts", "audio", "preview", "value"),
+                connection("tts", "audio", "encode", "audio"),
+                connection("encode", "file_path", "output", "file_path"),
             ),
         )
         assertConfig(
@@ -133,7 +137,8 @@ class MediaWorkflowTemplateTest {
                 "collect" to "media.audios_list",
                 "mix" to "media.audio_mix",
                 "caption_style" to "media.caption_style",
-                "preview" to "preview.view",
+                "encode" to "media.audio_encode",
+                "output" to "media.file_output",
             ),
             expectedConnections = setOf(
                 connection("resolveVideo", "resolved_path", "import_video", "path"),
@@ -141,7 +146,8 @@ class MediaWorkflowTemplateTest {
                 connection("background", "audio", "collect", "audio1"),
                 connection("foreground", "audio", "collect", "audio2"),
                 connection("collect", "audios", "mix", "audio_tracks"),
-                connection("mix", "audio", "preview", "value"),
+                connection("mix", "audio", "encode", "audio"),
+                connection("encode", "file_path", "output", "file_path"),
             ),
         )
         assertResolver(workflow.node("resolveVideo"), "input.mp4")
@@ -359,6 +365,64 @@ class MediaWorkflowTemplateTest {
             ),
         )
         assertResolver(workflow.node("resolveVideo"), "input.mp4")
+    }
+
+    @Test
+    fun imageEditTemplateIsConfiguredAndWired() {
+        val workflow = WorkflowCatalog.ImageEdit.workflow
+
+        assertTemplate(
+            workflow = workflow,
+            expectedId = "image-edit",
+            expectedName = "Image Edit",
+            expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
+                "resolveImage" to "io.resolve_path",
+                "import_image" to "media.image_import",
+                "resize" to "media.image_resize",
+                "crop" to "media.image_crop",
+                "preview" to "preview.view",
+            ),
+            expectedConnections = setOf(
+                connection("resolveImage", "resolved_path", "import_image", "path"),
+                connection("import_image", "image", "resize", "image"),
+                connection("resize", "image", "crop", "image"),
+                connection("crop", "image", "preview", "value"),
+            ),
+        )
+        assertResolver(workflow.node("resolveImage"), "sample.png")
+    }
+
+    @Test
+    fun slideshowTemplateIsConfiguredAndWired() {
+        val workflow = WorkflowCatalog.Slideshow.workflow
+
+        assertTemplate(
+            workflow = workflow,
+            expectedId = "slideshow",
+            expectedName = "Slideshow",
+            expectedNodes = mapOf(
+                "guide" to "graphyn.sticky_note",
+                "resolveFrame1" to "io.resolve_path",
+                "resolveFrame2" to "io.resolve_path",
+                "import1" to "media.image_import",
+                "import2" to "media.image_import",
+                "frames" to "media.images_list",
+                "sequence" to "media.image_sequence_to_video",
+                "encode" to "media.video_encode",
+                "output" to "media.file_output",
+            ),
+            expectedConnections = setOf(
+                connection("resolveFrame1", "resolved_path", "import1", "path"),
+                connection("resolveFrame2", "resolved_path", "import2", "path"),
+                connection("import1", "image", "frames", "image1"),
+                connection("import2", "image", "frames", "image2"),
+                connection("frames", "images", "sequence", "images"),
+                connection("sequence", "video", "encode", "video"),
+                connection("encode", "file_path", "output", "file_path"),
+            ),
+        )
+        assertResolver(workflow.node("resolveFrame1"), "frame1.png")
     }
 
     private fun assertTemplate(

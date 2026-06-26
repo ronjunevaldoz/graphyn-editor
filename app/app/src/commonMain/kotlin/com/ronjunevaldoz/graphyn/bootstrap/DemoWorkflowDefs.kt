@@ -166,9 +166,10 @@ internal val simpleTtsWorkflow = WorkflowDefinition(
             """
             Text to Speech
 
-            Reads a text file and synthesizes spoken audio.
+            Reads a text file and synthesizes spoken audio, then saves a WAV.
 
-            Flow: Resolve Path → File Read → Text to Speech → Preview
+            Flow: Resolve Path → File Read → Text to Speech → Audio Encode
+            → Media Output.
             Use cases: voiceover, narration drafts, accessibility audio.
             Tips: set voice_id/speed on the TTS node; results are cached.
             """,
@@ -183,12 +184,17 @@ internal val simpleTtsWorkflow = WorkflowDefinition(
             "voice_id" to WorkflowValue.StringValue("default"),
             "speed" to WorkflowValue.DoubleValue(1.0),
         )),
-        NodeRef("preview", "preview.view"),
+        NodeRef("encode", "media.audio_encode", config = mapOf(
+            "output_path" to WorkflowValue.StringValue("speech.wav"),
+            "format" to WorkflowValue.StringValue("wav"),
+        )),
+        NodeRef("output", "media.file_output"),
     ),
     connections = listOf(
         ConnectionRef("resolvePath", "resolved_path", "text", "path"),
         ConnectionRef("text", "content", "tts", "text"),
-        ConnectionRef("tts", "audio", "preview", "value"),
+        ConnectionRef("tts", "audio", "encode", "audio"),
+        ConnectionRef("encode", "file_path", "output", "file_path"),
     ),
 )
 
@@ -272,7 +278,7 @@ internal val audioMixWorkflow = WorkflowDefinition(
             synthesized voice, and defines a caption style for later use.
 
             Flow: import video → extract audio + synthesize TTS →
-            collect → mix → Preview.
+            collect → mix → Audio Encode → Media Output.
             Use cases: podcasts, voiced slideshows, narrated b-roll.
             Tips: caption_style is a metadata node consumed downstream.
             """,
@@ -297,7 +303,11 @@ internal val audioMixWorkflow = WorkflowDefinition(
             "font_size" to WorkflowValue.IntValue(24),
             "position" to WorkflowValue.StringValue("bottom"),
         )),
-        NodeRef("preview", "preview.view"),
+        NodeRef("encode", "media.audio_encode", config = mapOf(
+            "output_path" to WorkflowValue.StringValue("mixed.mp3"),
+            "format" to WorkflowValue.StringValue("mp3"),
+        )),
+        NodeRef("output", "media.file_output"),
     ),
     connections = listOf(
         ConnectionRef("resolveVideo", "resolved_path", "import_video", "path"),
@@ -305,7 +315,8 @@ internal val audioMixWorkflow = WorkflowDefinition(
         ConnectionRef("background", "audio", "collect", "audio1"),
         ConnectionRef("foreground", "audio", "collect", "audio2"),
         ConnectionRef("collect", "audios", "mix", "audio_tracks"),
-        ConnectionRef("mix", "audio", "preview", "value"),
+        ConnectionRef("mix", "audio", "encode", "audio"),
+        ConnectionRef("encode", "file_path", "output", "file_path"),
     ),
 )
 

@@ -6,11 +6,13 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import com.ronjunevaldoz.graphyn.plugins.mediacore.AudioMetadata
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaTypes
+import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class MediaAiPluginTest {
     @Test
@@ -76,6 +78,24 @@ class MediaAiPluginTest {
         val block = (blocks.single() as WorkflowValue.RecordValue).fields
         assertEquals(WorkflowValue.IntValue(80), block["width"])
         assertEquals(WorkflowValue.DoubleValue(0.95), block["confidence"])
+    }
+
+    @Test
+    fun fallbackResolversAlwaysReturnAnEngine() {
+        assertNotNull(resolveTtsEngine())
+        assertNotNull(resolveOcrEngine())
+    }
+
+    @Test
+    fun sayEngineProducesWavWhenAvailable() = runTest {
+        if (!isCommandAvailable("say")) return@runTest
+        val directory = Files.createTempDirectory("graphyn-say-test").toFile()
+        val output = File(directory, "hello.wav")
+        SayTextToSpeechEngine().synthesize(
+            TextToSpeechRequest(text = "Hello there", language = "en", voiceId = "default", speed = 1.0),
+            output,
+        )
+        assertTrue(output.isFile && output.length() > 0L, "say did not produce a WAV")
     }
 
     @Test
