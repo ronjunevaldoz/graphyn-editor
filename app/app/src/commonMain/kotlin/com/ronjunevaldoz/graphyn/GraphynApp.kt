@@ -10,7 +10,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.ronjunevaldoz.graphyn.bootstrap.WorkflowCatalog
+import com.ronjunevaldoz.graphyn.bootstrap.catalogTemplatesFor
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import kotlin.random.Random
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
@@ -47,11 +47,6 @@ fun GraphynApp(
     store: WorkflowStore? = null,
     workflowGenerator: WorkflowGenerator? = null,
 ) {
-    val templates = remember {
-        WorkflowCatalog.entries
-            .sortedBy { it.category.ordinal }
-            .map { WorkflowTemplate(it.label, it.description, it.workflow, it.category) }
-    }
     var recentWorkflows by remember { mutableStateOf(emptyList<WorkflowTemplate>()) }
     var savedWorkflows by remember { mutableStateOf(emptyList<WorkflowMeta>()) }
     var openWorkflow by remember { mutableStateOf<WorkflowDefinition?>(null) }
@@ -75,6 +70,9 @@ fun GraphynApp(
     val pluginRegistry = remember(runtimePlugins) {
         DefaultGraphynPluginRegistry().apply { installAll(runtimePlugins) }
     }
+    // Only advertise templates this platform can actually run (e.g. media/script flows are hidden
+    // on Web/JS where those JVM-only plugins aren't installed).
+    val templates = remember(pluginRegistry) { catalogTemplatesFor(pluginRegistry.nodeSpecs) }
     val engine = remember(pluginRegistry) {
         WorkflowExecutionEngine(pluginRegistry.nodeExecutors, pluginRegistry.nodeSpecs)
     }

@@ -43,7 +43,10 @@ kotlin {
 
 fun main() {
     CanvasBasedWindow(title = "My Workflow Editor") {
-        GraphynApp()  // or your own GraphynEditorShell wrapper
+        // `App()` (and `GraphynEditorShell`) ship in the published `graphyn-editor` library.
+        // `GraphynApp` — the full standalone launcher + template catalog — lives in the app
+        // module and is not published, so embedders use the shell directly.
+        App()  // or your own GraphynEditorShell wrapper
     }
 }
 ```
