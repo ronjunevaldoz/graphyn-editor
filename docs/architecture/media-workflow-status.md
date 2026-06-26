@@ -42,7 +42,7 @@ Phase 1 media workflows are implemented for JVM/Desktop and are covered by both 
 contract tests and workflow execution tests.
 
 Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
-availability-guarded FFmpeg backend tests. All five Phase 2 capabilities now ship in a template:
+availability-guarded FFmpeg backend tests. Every Phase 2 capability now ships in a template — four flows:
 **Captioned Video** (`speech_to_text → caption_overlay` + `caption_style`), **Document Text Extract**
 (`image_import → ocr`), **Picture-in-Picture** (`video_overlay → overlays_list → video_compose`),
 and **Sync Calibration** (`sync_point → sync_points_list → timing_controller`). The builder +
@@ -67,7 +67,7 @@ collector nodes assemble the record lists `video_compose` and `timing_controller
 | `media.file_output` | preview | implemented | no dedicated direct unit test yet | yes | yes | Pass-through file preview; only video-encode terminals expose a `file_path` |
 | `preview.view` | preview | implemented | yes (`PreviewPluginTest`) | yes | yes | Generic opaque preview; used to surface TTS/mix audio handles |
 | `graphyn.sticky_note` | sticky-notes | implemented | n/a (annotation) | yes | yes | No-op executor so an embedded guide note never fails execution |
-| `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Document Text Extract) | yes | FFprobe-backed image handle + dimensions; the producer `media.ocr` consumes |
+| `media.image_import` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Document Text Extract) | yes | FFprobe-backed image handle + dimensions; produces the image handle `media.ocr` consumes |
 | `media.caption_overlay` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Captioned Video) | yes | Burns captions via the `ass` filter; **requires FFmpeg built with libass** |
 | `media.video_compose` | `media-core` | implemented | yes (`MediaCorePluginTest`, `FfmpegMediaCoreBackendTest`) | yes (Picture-in-Picture) | yes | Overlay-filter chain with per-overlay timing + opacity |
 | `media.timing_controller` | `media-core` | implemented | yes (`MediaCorePluginTest`) | yes (Sync Calibration) | yes | Pure compute; averages `(source_ms,target_ms)` sync points into delays |
