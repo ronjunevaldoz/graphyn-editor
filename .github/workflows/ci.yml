@@ -22,6 +22,9 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Verify publishing config
+        run: ./gradlew verifyPublishing --no-daemon
+
       - name: Compile shared metadata
         run: ./gradlew :app:shared:compileCommonMainKotlinMetadata --no-daemon
 
