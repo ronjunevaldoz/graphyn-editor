@@ -3,6 +3,13 @@
 JVM/Desktop plugin providing text-to-speech, caption-style, speech-to-text, and OCR workflow nodes.
 Each AI capability is a command-line adapter so the heavy models stay out of the JVM process.
 
+## Zero-config fallbacks
+
+So the templates run out of the box, the default engines fall back to common system tools when the
+matching `GRAPHYN_*_EXECUTABLE` is unset: **macOS `say`** for text-to-speech and **`tesseract`** for
+OCR (if installed). A configured executable always takes precedence. Speech-to-text has no standard
+CLI fallback, so the captioning template still needs `GRAPHYN_STT_EXECUTABLE`.
+
 ## TTS Adapter
 
 Set `GRAPHYN_TTS_EXECUTABLE` to a command-line adapter for your TTS provider. Graphyn invokes:

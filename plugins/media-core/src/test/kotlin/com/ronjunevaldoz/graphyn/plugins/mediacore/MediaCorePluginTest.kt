@@ -18,8 +18,8 @@ class MediaCorePluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(15, registry.nodeSpecs.all().size)
-        (MediaCoreSpecs.all + MediaCompositionSpecs.all + MediaBuilderSpecs.all).forEach {
+        assertEquals(20, registry.nodeSpecs.all().size)
+        (MediaCoreSpecs.all + MediaCompositionSpecs.all + MediaBuilderSpecs.all + MediaImageSpecs.all).forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
         }
@@ -121,6 +121,48 @@ class MediaCorePluginTest {
         )
         assertEquals(listOf("/media/logo.mp4"), backend.lastOverlays.map { it.sourcePath })
         assertEquals(0.5, backend.lastOverlays.single().opacity)
+    }
+
+    @Test
+    fun imageOpsResizeCollectAndSequence() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        registry.nodeExecutors.resolve(MediaImageSpecs.imageResize.type)!!.execute(
+            mapOf(
+                "image" to MediaTypes.imageValue("/media/a.png"),
+                "width" to WorkflowValue.IntValue(800),
+                "height" to WorkflowValue.IntValue(600),
+            ),
+        )
+        assertEquals(800 to 600, backend.lastResize)
+
+        val collected = registry.nodeExecutors.resolve(MediaImageSpecs.imagesList.type)!!.execute(
+            mapOf(
+                "image1" to MediaTypes.imageValue("/media/a.png"),
+                "image2" to MediaTypes.imageValue("/media/b.png"),
+            ),
+        )
+        registry.nodeExecutors.resolve(MediaImageSpecs.imageSequenceToVideo.type)!!.execute(
+            mapOf("images" to collected.getValue("images"), "fps" to WorkflowValue.DoubleValue(2.0)),
+        )
+        assertEquals(2.0, backend.lastSequenceFps)
+    }
+
+    @Test
+    fun audioEncodeWritesRequestedFormat() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        val encoded = registry.nodeExecutors.resolve(MediaCompositionSpecs.audioEncode.type)!!.execute(
+            mapOf(
+                "audio" to MediaTypes.audioValue("/media/voice.wav"),
+                "output_path" to WorkflowValue.StringValue("/out/voice.mp3"),
+                "format" to WorkflowValue.StringValue("mp3"),
+            ),
+        )
+        assertEquals("mp3", backend.lastAudioFormat)
+        assertEquals(WorkflowValue.StringValue("/out/voice.mp3"), encoded["file_path"])
     }
 
     @Test
@@ -276,5 +318,27 @@ private class FakeMediaCoreBackend : MediaCoreBackend {
     ): VideoMetadata {
         lastOverlays = overlays
         return VideoMetadata("/media/composed.mp4", 1920, 1080, 2_000.0, 30.0, 60)
+    }
+
+    var lastAudioFormat: String? = null
+    var lastResize: Pair<Int, Int>? = null
+    var lastSequenceFps: Double = 0.0
+
+    override suspend fun encodeAudio(audioPath: String, outputPath: String, format: String): EncodedAudio {
+        lastAudioFormat = format
+        return EncodedAudio(outputPath, sizeBytes = 2048, durationMs = 3_000.0)
+    }
+
+    override suspend fun resizeImage(imagePath: String, width: Int, height: Int): ImageMetadata {
+        lastResize = width to height
+        return ImageMetadata("/media/resized.png", width, height)
+    }
+
+    override suspend fun cropImage(imagePath: String, x: Int, y: Int, width: Int, height: Int): ImageMetadata =
+        ImageMetadata("/media/cropped.png", width, height)
+
+    override suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double): VideoMetadata {
+        lastSequenceFps = fps
+        return VideoMetadata("/media/slideshow.mp4", 1280, 720, imagePaths.size / fps * 1000.0, fps, imagePaths.size)
     }
 }

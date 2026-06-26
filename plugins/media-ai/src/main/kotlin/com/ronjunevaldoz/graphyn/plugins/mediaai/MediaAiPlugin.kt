@@ -10,10 +10,10 @@ import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCompositionTypes
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaTypes
 
 class MediaAiPlugin(
-    private val textToSpeechEngine: TextToSpeechEngine = CommandTextToSpeechEngine(),
+    private val textToSpeechEngine: TextToSpeechEngine = resolveTtsEngine(),
     private val ttsCache: TtsCache = TtsCache(),
     private val speechToTextEngine: SpeechToTextEngine = CommandSpeechToTextEngine(),
-    private val ocrEngine: OcrEngine = CommandOcrEngine(),
+    private val ocrEngine: OcrEngine = resolveOcrEngine(),
 ) : GraphynPlugin {
     override val metadata = GraphynPluginMetadata(
         id = "graphyn.media.ai",
