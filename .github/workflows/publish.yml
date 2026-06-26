@@ -59,6 +59,12 @@ jobs:
       - name: Publish graphyn-server
         run: ./gradlew :server:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      # Postflight: a green publish job must mean the artifacts actually reached
+      # repo1.maven.org. Without this, uploads can sit unreleased in the Central
+      # Portal forever while the job reports success (the v0.3.0–v0.6.0 failure).
+      - name: Verify artifacts on Maven Central
+        run: ./scripts/verify-maven-central.sh "$VERSION" 2400
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

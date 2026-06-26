@@ -66,7 +66,12 @@ All public API surfaces in `core/`, `editor-api/`, `plugin-api/`, and `ui/cards/
 
 ## Maven publishing
 
-### Published artifacts (must have `mavenPublishing` block + `automaticRelease = true`)
+All publishing config is centralized in the **`graphyn-maven-publish` convention plugin**
+(`build-logic/src/main/kotlin/graphyn-maven-publish.gradle.kts`). It owns `automaticRelease = true`,
+the signing guard, group/version, and the shared license/developer/scm POM. **Do not hand-copy a
+`mavenPublishing { }` block** — that duplication is what caused the same bug to ship 11 times.
+
+### Published artifacts
 
 | Module | Artifact ID |
 |---|---|
@@ -84,11 +89,13 @@ All public API surfaces in `core/`, `editor-api/`, `plugin-api/`, and `ui/cards/
 
 ### Rules
 
-- **Every published module must have** `alias(libs.plugins.dokka)` + `alias(libs.plugins.mavenPublish)` in its `plugins {}` block, a `mavenPublishing { }` block with `coordinates(...)`, and `automaticRelease = true` in the `publishToMavenCentral()` call. Missing `automaticRelease = true` silently uploads artifacts to Sonatype Central Portal without releasing them — they never reach `repo1.maven.org`.
-- **Signing condition must check `signingInMemoryKey`**, not `signingKey`. CI sets `ORG_GRADLE_PROJECT_signingInMemoryKey`; checking for `signingKey` is always false so signatures are never generated and the portal rejects the upload. Correct form: `if (project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")) signAllPublications()`
-- **`api()` deps in published modules must themselves be published.** If a project dep would appear in the POM but isn't on Maven Central, change it to `implementation()` so it stays off the POM. Consumers who need the type at compile time should add the dep directly.
-- **Source-only modules** (`plugins/*`, `core:designsystem`) must never be `api()` deps of published modules. Use `implementation()`.
-- When adding a new published module: add it to `publish.yml` (in dependency order) and to the `GROUPS` array in `scripts/publish-local.sh`.
+- **To make a module publishable:** apply `id("graphyn-maven-publish")` in its `plugins {}` block (instead of the `dokka` + `mavenPublish` aliases), then add a minimal `mavenPublishing { coordinates(artifactId = "graphyn-…"); pom { name.set(…); description.set(…) } }`. Everything else (automaticRelease, signing, group, version, license/scm) comes from the convention plugin. The `:server` module is the one exception — it sets its own `project.group` for the application jar, so it passes the Maven groupId explicitly: `coordinates("io.github.ronjunevaldoz", "graphyn-server", libraryVersion)`.
+- **`api()` deps in published modules must themselves be published.** If a project dep would appear in the POM but isn't on Maven Central, change it to `implementation()`. Source-only modules (`plugins/*`, `core:designsystem`) must never be `api()` deps of a published module. The `verifyPublishing` task enforces this.
+- **When adding a new published module:** add it to the `publishedModulePaths` set in `build.gradle.kts`, the `ARTIFACTS` array in `scripts/verify-maven-central.sh`, `publish.yml` (in dependency order), and the `PUBLISH_GROUPS` array in `scripts/publish-local.sh`.
+- **Guardrails (don't bypass them):**
+  - `./gradlew verifyPublishing` (runs in `ci.yml` on every PR) fails if a published module doesn't apply the convention plugin or has an `api()` leak.
+  - `scripts/verify-maven-central.sh` (runs in `publish.yml` after publishing) polls `repo1.maven.org` and fails the release if any artifact didn't land — a green publish job means *actually published*.
+  - Local manual publish: `scripts/publish-local.sh <version>` (uses Doppler for credentials).
 - Reference: `docs/reference/compatibility-matrix.md` tracks all published artifacts and their first-available version.
 
 ## Documenting learnings
