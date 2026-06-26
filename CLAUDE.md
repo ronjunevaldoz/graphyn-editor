@@ -64,6 +64,32 @@ All public API surfaces in `core/`, `editor-api/`, `plugin-api/`, and `ui/cards/
 - KDoc must explain the **why** or the **contract**, not just restate the name — one sentence is enough if that's all it takes
 - Include usage examples (` ```kotlin ` blocks) when the call site isn't obvious from the signature
 
+## Maven publishing
+
+### Published artifacts (must have `mavenPublishing` block + `automaticRelease = true`)
+
+| Module | Artifact ID |
+|---|---|
+| `:core:model` | `graphyn-core-model` |
+| `:core:execution` | `graphyn-core-execution` |
+| `:core:serialization` | `graphyn-core-serialization` |
+| `:core:data` | `graphyn-core-data` |
+| `:plugin-api` | `graphyn-plugin-api` |
+| `:ai` | `graphyn-ai` |
+| `:editor-api` | `graphyn-editor-api` |
+| `:runtime` | `graphyn-runtime` |
+| `:ui:cards` | `graphyn-ui-cards` |
+| `:app:shared` | `graphyn-editor` |
+| `:server` | `graphyn-server` |
+
+### Rules
+
+- **Every published module must have** `alias(libs.plugins.dokka)` + `alias(libs.plugins.mavenPublish)` in its `plugins {}` block, a `mavenPublishing { }` block with `coordinates(...)`, and `automaticRelease = true` in the `publishToMavenCentral()` call. Missing `automaticRelease = true` silently uploads artifacts to Sonatype Central Portal without releasing them — they never reach `repo1.maven.org`.
+- **`api()` deps in published modules must themselves be published.** If a project dep would appear in the POM but isn't on Maven Central, change it to `implementation()` so it stays off the POM. Consumers who need the type at compile time should add the dep directly.
+- **Source-only modules** (`plugins/*`, `core:designsystem`) must never be `api()` deps of published modules. Use `implementation()`.
+- When adding a new published module: add it to `publish.yml` (in dependency order) and to the `GROUPS` array in `scripts/publish-local.sh`.
+- Reference: `docs/reference/compatibility-matrix.md` tracks all published artifacts and their first-available version.
+
 ## Documenting learnings
 
 When a session uncovers something non-obvious — a hidden constraint, a tricky bug root cause, a Kotlin/Compose gotcha, a module dependency surprise — write it up in `docs/architecture/lessons.md` before finishing. One bullet per finding: what the problem was, why it happened, and what the fix or rule is. This prevents the same issue from being rediscovered in future sessions.

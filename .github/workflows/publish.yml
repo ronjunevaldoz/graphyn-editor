@@ -41,6 +41,9 @@ jobs:
       - name: Publish plugin-api
         run: ./gradlew :plugin-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      - name: Publish graphyn-ai
+        run: ./gradlew :ai:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
       - name: Publish editor-api
         run: ./gradlew :editor-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 

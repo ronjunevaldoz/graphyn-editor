@@ -14,6 +14,7 @@ All artifacts share the same version and are published to [Maven Central](https:
 | `graphyn-editor-api` | `io.github.ronjunevaldoz:graphyn-editor-api` | 0.3.0 | Contracts for editor canvas cards and panels |
 | `graphyn-ui-cards` | `io.github.ronjunevaldoz:graphyn-ui-cards` | 0.3.0 | Built-in canvas card renderers (FieldCard, ShapeCard, CircleCard) |
 | `graphyn-editor` | `io.github.ronjunevaldoz:graphyn-editor` | 0.3.0 | Compose Multiplatform editor shell, canvas, launcher |
+| `graphyn-ai` | `io.github.ronjunevaldoz:graphyn-ai` | **0.7.0** | LLM workflow generation — Ollama adapter and generator contracts |
 | `graphyn-runtime` | `io.github.ronjunevaldoz:graphyn-runtime` | **0.7.0** | Convenience bundle of all first-party plugins (control, list-ops, types, text, io, json, preview) |
 | `graphyn-server` | `io.github.ronjunevaldoz:graphyn-server` | **0.6.0** | Ktor server + `install(Graphyn)` embeddable plugin |
 
@@ -33,6 +34,7 @@ All artifacts share the same version and are published to [Maven Central](https:
 | `graphyn-plugin-api` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-editor-api` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-ui-cards` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `graphyn-ai` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-runtime` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-editor` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-server` | ✅ | — | — | — | — |

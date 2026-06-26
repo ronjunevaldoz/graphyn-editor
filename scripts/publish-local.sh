@@ -41,6 +41,7 @@ echo "📦  Publishing version: $VERSION"
 declare -a GROUPS=(
     ":core:model :core:execution :core:serialization :core:data"
     ":plugin-api"
+    ":ai"
     ":editor-api"
     ":runtime"
     ":ui:cards"
