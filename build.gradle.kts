@@ -57,6 +57,48 @@ tasks.register("verifyPublishing") {
                 }
         }
 
+        // 3. Verify the 3 publish-config files each mention every published module,
+        //    so a new module can't be added to publishedModulePaths and then silently
+        //    skipped at release time because the scripts weren't updated.
+        //
+        //    • verify-maven-central.sh  — artifact IDs (derived from module paths)
+        //    • publish.yml              — Gradle task strings (module paths)
+        //    • publish-local.sh         — module paths in PUBLISH_GROUPS
+        val moduleToArtifact = mapOf(
+            ":core:model" to "graphyn-core-model",
+            ":core:execution" to "graphyn-core-execution",
+            ":core:serialization" to "graphyn-core-serialization",
+            ":core:data" to "graphyn-core-data",
+            ":plugin-api" to "graphyn-plugin-api",
+            ":ai" to "graphyn-ai",
+            ":editor-api" to "graphyn-editor-api",
+            ":runtime" to "graphyn-runtime",
+            ":ui:cards" to "graphyn-ui-cards",
+            ":app:shared" to "graphyn-editor",
+            ":server" to "graphyn-server",
+        )
+
+        fun fileText(relativePath: String) =
+            rootProject.file(relativePath).takeIf { it.exists() }?.readText() ?: ""
+
+        val verifyScript = fileText("scripts/verify-maven-central.sh")
+        val publishYml   = fileText(".github/workflows/publish.yml")
+        val publishLocal = fileText("scripts/publish-local.sh")
+
+        publishedModulePaths.forEach { path ->
+            val artifactId = moduleToArtifact[path]
+            if (artifactId == null) {
+                problems += "$path is in publishedModulePaths but has no entry in the moduleToArtifact map in build.gradle.kts — add it."
+                return@forEach
+            }
+            if (!verifyScript.contains(artifactId))
+                problems += "scripts/verify-maven-central.sh is missing artifact '$artifactId' (module $path) — add it to ARTIFACTS."
+            if (!publishYml.contains(path.removePrefix(":")))
+                problems += ".github/workflows/publish.yml does not publish $path — add a publish step for it."
+            if (!publishLocal.contains(path))
+                problems += "scripts/publish-local.sh PUBLISH_GROUPS is missing $path — add it in dependency order."
+        }
+
         if (problems.isNotEmpty()) {
             throw GradleException(
                 "Publishing audit failed:\n" + problems.joinToString("\n") { "  • $it" },
