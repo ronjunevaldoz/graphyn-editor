@@ -10,6 +10,7 @@ dependencies {
     implementation(projects.pluginApi)
     implementation(projects.editorApi)
     implementation(projects.ui.cards)
+    implementation(projects.core.designsystem)
     implementation(libs.compose.runtime)
     implementation(libs.compose.foundation)
     implementation(libs.kotlin.scriptingJsr223)
