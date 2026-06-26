@@ -2,8 +2,7 @@ plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.serialization)
-    alias(libs.plugins.dokka)
-    alias(libs.plugins.mavenPublish)
+    id("graphyn-maven-publish")
 }
 
 group = "com.ronjunevaldoz.graphyn"
@@ -32,29 +31,13 @@ dependencies {
     testImplementation(libs.kotlin.testJunit)
 }
 
+// server sets its own project.group (com.ronjunevaldoz.graphyn) for the application
+// jar, so the Maven groupId is passed explicitly here rather than inherited from the
+// convention plugin's project.group default.
 mavenPublishing {
-    publishToMavenCentral(automaticRelease = true)
-    if (project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")) signAllPublications()
     coordinates("io.github.ronjunevaldoz", "graphyn-server", libraryVersion)
     pom {
-        name = "Graphyn Server"
-        description = "Ktor server + embeddable plugin for running Graphyn workflow execution server-side"
-        url = "https://github.com/ronjunevaldoz/graphyn-editor"
-        licenses {
-            license {
-                name = "Apache License, Version 2.0"
-                url = "https://www.apache.org/licenses/LICENSE-2.0"
-            }
-        }
-        developers {
-            developer {
-                id = "ronjunevaldoz"
-                name = "Ron June Valdoz"
-                email = "ronjune.lopez@gmail.com"
-            }
-        }
-        scm {
-            url = "https://github.com/ronjunevaldoz/graphyn-editor"
-        }
+        name.set("Graphyn Server")
+        description.set("Ktor server + embeddable plugin for running Graphyn workflow execution server-side")
     }
 }
