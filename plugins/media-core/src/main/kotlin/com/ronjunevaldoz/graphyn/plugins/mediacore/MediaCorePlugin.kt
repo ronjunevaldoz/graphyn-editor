@@ -20,6 +20,7 @@ class MediaCorePlugin(
     override fun register(registrar: GraphynPluginRegistrar) {
         MediaCoreSpecs.all.forEach(registrar::registerNodeSpec)
         MediaCompositionSpecs.all.forEach(registrar::registerNodeSpec)
+        MediaBuilderSpecs.all.forEach(registrar::registerNodeSpec)
         registrar.registerExecutor(MediaCoreSpecs.videoImport.type, videoImportExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioExtract.type, audioExtractExecutor())
         registrar.registerExecutor(MediaCoreSpecs.audioMix.type, audioMixExecutor())
@@ -31,6 +32,10 @@ class MediaCorePlugin(
         registrar.registerExecutor(MediaCompositionSpecs.captionOverlay.type, captionOverlayExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.videoCompose.type, videoComposeExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.timingController.type, timingControllerExecutor())
+        registrar.registerExecutor(MediaBuilderSpecs.videoOverlay.type, videoOverlayExecutor())
+        registrar.registerExecutor(MediaBuilderSpecs.overlaysList.type, recordListExecutor("overlay", "overlays", "Overlays List"))
+        registrar.registerExecutor(MediaBuilderSpecs.syncPoint.type, syncPointExecutor())
+        registrar.registerExecutor(MediaBuilderSpecs.syncPointsList.type, recordListExecutor("point", "sync_points", "Sync Points List"))
     }
 
     private fun videoImportExecutor() = NodeExecutor { inputs ->

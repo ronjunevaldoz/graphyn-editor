@@ -37,7 +37,7 @@ broader repo surface.
 | `io.http_request` | io | ✅ | ❌ | ❌ | ✅ FieldCard | 4 | 3 | fires real HTTP — no mock; blank URL → connection refused |
 | `io.file_read` | io | ✅ | ❌ | ❌ | ✅ FieldCard | 1 | 2 | blank path → empty content, exists=false |
 | `io.file_write` | io | ✅ | ❌ | ❌ | ✅ FieldCard | 3 | 1 | content port is OpaqueType → matches every output |
-| `demo.subgraph` | app/demo (SubgraphRuntimePlugin) | ✅ | ❌ | ❌ | ✅ SubgraphCard | 1 | 1 | bug: inner workflow's last node output leaks as pipeline output instead of mapped `output` port |
+| `demo.subgraph` | app/app (SubgraphRuntimePlugin) | ✅ | ❌ | ❌ | ✅ SubgraphCard | 1 | 1 | bug: inner workflow's last node output leaks as pipeline output instead of mapped `output` port |
 | `script.eval` | script (JVM-only) | ✅ | ❌ | ❌ | ✅ ScriptCardFactory | 1 | 2 | JVM-only; `code` is config-only (not a wire port); custom 320dp card with dark monospace editor |
 
 ## Summary

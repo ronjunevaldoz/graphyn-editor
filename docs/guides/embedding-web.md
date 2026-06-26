@@ -43,7 +43,7 @@ kotlin {
 
 fun main() {
     CanvasBasedWindow(title = "My Workflow Editor") {
-        DemoApp()  // or your own GraphynEditorShell wrapper
+        GraphynApp()  // or your own GraphynEditorShell wrapper
     }
 }
 ```

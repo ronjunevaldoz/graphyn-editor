@@ -44,6 +44,20 @@ class GraphynWorkflowLauncherUiTest {
     }
 
     @Test
+    fun templatesAreGroupedByCategorySection() {
+        val categorized = listOf(
+            WorkflowTemplate("Captioned", "burn captions", WorkflowDefinition("wf-m", "Captioned", emptyList(), emptyList()), WorkflowCategory.Media),
+            WorkflowTemplate("List Ops", "list demo", WorkflowDefinition("wf-e", "List Ops", emptyList(), emptyList()), WorkflowCategory.Examples),
+        )
+        rule.setContent {
+            GraphynTheme { GraphynWorkflowLauncher(templates = categorized, onOpen = {}) }
+        }
+        rule.onNodeWithText("MEDIA").assertExists()
+        rule.onNodeWithText("EXAMPLES").assertExists()
+        rule.onNodeWithText("Captioned").assertExists()
+    }
+
+    @Test
     fun templateDescriptionRendersOnCard() {
         rule.setContent {
             GraphynTheme { GraphynWorkflowLauncher(templates = templates, onOpen = {}) }
