@@ -1,5 +1,6 @@
 // JVM/Desktop only: Phase 1 delegates media processing to local FFmpeg executables.
 plugins {
+    id("graphyn-maven-publish")
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
@@ -17,4 +18,11 @@ dependencies {
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutinesTest)
+}
+mavenPublishing {
+    coordinates(artifactId = "graphyn-plugin-media-core")
+    pom {
+        name.set("Graphyn Plugin: media-core")
+        description.set("First-party Graphyn plugin.")
+    }
 }

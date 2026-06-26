@@ -10,6 +10,7 @@ All artifacts share the same version and are published to [Maven Central](https:
 | `graphyn-core-execution` | `io.github.ronjunevaldoz:graphyn-core-execution` | 0.3.0 | Execution engine and events |
 | `graphyn-core-serialization` | `io.github.ronjunevaldoz:graphyn-core-serialization` | 0.3.0 | Workflow JSON codec |
 | `graphyn-core-data` | `io.github.ronjunevaldoz:graphyn-core-data` | 0.3.0 | Workflow stores + platform persistence |
+| `graphyn-ui-design` | `io.github.ronjunevaldoz:graphyn-ui-design` | **0.7.1** | Compose Multiplatform design tokens, theme, and UI primitives |
 | `graphyn-plugin-api` | `io.github.ronjunevaldoz:graphyn-plugin-api` | 0.3.0 | Contracts for runtime node plugins |
 | `graphyn-editor-api` | `io.github.ronjunevaldoz:graphyn-editor-api` | 0.3.0 | Contracts for editor canvas cards and panels |
 | `graphyn-ui-cards` | `io.github.ronjunevaldoz:graphyn-ui-cards` | 0.3.0 | Built-in canvas card renderers (FieldCard, ShapeCard, CircleCard) |
@@ -20,6 +21,7 @@ All artifacts share the same version and are published to [Maven Central](https:
 
 > **`graphyn-server` first published in 0.6.0** — available on Maven Central as `io.github.ronjunevaldoz:graphyn-server:0.6.0`.
 > **`graphyn-runtime` first published in 0.7.0** — was previously missing publish config (library bug fixed in 0.7.0).
+> **`graphyn-ui-design` first published in 0.7.1** — was previously an internal-only module; promoted to fix unpublished coordinate leaking into `graphyn-editor` POM.
 
 ---
 
@@ -31,6 +33,7 @@ All artifacts share the same version and are published to [Maven Central](https:
 | `graphyn-core-execution` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-core-serialization` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-core-data` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `graphyn-ui-design` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-plugin-api` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-editor-api` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-ui-cards` | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -93,6 +96,7 @@ These ship in the repository and are depended on by the demo app. They are **not
 graphyn-editor
   └── graphyn-editor-api
   └── graphyn-ui-cards
+  └── graphyn-ui-design
   └── graphyn-plugin-api
         └── graphyn-core-model
               └── graphyn-core-execution

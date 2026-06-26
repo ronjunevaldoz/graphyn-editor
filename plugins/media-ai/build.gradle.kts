@@ -1,5 +1,6 @@
 // JVM/Desktop only: command adapters for the configured TTS, STT, and OCR providers.
 plugins {
+    id("graphyn-maven-publish")
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
@@ -18,4 +19,11 @@ dependencies {
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutinesTest)
+}
+mavenPublishing {
+    coordinates(artifactId = "graphyn-plugin-media-ai")
+    pom {
+        name.set("Graphyn Plugin: media-ai")
+        description.set("First-party Graphyn plugin.")
+    }
 }

@@ -54,7 +54,13 @@ jobs:
         run: ./gradlew :ui:cards:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
       - name: Publish first-party plugins
-        run: ./gradlew :plugins:control:publishAllPublicationsToMavenCentralRepository :plugins:list-ops:publishAllPublicationsToMavenCentralRepository :plugins:types:publishAllPublicationsToMavenCentralRepository :plugins:text:publishAllPublicationsToMavenCentralRepository :plugins:io:publishAllPublicationsToMavenCentralRepository :plugins:json:publishAllPublicationsToMavenCentralRepository :plugins:preview:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+        run: ./gradlew :plugins:control:publishAllPublicationsToMavenCentralRepository :plugins:list-ops:publishAllPublicationsToMavenCentralRepository :plugins:types:publishAllPublicationsToMavenCentralRepository :plugins:text:publishAllPublicationsToMavenCentralRepository :plugins:io:publishAllPublicationsToMavenCentralRepository :plugins:json:publishAllPublicationsToMavenCentralRepository :plugins:preview:publishAllPublicationsToMavenCentralRepository :plugins:sticky-notes:publishAllPublicationsToMavenCentralRepository :plugins:script:publishAllPublicationsToMavenCentralRepository :plugins:gmail:publishAllPublicationsToMavenCentralRepository :plugins:linkedin:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
+      - name: Publish media plugins
+        run: ./gradlew :plugins:media-core:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
+      - name: Publish graphyn-plugin-media-ai
+        run: ./gradlew :plugins:media-ai:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
       - name: Publish graphyn-runtime
         run: ./gradlew :runtime:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache

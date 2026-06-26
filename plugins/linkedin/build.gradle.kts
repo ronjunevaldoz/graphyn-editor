@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.mavenPublish)
+    id("graphyn-maven-publish")
 }
 
 kotlin {
@@ -48,5 +48,12 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutinesTest)
         }
+    }
+}
+mavenPublishing {
+    coordinates(artifactId = "graphyn-plugin-linkedin")
+    pom {
+        name.set("Graphyn Plugin: linkedin")
+        description.set("First-party Graphyn plugin.")
     }
 }
