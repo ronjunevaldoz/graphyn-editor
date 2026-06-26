@@ -38,6 +38,9 @@ jobs:
       - name: Publish core modules
         run: ./gradlew :core:model:publishAllPublicationsToMavenCentralRepository :core:execution:publishAllPublicationsToMavenCentralRepository :core:serialization:publishAllPublicationsToMavenCentralRepository :core:data:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      - name: Publish graphyn-ui-design (core/designsystem)
+        run: ./gradlew :core:designsystem:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
       - name: Publish plugin-api
         run: ./gradlew :plugin-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
@@ -47,11 +50,14 @@ jobs:
       - name: Publish editor-api
         run: ./gradlew :editor-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
-      - name: Publish graphyn-runtime
-        run: ./gradlew :runtime:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
       - name: Publish ui-cards
         run: ./gradlew :ui:cards:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
+      - name: Publish first-party plugins
+        run: ./gradlew :plugins:control:publishAllPublicationsToMavenCentralRepository :plugins:list-ops:publishAllPublicationsToMavenCentralRepository :plugins:types:publishAllPublicationsToMavenCentralRepository :plugins:text:publishAllPublicationsToMavenCentralRepository :plugins:io:publishAllPublicationsToMavenCentralRepository :plugins:json:publishAllPublicationsToMavenCentralRepository :plugins:preview:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
+      - name: Publish graphyn-runtime
+        run: ./gradlew :runtime:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
       - name: Publish graphyn-editor (app/shared)
         run: ./gradlew :app:shared:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache

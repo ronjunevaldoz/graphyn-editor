@@ -41,11 +41,13 @@ echo "📦  Publishing version: $VERSION"
 # Named PUBLISH_GROUPS (not GROUPS) to avoid collision with .env variables
 declare -a PUBLISH_GROUPS=(
     ":core:model :core:execution :core:serialization :core:data"
+    ":core:designsystem"
     ":plugin-api"
     ":ai"
     ":editor-api"
-    ":runtime"
     ":ui:cards"
+    ":plugins:control :plugins:list-ops :plugins:types :plugins:text :plugins:io :plugins:json :plugins:preview"
+    ":runtime"
     ":app:shared"
     ":server"
 )

@@ -1,5 +1,6 @@
 plugins {
     id("graphyn-kmp-compose-library")
+    id("graphyn-maven-publish")
 }
 
 kotlin {
@@ -35,5 +36,13 @@ kotlin {
         val wasmJsMain by getting {
             dependencies { implementation(libs.ktor.clientJs) }
         }
+    }
+}
+
+mavenPublishing {
+    coordinates(artifactId = "graphyn-plugin-io")
+    pom {
+        name.set("Graphyn Plugin: io")
+        description.set("First-party Graphyn plugin.")
     }
 }
