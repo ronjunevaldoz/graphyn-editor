@@ -1,6 +1,6 @@
 plugins {
     id("graphyn-kmp-compose-library")
-    alias(libs.plugins.dokka)
+    id("graphyn-maven-publish")
 }
 
 kotlin {
@@ -16,5 +16,13 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+    }
+}
+
+mavenPublishing {
+    coordinates(artifactId = "graphyn-ui-design")
+    pom {
+        name.set("Graphyn UI Design System")
+        description.set("Compose Multiplatform design tokens, theme, and UI primitives for Graphyn.")
     }
 }

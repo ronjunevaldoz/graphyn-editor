@@ -22,6 +22,9 @@ val publishedModulePaths = setOf(
     ":core:designsystem", ":plugin-api", ":ai", ":editor-api", ":ui:cards",
     ":plugins:control", ":plugins:list-ops", ":plugins:types", ":plugins:text",
     ":plugins:io", ":plugins:json", ":plugins:preview",
+    ":plugins:sticky-notes", ":plugins:script",
+    ":plugins:media-core", ":plugins:media-ai",
+    ":plugins:gmail", ":plugins:linkedin",
     ":runtime", ":app:shared", ":server",
 )
 
@@ -33,8 +36,8 @@ tasks.register("verifyPublishing") {
     doLast {
         val problems = mutableListOf<String>()
 
-        // 1. Every expected module must exist and apply the convention plugin, which
-        //    is the single source of automaticRelease=true + the signing guard.
+        // 1a. Every expected module must exist and apply the convention plugin, which
+        //     is the single source of automaticRelease=true + the signing guard.
         publishedModulePaths.forEach { path ->
             val p = rootProject.findProject(path)
             when {
@@ -44,6 +47,18 @@ tasks.register("verifyPublishing") {
                     problems += "$path does not apply graphyn-maven-publish (no automaticRelease/signing guarantee)."
             }
         }
+
+        // 1b. Reverse check: any module that applies graphyn-maven-publish must be in
+        //     publishedModulePaths. This catches plugins added with the convention plugin
+        //     but forgotten from the list — the historical source of every missed publish.
+        rootProject.subprojects
+            .filter { it.plugins.hasPlugin("com.vanniktech.maven.publish") }
+            .forEach { p ->
+                if (p.path !in publishedModulePaths) {
+                    problems += "${p.path} applies graphyn-maven-publish but is NOT in publishedModulePaths" +
+                        " — add it to the set and to all 3 publish-config files."
+                }
+            }
 
         // 2. No published module may have a project dependency on an unpublished module
         //    via api() OR implementation() — both leak into the KMP POM (api → compile
@@ -90,6 +105,12 @@ tasks.register("verifyPublishing") {
             ":plugins:io" to "graphyn-plugin-io",
             ":plugins:json" to "graphyn-plugin-json",
             ":plugins:preview" to "graphyn-plugin-preview",
+            ":plugins:sticky-notes" to "graphyn-plugin-sticky-notes",
+            ":plugins:script" to "graphyn-plugin-script",
+            ":plugins:media-core" to "graphyn-plugin-media-core",
+            ":plugins:media-ai" to "graphyn-plugin-media-ai",
+            ":plugins:gmail" to "graphyn-plugin-gmail",
+            ":plugins:linkedin" to "graphyn-plugin-linkedin",
             ":runtime" to "graphyn-runtime",
             ":app:shared" to "graphyn-editor",
             ":server" to "graphyn-server",
