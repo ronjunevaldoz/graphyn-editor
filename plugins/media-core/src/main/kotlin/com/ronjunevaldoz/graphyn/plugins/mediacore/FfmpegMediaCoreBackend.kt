@@ -41,6 +41,15 @@ class FfmpegMediaCoreBackend(
     override suspend fun encodeAudio(audioPath: String, outputPath: String, format: String) =
         encodeAudioImpl(audioPath, outputPath, format)
 
+    override suspend fun resizeImage(imagePath: String, width: Int, height: Int) =
+        resizeImageImpl(imagePath, width, height)
+
+    override suspend fun cropImage(imagePath: String, x: Int, y: Int, width: Int, height: Int) =
+        cropImageImpl(imagePath, x, y, width, height)
+
+    override suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double) =
+        imageSequenceToVideoImpl(imagePaths, fps)
+
     /** Public: reused by the TTS cache to read generated audio metadata. */
     suspend fun inspectAudio(path: String) = inspectAudioImpl(path)
 

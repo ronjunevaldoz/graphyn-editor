@@ -30,6 +30,10 @@ object MediaCoreEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(MediaBuilderSpecs.overlaysList.type, FieldCardFactory(inputRows = 4, outputRows = 1))
         registrar.registerCanvasCard(MediaBuilderSpecs.syncPoint.type, FieldCardFactory(inputRows = 2, outputRows = 1))
         registrar.registerCanvasCard(MediaBuilderSpecs.syncPointsList.type, FieldCardFactory(inputRows = 4, outputRows = 1))
+        registrar.registerCanvasCard(MediaImageSpecs.imageResize.type, FieldCardFactory(inputRows = 3, outputRows = 3))
+        registrar.registerCanvasCard(MediaImageSpecs.imageCrop.type, FieldCardFactory(inputRows = 5, outputRows = 3))
+        registrar.registerCanvasCard(MediaImageSpecs.imagesList.type, FieldCardFactory(inputRows = 4, outputRows = 1))
+        registrar.registerCanvasCard(MediaImageSpecs.imageSequenceToVideo.type, FieldCardFactory(inputRows = 2, outputRows = 3))
         registrar.registerCategory(CATEGORY_MEDIA_VIDEO, NodeCategoryMeta("Media / Video", 0xFF2563EBL))
         registrar.registerCategory(CATEGORY_MEDIA_AUDIO, NodeCategoryMeta("Media / Audio", 0xFF16A34AL))
     }
