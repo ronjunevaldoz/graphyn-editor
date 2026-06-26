@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Compose-Multiplatform-3DDC84?logo=jetpackcompose&logoColor=white" alt="Compose Multiplatform"/>
   <img src="https://img.shields.io/badge/platforms-Android%20·%20Desktop%20·%20Web%20·%20iOS-0095D5" alt="Platforms"/>
-  <img src="https://img.shields.io/badge/release-0.3.0-blue" alt="Release"/>
+  <img src="https://img.shields.io/badge/release-0.6.0-blue" alt="Release"/>
 </p>
 
 ---
@@ -382,6 +382,29 @@ The server exposes:
 | `DELETE /workflows/{id}` | Delete workflow and its version history |
 
 Set `GRAPHYN_API_KEY=<secret>` in the environment to enable Bearer-token auth. All endpoints except `GET /` require the token when the env var is present.
+
+---
+
+## Publishing
+
+Artifacts are published to Maven Central automatically when a version tag is pushed (`git tag vX.Y.Z && git push origin vX.Y.Z`). For local / manual publishing without CI, use the Doppler-backed script:
+
+```bash
+# Prerequisites: doppler CLI + DOPPLER_TOKEN in .env or .env.local
+# Doppler project "maven-central / prd" must have MAVEN_CENTRAL_USERNAME,
+# MAVEN_CENTRAL_PASSWORD, GPG_SIGNING_KEY, GPG_SIGNING_PASSWORD
+
+# Publish all modules at version from gradle.properties
+./scripts/publish-local.sh
+
+# Explicit version
+./scripts/publish-local.sh 0.6.0
+
+# Single module only (fastest for hotfixes)
+./scripts/publish-local.sh 0.6.0 server
+```
+
+See [`.env.example`](.env.example) for all supported environment variables and [`docs/reference/compatibility-matrix.md`](docs/reference/compatibility-matrix.md) for the full artifact list.
 
 ---
 
