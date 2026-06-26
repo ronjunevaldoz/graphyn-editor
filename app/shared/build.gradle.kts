@@ -57,7 +57,7 @@ kotlin {
             api(projects.core.model)
             api(projects.core.execution)
             api(projects.core.data)
-            api(projects.core.designsystem)
+            implementation(projects.core.designsystem)
             api(projects.ai)
             api(projects.editorApi)
             api(projects.pluginApi)
