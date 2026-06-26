@@ -1,11 +1,10 @@
-import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     id("com.vanniktech.maven.publish")
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+    publishToMavenCentral(automaticRelease = true)
     if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
 
     pom {

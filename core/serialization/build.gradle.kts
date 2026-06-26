@@ -21,7 +21,7 @@ kotlin {
 val libraryVersion = (project.findProperty("VERSION") as? String) ?: "0.2.1"
 
 mavenPublishing {
-    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+    publishToMavenCentral(automaticRelease = true)
     if (project.hasProperty("signing.keyId") || project.hasProperty("signingKey")) signAllPublications()
     coordinates("io.github.ronjunevaldoz", "graphyn-core-serialization", libraryVersion)
     pom {
