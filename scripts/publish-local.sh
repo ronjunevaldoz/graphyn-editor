@@ -42,6 +42,7 @@ declare -a GROUPS=(
     ":core:model :core:execution :core:serialization :core:data"
     ":plugin-api"
     ":editor-api"
+    ":runtime"
     ":ui:cards"
     ":app:shared"
     ":server"
