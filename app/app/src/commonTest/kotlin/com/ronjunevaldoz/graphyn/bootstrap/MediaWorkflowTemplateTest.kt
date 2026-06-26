@@ -45,12 +45,14 @@ class MediaWorkflowTemplateTest {
                 "resolvePath" to "io.resolve_path",
                 "text" to "io.file_read",
                 "tts" to "media.text_to_speech",
-                "preview" to "preview.view",
+                "encode" to "media.audio_encode",
+                "output" to "media.file_output",
             ),
             expectedConnections = setOf(
                 connection("resolvePath", "resolved_path", "text", "path"),
                 connection("text", "content", "tts", "text"),
-                connection("tts", "audio", "preview", "value"),
+                connection("tts", "audio", "encode", "audio"),
+                connection("encode", "file_path", "output", "file_path"),
             ),
         )
         assertConfig(
@@ -133,7 +135,8 @@ class MediaWorkflowTemplateTest {
                 "collect" to "media.audios_list",
                 "mix" to "media.audio_mix",
                 "caption_style" to "media.caption_style",
-                "preview" to "preview.view",
+                "encode" to "media.audio_encode",
+                "output" to "media.file_output",
             ),
             expectedConnections = setOf(
                 connection("resolveVideo", "resolved_path", "import_video", "path"),
@@ -141,7 +144,8 @@ class MediaWorkflowTemplateTest {
                 connection("background", "audio", "collect", "audio1"),
                 connection("foreground", "audio", "collect", "audio2"),
                 connection("collect", "audios", "mix", "audio_tracks"),
-                connection("mix", "audio", "preview", "value"),
+                connection("mix", "audio", "encode", "audio"),
+                connection("encode", "file_path", "output", "file_path"),
             ),
         )
         assertResolver(workflow.node("resolveVideo"), "input.mp4")

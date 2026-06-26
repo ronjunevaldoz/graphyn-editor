@@ -20,12 +20,14 @@ class MediaWorkflowExecutionTest {
 
         val result = fixture.execute(WorkflowCatalog.SimpleTts)
 
-        result.assertFullSuccess(expectedNodeCount = 5)
+        result.assertFullSuccess(expectedNodeCount = 6)
         assertEquals(listOf("Text from input.txt"), fixture.ttsTexts)
         assertEquals(
             "/generated/default.wav",
             MediaTypes.path(result.output("tts", "audio"), "audio"),
         )
+        assertEquals("speech.wav" to "wav", fixture.lastAudioEncode)
+        assertEquals(stringValue("speech.wav"), result.output("encode", "file_path"))
     }
 
     @Test
@@ -59,11 +61,12 @@ class MediaWorkflowExecutionTest {
 
         val result = fixture.execute(WorkflowCatalog.AudioMix)
 
-        result.assertFullSuccess(expectedNodeCount = 9)
+        result.assertFullSuccess(expectedNodeCount = 10)
         assertEquals(
             listOf("/generated/input-extracted.wav", "/generated/speaker.wav"),
             fixture.lastAudioMixPaths,
         )
+        assertEquals("mixed.mp3" to "mp3", fixture.lastAudioEncode)
         assertEquals(
             WorkflowValue.IntValue(24),
             (result.output("caption_style", "style_config") as WorkflowValue.RecordValue)
@@ -197,6 +200,7 @@ private class MediaExecutionFixture {
     var lastOcrImage: String? = null
     var lastComposeOverlayCount: Int = 0
     var lastTimingDelayMs: Double = 0.0
+    var lastAudioEncode: Pair<String, String>? = null
 
     private val executors = DefaultNodeExecutorRegistry().apply {
         register("io.resolve_path") { inputs ->
@@ -307,6 +311,14 @@ private class MediaExecutionFixture {
         }
         register("media.file_output") { inputs ->
             mapOf("file_path" to inputs.getValue("file_path"))
+        }
+        register("media.audio_encode") { inputs ->
+            lastAudioEncode = inputs.string("output_path") to inputs.string("format")
+            mapOf(
+                "file_path" to stringValue(inputs.string("output_path")),
+                "size_bytes" to WorkflowValue.DoubleValue(2_048.0),
+                "duration_ms" to WorkflowValue.DoubleValue(3_000.0),
+            )
         }
         register("preview.view") { inputs ->
             mapOf("value" to (inputs["value"] ?: WorkflowValue.NullValue))

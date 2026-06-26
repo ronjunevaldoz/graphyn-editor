@@ -66,6 +66,7 @@ class DemoSceneWorkflowTest {
     // Script and media execution depend on JVM-only plugins installed by the desktop host.
     private val jvmOnlyTypes = setOf(
         "script.eval",
+        "media.audio_encode",
         "media.audio_extract",
         "media.audio_mix",
         "media.audios_list",

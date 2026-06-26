@@ -18,7 +18,7 @@ class MediaCorePluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(15, registry.nodeSpecs.all().size)
+        assertEquals(16, registry.nodeSpecs.all().size)
         (MediaCoreSpecs.all + MediaCompositionSpecs.all + MediaBuilderSpecs.all).forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
@@ -121,6 +121,22 @@ class MediaCorePluginTest {
         )
         assertEquals(listOf("/media/logo.mp4"), backend.lastOverlays.map { it.sourcePath })
         assertEquals(0.5, backend.lastOverlays.single().opacity)
+    }
+
+    @Test
+    fun audioEncodeWritesRequestedFormat() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        val encoded = registry.nodeExecutors.resolve(MediaCompositionSpecs.audioEncode.type)!!.execute(
+            mapOf(
+                "audio" to MediaTypes.audioValue("/media/voice.wav"),
+                "output_path" to WorkflowValue.StringValue("/out/voice.mp3"),
+                "format" to WorkflowValue.StringValue("mp3"),
+            ),
+        )
+        assertEquals("mp3", backend.lastAudioFormat)
+        assertEquals(WorkflowValue.StringValue("/out/voice.mp3"), encoded["file_path"])
     }
 
     @Test
@@ -276,5 +292,12 @@ private class FakeMediaCoreBackend : MediaCoreBackend {
     ): VideoMetadata {
         lastOverlays = overlays
         return VideoMetadata("/media/composed.mp4", 1920, 1080, 2_000.0, 30.0, 60)
+    }
+
+    var lastAudioFormat: String? = null
+
+    override suspend fun encodeAudio(audioPath: String, outputPath: String, format: String): EncodedAudio {
+        lastAudioFormat = format
+        return EncodedAudio(outputPath, sizeBytes = 2048, durationMs = 3_000.0)
     }
 }

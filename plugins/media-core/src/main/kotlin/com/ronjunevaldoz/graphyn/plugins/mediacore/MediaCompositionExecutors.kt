@@ -38,6 +38,19 @@ internal fun videoComposeExecutor(backend: MediaCoreBackend) = NodeExecutor { in
     )
 }
 
+internal fun audioEncodeExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
+    val encoded = backend.encodeAudio(
+        audioPath = MediaTypes.path(inputs["audio"], "audio"),
+        outputPath = inputs.string("output_path"),
+        format = inputs.stringOr("format", "wav"),
+    )
+    mapOf(
+        "file_path" to WorkflowValue.StringValue(encoded.path),
+        "size_bytes" to WorkflowValue.DoubleValue(encoded.sizeBytes.toDouble()),
+        "duration_ms" to WorkflowValue.DoubleValue(encoded.durationMs),
+    )
+}
+
 internal fun timingControllerExecutor() = NodeExecutor { inputs ->
     MediaTypes.path(inputs["base_video"], "video")
     val syncPoints = inputs.listOrEmpty("sync_points").map { it.record() }

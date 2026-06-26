@@ -29,6 +29,12 @@ data class ImageMetadata(
     val height: Int,
 )
 
+data class EncodedAudio(
+    val path: String,
+    val sizeBytes: Long,
+    val durationMs: Double,
+)
+
 /** A single timed caption line, in milliseconds relative to the start of the video. */
 data class Caption(
     val text: String,
@@ -78,6 +84,12 @@ interface MediaCoreBackend {
         baseVideoPath: String,
         overlays: List<VideoOverlay>,
     ): VideoMetadata
+
+    suspend fun encodeAudio(
+        audioPath: String,
+        outputPath: String,
+        format: String,
+    ): EncodedAudio
 }
 
 internal object GraphynMediaPaths {

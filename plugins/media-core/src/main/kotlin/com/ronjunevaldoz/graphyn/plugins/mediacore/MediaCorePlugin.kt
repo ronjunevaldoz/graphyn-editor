@@ -31,6 +31,7 @@ class MediaCorePlugin(
         registrar.registerExecutor(MediaCompositionSpecs.imageImport.type, imageImportExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.captionOverlay.type, captionOverlayExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.videoCompose.type, videoComposeExecutor(backend))
+        registrar.registerExecutor(MediaCompositionSpecs.audioEncode.type, audioEncodeExecutor(backend))
         registrar.registerExecutor(MediaCompositionSpecs.timingController.type, timingControllerExecutor())
         registrar.registerExecutor(MediaBuilderSpecs.videoOverlay.type, videoOverlayExecutor())
         registrar.registerExecutor(MediaBuilderSpecs.overlaysList.type, recordListExecutor("overlay", "overlays", "Overlays List"))
