@@ -390,6 +390,8 @@ The server exposes:
 | Endpoint | Description |
 |---|---|
 | `GET /` | Health check |
+| `GET /nodes` | List all registered node specs |
+| `GET /nodes/{type}` | Get a single node spec by type (404 if unknown) |
 | `POST /validate` | Validate a workflow — returns `[ValidationError]` |
 | `POST /execute` | Run synchronously — returns `WorkflowExecutionResult` |
 | `POST /executions` | Start async run — returns `{ runId }` (202) |

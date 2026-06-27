@@ -85,6 +85,7 @@ val Graphyn = createApplicationPlugin("Graphyn", ::GraphynKtorConfig) {
 
     application.routing {
         route(cfg.routePrefix) {
+            nodeRoutes(runtime.plugins, json)
             executionRoutes(runtime, registry, json)
             workflowRoutes(cfg.store, json)
         }
