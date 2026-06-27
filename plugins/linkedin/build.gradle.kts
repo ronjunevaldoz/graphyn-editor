@@ -18,8 +18,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":plugin-api"))
-            implementation(project(":ui:cards"))
+            implementation(projects.pluginApi)
+            implementation(projects.ui.cards)
             implementation(libs.kotlinx.coroutinesCore)
             implementation(libs.ktor.clientCore)
             implementation(libs.serialization.json)

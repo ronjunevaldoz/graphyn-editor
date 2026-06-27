@@ -12,8 +12,6 @@ kotlin {
         commonMain.dependencies {
             api(projects.pluginApi)
             api(projects.editorApi)
-            // implementation keeps these off the published POM — they are not on Maven Central.
-            // Consumers of graphyn-server get the plugin behaviour through the server's bundled classpath.
             implementation(projects.plugins.control)
             implementation(projects.plugins.listOps)
             implementation(projects.plugins.types)
