@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Compose-Multiplatform-3DDC84?logo=jetpackcompose&logoColor=white" alt="Compose Multiplatform"/>
   <img src="https://img.shields.io/badge/platforms-Android%20·%20Desktop%20·%20Web%20·%20iOS-0095D5" alt="Platforms"/>
-  <img src="https://img.shields.io/badge/release-0.6.0-blue" alt="Release"/>
+  <img src="https://img.shields.io/badge/release-0.7.4-blue" alt="Release"/>
 </p>
 
 ---
@@ -76,23 +76,33 @@ plugins/* (node definitions + executors)
 
 `core` is a folder of focused, layered modules — there is no umbrella `:core` module. Each consumer depends only on the submodules it uses; everything builds up from `core:model`.
 
-| Module | What | Status |
+| Module | Artifact | What |
 |---|---|---|
-| `core:model` | Workflow model, types, validation, registry, `NodeGroups` | Library |
-| `core:execution` | Execution engine, executors, events | Library |
-| `core:serialization` | Workflow document codec | Library |
-| `core:data` | Workflow stores + platform persistence | Library |
-| `editor-api` | Canvas card + panel contracts (→ core:model, core:execution) | Library |
-| `plugin-api` | Node spec + executor contracts (→ core:model, core:execution) | Library |
-| `ui/cards` | Ready-made card shapes | Library |
-| `app/shared` | Canvas + editor UI | App |
-| `plugins/gmail` | Gmail integration (fetch, send, reply) | 0.3.0 ✅ |
-| `plugins/linkedin` | LinkedIn nodes — only `GET /v2/me` is a live call; rest are placeholder endpoints | Sample |
-| `plugins/io` | HTTP, file, env, webhook | Sample |
-| `plugins/control` | Branch, loop, merge | Sample |
-| `plugins/text` | Format, split, regex | Sample |
-| `app/desktopApp` | Desktop editor (JVM) | App |
-| `server` | Ktor execution API | App |
+| `core:model` | `graphyn-core-model` | Workflow model, types, validation, registry |
+| `core:execution` | `graphyn-core-execution` | Execution engine, executors, events |
+| `core:serialization` | `graphyn-core-serialization` | Workflow document codec |
+| `core:data` | `graphyn-core-data` | Workflow stores + platform persistence |
+| `core:designsystem` | `graphyn-ui-design` | Design tokens, theme, and UI primitives |
+| `editor-api` | `graphyn-editor-api` | Canvas card + panel contracts |
+| `plugin-api` | `graphyn-plugin-api` | Node spec + executor contracts |
+| `ui/cards` | `graphyn-ui-cards` | Ready-made card shapes (Shape, Field, Circle) |
+| `app/shared` | `graphyn-editor` | Compose Multiplatform canvas + editor shell |
+| `ai` | `graphyn-ai` | LLM workflow generation (Ollama) |
+| `runtime` | `graphyn-runtime` | Convenience bundle of all first-party plugins |
+| `server` | `graphyn-server` | Ktor execution API + `install(Graphyn)` |
+| `plugins/control` | `graphyn-plugin-control` | Branch, loop, merge |
+| `plugins/list-ops` | `graphyn-plugin-list-ops` | Map, filter, reduce, sort |
+| `plugins/types` | `graphyn-plugin-types` | Type conversion and casting |
+| `plugins/text` | `graphyn-plugin-text` | Split, join, replace, template |
+| `plugins/io` | `graphyn-plugin-io` | HTTP, file read/write, path resolution |
+| `plugins/json` | `graphyn-plugin-json` | JSON parse, query, transform |
+| `plugins/preview` | `graphyn-plugin-preview` | Live output preview nodes |
+| `plugins/sticky-notes` | `graphyn-plugin-sticky-notes` | On-canvas annotation nodes |
+| `plugins/script` | `graphyn-plugin-script` | Kotlin Script eval (JVM) |
+| `plugins/media-core` | `graphyn-plugin-media-core` | FFmpeg-backed media processing (JVM) |
+| `plugins/media-ai` | `graphyn-plugin-media-ai` | TTS / STT / OCR adapters (JVM) |
+| `plugins/gmail` | `graphyn-plugin-gmail` | Gmail integration (fetch, send, reply) |
+| `plugins/linkedin` | `graphyn-plugin-linkedin` | LinkedIn profile and feed nodes |
 
 ---
 
@@ -101,29 +111,37 @@ plugins/* (node definitions + executors)
 ```kotlin
 // gradle/libs.versions.toml
 [versions]
-graphyn = "0.3.0"
+graphyn = "0.7.4"
 
 [libraries]
-graphyn-editor     = { module = "io.github.ronjunevaldoz:graphyn-editor",         version.ref = "graphyn" }
-graphyn-ui-cards   = { module = "io.github.ronjunevaldoz:graphyn-ui-cards",       version.ref = "graphyn" }
-graphyn-plugin-api = { module = "io.github.ronjunevaldoz:graphyn-plugin-api",     version.ref = "graphyn" }
-graphyn-core-model = { module = "io.github.ronjunevaldoz:graphyn-core-model",     version.ref = "graphyn" }
-# core is published per-submodule: graphyn-core-{model,execution,serialization,data}
+graphyn-editor        = { module = "io.github.ronjunevaldoz:graphyn-editor",              version.ref = "graphyn" }
+graphyn-ui-cards      = { module = "io.github.ronjunevaldoz:graphyn-ui-cards",            version.ref = "graphyn" }
+graphyn-runtime       = { module = "io.github.ronjunevaldoz:graphyn-runtime",             version.ref = "graphyn" }
+graphyn-plugin-api    = { module = "io.github.ronjunevaldoz:graphyn-plugin-api",          version.ref = "graphyn" }
+graphyn-editor-api    = { module = "io.github.ronjunevaldoz:graphyn-editor-api",          version.ref = "graphyn" }
+graphyn-core-model    = { module = "io.github.ronjunevaldoz:graphyn-core-model",          version.ref = "graphyn" }
+graphyn-plugin-io     = { module = "io.github.ronjunevaldoz:graphyn-plugin-io",           version.ref = "graphyn" }
+graphyn-plugin-gmail  = { module = "io.github.ronjunevaldoz:graphyn-plugin-gmail",        version.ref = "graphyn" }
+# full plugin list: graphyn-plugin-{control,list-ops,types,text,io,json,preview,sticky-notes,script,media-core,media-ai,gmail,linkedin}
+# full core list:   graphyn-core-{model,execution,serialization,data}
 ```
 
 ```kotlin
 // build.gradle.kts
 commonMain.dependencies {
-    implementation(libs.graphyn.editor)      // Full canvas UI
+    implementation(libs.graphyn.editor)   // full canvas UI
+    implementation(libs.graphyn.runtime)  // all first-party plugins bundled
 }
 ```
 
 | Use case | Dependency |
 |---|---|
 | Full canvas editor | `graphyn-editor` |
-| Card UI kit | `graphyn-ui-cards` |
+| All first-party plugins | `graphyn-runtime` |
+| Card UI kit only | `graphyn-ui-cards` |
 | Build a runtime plugin | `graphyn-plugin-api` |
 | Build an editor plugin | `graphyn-editor-api` |
+| Individual plugin | `graphyn-plugin-{control,io,json,…}` |
 | Workflow model only | `graphyn-core-model` (+ `-execution` / `-serialization` / `-data` as needed) |
 
 ---
@@ -398,10 +416,10 @@ Artifacts are published to Maven Central automatically when a version tag is pus
 ./scripts/publish-local.sh
 
 # Explicit version
-./scripts/publish-local.sh 0.6.0
+./scripts/publish-local.sh 0.7.4
 
 # Single module only (fastest for hotfixes)
-./scripts/publish-local.sh 0.6.0 server
+./scripts/publish-local.sh 0.7.4 server
 ```
 
 See [`.env.example`](.env.example) for all supported environment variables and [`docs/reference/compatibility-matrix.md`](docs/reference/compatibility-matrix.md) for the full artifact list.

@@ -66,6 +66,9 @@ These ship in the repository and are depended on by the demo app. They are **not
 
 | Version | Date | Highlights |
 |---|---|---|
+| 0.7.4 | 2026-06-27 | Publish all 13 first-party plugins as individual artifacts; `graphyn-ui-design` promoted from internal; reverse audit guard in `verifyPublishing` |
+| 0.7.2 | 2026-06-27 | First publish of 7 bundled plugins (`control`, `list-ops`, `types`, `text`, `io`, `json`, `preview`) fixing `graphyn-runtime` POM |
+| 0.7.1 | 2026-06-27 | Fix `graphyn-editor` POM (removed `sample-logger*` and `core:designsystem` leaks) |
 | 0.6.0 | 2026-06-26 | `graphyn-server` first publish; `install(Graphyn)` Ktor plugin; security: replaced hardcoded home-server URL with `GRAPHYN_OLLAMA_HOST` env var |
 | 0.5.0 | 2026-06-26 | Phase 2 & 3 media nodes; production app reframe; platform-gated catalog |
 | 0.4.1 | 2026-06-26 | Editable structured fields in cards |
