@@ -10,6 +10,7 @@ import kotlinx.serialization.Serializable
  * @param portColor Optional ARGB color override for the connection dot on the canvas.
  *   Falls back to the type-based color from `GraphynPortTypeColor` when null.
  */
+@Serializable
 data class PortSpec(
     val name: String,
     val type: WorkflowType,
@@ -29,6 +30,7 @@ data class PortSpec(
  * [description] is a short human-readable explanation of what the node does.
  * Shown in the inspector panel and as a subtitle in the palette.
  */
+@Serializable
 data class NodeSpec(
     val type: String,
     val label: String,
