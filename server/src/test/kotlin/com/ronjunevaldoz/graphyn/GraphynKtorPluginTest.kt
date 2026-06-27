@@ -181,6 +181,47 @@ class GraphynKtorPluginTest {
         assertEquals(WorkflowValue.StringValue("hello"), result.nodeOutputsByNodeId["n1"]?.get("value"))
     }
 
+    // ── /nodes catalog ────────────────────────────────────────────────────────
+
+    @Test
+    fun getNodesReturnsRegisteredSpecs() = testApplication {
+        val echoPlugin = object : GraphynPlugin {
+            override val metadata = GraphynPluginMetadata("test.echo2", "Echo2", "0.0.1")
+            override fun register(registrar: GraphynPluginRegistrar) {
+                registrar.registerNodeSpec(NodeSpec(
+                    type = "test.echo2",
+                    label = "Echo2",
+                    inputs = listOf(PortSpec("value", WorkflowType.StringType)),
+                    outputs = listOf(PortSpec("value", WorkflowType.StringType)),
+                ))
+            }
+        }
+        application { install(Graphyn) { requireApiKey = false; plugins(echoPlugin) } }
+
+        val response = client.get("/nodes")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val specs = json.decodeFromString<List<NodeSpec>>(response.bodyAsText())
+        assertTrue(specs.any { it.type == "test.echo2" })
+    }
+
+    @Test
+    fun getNodeByTypeReturnsSpec() = testApplication {
+        application { install(Graphyn) { requireApiKey = false } }
+
+        val response = client.get("/nodes/json.parse")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val spec = json.decodeFromString<NodeSpec>(response.bodyAsText())
+        assertEquals("json.parse", spec.type)
+    }
+
+    @Test
+    fun getNodeByUnknownTypeReturns404() = testApplication {
+        application { install(Graphyn) { requireApiKey = false } }
+
+        val response = client.get("/nodes/does.not.exist")
+        assertEquals(HttpStatusCode.NotFound, response.status)
+    }
+
     @Test
     fun unknownNodeTypeValidationFailsBeforeExecution() = testApplication {
         application { install(Graphyn) { requireApiKey = false } }
