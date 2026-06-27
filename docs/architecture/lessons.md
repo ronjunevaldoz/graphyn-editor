@@ -5,6 +5,50 @@ across projects and to serve as raw material for agent skills.
 
 ---
 
+## KMP `implementation()` deps still leak into the published POM
+
+**Category:** Maven publishing — Kotlin Multiplatform
+
+In standard JVM Gradle, `implementation()` keeps a dep off the POM. In KMP it does not — `implementation()` generates a `runtime`-scoped coordinate in every published POM, same as `api()` generates `compile`-scoped. Any project dependency (published or not) on a published KMP module will appear in the POM with its Gradle project coordinates (`Graphyn.plugins:sample-logger:unspecified`) which Maven consumers cannot resolve.
+
+**Rule:** Every project dep in a published KMP module — whether `api()` or `implementation()` — must itself be published to Maven Central. The audit task must check both configuration types, not just `api`.
+
+**Fix applied:** Extended `verifyPublishing` check 2 to scan `*MainImplementation` configurations in addition to `*MainApi`.
+
+---
+
+## Reverse-check pattern for convention plugin enrollment
+
+**Category:** Gradle audit tasks — publish guardrails
+
+A `verifyPublishing` task that only checks "listed modules are correctly wired" misses the inverse: a module that applies the publish convention plugin but is absent from the published set. New plugins are silently skipped at release time.
+
+**Rule:** The audit must enforce both directions — listed modules apply the plugin AND modules applying the plugin are listed. Applying the convention plugin is the enrollment contract; the audit enforces it symmetrically.
+
+**Fix applied:** Added check 1b to `verifyPublishing`: scans all subprojects for `com.vanniktech.maven.publish` and fails if any aren't in the published set.
+
+---
+
+## `MavenPublishBaseExtension.coordinates` is a setter, not a readable property
+
+**Category:** Gradle plugin API — vanniktech maven-publish
+
+`MavenPublishBaseExtension.coordinates(artifactId)` is a configuration method, not a readable property. Attempting `extension.coordinates.artifactId` produces a compile error (`Function invocation expected`). There is no public getter for the stored coordinates.
+
+**Workaround:** Read artifact IDs from `PublishingExtension.publications.withType(MavenPublication)`. Find the root publication by filtering out platform-suffixed artifact IDs (`-jvm`, `-android`, `-js`, `-wasmjs`, `-iosarm64`, `-iossimulatorarm64`, `-metadata`). For JVM-only modules the single publication has the base artifact ID directly.
+
+---
+
+## Maven Central deployment conflicts on partial publish retry
+
+**Category:** Maven Central — Central Portal
+
+If a publish run fails partway through (e.g. a compile error mid-batch), the partially uploaded deployment is left in `PUBLISHING` or `VALIDATING` state on Central Portal. Retrying the same version fails with: `Component with coordinate '...' is currently being published in another deployment`.
+
+**Rule:** Either drop the stuck deployment at central.sonatype.com before retrying the same version, or bump the patch version. Do not retry the same version without clearing the prior deployment first.
+
+---
+
 ## The Write-from-Fallback Trap
 
 **Category:** State management — mutable maps with lazy initialization  
