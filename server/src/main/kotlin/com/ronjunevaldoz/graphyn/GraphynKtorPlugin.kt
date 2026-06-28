@@ -10,6 +10,9 @@ import io.ktor.server.application.install
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.sse.SSE
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 
 /**
@@ -78,6 +81,8 @@ val Graphyn = createApplicationPlugin("Graphyn", ::GraphynKtorConfig) {
     val cfg = pluginConfig
     val runtime = createGraphynServerRuntime(cfg.extraPlugins)
     val registry = GraphynRunRegistry(runtime.executionEngine)
+    val jobStore = JobStore()
+    val jobScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val json = Json { encodeDefaults = false; ignoreUnknownKeys = true }
 
     application.install(SSE)
@@ -88,6 +93,7 @@ val Graphyn = createApplicationPlugin("Graphyn", ::GraphynKtorConfig) {
             nodeRoutes(runtime.plugins, json)
             executionRoutes(runtime, registry, json)
             workflowRoutes(cfg.store, json)
+            jobRoutes(runtime, jobStore, jobScope, json)
         }
     }
 }
