@@ -28,10 +28,6 @@ jobs:
       - name: Build WasmJS web app
         run: ./gradlew :app:webApp:wasmJsBrowserDistribution --no-daemon
 
-      # ── API docs (Dokka) ──────────────────────────────────────────────
-      - name: Generate API docs
-        run: ./gradlew dokkaHtmlMultiModule --no-daemon
-
       # ── MkDocs site ───────────────────────────────────────────────────
       - uses: actions/setup-python@v5
         with:
