@@ -1,0 +1,58 @@
+package com.ronjunevaldoz.graphyn.plugins.stablesd
+
+import com.ronjunevaldoz.graphyn.core.model.PortSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType.EnumType
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType.NullableType
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType.StringType
+
+/** All model-path input ports for [SdContextSpec.context], sourced from sd_ctx_params_t. */
+internal val sdContextPathPorts: List<PortSpec> = listOf(
+    PortSpec("model_path", StringType, portColor = COLOR_STRING,
+        description = "--model: Full model weights (.ckpt/.safetensors/.gguf). Required unless diffusion_model_path is set."),
+    PortSpec("clip_l_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--clip_l: CLIP-L text encoder path (SD1/SD2/SDXL/FLUX)."),
+    PortSpec("clip_g_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--clip_g: CLIP-G text encoder path (SDXL/SD3)."),
+    PortSpec("clip_vision_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--clip_vision: CLIP vision encoder path (PhotoMaker/PuLID/Qwen)."),
+    PortSpec("t5xxl_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--t5xxl: T5-XXL text encoder path (SD3/FLUX/Chroma)."),
+    PortSpec("llm_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--llm: LLM text encoder path (Wan2.1/Wan2.2/LTX-2.3)."),
+    PortSpec("llm_vision_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--llm_vision: LLM vision encoder path."),
+    PortSpec("diffusion_model_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--diffusion-model: Diffusion model weights separate from the full checkpoint."),
+    PortSpec("high_noise_diffusion_model_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--high-noise-diffusion-model: High-noise diffusion model for MoE video models."),
+    PortSpec("uncond_diffusion_model_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--uncond-diffusion-model: Unconditional diffusion model path."),
+    PortSpec("embeddings_connectors_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--embeddings-connectors: Embedding connector weights path."),
+    PortSpec("vae_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--vae: Override VAE weights path."),
+    PortSpec("vae_format", EnumType(SD_VAE_FORMATS), portColor = COLOR_STRING,
+        description = "--vae-format: Force VAE variant (auto/flux/sd3/flux2). Default: auto."),
+    PortSpec("audio_vae_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--audio-vae: Audio VAE path for video models that generate audio."),
+    PortSpec("taesd_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--taesd: TAESD fast latent decoder path; enables --preview tae."),
+    PortSpec("esrgan_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--upscale-model: ESRGAN upscaler model path (used in upscale mode)."),
+    PortSpec("control_net_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--control-net: ControlNet model path (SD1.5 only)."),
+    PortSpec("embedding_dir", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--embd-dir: Directory of textual inversion embeddings; names usable in the prompt."),
+    PortSpec("photo_maker_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--photo-maker: PhotoMaker weights path."),
+    PortSpec("pulid_weights_path", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--pulid-weights: PuLID weights path."),
+    PortSpec("lora_model_dir", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--lora-model-dir: Directory searched for LoRA .safetensors files. Default: current dir."),
+    PortSpec("hires_upscalers_dir", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--hires-upscalers-dir: Directory for hires fix upscaler model files."),
+    PortSpec("tensor_type_rules", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--tensor-type-rules: Fine-grained per-tensor quantization rules string."),
+    PortSpec("wtype", NullableType(StringType), portColor = COLOR_STRING,
+        description = "--type: Weight quantization type applied at load (e.g. f16, q4_k, q8_0, bf16). Default: original."),
+)

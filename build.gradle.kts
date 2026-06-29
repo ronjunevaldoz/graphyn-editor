@@ -14,36 +14,6 @@ plugins {
     alias(libs.plugins.mavenPublish) apply false
 }
 
-// module path → Maven artifact ID. Single source of truth for the publish audit.
-// Keep publish order in publish.yml / publish-local.sh consistent with dep order.
-val publishedModules = mapOf(
-    ":core:model"           to "graphyn-core-model",
-    ":core:execution"       to "graphyn-core-execution",
-    ":core:serialization"   to "graphyn-core-serialization",
-    ":core:data"            to "graphyn-core-data",
-    ":core:designsystem"    to "graphyn-ui-design",
-    ":plugin-api"           to "graphyn-plugin-api",
-    ":ai"                   to "graphyn-ai",
-    ":editor-api"           to "graphyn-editor-api",
-    ":ui:cards"             to "graphyn-ui-cards",
-    ":plugins:control"      to "graphyn-plugin-control",
-    ":plugins:list-ops"     to "graphyn-plugin-list-ops",
-    ":plugins:types"        to "graphyn-plugin-types",
-    ":plugins:text"         to "graphyn-plugin-text",
-    ":plugins:io"           to "graphyn-plugin-io",
-    ":plugins:json"         to "graphyn-plugin-json",
-    ":plugins:preview"      to "graphyn-plugin-preview",
-    ":plugins:sticky-notes" to "graphyn-plugin-sticky-notes",
-    ":plugins:script"       to "graphyn-plugin-script",
-    ":plugins:media-core"   to "graphyn-plugin-media-core",
-    ":plugins:media-ai"     to "graphyn-plugin-media-ai",
-    ":plugins:gmail"        to "graphyn-plugin-gmail",
-    ":plugins:linkedin"     to "graphyn-plugin-linkedin",
-    ":runtime"              to "graphyn-runtime",
-    ":app:shared"           to "graphyn-editor",
-    ":server"               to "graphyn-server",
-)
-
 tasks.register("verifyPublishing") {
     group = "verification"
     description = "Asserts every published module is correctly wired for Maven Central."
@@ -51,28 +21,34 @@ tasks.register("verifyPublishing") {
         val problems = mutableListOf<String>()
         val mavenPublishPluginId = "com.vanniktech.maven.publish"
 
-        fun Project.isMavenPublishApplied() = plugins.hasPlugin(mavenPublishPluginId)
+        val publishedProjects = rootProject.subprojects
+            .filter { it.plugins.hasPlugin(mavenPublishPluginId) }
 
-        // 1. Convention plugin applied ↔ registered in publishedModules (both directions).
-        publishedModules.keys.forEach { path ->
-            val p = rootProject.findProject(path)
-            when {
-                p == null -> problems += "$path is in publishedModules but not in the build."
-                !p.isMavenPublishApplied() -> problems += "$path is missing graphyn-maven-publish."
-            }
-        }
-        rootProject.subprojects.filter { it.isMavenPublishApplied() }.forEach { p ->
-            if (p.path !in publishedModules)
-                problems += "${p.path} applies graphyn-maven-publish but is missing from publishedModules — add it."
+        val platformSuffixes = setOf(
+            "-jvm", "-android", "-js", "-wasmjs",
+            "-iosarm64", "-iossimulatorarm64", "-metadata",
+        )
+        fun Project.artifactId(): String? =
+            extensions.findByType(PublishingExtension::class.java)
+                ?.publications
+                ?.withType(MavenPublication::class.java)
+                ?.firstOrNull { pub -> platformSuffixes.none { pub.artifactId.endsWith(it) } }
+                ?.artifactId
+
+        // 1. Every published project must have coordinates declared.
+        publishedProjects.forEach { p ->
+            if (p.artifactId() == null)
+                problems += "${p.path} applies graphyn-maven-publish but has no coordinates(artifactId = ...) set."
         }
 
         // 2. api() and implementation() project deps on unpublished modules leak into the KMP POM.
-        publishedModules.keys.mapNotNull { rootProject.findProject(it) }.forEach { p ->
+        val publishedPaths = publishedProjects.map { it.path }.toSet()
+        publishedProjects.forEach { p ->
             p.configurations
                 .filter { it.name == "api" || it.name.endsWith("MainApi") ||
                            it.name == "implementation" || it.name.endsWith("MainImplementation") }
                 .flatMap { cfg -> cfg.dependencies.withType(ProjectDependency::class.java).map { cfg to it } }
-                .filter { (_, dep) -> dep.path !in publishedModules }
+                .filter { (_, dep) -> dep.path !in publishedPaths }
                 .forEach { (cfg, dep) ->
                     problems += "${p.path} → unpublished ${dep.path} via '${cfg.name}' (leaks into POM)."
                 }
@@ -84,18 +60,19 @@ tasks.register("verifyPublishing") {
         val publishYml   = fileText(".github/workflows/publish.yml")
         val publishLocal = fileText("scripts/publish-local.sh")
 
-        publishedModules.forEach { (path, artifactId) ->
+        publishedProjects.forEach { p ->
+            val artifactId = p.artifactId() ?: return@forEach
             if (!verifyScript.contains(artifactId))
                 problems += "verify-maven-central.sh missing '$artifactId'."
-            if (!publishYml.contains(path.removePrefix(":")))
-                problems += "publish.yml missing publish step for $path."
-            if (!publishLocal.contains(path))
-                problems += "publish-local.sh PUBLISH_GROUPS missing $path."
+            if (!publishYml.contains(p.path.removePrefix(":")))
+                problems += "publish.yml missing publish step for ${p.path}."
+            if (!publishLocal.contains(p.path))
+                problems += "publish-local.sh PUBLISH_GROUPS missing ${p.path}."
         }
 
         if (problems.isNotEmpty())
             throw GradleException("Publishing audit failed:\n" + problems.joinToString("\n") { "  • $it" })
 
-        logger.lifecycle("✓ Publishing audit passed for ${publishedModules.size} modules.")
+        logger.lifecycle("✓ Publishing audit passed for ${publishedProjects.size} modules.")
     }
 }
