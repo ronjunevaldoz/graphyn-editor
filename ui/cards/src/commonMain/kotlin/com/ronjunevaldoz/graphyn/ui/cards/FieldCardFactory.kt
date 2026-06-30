@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
-import com.ronjunevaldoz.graphyn.core.designsystem.tokens.GraphynSpacingValues
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
@@ -26,7 +25,7 @@ import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 
 internal const val HEADER_DP = 28
 internal const val ROW_DP = 22
-internal const val FOOTER_DIVIDER_DP = 9
+internal const val FOOTER_DIVIDER_DP = 1
 internal const val VALUE_DP = 100
 internal const val CARD_WIDTH_DP = 240
 internal const val RECORD_POPUP_MIN_DP = 140
@@ -122,7 +121,7 @@ private fun FieldCard(ctx: NodeCanvasContext) {
             if(ctx.spec.outputs.isNotEmpty()) {
                 Spacer(
                     Modifier.fillMaxWidth()
-                        .height(GraphynSpacingValues.spacing.xs)
+                        .height(FOOTER_DIVIDER_DP.dp)
                         .background(theme.divider())
                 )
             }
