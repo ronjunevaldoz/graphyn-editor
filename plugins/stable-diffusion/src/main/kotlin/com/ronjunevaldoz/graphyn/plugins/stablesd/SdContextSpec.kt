@@ -6,28 +6,30 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowType.OpaqueType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 /**
- * Node spec for `sd.context` — configures and loads a stable-diffusion.cpp model context.
+ * Node spec for `sd.context` — hardware and compute settings for a stable-diffusion.cpp context.
  *
- * Outputs an opaque [SdContextToken] consumed by generation nodes (sd.txt2img, sd.img2img,
- * sd.txt2vid, sd.img2vid). Loading is expensive; wire one context node to multiple generation
- * nodes to share the configuration without repeating it.
+ * Takes an opaque [SdModelSpec.model] token (model file paths) plus compute ports, and outputs
+ * a merged context token consumed by generation nodes (sd.txt2img, sd.img2img, sd.txt2vid,
+ * sd.img2vid). Wire one context to multiple generation nodes to share configuration.
  *
- * All input ports map 1-to-1 to fields in `sd_ctx_params_t` / `SDContextParams`.
- * Ports are split across [sdContextPathPorts] (model files) and [sdContextComputePorts] (hardware).
+ * Model paths are separated into [SdModelSpec] so you can swap models without touching compute
+ * settings. Ports here map to hardware fields in `sd_ctx_params_t` / `SDContextParams`.
  */
 object SdContextSpec {
     val context = NodeSpec(
         type = "sd.context",
         label = "SD Context",
-        description = "Loads a stable-diffusion.cpp model. Wire to sd.txt2img / sd.img2img / sd.txt2vid / sd.img2vid.",
+        description = "Hardware/compute settings. Wire sd.model → model, then context → generation nodes.",
         category = CATEGORY_SD_CFG,
-        inputs = sdContextPathPorts + sdContextComputePorts,
+        inputs = listOf(
+            PortSpec("model", OpaqueType, portColor = COLOR_MODEL,
+                description = "Opaque model-paths token from sd.model."),
+        ) + sdContextComputePorts,
         outputs = listOf(
-            PortSpec("context", OpaqueType, portColor = COLOR_MODEL,
+            PortSpec("context", OpaqueType, portColor = COLOR_CONTEXT,
                 description = "Opaque model context passed to generation nodes."),
         ),
         defaultValues = mapOf(
-            "vae_format"          to WorkflowValue.StringValue("auto"),
             "n_threads"           to WorkflowValue.IntValue(-1),
             "rng_type"            to WorkflowValue.StringValue("cuda"),
             "lora_apply_mode"     to WorkflowValue.StringValue("auto"),

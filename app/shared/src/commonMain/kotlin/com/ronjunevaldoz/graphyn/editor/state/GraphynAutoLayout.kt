@@ -6,6 +6,7 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
+import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
 
 internal object GraphynAutoLayout {
     private const val GRID_COLS = 3
@@ -125,7 +126,12 @@ internal fun GraphynEditorState.performAutoLayout(): AutoLayoutResult? {
     val wf = workflow ?: return null
     val registry = canvasCards
     val nodeSize: (String) -> IntSize = { type ->
-        registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) } ?: GraphynCanvasMetrics.NodeSize
+        registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) }
+            ?: nodeSpecs?.resolve(type)?.let { spec ->
+                val f = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+                IntSize(f.nodeWidth, f.nodeHeight)
+            }
+            ?: GraphynCanvasMetrics.NodeSize
     }
     // Annotations (sticky notes, frames) are not part of the dataflow DAG; lay out the graph
     // nodes, then park annotations in a column to the left so they read as a legend.

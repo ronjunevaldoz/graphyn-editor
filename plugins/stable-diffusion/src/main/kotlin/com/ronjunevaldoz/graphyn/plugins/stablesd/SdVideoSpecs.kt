@@ -13,7 +13,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 /** Shared input ports for both video generation nodes (from sd_vid_gen_params_t). */
 private val videoGenSharedPorts = listOf(
-    PortSpec("context", OpaqueType, portColor = COLOR_MODEL,
+    PortSpec("context", OpaqueType, portColor = COLOR_CONTEXT,
         description = "SD model context from sd.context node."),
     PortSpec("sampler", OpaqueType, portColor = COLOR_SAMPLER,
         description = "Primary sampling config from sd.sampler node."),

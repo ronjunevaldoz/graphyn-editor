@@ -9,11 +9,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowType.ListType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.NullableType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.OpaqueType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.StringType
+
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 /** Shared input ports for both image generation nodes (from sd_img_gen_params_t). */
 private val imageGenSharedPorts = listOf(
-    PortSpec("context", OpaqueType, portColor = COLOR_MODEL,
+    PortSpec("context", OpaqueType, portColor = COLOR_CONTEXT,
         description = "SD model context from sd.context node."),
     PortSpec("sampler", OpaqueType, portColor = COLOR_SAMPLER,
         description = "Sampling config from sd.sampler node."),
@@ -33,28 +34,10 @@ private val imageGenSharedPorts = listOf(
         description = "--clip-skip: CLIP layers to skip from the end. -1 = model default."),
     PortSpec("loras", NullableType(ListType(OpaqueType)), portColor = COLOR_LORA,
         description = "List of sd.lora tokens to apply. Null = none."),
-    PortSpec("control_image", NullableType(StringType), portColor = COLOR_IMAGE,
-        description = "--control-image: Path to ControlNet conditioning image (SD1.5 only)."),
-    PortSpec("control_strength", DoubleType, portColor = COLOR_FLOAT,
-        description = "--control-strength: ControlNet influence weight. Default: 0.9."),
-    PortSpec("ref_images", NullableType(ListType(StringType)), portColor = COLOR_IMAGE,
-        description = "--ref-image: Paths to reference images (PhotoMaker/PuLID/Qwen). Null = none."),
-    PortSpec("auto_resize_ref_image", BooleanType, portColor = COLOR_BOOL,
-        description = "--disable-auto-resize-ref-image: Auto-resize reference images to match width/height. Default: true."),
-    PortSpec("increase_ref_index", BooleanType, portColor = COLOR_BOOL,
-        description = "--increase-ref-index: Increment reference image index per batch item."),
-    PortSpec("mask_image", NullableType(StringType), portColor = COLOR_IMAGE,
-        description = "--mask: Inpainting mask path (white = inpaint, black = preserve). Null = no mask."),
-    PortSpec("pm_id_embed_path", NullableType(StringType), portColor = COLOR_STRING,
-        description = "--pm-id-embed-path: PhotoMaker id-embedding file path. Null = not used."),
-    PortSpec("pm_id_images_dir", NullableType(StringType), portColor = COLOR_STRING,
-        description = "--pm-id-images-dir: Directory of PhotoMaker id-images (alternative to pm_id_embed_path). Null = not used."),
-    PortSpec("pm_style_strength", DoubleType, portColor = COLOR_FLOAT,
-        description = "--pm-style-strength: PhotoMaker style strength. Default: 20.0."),
-    PortSpec("pulid_id_embedding_path", NullableType(StringType), portColor = COLOR_STRING,
-        description = "--pulid-id-embedding: PuLID id-embedding file path."),
-    PortSpec("pulid_id_weight", DoubleType, portColor = COLOR_FLOAT,
-        description = "--pulid-id-weight: PuLID id-embedding weight. Default: 1.0."),
+    PortSpec("controlnet", NullableType(OpaqueType), portColor = COLOR_CONTROLNET,
+        description = "Optional sd.controlnet token (ControlNet conditioning + mask). Null = disabled."),
+    PortSpec("id_cond", NullableType(OpaqueType), portColor = COLOR_ID_COND,
+        description = "Optional sd.id_cond token (ref images, PhotoMaker, PuLID). Null = disabled."),
     PortSpec("embed_image_metadata", BooleanType, portColor = COLOR_BOOL,
         description = "CLI: false → --disable-image-metadata. Embed generation metadata into output PNG. Default: true. Set false to pass --disable-image-metadata."),
     PortSpec("hires", NullableType(OpaqueType), portColor = COLOR_SAMPLER,
@@ -68,21 +51,18 @@ private val imageGenSharedPorts = listOf(
 private val imageGenOutputs = listOf(
     PortSpec("images", ListType(StringType), portColor = COLOR_IMAGE,
         description = "Paths to the generated image files (one per batch item)."),
+    PortSpec("image", NullableType(StringType), portColor = COLOR_IMAGE,
+        description = "Path to the first generated image. Convenience for single-image workflows."),
 )
 
 private val imageGenDefaults = mapOf(
-    "negative_prompt"        to WorkflowValue.StringValue(""),
-    "width"                  to WorkflowValue.IntValue(-1),
-    "height"                 to WorkflowValue.IntValue(-1),
-    "seed"                   to WorkflowValue.IntValue(-1),
-    "batch_count"            to WorkflowValue.IntValue(1),
-    "clip_skip"              to WorkflowValue.IntValue(-1),
-    "control_strength"       to WorkflowValue.DoubleValue(0.9),
-    "auto_resize_ref_image"  to WorkflowValue.BooleanValue(true),
-    "increase_ref_index"     to WorkflowValue.BooleanValue(false),
-    "embed_image_metadata"   to WorkflowValue.BooleanValue(true),
-    "pm_style_strength"      to WorkflowValue.DoubleValue(20.0),
-    "pulid_id_weight"        to WorkflowValue.DoubleValue(1.0),
+    "negative_prompt"      to WorkflowValue.StringValue(""),
+    "width"                to WorkflowValue.IntValue(-1),
+    "height"               to WorkflowValue.IntValue(-1),
+    "seed"                 to WorkflowValue.IntValue(-1),
+    "batch_count"          to WorkflowValue.IntValue(1),
+    "clip_skip"            to WorkflowValue.IntValue(-1),
+    "embed_image_metadata" to WorkflowValue.BooleanValue(true),
 )
 
 /** Node specs for text-to-image and image-to-image generation. */

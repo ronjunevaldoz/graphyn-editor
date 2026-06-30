@@ -6,6 +6,9 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,16 +46,20 @@ import kotlin.math.roundToInt
 internal fun FieldHeader(
     label: String,
     theme: FieldNodeTheme,
+    description: String? = null,
     onMove: ((IntOffset) -> Unit)? = null,
     nodeId: String? = null,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(HEADER_DP.dp)
             .background(theme.headerBackground())
             .padding(horizontal = 10.dp)
+            .hoverable(interactionSource)
             .then(if (nodeId != null) Modifier.testTag("node-header-$nodeId") else Modifier)
             .then(if (onMove != null) Modifier.pointerInput(Unit) {
                 awaitEachGesture {
@@ -68,6 +76,9 @@ internal fun FieldHeader(
         contentAlignment = Alignment.CenterStart,
     ) {
         BasicText(label, style = appTheme.typography.nodeHeader.copy(color = theme.titleColor()))
+        if (isHovered && !description.isNullOrBlank()) {
+            FieldNodeTooltip(description)
+        }
     }
 }
 
@@ -149,6 +160,7 @@ private fun NullableRow(
     val isNull = currentValue == null || currentValue is WorkflowValue.NullValue
     FieldRow(
         name = if(!isNull) null else input.name,
+        description = input.description,
         leading = {
             Box(
                 modifier = Modifier
@@ -180,7 +192,7 @@ private fun NullableRow(
                 )
             )
         } else {
-            val innerInput = input.copy(type = innerType)
+            val innerInput = input.copy(type = innerType, description = null)
 
             when (innerType) {
                 WorkflowType.IntType,

@@ -107,6 +107,7 @@ private fun FieldCard(ctx: NodeCanvasContext) {
             FieldHeader(
                 ctx.spec.label,
                 theme,
+                description = ctx.spec.description,
                 onMove = ctx.onMove,
                 nodeId = ctx.node.id
             )

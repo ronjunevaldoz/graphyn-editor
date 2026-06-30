@@ -1,8 +1,7 @@
 package com.ronjunevaldoz.graphyn.editor.state
 
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
-import com.ronjunevaldoz.graphyn.core.model.WorkflowType
-import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
+import com.ronjunevaldoz.graphyn.editor.canvas.components.PortCompatibility
 
 internal fun GraphynEditorState.completeConnection(toNodeId: String, toPort: String) {
     val draft = connectionDraft ?: return
@@ -12,19 +11,17 @@ internal fun GraphynEditorState.completeConnection(toNodeId: String, toPort: Str
     val toNodeType = w.nodes.firstOrNull { it.id == toNodeId }?.type
     val fromSpec = fromNodeType?.let { nodeSpecs?.resolve(it) }
     val toSpec = toNodeType?.let { nodeSpecs?.resolve(it) }
-    val outputType = fromSpec?.outputs?.firstOrNull { it.name == draft.fromPort }?.type
-        ?: fromSpec?.inputs?.firstOrNull { it.name == draft.fromPort }?.type
-    val inputType = toSpec?.inputs?.firstOrNull { it.name == toPort }?.type
-        ?: toSpec?.outputs?.firstOrNull { it.name == toPort }?.type
+    val outputPort = fromSpec?.outputs?.firstOrNull { it.name == draft.fromPort }
+        ?: fromSpec?.inputs?.firstOrNull { it.name == draft.fromPort }
+    val inputPort = toSpec?.inputs?.firstOrNull { it.name == toPort }
+        ?: toSpec?.outputs?.firstOrNull { it.name == toPort }
 
-    if (outputType != null && inputType != null) {
-        val compatible = outputType is WorkflowType.OpaqueType || inputType is WorkflowType.OpaqueType
-            || WorkflowTypeCompatibility.isCompatible(inputType, outputType)
-        if (!compatible) {
+    if (outputPort != null && inputPort != null) {
+        if (!PortCompatibility.isCompatible(inputPort, outputPort)) {
             rejectConnectionPort(toNodeId, toPort)
             connectionDraft = null
             connectionDraftPosition = null
-            log.push("Rejected connection: $outputType is not compatible with $inputType")
+            log.push("Rejected connection: ${outputPort.type}[color=${outputPort.portColor}] → ${inputPort.type}[color=${inputPort.portColor}] incompatible")
             return
         }
     }

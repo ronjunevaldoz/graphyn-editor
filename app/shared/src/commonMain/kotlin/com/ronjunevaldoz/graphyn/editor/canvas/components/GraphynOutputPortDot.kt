@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
 import com.ronjunevaldoz.graphyn.core.model.displayName
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
@@ -51,7 +50,7 @@ internal fun GraphynOutputPortDot(
         val draftNode = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
         val inputPort = draftNode?.let { nodeSpecs.resolve(it.type) }
             ?.inputs?.firstOrNull { it.name == draft.fromPort }
-        inputPort != null && WorkflowTypeCompatibility.isCompatible(inputPort.type, outputPort.type)
+        inputPort != null && PortCompatibility.isCompatible(inputPort, outputPort)
     }
     Box(
         modifier = Modifier
@@ -81,7 +80,7 @@ internal fun GraphynOutputPortDot(
                         val draftNode = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
                         val inputPort = draftNode?.let { nodeSpecs.resolve(it.type) }
                             ?.inputs?.firstOrNull { it.name == draft.fromPort }
-                        if (inputPort == null || !WorkflowTypeCompatibility.isCompatible(inputPort.type, outputPort.type)) {
+                        if (inputPort == null || !PortCompatibility.isCompatible(inputPort, outputPort)) {
                             state.rejectConnectionPort(node.id, outputPort.name)
                             state.addDebugLog("Rejected: ${node.id}:${outputPort.name} → ${draft.fromNodeId}:${draft.fromPort} (type mismatch)")
                             state.dispatch(GraphynEditorIntent.CancelConnection)

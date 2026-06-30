@@ -1,7 +1,35 @@
 package com.ronjunevaldoz.graphyn.plugins.stablesd
 
-// Port colours — matched to stable-diffusion.cpp semantic domains
-internal const val COLOR_MODEL      = 0xFF6B6BF7L // purple — loaded model/context
+/**
+ * Port colours for the stable-diffusion.cpp plugin.
+ *
+ * Every OpaqueType port in this plugin carries a unique [portColor] that acts as a semantic
+ * channel identifier. The editor's [PortCompatibility] check requires both ends of a connection
+ * to share the same portColor, so cross-channel wiring is rejected at every validation layer
+ * (picker popup, port-dot highlight, and final connection handler).
+ *
+ * ## OpaqueType channel map
+ *
+ * | Constant | Colour | Source node | Destination port |
+ * |---|---|---|---|
+ * | [COLOR_DIFFUSION] | deep purple | `sd.diffusion` output `diffusion` | `sd.model` input `diffusion` |
+ * | [COLOR_ENCODERS]  | indigo      | `sd.encoders` output `encoders`   | `sd.model` input `encoders`  |
+ * | [COLOR_VAE_PATH]  | teal        | `sd.vae` output `vae`             | `sd.model` input `vae`       |
+ * | [COLOR_MODEL]     | bright purple | `sd.model` output `model`       | `sd.context` input `model`   |
+ * | [COLOR_CONTEXT]   | orchid      | `sd.context` output `context`     | generation node input `context` |
+ * | [COLOR_CONTROLNET]| deep orange | `sd.controlnet` output `controlnet` | generation node input `controlnet` |
+ * | [COLOR_ID_COND]   | pink        | `sd.id_cond` output `id_cond`     | generation node input `id_cond` |
+ *
+ * Non-OpaqueType ports ([COLOR_SAMPLER], [COLOR_IMAGE], etc.) use colour for visual grouping only;
+ * their type matching is handled by [WorkflowTypeCompatibility] without a portColor check.
+ */
+internal const val COLOR_DIFFUSION  = 0xFF7E57C2L // deep purple — diffusion model paths sub-token
+internal const val COLOR_ENCODERS   = 0xFF5C6BC0L // indigo      — text encoder paths sub-token
+internal const val COLOR_VAE_PATH   = 0xFF26A69AL // teal        — VAE path sub-token
+internal const val COLOR_MODEL      = 0xFF6B6BF7L // bright purple — assembled model paths (sd.model → sd.context)
+internal const val COLOR_CONTEXT    = 0xFFAB47BCL // orchid      — initialized context (sd.context → generation)
+internal const val COLOR_CONTROLNET = 0xFFFF7043L // deep orange — ControlNet config token
+internal const val COLOR_ID_COND    = 0xFFEC407AL // pink        — id-conditioning token
 internal const val COLOR_SAMPLER    = 0xFF4CAF50L // green  — sampling config
 internal const val COLOR_IMAGE      = 0xFF2196F3L // blue   — image data (path)
 internal const val COLOR_VIDEO      = 0xFF00BCD4L // cyan   — video/frame data
@@ -27,9 +55,15 @@ internal val SD_SCHEDULERS = listOf(
     "simple", "smoothstep", "kl_optimal", "lcm", "bong_tangent",
     "ltx2", "logit_normal", "flux2", "flux",
 )
-internal val SD_PREDICTIONS = listOf("eps", "v", "edm_v", "sd3_flow", "flux_flow", "sefi_flow")
-internal val SD_LORA_MODES  = listOf("auto", "immediately", "at_runtime")
-internal val SD_VAE_FORMATS = listOf("auto", "flux", "sd3", "flux2")
+internal val SD_PREDICTIONS   = listOf("eps", "v", "edm_v", "sd3_flow", "flux_flow", "sefi_flow")
+internal val SD_LORA_MODES    = listOf("auto", "immediately", "at_runtime")
+internal val SD_VAE_FORMATS   = listOf("auto", "flux", "sd3", "flux2")
+internal val SD_BACKENDS      = listOf("cuda", "vulkan", "metal", "opencl", "cpu")
+internal val SD_WEIGHT_TYPES  = listOf(
+    "f32", "f16", "bf16", "q8_0", "q8_1",
+    "q4_0", "q4_1", "q4_k", "q5_0", "q5_1", "q5_k", "q6_k",
+    "iq1_s", "iq2_xxs", "iq2_xs", "iq3_xxs", "iq4_nl",
+)
 internal val SD_HIRES_UPSCALERS = listOf(
     "None", "Latent", "Latent (nearest)", "Latent (nearest-exact)", "Latent (antialiased)",
     "Latent (bicubic)", "Latent (bicubic antialiased)", "Lanczos", "Nearest", "Model",

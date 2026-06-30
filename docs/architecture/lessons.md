@@ -1239,3 +1239,316 @@ From v0.3.0 through v0.6.0, every CI publish job reported success yet **nothing 
   `set -a; source .env` ran before the array declaration; the env value won and the loop iterated a
   stray scalar. Rule: name script-local arrays distinctly (e.g. `PUBLISH_GROUPS`) so they can't
   collide with sourced environment variables.
+
+## JNI bridge for large C structs: use a flat C wrapper struct, not 60+ function params
+
+**Category:** JNI / C interop
+
+When a native library exposes a struct with 30+ fields (`sd_ctx_params_t`, `sd_img_gen_params_t`),
+do NOT add all fields as individual JNI function parameters — JDK has a practical limit and the
+function signature becomes unmaintainable. The correct pattern:
+1. Define a **flat C struct** in your `*-wrapper.h` that mirrors the library struct but uses only
+   C-primitive types (`const char*`, `int`, `float`, `bool`) — no C++ templates or enum fields
+   directly (store enum values as `int`, cast to the enum in the wrapper impl).
+2. Add `void wrapper_struct_init(MyStruct* p)` that sets every field to its safe default.
+3. JNI bridge builds the flat struct from JVM types (jstring → std::string → c_str(), jboolean →
+   bool, etc.), then calls one wrapper function. This IS still "type conversion only" — the JNI
+   layer owns no native logic, it just groups the conversions.
+4. Kotlin callers use data classes (one per logical group) with sensible defaults; the wrapper
+   method unpacks them before calling the JNI external fun.
+- **Why:** direct 60-param JNI functions are error-prone to call, easy to get param order wrong,
+  and cannot be extended without changing the signature. The struct approach lets you add new fields
+  without touching any JNI signature — only the C and Kotlin structs change.
+
+## Wrapper struct default-init is mandatory — zero-init alone is not safe for enum fields
+
+When adding `sd_wrapper_ctx_params_init()` / `sd_wrapper_generate_params_init()`, do NOT rely on
+`*p = {}` (zero-init) alone. Library enums may have a 0 value that is NOT the safe default:
+- `sd_vae_format_t`: value 0 = `SD_VAE_FORMAT_FLUX` but the safe default is -1 = `SD_VAE_FORMAT_AUTO`.
+- `prediction_t`: value 0 = `EPS_PRED` but for FLUX models you want the library to auto-detect.
+Rule: always follow `*p = {}` with explicit assignments for every enum/flag that has a "no-op"
+sentinel that differs from zero (e.g. -1 = auto, or a specific enum constant).
+
+---
+
+## C header forward-declaration order: new types must come AFTER existing type aliases
+
+**Category:** C/C++ — header authoring
+
+When adding new structs to a shared `*-wrapper.h` that already defines types (typedef'd result
+structs, callback typedefs, opaque handle types), placing the new structs BEFORE the existing
+`typedef` blocks causes `unknown type name` errors because the new types reference the older ones.
+
+**Rule:** In a C header, always place new structs AFTER all existing type definitions they reference.
+The compiler reads a header top-to-bottom; a forward reference to a not-yet-seen typedef is an error.
+When in doubt, put all new additions at the **bottom** of the header's type section.
+
+---
+
+## `*p = {}` on a `typedef struct` is a C++ feature — use `memset` for C-compatible init functions
+
+**Category:** C/C++ — struct initialization in shared headers
+
+In `*-wrapper.h` files that use C linkage (`extern "C"`) or will be compiled by a C compiler,
+`static inline void init(MyStruct* p) { *p = {}; }` causes "no viable overloaded '='" errors.
+`{}` zero-initialization on a C-style `typedef struct` is C++11, not C99.
+
+**Rule:** Use `memset(p, 0, sizeof(*p))` in `static inline` init functions defined in shared headers.
+Follow with explicit field assignments for any field whose safe default differs from zero (see lesson above).
+
+---
+
+## JVM-only plugin with flat CLI-arg interface: bridge to HTTP via arg parsing
+
+**Category:** Plugin integration — `StableDiffusionBackend` / HTTP
+
+`StableDiffusionBackend.generateImage(args: List<String>)` speaks CLI flags (produced by the
+executor's `buildImageArgs`). When the actual generation runs in a Docker container via `server-sd`
+(which takes JSON), an `HttpStableDiffusionBackend` must parse the flat arg list back into a
+`GenerateExRequest` JSON body.
+
+**Pattern:**
+1. Maintain a `VALUE_FLAGS` set of all flags that take a value argument (`"--prompt"`, `"--steps"`, …).
+2. Walk the arg list: if the current flag is in `VALUE_FLAGS`, consume the next token as its value.
+3. Boolean/standalone flags (no value token) go into a `flags: Set<String>`.
+4. Build the JSON body string directly from the parsed map.
+
+**Gotcha:** `--seed -1` looks like a flag (`-1` starts with `-`). The `VALUE_FLAGS` approach handles
+this correctly because we consume the next arg unconditionally when the flag is a known value-taker.
+A `startsWith("-")` heuristic would misclassify `-1` as a new flag.
+
+**Gotcha:** `--prompt` may appear multiple times (once per `<lora:path:mult>` lora entry, then once
+for the real prompt). Collect all `--prompt` values; treat entries matching `<lora:...>` as lora
+references, the last bare string as the actual prompt.
+
+---
+
+## stable-diffusion.cpp: empty backend string silently falls back to CPU via memory check
+
+**Category:** JNI / server deployment — stable-diffusion.cpp backend selection
+
+`GRAPHYN_SD_BACKEND: ""` (empty) triggers `EngineMemoryCheck.autoOffloadToCpu()`, which measures
+**system RAM** (not GPU VRAM). Inside a Docker container this reads the container's memory limit,
+not the host GPU. It almost always returns true → forces `"cpu"` → 750s per generation instead of
+~37s on GPU.
+
+**Rule:** Always set `GRAPHYN_SD_BACKEND: "cuda"` (or `"vulkan"` / `"metal"`) explicitly in
+deployment config. Never rely on auto-detection in a containerised environment.
+
+**Diagnostic signal:** `copy_to_backend: 0.00s` in every `model_loader.cpp` log line means tensors
+are NOT being copied to the GPU backend. If you see this alongside `read: 15s`, the model is
+streaming from disk into CPU RAM — GPU is idle. GPU inference shows meaningful `copy_to_backend`
+times (several hundred ms to a few seconds per layer batch).
+
+**Fixed in:** `server-sd/docker-compose.dev.yml` — changed `GRAPHYN_SD_BACKEND: ""` to
+`GRAPHYN_SD_BACKEND: "cuda"`.
+
+---
+
+## `GraphynBootstrapJvm.mediaRuntimePlugins` is the correct place for JVM-only runtime plugins
+
+**Category:** App architecture — plugin registration
+
+JVM-only runtime plugins (those whose module is under `src/main/kotlin`, not `src/commonMain/kotlin`)
+cannot be registered in `GraphynDemoPlugins` (in `commonMain`). They belong in
+`GraphynBootstrapJvm.mediaRuntimePlugins` (`jvmMain`). This list is already merged into the
+`runtimePlugins` call in `desktopApp/main.kt` at line 27 — adding a plugin here is all that's needed.
+
+No editor plugin is required for `StableDiffusionPlugin` because it has no custom canvas card; the
+standard `FieldCard` renders its specs.
+
+---
+
+## Split config nodes into path-only and compute-only for composability
+
+**Category:** Plugin design — node modularity
+
+A config node that owns both file paths and hardware settings (50+ ports) is hard to reuse and
+impossible to swap independently. The `sd.context` node had this problem: model paths (24 ports)
+and hardware compute options (27 ports) in one node. The fix is to split them: one `sd.model` node
+owns only file paths and outputs an opaque token; `sd.context` takes that token plus compute ports
+and merges them into the final context token.
+
+In the executor for the aggregating node, strip `_type` from the upstream token's fields before
+merging, so the downstream `_type` sentinel is always correct:
+```kotlin
+val modelFields = (inputs["model"] as? WorkflowValue.RecordValue)
+    ?.fields?.minus("_type") ?: emptyMap()
+mapOf("context" to SdTokens.context(modelFields + inputs.minus("model")))
+```
+
+Port lists were already separated in code (`sdContextPathPorts`, `sdContextComputePorts`) — the
+only work was adding the `sd.model` spec and updating the executor.
+
+---
+
+## Generation node convenience output: `image` alongside `images`
+
+**Category:** Plugin design — output ergonomics
+
+A generation node that only outputs `images: ListType(StringType)` forces every single-image
+workflow to use a list-index node to extract `images[0]`. Instead, expose both:
+- `images: ListType(StringType)` — full batch (always set)
+- `image: NullableType(StringType)` — `images.firstOrNull()` (convenience for single-image workflows)
+
+This lets the FLUX workflow connect `txt2img.image → preview.value` directly, and multi-batch
+workflows can still use `images`. The output change is additive and doesn't break existing graphs.
+
+---
+
+## Use `expect/actual` to inject platform-specific rendering into a common card
+
+**Category:** Compose Multiplatform — preview plugin
+
+`preview.view` renders text on all platforms but should show a real image on JVM Desktop when
+the value is a file path. The fix: extract the content area into an
+`internal expect fun PreviewContentArea(value: WorkflowValue?)`, then provide a JVM actual that
+detects image extensions and calls `loadImageBitmap(FileInputStream(path))` + `Image(bitmap, ...)`.
+All non-JVM actuals delegate to the text display.
+
+Key: remove the `padding` from the container Box so the JVM actual can choose full-bleed image
+vs. padded text independently. The image actual calls `Modifier.fillMaxSize()` + `ContentScale.Fit`
+for a thumbnail; the text actual wraps itself in `Box(padding(8.dp))`.
+
+---
+
+## Group optional generation features into opaque tokens to shrink shared port lists
+
+**Category:** Plugin design — node modularity
+
+`imageGenSharedPorts` originally had 25 ports, including 11 that are only relevant when using
+ControlNet, PhotoMaker, PuLID, or reference images. These are never wired in a basic txt2img
+workflow. Grouping them into two optional opaque tokens reduces the node to 16 ports:
+
+- `sd.controlnet` — control_image, control_strength, mask_image → `controlnet: NullableType(OpaqueType)`
+- `sd.id_cond` — ref_images, auto_resize_ref_image, increase_ref_index, pm_*, pulid_* → `id_cond: NullableType(OpaqueType)`
+
+The executors for the new config nodes wrap their inputs as typed records (`SdTokens.controlNet`/
+`SdTokens.idCond`). The `buildImageArgs` function checks `NullValue` before calling the builder,
+matching the existing pattern for `hires`, `cache`, `vae_tiling`. The port list physically
+shrinks: moved port lists live in the new spec files, not in the shared list.
+
+---
+
+## SD plugin: split text encoders and VAE into dedicated nodes
+
+**Category:** Plugin design — KMP node graph modularisation
+
+`sd.model` started with 24 ports covering model paths, all encoder paths, and VAE config. Most
+of these are never changed together: FLUX users set encoder paths once and never touch VAE format;
+SD1.5 users often swap VAE without touching encoders. Grouping them into optional opaque tokens
+reduces `sd.model` to 14 ports with two composable sub-nodes:
+
+- `sd.encoders` — clip_l, clip_g, clip_vision, t5xxl, llm, llm_vision → `encoders: NullableType(OpaqueType)`
+- `sd.vae`      — vae_path, vae_format (EnumType), audio_vae_path, taesd_path → `vae: NullableType(OpaqueType)`
+
+The `sd.model` executor merges upstream tokens by stripping `_type` from each record before
+combining, same pattern used by `sd.context` when it merges the `sd.model` token.
+
+**Port type fixes applied in the same pass:**
+- `backend` / `params_backend` in `SdContextComputePorts` changed from `NullableType(StringType)` → `NullableType(EnumType(SD_BACKENDS))` so the UI shows a picker instead of a free-text field.
+- `max_vram` changed from `NullableType(StringType)` → `NullableType(DoubleType)` — the value is a GiB number; the old StringType accepted `"4"` but broke type-checking and number validation.
+- `wtype` in model paths changed from `NullableType(StringType)` → `NullableType(EnumType(SD_WEIGHT_TYPES))` for the same reason.
+
+**Rule:** whenever a node accumulates more than ~10 ports, check for semantic groups that are never
+configured simultaneously (encoders vs model vs VAE). Each group that meets that criterion becomes
+its own config node outputting an opaque token, and the parent node takes optional opaque inputs.
+
+---
+
+## OpaqueType wildcard survived in `completeConnection` after `WorkflowTypeCompatibility` fix
+
+**Category:** Port type system — connection validation
+
+`WorkflowTypeCompatibility.isCompatible` was fixed to make `OpaqueType` only match `OpaqueType`
+(not everything), but `GraphynEditorConnectionActions.completeConnection` had its own redundant guard:
+
+```kotlin
+val compatible = outputType is WorkflowType.OpaqueType || inputType is WorkflowType.OpaqueType
+    || WorkflowTypeCompatibility.isCompatible(inputType, outputType)
+```
+
+The first two conditions bypassed the fixed compatibility check, allowing any output to connect to
+an OpaqueType input and any OpaqueType output to connect to any input.
+
+**Fix:** Replace the entire expression with `WorkflowTypeCompatibility.isCompatible(inputType, outputType)`.
+
+**Rule:** Type compatibility must be enforced in exactly one place (`WorkflowTypeCompatibility`). Any
+ad-hoc OpaqueType shortcut in connection handlers re-introduces the wildcard bug.
+
+---
+
+## Auto-layout uses fallback `NodeSize(280×180)` for nodes with no registered canvas card
+
+**Category:** Canvas layout — node height calculation
+
+`performAutoLayout` computes each node's size by resolving the node type in `canvasCards`. Nodes
+without a registered canvas card (e.g., SD plugin nodes registered only via `registerNodeSpec`) fall
+back to `GraphynCanvasMetrics.NodeSize = IntSize(280, 180)`. A node like `sd.context` with 29 input
+ports actually renders at ~697dp tall (via the auto-created `FieldCardFactory`), so the 180dp fallback
+caused every subsequent node to be placed on top of the `sd.context` card visually.
+
+**Fix:** When `canvasCards.resolve(type)` returns null, fall back to `nodeSpecs.resolve(type)` and
+compute the height from the spec's port counts using a temporary `FieldCardFactory`:
+
+```kotlin
+registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) }
+    ?: nodeSpecs?.resolve(type)?.let { spec ->
+        val f = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+        IntSize(f.nodeWidth, f.nodeHeight)
+    }
+    ?: GraphynCanvasMetrics.NodeSize
+```
+
+**Rule:** Node size for auto-layout must match what the canvas renderer actually produces. The canvas
+renderer falls back to `FieldCardFactory(inputs.size, outputs.size)` — the layout must use the same
+formula.
+
+---
+
+## `portColor` as a semantic channel for OpaqueType ports
+
+**Category:** Port type system — OpaqueType discrimination
+
+OpaqueType ports use `portColor` as a semantic channel identifier. Without color-level matching,
+any node with a generic OpaqueType input (Branch, Map, Filter) appears in the picker and gets
+highlighted when dragging from a specialized colored port like `COLOR_MODEL` from `sd.context`.
+
+**Rule:** When both the source and candidate port are OpaqueType (bare or NullableType-wrapped),
+require their `portColor` to match exactly (`null == null`, `COLOR_A == COLOR_A`, `null ≠ COLOR_A`).
+Non-OpaqueType ports are unaffected.
+
+**Enforcement points:**
+- `PortCompatibility.opaqueColorsMatch` — shared object in `app:shared`; called by all three validation layers
+- `GraphynNodePickerHelpers.compatiblePickerSpecs` — picker popup suggestions
+- `GraphynInputPortDot` / `GraphynOutputPortDot` — port dot highlighting and click rejection
+- `GraphynEditorConnectionActions.completeConnection` — final server-side guard
+
+**Fix:** Extract `PortCompatibility` object; replace all per-site `WorkflowTypeCompatibility.isCompatible` calls with `PortCompatibility.isCompatible` which chains type + color checks.
+
+---
+
+## SD plugin: one `portColor` constant for all OpaqueType channels defeats semantic separation
+
+**Category:** SD plugin — portColor channel design
+
+`SdNodeColors.kt` originally declared a single `COLOR_MODEL` constant and applied it to every
+OpaqueType port in the plugin (diffusion, encoders, vae sub-tokens; the assembled model token;
+the context token; controlnet; id_cond). With portColor-strict matching enabled this made every
+OpaqueType port in the plugin mutually compatible — you could accidentally wire `sd.diffusion`
+directly into `sd.txt2img.context`, bypassing `sd.model` and `sd.context` entirely.
+
+**Rule:** Each semantic channel needs its own color constant. Channels in the SD plugin:
+
+| Constant | Channel | Wire direction |
+|---|---|---|
+| `COLOR_DIFFUSION` | diffusion model paths sub-token | sd.diffusion → sd.model.diffusion |
+| `COLOR_ENCODERS`  | encoder paths sub-token | sd.encoders → sd.model.encoders |
+| `COLOR_VAE_PATH`  | VAE config sub-token | sd.vae → sd.model.vae |
+| `COLOR_MODEL`     | assembled model paths token | sd.model → sd.context.model |
+| `COLOR_CONTEXT`   | initialized context token | sd.context → sd.txt2img/img2img/txt2vid/img2vid.context |
+| `COLOR_CONTROLNET`| ControlNet config token | sd.controlnet → generation.controlnet |
+| `COLOR_ID_COND`   | id-conditioning token | sd.id_cond → generation.id_cond |
+
+**Fix:** Add six new color constants to `SdNodeColors.kt`; update each spec file so output and
+matching input use the same channel-specific constant.

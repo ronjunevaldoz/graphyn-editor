@@ -29,7 +29,6 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
 import com.ronjunevaldoz.graphyn.core.model.displayName
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
@@ -58,7 +57,7 @@ internal fun GraphynInputPortDot(
         val srcPort = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
             ?.let { nodeSpecs.resolve(it.type) }?.outputs?.firstOrNull { it.name == draft.fromPort }
         val tgtPort = nodeSpecs.resolve(node.type)?.inputs?.firstOrNull { it.name == inputPort.name }
-        srcPort != null && tgtPort != null && WorkflowTypeCompatibility.isCompatible(tgtPort.type, srcPort.type)
+        srcPort != null && tgtPort != null && PortCompatibility.isCompatible(tgtPort, srcPort)
     }
     val isReconnectTarget = selectedConn != null && draft == null
     Box(
@@ -92,7 +91,7 @@ internal fun GraphynInputPortDot(
                         val srcPort = workflow.nodes.firstOrNull { it.id == draft.fromNodeId }
                             ?.let { nodeSpecs.resolve(it.type) }?.outputs?.firstOrNull { it.name == draft.fromPort }
                         val tgtPort = nodeSpecs.resolve(node.type)?.inputs?.firstOrNull { it.name == inputPort.name }
-                        if (srcPort == null || tgtPort == null || !WorkflowTypeCompatibility.isCompatible(tgtPort.type, srcPort.type)) {
+                        if (srcPort == null || tgtPort == null || !PortCompatibility.isCompatible(tgtPort, srcPort)) {
                             state.rejectConnectionPort(node.id, inputPort.name)
                             state.addDebugLog("Rejected: ${draft.fromNodeId}:${draft.fromPort} → ${node.id}:${inputPort.name} (type mismatch)")
                             state.dispatch(GraphynEditorIntent.CancelConnection)
