@@ -6,15 +6,15 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Default model paths — override via config port values at runtime.
-private const val WAN_DIFFUSION_LOW  = "/models/wan/wan2.2_i2v_low_noise-Q4_K.gguf"
-private const val WAN_DIFFUSION_HIGH = "/models/wan/wan2.2_i2v_high_noise-Q4_K.gguf"
-private const val WAN_T5            = "/models/wan/text_encoder/umt5_xxl-Q4_K.gguf"
-private const val WAN_CLIP_VISION   = "/models/wan/clip_vision/clip_vision_h.safetensors"
-private const val WAN_VAE           = "/models/wan/vae/wan_2.1_vae.safetensors"
+private const val WAN_DIFFUSION_LOW  = "/models/diffusion/wan/Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf"
+private const val WAN_DIFFUSION_HIGH = "/models/diffusion/wan/Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf"
+private const val WAN_T5            = "/models/wan/umt5-xxl-encoder-Q5_K_M.gguf"
+private const val WAN_CLIP_VISION   = "/models/wan/clip_vision_h.safetensors"
+private const val WAN_VAE           = "/models/wan/wan_2.1_vae.safetensors"
 private const val WAN_LORA_DIR      = "/models/wan/lora"
 // Full server-side LoRA paths. Wan2.2 is MoE — the high-noise sd.lora carries is_high_noise=true.
-private const val WAN_LORA_LOW      = "$WAN_LORA_DIR/lightx2v_I2V_14B_low_noise_4step.safetensors"
-private const val WAN_LORA_HIGH     = "$WAN_LORA_DIR/lightx2v_I2V_14B_high_noise_4step.safetensors"
+private const val WAN_LORA_LOW      = "$WAN_LORA_DIR/wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors"
+private const val WAN_LORA_HIGH     = "$WAN_LORA_DIR/wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors"
 private const val WAN_INIT_IMAGE    = "../../app/app/src/commonMain/resources/media/input.png"
 
 /**

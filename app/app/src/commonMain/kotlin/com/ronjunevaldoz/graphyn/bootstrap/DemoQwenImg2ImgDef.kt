@@ -6,12 +6,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Default model paths — override via config port values at runtime.
-private const val QWEN_EDIT_DIFFUSION = "/models/qwen-image-edit/Qwen-Image-Edit-2511-Q4_K.gguf"
-private const val QWEN_EDIT_TEXT_ENC  = "/models/qwen-image-edit/text_encoder/qwen_2.5_vl_7b-Q4_K.gguf"
-private const val QWEN_EDIT_VAE       = "/models/qwen-image-edit/vae/qwen_image_vae.safetensors"
-private const val QWEN_EDIT_LORA_DIR  = "/models/qwen-image-edit/lora"
+private const val QWEN_EDIT_DIFFUSION = "/models/qwen/diffusion/qwen-image-edit-2511-Q4_K_M.gguf"
+private const val QWEN_EDIT_TEXT_ENC  = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf"
+private const val QWEN_EDIT_VAE       = "/models/qwen/vae/qwen_image_vae.safetensors"
+private const val QWEN_EDIT_LORA_DIR  = "/models/qwen/lora"
 // Full server-side LoRA path (the server applies LoRAs by path, not via lora_model_dir).
-private const val QWEN_EDIT_LORA_4STEP = "$QWEN_EDIT_LORA_DIR/Qwen-Image-Edit-Lightning-4steps-V1.0.safetensors"
+private const val QWEN_EDIT_LORA_4STEP = "$QWEN_EDIT_LORA_DIR/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors"
 private const val QWEN_EDIT_INIT_IMAGE = "../../app/app/src/commonMain/resources/media/input.png"
 
 /**
