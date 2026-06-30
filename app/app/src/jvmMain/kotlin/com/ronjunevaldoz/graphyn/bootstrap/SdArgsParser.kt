@@ -13,6 +13,9 @@ private val VALUE_FLAGS = setOf(
     "--batch-count", "--clip-skip", "--control-image", "--control-strength", "--mask",
     "--hires-scale", "--hires-steps", "--hires-denoising-strength",
     "--video-frames", "--fps", "--moe-boundary", "--vace-strength", "--end-img",
+    // Model paths — forwarded so the workflow chooses the model instead of the server's env default.
+    "--diffusion-model", "--high-noise-diffusion-model", "--clip_l", "--clip_g", "--clip_vision",
+    "--t5xxl", "--llm", "--vae", "--backend", "--threads",
 )
 
 private val LORA_PATTERN = Regex("<lora:([^:>]+):([\\d.]+)>")
@@ -72,6 +75,9 @@ internal fun videoArgsToJson(args: List<String>): String {
         append(""""steps":${int("--steps", 4)},"moeBoundary":${float("--moe-boundary", 0.5f)},""")
         append(""""seed":${long("--seed", -1L)},"cfgScale":${float("--cfg-scale", 1.0f)},""")
         append(""""flowShift":${float("--flow-shift", 5.0f)},"samplingMethod":"${str("--sampling-method", "euler")}",""")
+        // Wan model paths — blank values fall back to the server's GRAPHYN_WAN_* env vars.
+        append(""""lowNoiseModelPath":"${str("--diffusion-model")}","highNoiseModelPath":"${str("--high-noise-diffusion-model")}",""")
+        append(""""clipVisionPath":"${str("--clip_vision")}","textEncoderPath":"${str("--t5xxl")}","vaePath":"${str("--vae")}",""")
         append(""""loraPaths":[$pathsJson],"loraMultipliers":[$multsJson],"loraHighNoise":[$highNoiseJson]}""")
     }
 }
@@ -108,6 +114,12 @@ internal fun argsToJson(args: List<String>): String {
         append(""""vaeTilingEnabled":${"--vae-tiling" in flags},"hiresEnabled":${"--hires" in flags},""")
         append(""""hiresScale":${float("--hires-scale", 2.0f)},"hiresSteps":${int("--hires-steps")},""")
         append(""""hiresDenoisingStrength":${float("--hires-denoising-strength", 0.7f)},""")
+        // Model paths — blank values let the server fall back to its env default model.
+        append(""""diffusionModelPath":"${str("--diffusion-model")}","clipLPath":"${str("--clip_l")}",""")
+        append(""""clipGPath":"${str("--clip_g")}","t5xxlPath":"${str("--t5xxl")}",""")
+        append(""""vaePath":"${str("--vae")}","llmPath":"${str("--llm")}",""")
+        append(""""backend":"${str("--backend")}","nThreads":${int("--threads", -1)},""")
+        append(""""diffusionFa":${"--diffusion-fa" in flags || "--fa" in flags},""")
         append(""""loraPaths":[$loraPathJson],"loraMultipliers":[$loraMultJson]}""")
     }
 }

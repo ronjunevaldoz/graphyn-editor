@@ -10,8 +10,8 @@ private const val QWEN_EDIT_DIFFUSION = "/models/qwen-image-edit/Qwen-Image-Edit
 private const val QWEN_EDIT_TEXT_ENC  = "/models/qwen-image-edit/text_encoder/qwen_2.5_vl_7b-Q4_K.gguf"
 private const val QWEN_EDIT_VAE       = "/models/qwen-image-edit/vae/qwen_image_vae.safetensors"
 private const val QWEN_EDIT_LORA_DIR  = "/models/qwen-image-edit/lora"
-// LoRA filename (no extension) resolved under lora_model_dir by stable-diffusion.cpp.
-private const val QWEN_EDIT_LORA_4STEP = "Qwen-Image-Edit-Lightning-4steps-V1.0"
+// Full server-side LoRA path (the server applies LoRAs by path, not via lora_model_dir).
+private const val QWEN_EDIT_LORA_4STEP = "$QWEN_EDIT_LORA_DIR/Qwen-Image-Edit-Lightning-4steps-V1.0.safetensors"
 private const val QWEN_EDIT_INIT_IMAGE = "../../app/app/src/commonMain/resources/media/input.png"
 
 /**

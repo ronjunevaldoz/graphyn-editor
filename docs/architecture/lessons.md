@@ -1651,3 +1651,33 @@ the port is a list, else null. Used by both the validator and the scheduler. Cov
 because the SD config specs mark many nullable ports `required`; these surface in the editor but
 don't block execution. `DemoSceneWorkflowTest` exempts `sd.*` types (JVM-only media plugin) the
 same way it exempts `media.*` and `script.eval`.
+
+---
+
+## Model paths flow from the workflow to the SD server (no more env reconfiguration)
+
+**Category:** SD plugin · server-sd — per-request model loading
+
+The thin `server-sd` originally loaded one model at boot from `GRAPHYN_SD_MODEL`/etc. env vars and
+ignored per-request model paths — so switching models meant editing env vars and restarting, and the
+editor's per-node model fields were decorative. The workflow already emits every model path as a CLI
+flag (`--diffusion-model`, `--clip_l`, `--t5xxl`, `--vae`, `--llm`, `--high-noise-diffusion-model`,
+…), but `argsToJson` dropped them and the server DTO had no fields for them.
+
+**Fix (both halves):**
+- **Client** (`SdArgsParser`): the model flags are now in `VALUE_FLAGS` and forwarded into the
+  generate/generate-video JSON. They're server-side paths (models live on the server), so no upload.
+- **Server**: `GenerateExRequest`/`GenerateVideoRequest` carry the model paths; `SdEngineCache` holds
+  one `JniStableDiffusion` keyed on its `StableDiffusionConfig` and reloads only when the requested
+  model changes (one model fits in VRAM at a time). Env vars are now just the fallback default. The
+  Wan video route resolves model paths from the request, falling back to `GRAPHYN_WAN_*`.
+
+**Gotchas:**
+- LoRAs are applied by **full path** in `generateEx`; the native context init has no `lora_model_dir`
+  parameter, so bare names + `lora_model_dir` do not resolve. Demo workflows use absolute LoRA paths.
+- `StableDiffusionConfig` only covers the basic init fields (diffusion/clip_l/clip_g/t5xxl/vae/llm/
+  fa/backend/threads) — enough for FLUX and Qwen. Split-checkpoint `--model`, `vae_format`, `taesd`,
+  etc. would need the `initEx` path threaded too.
+- `diffusionFa` defaults true for a reason (big MMDiT models spill VRAM without it); the client sends
+  it as the presence of `--diffusion-fa`/`--fa`, so a workflow that wants it must set the context
+  node's `diffusion_flash_attn = true`.
