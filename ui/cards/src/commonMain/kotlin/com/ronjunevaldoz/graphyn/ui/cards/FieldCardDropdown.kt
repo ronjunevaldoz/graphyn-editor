@@ -40,7 +40,7 @@ internal fun SingleSelectRow(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val selected = (currentValue as? WorkflowValue.StringValue)?.value
-    FieldRow(name = input.name) {
+    FieldRow(name = input.name, description = input.description) {
         Box {
             ValueChip(selected ?: "—", theme) { showMenu = true }
             if (showMenu) {
@@ -67,7 +67,7 @@ internal fun MultiSelectRow(
             ?.map { it.value }?.toSet() ?: emptySet()
     }
     val label = when (selectedSet.size) { 0 -> "—"; 1 -> selectedSet.first(); else -> "${selectedSet.size} selected" }
-    FieldRow(name = input.name) {
+    FieldRow(name = input.name, description = input.description) {
         Box {
             ValueChip(label, theme) { showMenu = true }
             if (showMenu) {

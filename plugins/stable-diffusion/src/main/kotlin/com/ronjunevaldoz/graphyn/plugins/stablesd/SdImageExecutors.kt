@@ -12,7 +12,11 @@ import com.ronjunevaldoz.graphyn.plugins.stablesd.SdTokens.orEmpty
 internal fun txt2imgExecutor(backend: StableDiffusionBackend) = NodeExecutor { inputs ->
     val args = buildImageArgs(inputs, initImagePath = null)
     val result = backend.generateImage(args)
-    mapOf("images" to ListValue(result.imagePaths.map { StringValue(it) }))
+    val paths = result.imagePaths.map { StringValue(it) }
+    mapOf(
+        "images" to ListValue(paths),
+        "image"  to (paths.firstOrNull() ?: WorkflowValue.NullValue),
+    )
 }
 
 internal fun img2imgExecutor(backend: StableDiffusionBackend) = NodeExecutor { inputs ->
@@ -26,7 +30,11 @@ internal fun img2imgExecutor(backend: StableDiffusionBackend) = NodeExecutor { i
     val args = buildImageArgs(inputs, initImagePath = initImage) +
         listOf("--strength", strength.toString())
     val result = backend.generateImage(args)
-    mapOf("images" to ListValue(result.imagePaths.map { StringValue(it) }))
+    val paths = result.imagePaths.map { StringValue(it) }
+    mapOf(
+        "images" to ListValue(paths),
+        "image"  to (paths.firstOrNull() ?: WorkflowValue.NullValue),
+    )
 }
 
 private fun buildImageArgs(
@@ -67,21 +75,8 @@ private fun buildImageArgs(
 
     initImagePath?.let { add("--init-img"); add(it) }
 
-    if ((inputs["auto_resize_ref_image"] as? BooleanValue)?.value == false) add("--disable-auto-resize-ref-image")
-    if ((inputs["increase_ref_index"] as? BooleanValue)?.value == true) add("--increase-ref-index")
     if ((inputs["embed_image_metadata"] as? BooleanValue)?.value == false) add("--disable-image-metadata")
 
-    (inputs["control_image"] as? StringValue)?.value?.let { add("--control-image"); add(it) }
-    (inputs["control_strength"] as? WorkflowValue.DoubleValue)?.value
-        ?.let { add("--control-strength"); add(it.toString()) }
-    (inputs["mask_image"] as? StringValue)?.value?.let { add("--mask"); add(it) }
-    (inputs["ref_images"] as? ListValue)?.items?.filterIsInstance<StringValue>()
-        ?.forEach { add("--ref-image"); add(it.value) }
-    (inputs["pm_id_embed_path"] as? StringValue)?.value?.let { add("--pm-id-embed-path"); add(it) }
-    (inputs["pm_id_images_dir"] as? StringValue)?.value?.let { add("--pm-id-images-dir"); add(it) }
-    (inputs["pm_style_strength"] as? WorkflowValue.DoubleValue)?.value
-        ?.let { add("--pm-style-strength"); add(it.toString()) }
-    (inputs["pulid_id_embedding_path"] as? StringValue)?.value?.let { add("--pulid-id-embedding"); add(it) }
-    (inputs["pulid_id_weight"] as? WorkflowValue.DoubleValue)?.value
-        ?.let { add("--pulid-id-weight"); add(it.toString()) }
+    inputs["controlnet"]?.let { if (it !is NullValue) addAll(buildControlNetArgs(it.orEmpty())) }
+    inputs["id_cond"]?.let { if (it !is NullValue) addAll(buildIdCondArgs(it.orEmpty())) }
 }

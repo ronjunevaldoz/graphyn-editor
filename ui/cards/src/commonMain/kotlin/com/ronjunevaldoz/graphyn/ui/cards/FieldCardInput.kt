@@ -50,7 +50,7 @@ internal fun InputRow(
         onValueChange(parsed)
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
-    FieldRow(name = input.name) {
+    FieldRow(name = input.name, description = input.description) {
         if (currentValue != null) {
             if (input.type == WorkflowType.BooleanType && currentValue is WorkflowValue.BooleanValue) {
                 val on = currentValue.value
@@ -103,7 +103,7 @@ internal fun InputRow(
 @Composable
 internal fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp) ,
+        modifier = Modifier.fillMaxWidth().height(ROW_DP.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Spacer(Modifier.weight(1f))

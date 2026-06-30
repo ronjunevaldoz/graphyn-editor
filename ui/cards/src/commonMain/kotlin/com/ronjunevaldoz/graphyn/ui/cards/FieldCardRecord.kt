@@ -52,7 +52,7 @@ internal fun RecordRow(
         showPopup = false
         draftFields = null
     }
-    FieldRow(name = input.name) {
+    FieldRow(name = input.name, description = input.description) {
         Box {
             Box(Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()).clickable {
                 draftFields = fields

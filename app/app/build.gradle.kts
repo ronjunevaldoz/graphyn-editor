@@ -54,6 +54,9 @@ kotlin {
             implementation(projects.plugins.linkedin)
             implementation(projects.plugins.mediaCore)
             implementation(projects.plugins.mediaAi)
+            implementation(projects.plugins.stableDiffusion)
+            implementation(libs.ktor.clientCore)
+            implementation(libs.ktor.clientCio)
         }
         jsMain.dependencies {
             implementation(projects.plugins.gmail)

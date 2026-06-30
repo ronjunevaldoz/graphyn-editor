@@ -29,8 +29,26 @@ internal object SdTokens {
     fun cache(inputs: Map<String, WorkflowValue>): WorkflowValue =
         RecordValue(mapOf("_type" to StringValue("sd.cache")) + inputs.mapValues { it.value })
 
+    fun model(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.model")) + inputs.mapValues { it.value })
+
+    fun controlNet(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.controlnet")) + inputs.mapValues { it.value })
+
+    fun idCond(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.id_cond")) + inputs.mapValues { it.value })
+
     fun vaeTiling(inputs: Map<String, WorkflowValue>): WorkflowValue =
         RecordValue(mapOf("_type" to StringValue("sd.vae_tiling")) + inputs.mapValues { it.value })
+
+    fun encoders(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.encoders")) + inputs.mapValues { it.value })
+
+    fun vae(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.vae")) + inputs.mapValues { it.value })
+
+    fun diffusion(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.diffusion")) + inputs.mapValues { it.value })
 
     fun RecordValue.fields(): Map<String, WorkflowValue> = fields
 

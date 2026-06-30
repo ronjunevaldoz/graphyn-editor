@@ -15,12 +15,20 @@ private const val FLUX_VAE       = "/models/flux/vae/ae.safetensors"
  * FLUX.1-schnell text-to-image workflow.
  *
  * Node graph:
- *   sd.context (model + hardware)
+ *   sd.diffusion (diffusion model path)
+ *       ↓ diffusion
+ *   sd.encoders (CLIP-L + T5-XXL paths)
+ *       ↓ encoders
+ *   sd.vae (VAE path)
+ *       ↓ vae
+ *   sd.model (assembles all three tokens)
+ *       ↓ model
+ *   sd.context (hardware settings)
  *       ↓ context
  *   sd.sampler (4-step euler, distilled guidance)
  *       ↓ sampler
  *   sd.txt2img (prompt + dimensions)
- *       ↓ images[0]
+ *       ↓ image (first result)
  *   preview.view
  *
  * FLUX.1-schnell is a 4-step distilled model:
@@ -40,20 +48,39 @@ internal val fluxTxt2ImgWorkflow = WorkflowDefinition(
             Generates a 1024×1024 image from a text prompt using
             FLUX.1-schnell (4-step distilled, no negative prompt needed).
 
-            Flow: SD Context → SD Sampler → SD Text→Image → Preview
+            Flow: SD Diffusion + SD Encoders + SD VAE → SD Model → SD Context → SD Sampler → SD Text→Image → Preview
 
             Tip: edit the prompt port on sd.txt2img to change the subject.
             Change width/height for different aspect ratios (multiples of 16).
             """,
         ),
         NodeRef(
+            id = "sddiffusion",
+            type = "sd.diffusion",
+            config = mapOf(
+                "diffusion_model_path" to WorkflowValue.StringValue(FLUX_DIFFUSION),
+            ),
+        ),
+        NodeRef(
+            id = "encoders",
+            type = "sd.encoders",
+            config = mapOf(
+                "clip_l_path" to WorkflowValue.StringValue(FLUX_CLIP_L),
+                "t5xxl_path"  to WorkflowValue.StringValue(FLUX_T5XXL),
+            ),
+        ),
+        NodeRef(
+            id = "sdvae",
+            type = "sd.vae",
+            config = mapOf(
+                "vae_path" to WorkflowValue.StringValue(FLUX_VAE),
+            ),
+        ),
+        NodeRef(id = "sdmodel", type = "sd.model"),
+        NodeRef(
             id = "ctx",
             type = "sd.context",
             config = mapOf(
-                "diffusion_model_path" to WorkflowValue.StringValue(FLUX_DIFFUSION),
-                "clip_l_path"          to WorkflowValue.StringValue(FLUX_CLIP_L),
-                "t5xxl_path"           to WorkflowValue.StringValue(FLUX_T5XXL),
-                "vae_path"             to WorkflowValue.StringValue(FLUX_VAE),
                 "diffusion_flash_attn" to WorkflowValue.BooleanValue(true),
                 "n_threads"            to WorkflowValue.IntValue(-1),
             ),
@@ -85,8 +112,12 @@ internal val fluxTxt2ImgWorkflow = WorkflowDefinition(
         NodeRef("preview", "preview.view"),
     ),
     connections = listOf(
-        ConnectionRef("ctx",     "context", "txt2img", "context"),
-        ConnectionRef("sampler", "sampler", "txt2img", "sampler"),
-        ConnectionRef("txt2img", "images",  "preview", "value"),
+        ConnectionRef("sddiffusion", "diffusion", "sdmodel", "diffusion"),
+        ConnectionRef("encoders",   "encoders",  "sdmodel", "encoders"),
+        ConnectionRef("sdvae",      "vae",       "sdmodel", "vae"),
+        ConnectionRef("sdmodel",    "model",     "ctx",     "model"),
+        ConnectionRef("ctx",      "context",  "txt2img", "context"),
+        ConnectionRef("sampler",  "sampler",  "txt2img", "sampler"),
+        ConnectionRef("txt2img",  "image",    "preview", "value"),
     ),
 )

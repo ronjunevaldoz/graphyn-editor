@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.plugins.stablesd
 
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.BooleanType
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType.DoubleType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.EnumType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.IntType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.NullableType
@@ -21,12 +22,12 @@ internal val sdContextComputePorts: List<PortSpec> = listOf(
         description = "CLI: --lora-apply-mode <mode>. When LoRA weights are fused: 'auto' = decide at load time, 'immediately' = fuse at load, 'at_runtime' = fuse per-step."),
     PortSpec("offload_params_to_cpu", BooleanType, portColor = COLOR_BOOL,
         description = "CLI: --offload-to-cpu. Offload model parameters to CPU RAM between steps to reduce VRAM usage. Increases generation time."),
-    PortSpec("max_vram", NullableType(StringType), portColor = COLOR_STRING,
-        description = "CLI: --max-vram <GiB|spec>. VRAM budget in GiB for graph-cut offload (e.g. '4'). '0' = disabled, '-1' = auto. Also accepts backend assignment spec."),
-    PortSpec("backend", NullableType(StringType), portColor = COLOR_STRING,
-        description = "CLI: --backend <name>. Compute backend (e.g. 'cuda', 'vulkan', 'metal', 'opencl', 'cpu'). Null = auto-select."),
-    PortSpec("params_backend", NullableType(StringType), portColor = COLOR_STRING,
-        description = "CLI: --params-backend <name>. Backend used for parameter storage, separate from compute backend. Null = same as backend."),
+    PortSpec("max_vram", NullableType(DoubleType), portColor = COLOR_FLOAT,
+        description = "CLI: --max-vram <GiB>. VRAM budget in GiB for graph-cut offload. 0.0 = disabled, -1.0 = auto."),
+    PortSpec("backend", NullableType(EnumType(SD_BACKENDS)), portColor = COLOR_STRING,
+        description = "CLI: --backend <name>. Compute backend. Null = auto-select."),
+    PortSpec("params_backend", NullableType(EnumType(SD_BACKENDS)), portColor = COLOR_STRING,
+        description = "CLI: --params-backend <name>. Backend for parameter storage. Null = same as backend."),
     PortSpec("rpc_servers", NullableType(StringType), portColor = COLOR_STRING,
         description = "CLI: --rpc-servers <host:port,...>. Comma-separated RPC server addresses for distributed multi-GPU inference."),
     PortSpec("enable_mmap", BooleanType, portColor = COLOR_BOOL,

@@ -41,11 +41,16 @@ class CoreWorkflowTest {
     }
 
     @Test
-    fun opaqueTypeIsCompatibleInBothDirections() {
-        // Opaque as expected (input) accepts anything; opaque as actual (output) flows anywhere.
-        assertTrue(WorkflowTypeCompatibility.isCompatible(WorkflowType.OpaqueType, WorkflowType.StringType))
-        assertTrue(WorkflowTypeCompatibility.isCompatible(WorkflowType.StringType, WorkflowType.OpaqueType))
+    fun opaqueTypeIsOnlyCompatibleWithOpaque() {
+        // OpaqueType output connects to OpaqueType or NullableType(OpaqueType) inputs only.
+        assertTrue(WorkflowTypeCompatibility.isCompatible(WorkflowType.OpaqueType, WorkflowType.OpaqueType))
         assertTrue(WorkflowTypeCompatibility.isCompatible(
+            WorkflowType.NullableType(WorkflowType.OpaqueType), WorkflowType.OpaqueType,
+        ))
+        // OpaqueType does NOT flow into typed ports and typed ports do NOT flow into OpaqueType.
+        assertFalse(WorkflowTypeCompatibility.isCompatible(WorkflowType.OpaqueType, WorkflowType.StringType))
+        assertFalse(WorkflowTypeCompatibility.isCompatible(WorkflowType.StringType, WorkflowType.OpaqueType))
+        assertFalse(WorkflowTypeCompatibility.isCompatible(
             WorkflowType.ListType(WorkflowType.IntType), WorkflowType.OpaqueType,
         ))
     }

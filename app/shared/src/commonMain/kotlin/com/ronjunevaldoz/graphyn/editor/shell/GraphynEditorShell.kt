@@ -3,6 +3,7 @@
 package com.ronjunevaldoz.graphyn.editor.shell
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -35,7 +36,7 @@ import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.ai.GraphynAiAssistantState
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynAiPanel
+import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynAiDialog
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynInspectorPanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynPalettePanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
@@ -135,49 +136,47 @@ private fun GraphynEditorShellContent(
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(colors.canvasBackground)) {
-        GraphynTopToolbar(
-            branding = branding,
-            appearanceState = appearanceState,
-            shortcutState = shortcutState,
-            canRun = executionEngine != null,
-            onRun = { executionEngine?.let { state.execute(it) } },
-            onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },
-            onHome = dependencies.onHome,
-            workflowName = if (dependencies.onHome != null) state.workflow?.name else null,
-            onToggleAi = if (assistant != null) ({ aiOpen = !aiOpen }) else null,
-            aiActive = aiOpen,
-        )
-        Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            GraphynPalettePanel(
-                modifier = Modifier.width(220.dp).fillMaxHeight(),
-                nodeSpecs = dependencies.nodeSpecs,
-                categoryRegistry = dependencies.categoryRegistry,
-                onAddNode = { spec -> state.dispatch(GraphynEditorIntent.AddNode(spec)) },
+    Box(modifier = Modifier.fillMaxSize().background(colors.canvasBackground)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            GraphynTopToolbar(
+                branding = branding,
+                appearanceState = appearanceState,
+                shortcutState = shortcutState,
+                canRun = executionEngine != null,
+                onRun = { executionEngine?.let { state.execute(it) } },
+                onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },
+                onHome = dependencies.onHome,
+                workflowName = if (dependencies.onHome != null) state.workflow?.name else null,
+                onToggleAi = if (assistant != null) ({ aiOpen = !aiOpen }) else null,
+                aiActive = aiOpen,
             )
-            GraphynEditorShellCanvas(state = state, dependencies = dependencies, modifier = Modifier.weight(1f), canvasContent = canvasContent)
-            GraphynInspectorPanel(
-                modifier = Modifier.width(260.dp).fillMaxHeight(),
-                state = state,
-                nodeSpecs = dependencies.nodeSpecs,
-                panels = dependencies.panels,
-                validationErrors = validationErrors,
-                onEnterSubgraph = dependencies.onEnterSubgraph?.let { callback ->
-                    { inner ->
-                        val selectedNode = state.selectedNode()
-                        val label = selectedNode?.let { dependencies.nodeSpecs.resolve(it.type)?.label ?: it.type }
-                            ?: inner.name
-                        callback(label, inner)
-                    }
-                },
-            )
-            if (aiOpen && assistant != null) {
-                GraphynAiPanel(
-                    assistant = assistant,
-                    onClose = { aiOpen = false },
-                    modifier = Modifier.width(300.dp).fillMaxHeight(),
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                GraphynPalettePanel(
+                    modifier = Modifier.width(220.dp).fillMaxHeight(),
+                    nodeSpecs = dependencies.nodeSpecs,
+                    categoryRegistry = dependencies.categoryRegistry,
+                    onAddNode = { spec -> state.dispatch(GraphynEditorIntent.AddNode(spec)) },
+                )
+                GraphynEditorShellCanvas(state = state, dependencies = dependencies, modifier = Modifier.weight(1f), canvasContent = canvasContent)
+                GraphynInspectorPanel(
+                    modifier = Modifier.width(260.dp).fillMaxHeight(),
+                    state = state,
+                    nodeSpecs = dependencies.nodeSpecs,
+                    panels = dependencies.panels,
+                    validationErrors = validationErrors,
+                    onEnterSubgraph = dependencies.onEnterSubgraph?.let { callback ->
+                        { inner ->
+                            val selectedNode = state.selectedNode()
+                            val label = selectedNode?.let { dependencies.nodeSpecs.resolve(it.type)?.label ?: it.type }
+                                ?: inner.name
+                            callback(label, inner)
+                        }
+                    },
                 )
             }
+        }
+        if (aiOpen && assistant != null) {
+            GraphynAiDialog(assistant = assistant, onDismiss = { aiOpen = false })
         }
     }
 }

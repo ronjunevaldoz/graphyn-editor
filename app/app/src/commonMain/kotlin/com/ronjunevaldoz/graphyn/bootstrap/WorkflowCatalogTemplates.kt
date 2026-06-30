@@ -13,4 +13,4 @@ fun catalogTemplatesFor(nodeSpecs: NodeSpecRegistry): List<WorkflowTemplate> =
     WorkflowCatalog.entries
         .sortedBy { it.category.ordinal }
         .filter { entry -> entry.workflow.nodes.all { nodeSpecs.resolve(it.type) != null } }
-        .map { WorkflowTemplate(it.label, it.description, it.workflow, it.category) }
+        .map { WorkflowTemplate(it.label, it.description, it.workflow, it.category, it.badge) }

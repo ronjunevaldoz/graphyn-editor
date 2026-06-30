@@ -10,6 +10,7 @@ import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiPlugin
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCoreEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCorePlugin
+import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionPlugin
 
 /**
  * JVM-only editor plugins for service integrations.
@@ -18,6 +19,7 @@ object GraphynBootstrapJvm {
     val mediaRuntimePlugins: List<GraphynPlugin> = listOf(
         MediaCorePlugin(),
         MediaAiPlugin(),
+        StableDiffusionPlugin(HttpStableDiffusionBackend()),
     )
 
     val serviceIntegrationEditorPlugins: List<GraphynEditorPlugin> = listOf(

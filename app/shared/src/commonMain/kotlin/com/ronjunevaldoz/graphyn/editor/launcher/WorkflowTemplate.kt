@@ -24,10 +24,12 @@ enum class WorkflowCategory(val label: String) {
  * @param description Optional one-line hint shown beneath the name.
  * @param workflow The [WorkflowDefinition] loaded when the card is tapped.
  * @param category Catalog section this template belongs to; defaults to [WorkflowCategory.Examples].
+ * @param badge Short label rendered as a colored pill next to the name (e.g. "AI", "GPU"). Null = no badge.
  */
 data class WorkflowTemplate(
     val name: String,
     val description: String? = null,
     val workflow: WorkflowDefinition,
     val category: WorkflowCategory = WorkflowCategory.Examples,
+    val badge: String? = null,
 )

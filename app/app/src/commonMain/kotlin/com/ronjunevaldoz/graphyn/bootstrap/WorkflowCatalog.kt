@@ -38,6 +38,7 @@ enum class WorkflowCatalog(
     val workflow: WorkflowDefinition,
     val category: WorkflowCategory,
     val description: String,
+    val badge: String? = null,
 ) {
     SimpleTts("Text to Speech", simpleTtsWorkflow, Media,
         "Read a text file and synthesize spoken audio."),
@@ -58,7 +59,7 @@ enum class WorkflowCatalog(
     SyncCalibration("Sync Calibration", syncCalibrationWorkflow, Media,
         "Average measured A/V drift into delay offsets."),
     FluxTxt2Img("FLUX Text to Image", fluxTxt2ImgWorkflow, Media,
-        "Generate an image from a prompt using FLUX.1-schnell (4-step distilled)."),
+        "Generate an image from a prompt using FLUX.1-schnell (4-step distilled).", badge = "AI"),
     ImageEdit("Image Edit", imageEditWorkflow, Media,
         "Resize an image and crop a region out of it."),
     Slideshow("Slideshow", slideshowWorkflow, Media,

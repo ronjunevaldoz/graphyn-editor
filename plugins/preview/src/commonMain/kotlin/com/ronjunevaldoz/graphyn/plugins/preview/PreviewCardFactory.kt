@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -39,7 +38,7 @@ import kotlin.math.roundToInt
 private const val CARD_WIDTH  = 180
 private const val HEADER_DP   = 28
 private const val PORT_ROW_DP = 22
-private const val CONTENT_DP  = 72
+private const val CONTENT_DP  = 180
 
 internal object PreviewCardFactory : NodeCanvasFactory {
     override val nodeWidth  = CARD_WIDTH
@@ -92,19 +91,10 @@ private fun PreviewCard(ctx: NodeCanvasContext) {
             }
 
             Box(
-                modifier = Modifier.fillMaxWidth().height(CONTENT_DP.dp)
-                    .background(colors.muted).padding(8.dp),
+                modifier = Modifier.fillMaxWidth().height(CONTENT_DP.dp).background(colors.muted),
                 contentAlignment = Alignment.TopStart,
             ) {
-                BasicText(
-                    text = value.display(),
-                    style = TextStyle(
-                        fontFamily = if (value != null && value !is WorkflowValue.NullValue) FontFamily.Monospace else FontFamily.Default,
-                        fontSize = 10.sp,
-                        color = if (value == null || value is WorkflowValue.NullValue) colors.onMuted else colors.onSurface,
-                        lineHeight = 14.sp,
-                    ),
-                )
+                PreviewContentArea(value)
             }
 
             Row(Modifier.fillMaxWidth().height(PORT_ROW_DP.dp).padding(horizontal = 10.dp),
@@ -117,13 +107,3 @@ private fun PreviewCard(ctx: NodeCanvasContext) {
     }
 }
 
-private fun WorkflowValue?.display(): String = when (this) {
-    null, is WorkflowValue.NullValue    -> "No output yet"
-    is WorkflowValue.StringValue        -> value.take(120)
-    is WorkflowValue.IntValue           -> value.toString()
-    is WorkflowValue.DoubleValue        -> value.toString()
-    is WorkflowValue.BooleanValue       -> if (value) "true" else "false"
-    is WorkflowValue.ListValue          -> "[ ${items.size} item${if (items.size == 1) "" else "s"} ]"
-    is WorkflowValue.RecordValue        -> "{ ${fields.keys.take(3).joinToString(", ")}${if (fields.size > 3) "…" else ""} }"
-    else                                -> toString()
-}

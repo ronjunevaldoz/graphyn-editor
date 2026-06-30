@@ -52,6 +52,27 @@ internal fun buildCacheArgs(inputs: Map<String, WorkflowValue>): List<String> = 
     if (inputs.bool("scm_policy_dynamic") == false) { add("--scm-policy"); add("static") }
 }
 
+/** Builds ControlNet and inpainting args from an `sd.controlnet` record. */
+internal fun buildControlNetArgs(inputs: Map<String, WorkflowValue>): List<String> = buildList {
+    inputs.str("control_image")?.let { add("--control-image"); add(it) }
+    inputs.double("control_strength")?.let { add("--control-strength"); add(it.toString()) }
+    inputs.str("mask_image")?.let { add("--mask"); add(it) }
+}
+
+/** Builds id-conditioning args (ref images / PhotoMaker / PuLID) from an `sd.id_cond` record. */
+internal fun buildIdCondArgs(inputs: Map<String, WorkflowValue>): List<String> = buildList {
+    (inputs["ref_images"] as? WorkflowValue.ListValue)?.items
+        ?.filterIsInstance<WorkflowValue.StringValue>()
+        ?.forEach { add("--ref-image"); add(it.value) }
+    if (inputs.bool("auto_resize_ref_image") == false) add("--disable-auto-resize-ref-image")
+    if (inputs.bool("increase_ref_index") == true) add("--increase-ref-index")
+    inputs.str("pm_id_embed_path")?.let { add("--pm-id-embed-path"); add(it) }
+    inputs.str("pm_id_images_dir")?.let { add("--pm-id-images-dir"); add(it) }
+    inputs.double("pm_style_strength")?.let { add("--pm-style-strength"); add(it.toString()) }
+    inputs.str("pulid_id_embedding_path")?.let { add("--pulid-id-embedding"); add(it) }
+    inputs.double("pulid_id_weight")?.let { add("--pulid-id-weight"); add(it.toString()) }
+}
+
 /** Builds `--vae-tiling` and related args from an `sd.vae_tiling` record. */
 internal fun buildTilingArgs(inputs: Map<String, WorkflowValue>): List<String> = buildList {
     if (inputs.bool("enabled") != true) return@buildList

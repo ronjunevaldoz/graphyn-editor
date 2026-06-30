@@ -107,7 +107,7 @@ internal fun GraphynAiPanel(
 }
 
 @Composable
-private fun MiniButton(
+internal fun MiniButton(
     label: String,
     modifier: Modifier = Modifier,
     filled: Boolean = false,

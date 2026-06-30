@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,6 +13,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
+import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynJobBadge
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynLogPanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynMinimapDebugger
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynZoomControls
@@ -33,6 +35,10 @@ internal fun GraphynEditorShellCanvas(
                 modifier = Modifier.align(Alignment.BottomStart),
                 onZoomIn = { state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, ZoomStep, Offset.Zero)) },
                 onZoomOut = { state.dispatch(GraphynEditorIntent.UpdateViewportTransform(Offset.Zero, ZoomOutStep, Offset.Zero)) },
+            )
+            GraphynJobBadge(
+                state = state,
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
             )
             val minimapWidth = 200.dp
             val minimapHeight = 130.dp
