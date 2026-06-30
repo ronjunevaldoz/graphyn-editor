@@ -26,12 +26,13 @@ import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
-private enum class OutputTab { Output, Logs, Debug }
+private enum class OutputTab { Output, Artifacts, Logs, Debug }
 
 @Composable
 internal fun GraphynLogPanel(
     modifier: Modifier = Modifier,
     state: GraphynEditorState,
+    onArtifactClick: (ArtifactItem) -> Unit = {},
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
@@ -39,6 +40,11 @@ internal fun GraphynLogPanel(
     var activeTab by remember { mutableStateOf(OutputTab.Output) }
 
     val result = state.lastExecutionResult
+    val nodeLabel: (String) -> String = { id ->
+        state.workflow?.nodes?.firstOrNull { it.id == id }
+            ?.type?.substringAfterLast('.') ?: id
+    }
+    val artifacts = result?.let { extractArtifacts(it, nodeLabel) } ?: emptyList()
 
     Column(
         modifier = modifier
@@ -94,16 +100,15 @@ internal fun GraphynLogPanel(
                                 style = type.mono.copy(color = colors.textDisabled),
                             )
                         } else {
-                            val nodeLabel: (String) -> String = { id ->
-                                state.workflow?.nodes?.firstOrNull { it.id == id }
-                                    ?.type?.substringAfterLast('.') ?: id
-                            }
                             GraphynExecutionResultSection(
                                 result = result,
                                 statusByNodeId = state.executionStatusByNodeId,
                                 nodeLabel = nodeLabel,
                             )
                         }
+                    }
+                    OutputTab.Artifacts -> {
+                        GraphynArtifactsTab(artifacts = artifacts, onView = onArtifactClick)
                     }
                     OutputTab.Logs -> {
                         val logs = state.debugLogEntries
