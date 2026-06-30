@@ -28,7 +28,8 @@ import java.io.File
  * `GRAPHYN_ARTIFACTS_DIR` (default `~/.graphyn/artifacts`).
  */
 class HttpStableDiffusionBackend(
-    private val baseUrl: String = System.getenv("GRAPHYN_SD_SERVER_URL") ?: "http://192.168.254.104:8082",
+    private val baseUrl: String = System.getenv("GRAPHYN_SD_SERVER_URL")
+        ?: "https://ron-local-home.duckdns.org/stablediffusion",
     private val artifactsDir: File = defaultArtifactsDir(),
     private val history: ArtifactHistory = FileArtifactHistory(),
 ) : StableDiffusionBackend {
