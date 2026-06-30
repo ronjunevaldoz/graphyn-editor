@@ -9,6 +9,8 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 // Q4_K_M fits a 12 GB card via the sd.context max_vram auto-offload (-1, server default).
 private const val QWEN_EDIT_DIFFUSION = "/models/qwen/diffusion/qwen-image-edit-2511-Q4_K_M.gguf"
 private const val QWEN_EDIT_TEXT_ENC  = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf"
+// Qwen2.5-VL vision projector — drives the editor's semantic path (sees the reference image).
+private const val QWEN_EDIT_MMPROJ    = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct.mmproj-Q8_0.gguf"
 private const val QWEN_EDIT_VAE       = "/models/qwen/vae/qwen_image_vae.safetensors"
 private const val QWEN_EDIT_LORA_DIR  = "/models/qwen/lora"
 // Full server-side LoRA path (the server applies LoRAs by path, not via lora_model_dir).
@@ -58,7 +60,8 @@ internal val qwenImg2ImgWorkflow = WorkflowDefinition(
             id = "encoders",
             type = "sd.encoders",
             config = mapOf(
-                "llm_path" to WorkflowValue.StringValue(QWEN_EDIT_TEXT_ENC),
+                "llm_path"        to WorkflowValue.StringValue(QWEN_EDIT_TEXT_ENC),
+                "llm_vision_path" to WorkflowValue.StringValue(QWEN_EDIT_MMPROJ),
             ),
         ),
         NodeRef(
