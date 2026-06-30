@@ -52,13 +52,13 @@ internal fun NumericRow(
         onValueChange(parsed)
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
-    FieldRow(name = input.name, description = input.description, hasValue = false) {
+    FieldRow(name = input.name, description = input.description, hasValue = currentValue != null) {
         if (currentValue != null) {
             if (editText != null) {
                 BasicTextField(
                     value = editText!!,
                     onValueChange = { if (isValidIntermediate(input.type, it)) editText = it },
-                    modifier = Modifier.weight(1f).focusRequester(focusRequester)
+                    modifier = Modifier.width(VALUE_DP.dp).focusRequester(focusRequester)
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                     textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center),
                     decorationBox = { inner ->
@@ -66,7 +66,7 @@ internal fun NumericRow(
                     },
                 )
             } else {
-                StepperChip(currentValue.label(), theme, modifier = Modifier.weight(1f),
+                StepperChip(currentValue.label(), theme, modifier = Modifier.width(VALUE_DP.dp),
                     onMinus = { stepValue(currentValue, -step)?.let(onValueChange) },
                     onEdit = { focusGranted = false; editText = currentValue.label() },
                     onPlus = { stepValue(currentValue, step)?.let(onValueChange) },

@@ -3,6 +3,8 @@
 package com.ronjunevaldoz.graphyn
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -10,6 +12,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import com.ronjunevaldoz.graphyn.bootstrap.catalogTemplatesFor
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import kotlin.random.Random
@@ -17,9 +20,7 @@ import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.store.WorkflowMeta
 import com.ronjunevaldoz.graphyn.core.store.WorkflowStore
-import androidx.compose.runtime.snapshotFlow
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
-import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.ai.OllamaConfig
 import com.ronjunevaldoz.graphyn.ai.OllamaWorkflowGenerator
 import com.ronjunevaldoz.graphyn.ai.WorkflowGenerator
@@ -28,14 +29,11 @@ import com.ronjunevaldoz.graphyn.editor.launcher.WorkflowTemplate
 import com.ronjunevaldoz.graphyn.editor.plugins.DefaultGraphynEditorPluginRegistry
 import com.ronjunevaldoz.graphyn.editor.plugins.GraphynEditorPlugin
 import com.ronjunevaldoz.graphyn.editor.shell.GraphynEditorShellDependencies
-import com.ronjunevaldoz.graphyn.editor.shell.GraphynSubgraphNavigator
-import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynTheme
 import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
-import kotlinx.coroutines.flow.first
 
 @Composable
 fun GraphynApp(
@@ -50,7 +48,9 @@ fun GraphynApp(
     var recentWorkflows by remember { mutableStateOf(emptyList<WorkflowTemplate>()) }
     var savedWorkflows by remember { mutableStateOf(emptyList<WorkflowMeta>()) }
     var openWorkflow by remember { mutableStateOf<WorkflowDefinition?>(null) }
+    var openWithStore by remember { mutableStateOf(true) }
     var pendingLoadId by remember { mutableStateOf<String?>(null) }
+    var pendingTemplate by remember { mutableStateOf<WorkflowTemplate?>(null) }
     val generator = workflowGenerator
         ?: remember { OllamaWorkflowGenerator(OllamaConfig(baseUrl = DEMO_OLLAMA_HOST)) }
 
@@ -80,54 +80,66 @@ fun GraphynApp(
     val darkTheme = appearanceState.resolvedDarkTheme(isSystemInDarkTheme())
 
     GraphynTheme(branding = branding.copy(palette = appearanceState.resolvePalette(darkTheme)), darkTheme = darkTheme) {
-        val wf = openWorkflow
-        if (wf == null) {
-            GraphynWorkflowLauncher(
-                templates = templates,
-                recentWorkflows = recentWorkflows,
-                savedWorkflows = savedWorkflows,
-                onNew = {
-                    openWorkflow = WorkflowDefinition(
-                        id = "wf-${Random.nextLong().and(0xFFFFFFFFL)}",
-                        name = "Untitled", nodes = emptyList(), connections = emptyList(),
-                    )
-                },
-                onOpenSaved = { id -> pendingLoadId = id },
-                onOpen = { template ->
-                    recentWorkflows = listOf(template) +
-                        recentWorkflows.filter { it.workflow.id != template.workflow.id }.take(9)
-                    openWorkflow = template.workflow
-                },
-            )
-        } else {
-            key(wf.id) {
-                val state = rememberGraphynEditorState(
-                    initialWorkflow = wf,
-                    canvasBounds = canvasBounds,
-                    store = store,
+        Box(Modifier.fillMaxSize()) {
+            val wf = openWorkflow
+            if (wf == null) {
+                GraphynWorkflowLauncher(
+                    templates = templates,
+                    recentWorkflows = recentWorkflows,
+                    savedWorkflows = savedWorkflows,
+                    onNew = {
+                        openWithStore = true
+                        openWorkflow = WorkflowDefinition(
+                            id = "wf-${Random.nextLong().and(0xFFFFFFFFL)}",
+                            name = "Untitled", nodes = emptyList(), connections = emptyList(),
+                        )
+                    },
+                    onOpenSaved = { id ->
+                        openWithStore = true
+                        pendingLoadId = id
+                    },
+                    onOpen = { template ->
+                        recentWorkflows = listOf(template) +
+                            recentWorkflows.filter { it.workflow.id != template.workflow.id }.take(9)
+                        pendingTemplate = template
+                    },
                 )
-                // Templates ship without positions; lay them out once the canvas is measured.
-                // Guarded on empty positions so a stored/edited layout is never clobbered.
-                LaunchedEffect(Unit) {
-                    snapshotFlow { state.canvasSize to state.hasCanvasCards }
-                        .first { (size, ready) -> size.width > 0 && size.height > 0 && ready }
-                    if (state.nodePositionsByNodeId.isEmpty()) {
-                        state.dispatch(GraphynEditorIntent.AutoLayout)
-                    }
+            } else {
+                key(wf.id) {
+                    GraphynEditorSection(
+                        wf = wf,
+                        store = if (openWithStore) store else null,
+                        canvasBounds = canvasBounds,
+                        branding = branding,
+                        dependencies = GraphynEditorShellDependencies(
+                            nodeSpecs = pluginRegistry.nodeSpecs,
+                            panels = editorRegistry.panels,
+                            canvasCards = editorRegistry.canvasCards,
+                            categoryRegistry = editorRegistry.categories,
+                            executionEngine = executionEngine ?: engine,
+                            workflowGenerator = generator,
+                        ),
+                        appearanceState = appearanceState,
+                        onHome = { openWorkflow = null; openWithStore = true },
+                    )
                 }
-                GraphynSubgraphNavigator(
-                    branding = branding,
-                    dependencies = GraphynEditorShellDependencies(
-                        nodeSpecs = pluginRegistry.nodeSpecs,
-                        panels = editorRegistry.panels,
-                        canvasCards = editorRegistry.canvasCards,
-                        categoryRegistry = editorRegistry.categories,
-                        executionEngine = executionEngine ?: engine,
-                        workflowGenerator = generator,
-                    ),
-                    appearanceState = appearanceState,
-                    state = state,
-                    onHome = { openWorkflow = null },
+            }
+
+            val pending = pendingTemplate
+            if (pending != null && openWorkflow == null) {
+                TemplateSaveDialog(
+                    templateName = pending.name,
+                    onSave = {
+                        openWithStore = true
+                        openWorkflow = pending.workflow
+                        pendingTemplate = null
+                    },
+                    onSkip = {
+                        openWithStore = false
+                        openWorkflow = pending.workflow
+                        pendingTemplate = null
+                    },
+                    onDismiss = { pendingTemplate = null },
                 )
             }
         }
