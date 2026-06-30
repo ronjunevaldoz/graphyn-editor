@@ -93,6 +93,7 @@ val Graphyn = createApplicationPlugin("Graphyn", ::GraphynKtorConfig) {
             nodeRoutes(runtime.plugins, json)
             executionRoutes(runtime, registry, json)
             workflowRoutes(cfg.store, json)
+            workflowRunRoute(cfg.store, runtime, registry, json)
             jobRoutes(runtime, jobStore, jobScope, json)
         }
     }
