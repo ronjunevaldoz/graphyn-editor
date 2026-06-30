@@ -89,7 +89,8 @@ internal val wan5bImg2VidWorkflow = WorkflowDefinition(
                 "prompt"       to WorkflowValue.StringValue("the scene comes alive, gentle camera push-in, natural motion"),
                 "width"        to WorkflowValue.IntValue(480),
                 "height"       to WorkflowValue.IntValue(480),
-                "video_frames" to WorkflowValue.IntValue(49),
+                // 17 frames fits the Wan VAE decode buffer on 12 GB; 49 OOMs the decode (even tiled).
+                "video_frames" to WorkflowValue.IntValue(17),
                 "fps"          to WorkflowValue.IntValue(16),
                 "seed"         to WorkflowValue.IntValue(-1),
             ),
