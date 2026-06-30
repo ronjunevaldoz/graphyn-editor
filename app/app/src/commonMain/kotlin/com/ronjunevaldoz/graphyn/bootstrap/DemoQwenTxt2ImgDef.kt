@@ -1,0 +1,120 @@
+package com.ronjunevaldoz.graphyn.bootstrap
+
+import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
+import com.ronjunevaldoz.graphyn.core.model.NodeRef
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+
+// Default model paths — override via config port values at runtime.
+private const val QWEN_DIFFUSION = "/models/qwen-image/Qwen-Image-2512-Q4_K.gguf"
+private const val QWEN_TEXT_ENC  = "/models/qwen-image/text_encoder/qwen_2.5_vl_7b-Q4_K.gguf"
+private const val QWEN_VAE       = "/models/qwen-image/vae/qwen_image_vae.safetensors"
+private const val QWEN_LORA_DIR  = "/models/qwen-image/lora"
+// 4-step LoRA applied via inline <lora:name:weight> prompt syntax. The name (no extension)
+// is resolved under lora_model_dir by stable-diffusion.cpp at runtime.
+private const val QWEN_LORA_4STEP = "Qwen-Image-Lightning-4steps-V1.0"
+
+/**
+ * Qwen-Image (2512) text-to-image with a 4-step Lightning LoRA.
+ *
+ * Node graph:
+ *   sd.diffusion (Qwen-Image diffusion) ─┐
+ *   sd.encoders (Qwen2.5-VL llm)         ├─→ sd.model → sd.context → sd.txt2img → preview
+ *   sd.vae (Qwen-Image VAE)             ─┘                 ↑
+ *   sd.sampler (4-step euler) ───────────────────────────┘
+ *
+ * The 4-step Lightning LoRA is applied inline via `<lora:…:1.0>` at the head of the prompt
+ * (resolved under `lora_model_dir` on sd.model). Qwen-Image is CFG-distilled, so with the
+ * LoRA: sample_steps = 4, txt_cfg = 1.0, flow_shift = 3.0.
+ */
+internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
+    id = "qwen-txt2img",
+    name = "Qwen Image Text to Image",
+    nodes = listOf(
+        guideNote(
+            """
+            Qwen-Image (2512) Text → Image · 4-step LoRA
+
+            Generates an image from a text prompt using Qwen-Image with the
+            Lightning 4-step LoRA for fast sampling (no CFG).
+
+            The 4-step LoRA is applied inline in the prompt:
+                <lora:$QWEN_LORA_4STEP:1.0>
+            resolved under lora_model_dir on sd.model.
+
+            Tip: keep the <lora:…> tag at the start of the prompt and
+            sample_steps at 4 / txt_cfg at 1.0 while the LoRA is attached.
+            """,
+        ),
+        NodeRef(
+            id = "sddiffusion",
+            type = "sd.diffusion",
+            config = mapOf(
+                "diffusion_model_path" to WorkflowValue.StringValue(QWEN_DIFFUSION),
+            ),
+        ),
+        NodeRef(
+            id = "encoders",
+            type = "sd.encoders",
+            config = mapOf(
+                "llm_path" to WorkflowValue.StringValue(QWEN_TEXT_ENC),
+            ),
+        ),
+        NodeRef(
+            id = "sdvae",
+            type = "sd.vae",
+            config = mapOf(
+                "vae_path" to WorkflowValue.StringValue(QWEN_VAE),
+            ),
+        ),
+        NodeRef(
+            id = "sdmodel",
+            type = "sd.model",
+            config = mapOf(
+                "lora_model_dir" to WorkflowValue.StringValue(QWEN_LORA_DIR),
+            ),
+        ),
+        NodeRef(
+            id = "ctx",
+            type = "sd.context",
+            config = mapOf(
+                "diffusion_flash_attn" to WorkflowValue.BooleanValue(true),
+                "n_threads"            to WorkflowValue.IntValue(-1),
+            ),
+        ),
+        NodeRef(
+            id = "sampler",
+            type = "sd.sampler",
+            config = mapOf(
+                "sample_method"      to WorkflowValue.StringValue("euler"),
+                "scheduler"          to WorkflowValue.StringValue("discrete"),
+                "sample_steps"       to WorkflowValue.IntValue(4),
+                "txt_cfg"            to WorkflowValue.DoubleValue(1.0),
+                "distilled_guidance" to WorkflowValue.DoubleValue(1.0),
+                "flow_shift"         to WorkflowValue.DoubleValue(3.0),
+            ),
+        ),
+        NodeRef(
+            id = "txt2img",
+            type = "sd.txt2img",
+            config = mapOf(
+                "prompt"          to WorkflowValue.StringValue("<lora:$QWEN_LORA_4STEP:1.0> a serene mountain lake at sunrise, mist over the water, ultra detailed"),
+                "negative_prompt" to WorkflowValue.StringValue(""),
+                "width"           to WorkflowValue.IntValue(1328),
+                "height"          to WorkflowValue.IntValue(1328),
+                "seed"            to WorkflowValue.IntValue(-1),
+                "batch_count"     to WorkflowValue.IntValue(1),
+            ),
+        ),
+        NodeRef("preview", "preview.view"),
+    ),
+    connections = listOf(
+        ConnectionRef("sddiffusion", "diffusion", "sdmodel", "diffusion"),
+        ConnectionRef("encoders",    "encoders",  "sdmodel", "encoders"),
+        ConnectionRef("sdvae",       "vae",       "sdmodel", "vae"),
+        ConnectionRef("sdmodel",     "model",     "ctx",     "model"),
+        ConnectionRef("ctx",         "context",   "txt2img", "context"),
+        ConnectionRef("sampler",     "sampler",   "txt2img", "sampler"),
+        ConnectionRef("txt2img",     "image",     "preview", "value"),
+    ),
+)

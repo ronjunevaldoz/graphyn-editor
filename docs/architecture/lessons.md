@@ -1616,3 +1616,34 @@ because it's constrained within the fixed-width chip Row.
 **Fix location:** `FieldCardStepper.kt` — `NumericRow` (`hasValue`, `width(VALUE_DP.dp)`),
 `StepperChip` (outer modifier fixed width, center box weight(1f)).
 
+
+---
+
+## The `sd.lora` node cannot be wired into a generation node's `loras` list port
+
+**Category:** SD plugin · graph engine — list ports
+
+`sd.txt2img`/`img2img`/`txt2vid`/`img2vid` expose a `loras` input typed
+`NullableType(ListType(OpaqueType))`, and `sd.lora` outputs a single `OpaqueType`
+`lora` token. Three independent rules make a direct connection non-functional:
+
+1. **Type compatibility** — `WorkflowTypeCompatibility.isCompatible(ListType(Opaque), Opaque)`
+   is `false` (a list expects a list source), so `sd.lora → loras` is a `type_mismatch`.
+2. **No fan-in** — `validateConnections` flags `duplicate_input_connection` for any input
+   port with >1 connection, so you can't wire two `sd.lora` nodes into one `loras` port.
+3. **Runtime drop** — `buildInputMap` does `connected[toPort] = value` (last-write-wins, no
+   list aggregation), and `SdImageExecutors` reads `inputs["loras"] as? ListValue` — a single
+   `OpaqueValue` casts to null, so the LoRA is silently ignored even if it validated.
+
+There is no list-aggregator node that collects N opaque tokens into one `ListValue`.
+
+**Rule / workaround:** apply LoRAs inline in the prompt via stable-diffusion.cpp's
+`<lora:name:weight>` syntax (the executor emits `--prompt <lora:…>` at `SdImageExecutors.kt`),
+with the name resolved under `lora_model_dir` on `sd.model`. This is how the Qwen/Wan demo
+workflows attach their 4-step LoRAs. Wiring the `sd.lora` *node* would require engine support
+for collecting multiple connections into a list port (and a single→list compatibility rule, or
+a dedicated list-builder node) — a core change, not a workflow-authoring fix.
+
+**Note:** every SD workflow (including the shipped FLUX one) already reports ~37 non-blocking
+validation warnings because the SD config specs mark many nullable ports `required`. Validation
+errors are surfaced in the editor but do not block execution.
