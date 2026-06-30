@@ -1731,3 +1731,20 @@ Empirical results testing the AI workflows via the server-sd API (RTX 5070, 12 G
 - **Recommended swaps:** image editing → **FLUX.1-Kontext-dev** (instruction editor, no separate
   vision encoder, ~12B, faster than Qwen-Edit's ~20B). Fast video → **Wan2.2-TI2V-5B** (already on
   the server, single model vs the A14B MoE pair) or **LTX-Video** for near-real-time i2v.
+
+---
+
+## CORRECTION: Qwen-Image-Edit was not "unusable" — it needed --qwen-image-zero-cond-t
+
+The earlier conclusion that Qwen-Image-Edit is broken on this server was wrong. Per the official
+sd.cpp docs (docs/qwen_image_edit.md), **Qwen-Image-Edit 2511 requires `--qwen-image-zero-cond-t`;
+without it the edit degrades badly** — that was the tiled-mosaic output, not a missing vision
+encoder. Our pipeline emitted the flag from the context node but dropped it at three layers
+(client argsToJson, server request DTO, and the JNI initEx call, which I'd only wired for the basic
+fields). After threading `qwenImageZeroCondT` (and `llmVisionPath`) through all three, the same edit
+produces a clean result.
+
+Takeaway: don't declare a model "unusable" from one bad output — check the model's required flags
+first. For best structure preservation Qwen-Edit also wants the Qwen2.5-VL mmproj (`--llm_vision`,
+from mradermacher/Qwen2.5-VL-7B-Instruct-GGUF); the appearance/VAE path works without it but the
+semantic path needs it.
