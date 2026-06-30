@@ -1681,3 +1681,32 @@ flag (`--diffusion-model`, `--clip_l`, `--t5xxl`, `--vae`, `--llm`, `--high-nois
 - `diffusionFa` defaults true for a reason (big MMDiT models spill VRAM without it); the client sends
   it as the presence of `--diffusion-fa`/`--fa`, so a workflow that wants it must set the context
   node's `diffusion_flash_attn = true`.
+
+---
+
+## Low-VRAM SD: it's a setting (max_vram offload), not a dedicated workflow
+
+**Category:** SD plugin · server-sd — VRAM / RAM offload
+
+A model larger than GPU VRAM (e.g. Qwen-Image Q4_K_M ~13 GB on a 12 GB card) crashed the native
+sampler. The fix is *not* duplicate "low-VRAM" workflows — VRAM fit is a hardware property. The
+`sd.context` node already exposes `max_vram`, `stream_layers`, `offload_params_to_cpu`, etc.
+
+Three things had to line up; missing any one re-breaks it:
+1. **Image engine must use `initEx`, not the basic `nativeInit`.** Only `initEx` accepts `max_vram`.
+   The basic init silently ignored it, so graph-cut never happened. (The Wan engine already used the
+   extended init — that's why 13.6 GB Wan fit but 13 GB Qwen didn't.) An empty `max_vram` maps to
+   `nullptr` natively (full-VRAM, old behavior); `"-1"` = auto graph-cut.
+2. **The client must forward `--max-vram`/`--stream-layers`**, and the server defaults `maxVram` to
+   `"-1"` so offload is on by default.
+3. **The container RAM limit must exceed the model's CPU-offload working set.** This was the real
+   trap: with `limits.memory: 12g`, `EngineMemoryCheck` saw only 12 GiB RAM, decided the 12.6 GiB
+   model needed *full* CPU offload (`backend=cpu`), which **disables** `max_vram` graph-cut
+   (`--max-vram < 0 ... main backend is CPU; disabling graph splitting`), then loaded 18.8 GiB into
+   a 12 GiB-capped container → OOM-kill → "server prematurely closed the connection". Raising to
+   `24g` (host has 31) keeps it on CUDA + graph-cut.
+
+**Result:** Q4_K_M Qwen (13 GB) runs on a 12 GB RTX 5070 — `graph cut max_vram=9905MB`, ~159 s for a
+4-step 512² image. Smaller quants (Q2_K, ~41 s) remain a per-workflow speed/quality choice via the
+model path. Diagnose offload issues from the server log lines `graph cut max_vram=` (good) vs
+`disabling graph splitting` + `Enabling CPU param offload` (RAM-starved).
