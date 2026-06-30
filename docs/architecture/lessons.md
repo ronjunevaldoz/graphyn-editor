@@ -1619,31 +1619,35 @@ because it's constrained within the fixed-width chip Row.
 
 ---
 
-## The `sd.lora` node cannot be wired into a generation node's `loras` list port
+## List-port fan-in: wiring N single values into one `ListType` input
 
-**Category:** SD plugin · graph engine — list ports
+**Category:** graph engine — list ports (core/model + core/execution)
 
 `sd.txt2img`/`img2img`/`txt2vid`/`img2vid` expose a `loras` input typed
-`NullableType(ListType(OpaqueType))`, and `sd.lora` outputs a single `OpaqueType`
-`lora` token. Three independent rules make a direct connection non-functional:
+`NullableType(ListType(OpaqueType))`; `sd.lora` outputs a single `OpaqueType` token. Originally
+three independent rules made wiring `sd.lora → loras` non-functional, and the workaround was the
+inline `<lora:name:weight>` prompt syntax. The graph engine now supports list-port fan-in
+directly, so the `sd.lora` *node* works. Three coordinated changes were required — all three are
+needed; fixing fewer leaves it broken:
 
-1. **Type compatibility** — `WorkflowTypeCompatibility.isCompatible(ListType(Opaque), Opaque)`
-   is `false` (a list expects a list source), so `sd.lora → loras` is a `type_mismatch`.
-2. **No fan-in** — `validateConnections` flags `duplicate_input_connection` for any input
-   port with >1 connection, so you can't wire two `sd.lora` nodes into one `loras` port.
-3. **Runtime drop** — `buildInputMap` does `connected[toPort] = value` (last-write-wins, no
-   list aggregation), and `SdImageExecutors` reads `inputs["loras"] as? ListValue` — a single
-   `OpaqueValue` casts to null, so the LoRA is silently ignored even if it validated.
+1. **Type compatibility** (`WorkflowTypeCompatibility`) — the `ListType` branch now also accepts a
+   single element-compatible source: `isCompatible(ListType(E), A)` is true when `isCompatible(E, A)`.
+   So `Opaque → List<Opaque>` validates (a single value fans into the list).
+2. **Fan-in allowed for list ports** (`validateConnections`) — `duplicate_input_connection` is no
+   longer raised when the target input port resolves to a list type (`WorkflowType.listElementType()
+   != null`). When the target node's *spec is unknown* (e.g. validating an SD workflow with only the
+   demo plugins installed), the duplicate check is skipped entirely — `unknown_node_type` already
+   covers it, and we can't classify an unresolved port.
+3. **Runtime aggregation** (`buildInputMap`) — connections into a list port are collected into one
+   `WorkflowValue.ListValue`. A single upstream that already emits a `ListValue` is passed through
+   as-is; otherwise the gathered single values are wrapped into a list. Scalar ports keep
+   last-write-wins as before.
 
-There is no list-aggregator node that collects N opaque tokens into one `ListValue`.
+Helper: `WorkflowType.listElementType()` unwraps a `NullableType` and returns the element type if
+the port is a list, else null. Used by both the validator and the scheduler. Covered by
+`ListPortFanInTest` (multiple + single connection → `ListValue`).
 
-**Rule / workaround:** apply LoRAs inline in the prompt via stable-diffusion.cpp's
-`<lora:name:weight>` syntax (the executor emits `--prompt <lora:…>` at `SdImageExecutors.kt`),
-with the name resolved under `lora_model_dir` on `sd.model`. This is how the Qwen/Wan demo
-workflows attach their 4-step LoRAs. Wiring the `sd.lora` *node* would require engine support
-for collecting multiple connections into a list port (and a single→list compatibility rule, or
-a dedicated list-builder node) — a core change, not a workflow-authoring fix.
-
-**Note:** every SD workflow (including the shipped FLUX one) already reports ~37 non-blocking
-validation warnings because the SD config specs mark many nullable ports `required`. Validation
-errors are surfaced in the editor but do not block execution.
+**Note:** every SD workflow (including FLUX) still reports ~37 non-blocking validation warnings
+because the SD config specs mark many nullable ports `required`; these surface in the editor but
+don't block execution. `DemoSceneWorkflowTest` exempts `sd.*` types (JVM-only media plugin) the
+same way it exempts `media.*` and `script.eval`.

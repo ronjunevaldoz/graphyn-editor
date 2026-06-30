@@ -10,8 +10,7 @@ private const val QWEN_DIFFUSION = "/models/qwen-image/Qwen-Image-2512-Q4_K.gguf
 private const val QWEN_TEXT_ENC  = "/models/qwen-image/text_encoder/qwen_2.5_vl_7b-Q4_K.gguf"
 private const val QWEN_VAE       = "/models/qwen-image/vae/qwen_image_vae.safetensors"
 private const val QWEN_LORA_DIR  = "/models/qwen-image/lora"
-// 4-step LoRA applied via inline <lora:name:weight> prompt syntax. The name (no extension)
-// is resolved under lora_model_dir by stable-diffusion.cpp at runtime.
+// LoRA filename (no extension) resolved under lora_model_dir by stable-diffusion.cpp.
 private const val QWEN_LORA_4STEP = "Qwen-Image-Lightning-4steps-V1.0"
 
 /**
@@ -20,10 +19,11 @@ private const val QWEN_LORA_4STEP = "Qwen-Image-Lightning-4steps-V1.0"
  * Node graph:
  *   sd.diffusion (Qwen-Image diffusion) ─┐
  *   sd.encoders (Qwen2.5-VL llm)         ├─→ sd.model → sd.context → sd.txt2img → preview
- *   sd.vae (Qwen-Image VAE)             ─┘                 ↑
- *   sd.sampler (4-step euler) ───────────────────────────┘
+ *   sd.vae (Qwen-Image VAE)             ─┘                 ↑ ↑
+ *   sd.lora (Lightning 4-step) ─────────────────→ loras ──┘ │
+ *   sd.sampler (4-step euler) ─────────────────────────────┘
  *
- * The 4-step Lightning LoRA is applied inline via `<lora:…:1.0>` at the head of the prompt
+ * The 4-step Lightning LoRA is wired through the sd.lora node into the txt2img `loras` port
  * (resolved under `lora_model_dir` on sd.model). Qwen-Image is CFG-distilled, so with the
  * LoRA: sample_steps = 4, txt_cfg = 1.0, flow_shift = 3.0.
  */
@@ -38,12 +38,11 @@ internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
             Generates an image from a text prompt using Qwen-Image with the
             Lightning 4-step LoRA for fast sampling (no CFG).
 
-            The 4-step LoRA is applied inline in the prompt:
-                <lora:$QWEN_LORA_4STEP:1.0>
-            resolved under lora_model_dir on sd.model.
+            The sd.lora node feeds the txt2img `loras` port; the file
+            ($QWEN_LORA_4STEP) is resolved under lora_model_dir on sd.model.
 
-            Tip: keep the <lora:…> tag at the start of the prompt and
-            sample_steps at 4 / txt_cfg at 1.0 while the LoRA is attached.
+            Tip: keep sample_steps at 4 and txt_cfg at 1.0 while the LoRA is
+            attached. Chain more sd.lora nodes into `loras` to stack LoRAs.
             """,
         ),
         NodeRef(
@@ -83,6 +82,14 @@ internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
             ),
         ),
         NodeRef(
+            id = "lora",
+            type = "sd.lora",
+            config = mapOf(
+                "path"       to WorkflowValue.StringValue(QWEN_LORA_4STEP),
+                "multiplier" to WorkflowValue.DoubleValue(1.0),
+            ),
+        ),
+        NodeRef(
             id = "sampler",
             type = "sd.sampler",
             config = mapOf(
@@ -98,7 +105,7 @@ internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
             id = "txt2img",
             type = "sd.txt2img",
             config = mapOf(
-                "prompt"          to WorkflowValue.StringValue("<lora:$QWEN_LORA_4STEP:1.0> a serene mountain lake at sunrise, mist over the water, ultra detailed"),
+                "prompt"          to WorkflowValue.StringValue("a serene mountain lake at sunrise, mist over the water, ultra detailed"),
                 "negative_prompt" to WorkflowValue.StringValue(""),
                 "width"           to WorkflowValue.IntValue(1328),
                 "height"          to WorkflowValue.IntValue(1328),
@@ -114,6 +121,7 @@ internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
         ConnectionRef("sdvae",       "vae",       "sdmodel", "vae"),
         ConnectionRef("sdmodel",     "model",     "ctx",     "model"),
         ConnectionRef("ctx",         "context",   "txt2img", "context"),
+        ConnectionRef("lora",        "lora",      "txt2img", "loras"),
         ConnectionRef("sampler",     "sampler",   "txt2img", "sampler"),
         ConnectionRef("txt2img",     "image",     "preview", "value"),
     ),

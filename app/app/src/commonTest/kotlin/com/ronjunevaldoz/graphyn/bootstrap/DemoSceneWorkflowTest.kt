@@ -90,6 +90,9 @@ class DemoSceneWorkflowTest {
         "media.video_overlay",
         "media.video_stitch",
         "media.videos_list",
+        // stable-diffusion.cpp nodes — JVM-only, installed by the desktop host's media runtime.
+        "sd.diffusion", "sd.encoders", "sd.vae", "sd.model", "sd.context", "sd.sampler",
+        "sd.lora", "sd.txt2img", "sd.img2img", "sd.txt2vid", "sd.img2vid",
     )
 
     @Test
@@ -126,6 +129,10 @@ class DemoSceneWorkflowTest {
             WorkflowCatalog.SyncCalibration,
             WorkflowCatalog.ImageEdit,
             WorkflowCatalog.Slideshow,
+            WorkflowCatalog.FluxTxt2Img,
+            WorkflowCatalog.QwenTxt2Img,
+            WorkflowCatalog.QwenImg2Img,
+            WorkflowCatalog.WanImg2Vid,
         )
         WorkflowCatalog.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes

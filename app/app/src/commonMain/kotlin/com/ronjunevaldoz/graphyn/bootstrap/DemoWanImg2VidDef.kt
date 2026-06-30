@@ -12,8 +12,8 @@ private const val WAN_T5            = "/models/wan/text_encoder/umt5_xxl-Q4_K.gg
 private const val WAN_CLIP_VISION   = "/models/wan/clip_vision/clip_vision_h.safetensors"
 private const val WAN_VAE           = "/models/wan/vae/wan_2.1_vae.safetensors"
 private const val WAN_LORA_DIR      = "/models/wan/lora"
-// 4-step LightX2V LoRAs applied inline via <lora:name:weight>, resolved under lora_model_dir.
-// Wan2.2 is MoE: sd.cpp routes each LoRA to the matching expert (high/low noise) by tensor names.
+// LoRA filenames (no extension) resolved under lora_model_dir. Wan2.2 is MoE — the high-noise
+// sd.lora carries is_high_noise=true so it's routed to the high-noise expert.
 private const val WAN_LORA_LOW      = "lightx2v_I2V_14B_low_noise_4step"
 private const val WAN_LORA_HIGH     = "lightx2v_I2V_14B_high_noise_4step"
 private const val WAN_INIT_IMAGE    = "../../app/app/src/commonMain/resources/media/input.png"
@@ -22,14 +22,15 @@ private const val WAN_INIT_IMAGE    = "../../app/app/src/commonMain/resources/me
  * Wan2.2 image-to-video with 4-step LightX2V LoRAs.
  *
  * Wan2.2 is a Mixture-of-Experts (MoE) model: a high-noise diffusion model runs the early
- * denoising steps and a low-noise model finishes. Each expert has its own 4-step LoRA, both
- * applied inline in the prompt via `<lora:…:1.0>` (resolved under `lora_model_dir` on sd.model);
- * sd.cpp routes each LoRA to the matching expert by tensor names.
+ * denoising steps and a low-noise model finishes. Each expert has its own 4-step LoRA — two
+ * sd.lora nodes fan into the single img2vid `loras` port (the high-noise one sets
+ * is_high_noise=true). LoRA files resolve under `lora_model_dir` on sd.model.
  *
  * Node graph:
  *   sd.diffusion (low + high noise) ─┐
  *   sd.encoders (umt5 + clip_vision) ├─→ sd.model → sd.context → sd.img2vid → preview
- *   sd.vae (Wan VAE)                ─┘                  ↑
+ *   sd.vae (Wan VAE)                ─┘                  ↑ ↑
+ *   sd.lora low + sd.lora high ───────────→ loras ─────┘ │
  *   sd.sampler (4-step) ───────────────→ sampler + high_noise_sampler
  */
 internal val wanImg2VidWorkflow = WorkflowDefinition(
@@ -41,9 +42,9 @@ internal val wanImg2VidWorkflow = WorkflowDefinition(
             Wan2.2 Image → Video · 4-step LightX2V LoRAs
 
             Animates a still image into a short clip using Wan2.2 (MoE) with
-            the 4-step LightX2V acceleration LoRAs, applied inline:
-                <lora:$WAN_LORA_HIGH:1.0>
-                <lora:$WAN_LORA_LOW:1.0>
+            the 4-step LightX2V acceleration LoRAs. Two sd.lora nodes fan into
+            the img2vid `loras` port — high-noise ($WAN_LORA_HIGH) and
+            low-noise ($WAN_LORA_LOW).
 
             Tip: set init_image on sd.img2vid. Tune video_frames/fps for length.
             """,
@@ -87,6 +88,24 @@ internal val wanImg2VidWorkflow = WorkflowDefinition(
             ),
         ),
         NodeRef(
+            id = "loralow",
+            type = "sd.lora",
+            config = mapOf(
+                "path"          to WorkflowValue.StringValue(WAN_LORA_LOW),
+                "multiplier"    to WorkflowValue.DoubleValue(1.0),
+                "is_high_noise" to WorkflowValue.BooleanValue(false),
+            ),
+        ),
+        NodeRef(
+            id = "lorahigh",
+            type = "sd.lora",
+            config = mapOf(
+                "path"          to WorkflowValue.StringValue(WAN_LORA_HIGH),
+                "multiplier"    to WorkflowValue.DoubleValue(1.0),
+                "is_high_noise" to WorkflowValue.BooleanValue(true),
+            ),
+        ),
+        NodeRef(
             id = "sampler",
             type = "sd.sampler",
             config = mapOf(
@@ -121,6 +140,8 @@ internal val wanImg2VidWorkflow = WorkflowDefinition(
         ConnectionRef("sdvae",       "vae",       "sdmodel", "vae"),
         ConnectionRef("sdmodel",     "model",     "ctx",     "model"),
         ConnectionRef("ctx",         "context",   "img2vid", "context"),
+        ConnectionRef("loralow",     "lora",      "img2vid", "loras"),
+        ConnectionRef("lorahigh",    "lora",      "img2vid", "loras"),
         ConnectionRef("sampler",     "sampler",   "img2vid", "sampler"),
         ConnectionRef("sampler",     "sampler",   "img2vid", "high_noise_sampler"),
         ConnectionRef("img2vid",     "frames",    "preview", "value"),

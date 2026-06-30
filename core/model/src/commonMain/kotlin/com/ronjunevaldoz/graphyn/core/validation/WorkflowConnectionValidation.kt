@@ -6,6 +6,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowTypeCompatibility
+import com.ronjunevaldoz.graphyn.core.model.listElementType
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 
 internal fun validateConnections(
@@ -70,12 +71,18 @@ internal fun validateConnections(
     connections
         .groupBy { "${it.toNodeId}:${it.toPort}" }
         .filterValues { it.size > 1 }
-        .keys.forEach { targetKey ->
-            val (nodeId, port) = targetKey.split(":", limit = 2)
+        .forEach { (_, group) ->
+            val sample = group.first()
+            val toNode = nodesById[sample.toNodeId] ?: return@forEach
+            // Unknown node type is already reported; can't classify its ports, so don't pile on.
+            val toSpec = specsByNodeId[toNode] ?: return@forEach
+            val toPortType = toSpec.inputs.firstOrNull { it.name == sample.toPort }?.type
+            // List ports legitimately accept fan-in — each connection contributes one item.
+            if (toPortType?.listElementType() != null) return@forEach
             errors += ValidationError(
                 code = "duplicate_input_connection",
-                message = "Input port '$port' on node '$nodeId' has more than one connection.",
-                nodeId = nodeId, port = port,
+                message = "Input port '${sample.toPort}' on node '${sample.toNodeId}' has more than one connection.",
+                nodeId = sample.toNodeId, port = sample.toPort,
             )
         }
 }

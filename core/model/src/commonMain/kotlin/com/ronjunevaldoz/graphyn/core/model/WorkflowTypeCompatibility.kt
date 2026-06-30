@@ -15,8 +15,10 @@ object WorkflowTypeCompatibility {
             WorkflowType.DoubleType -> actual is WorkflowType.DoubleType || actual is WorkflowType.IntType
             WorkflowType.BooleanType -> actual is WorkflowType.BooleanType
             is WorkflowType.ListType ->
-                actual is WorkflowType.ListType &&
-                    isCompatible(expected.elementType, actual.elementType)
+                // A list source matches element-for-element; a single element also fans into the
+                // list port (collected into a one-or-more-item list at execution time).
+                (actual is WorkflowType.ListType && isCompatible(expected.elementType, actual.elementType)) ||
+                    isCompatible(expected.elementType, actual)
             is WorkflowType.NullableType ->
                 (actual is WorkflowType.NullableType &&
                     isCompatible(expected.wrappedType, actual.wrappedType)) ||

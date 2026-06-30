@@ -5,6 +5,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.listElementType
 
 /**
  * Groups nodes into layers where every node in layer N depends only on nodes in layers 0..N-1.
@@ -93,10 +94,22 @@ internal fun buildInputMap(
     outputsByNodeId: Map<String, Map<String, WorkflowValue>>,
     externalInputs: Map<String, WorkflowValue> = emptyMap(),
 ): Map<String, WorkflowValue> {
+    val portTypes = spec?.inputs?.associate { it.name to it.type }.orEmpty()
+    // List ports collect every incoming connection; scalar ports keep the last (single) value.
+    val collected = linkedMapOf<String, MutableList<WorkflowValue>>()
     val connected = linkedMapOf<String, WorkflowValue>()
     workflow.connections.filter { it.toNodeId == node.id }.forEach { conn ->
         val value = outputsByNodeId[conn.fromNodeId]?.get(conn.fromPort) ?: return@forEach
-        connected[conn.toPort] = value
+        if (portTypes[conn.toPort]?.listElementType() != null) {
+            collected.getOrPut(conn.toPort) { mutableListOf() } += value
+        } else {
+            connected[conn.toPort] = value
+        }
+    }
+    collected.forEach { (port, values) ->
+        // A single upstream that already emits a list is passed through; otherwise wrap the
+        // gathered single-element values into one list.
+        connected[port] = (values.singleOrNull() as? WorkflowValue.ListValue) ?: WorkflowValue.ListValue(values)
     }
     return (spec?.defaultValues.orEmpty()) + externalInputs + node.config + connected
 }

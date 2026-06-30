@@ -9,7 +9,8 @@ import kotlinx.serialization.Serializable
  * Use [WorkflowTypeCompatibility.isCompatible] to test whether an output type
  * can connect to an input type. The rules are:
  * - Primitive types are exact-match only, except [DoubleType] which also accepts [IntType].
- * - [ListType] matches only if the element types are compatible.
+ * - [ListType] matches a list with compatible element types, or a single element-compatible
+ *   value (which fans into the list).
  * - [NullableType] unwraps: a non-nullable actual is compatible with a nullable expected
  *   if the inner types are compatible.
  * - [RecordType] matches field-for-field by key and type.
@@ -46,6 +47,17 @@ sealed interface WorkflowType {
     /** Pass-through type that accepts any incoming connection. Use for untyped runtime handles. */
     @Serializable @SerialName("opaque")
     data object OpaqueType : WorkflowType
+}
+
+/**
+ * The element type if this is a list port — unwrapping a [WorkflowType.NullableType] wrapper —
+ * or null if the port is not a list. Drives list-port fan-in: multiple single-element connections
+ * (or one list connection) collapse into one [WorkflowValue.ListValue] for the port.
+ */
+fun WorkflowType.listElementType(): WorkflowType? = when (this) {
+    is WorkflowType.ListType -> elementType
+    is WorkflowType.NullableType -> wrappedType.listElementType()
+    else -> null
 }
 
 /** Human-readable label for a type, shown in port tooltips and the inspector. */
