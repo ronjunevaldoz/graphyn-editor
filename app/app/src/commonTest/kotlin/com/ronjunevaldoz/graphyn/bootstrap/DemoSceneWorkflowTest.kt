@@ -133,6 +133,7 @@ class DemoSceneWorkflowTest {
             WorkflowCatalog.QwenTxt2Img,
             WorkflowCatalog.QwenImg2Img,
             WorkflowCatalog.WanImg2Vid,
+            WorkflowCatalog.Wan5bImg2Vid,
         )
         WorkflowCatalog.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes
