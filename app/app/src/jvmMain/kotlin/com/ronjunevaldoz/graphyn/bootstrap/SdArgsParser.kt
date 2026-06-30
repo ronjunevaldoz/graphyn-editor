@@ -15,7 +15,7 @@ private val VALUE_FLAGS = setOf(
     "--video-frames", "--fps", "--moe-boundary", "--vace-strength", "--end-img",
     // Model paths — forwarded so the workflow chooses the model instead of the server's env default.
     "--diffusion-model", "--high-noise-diffusion-model", "--clip_l", "--clip_g", "--clip_vision",
-    "--t5xxl", "--llm", "--vae", "--backend", "--threads",
+    "--t5xxl", "--llm", "--vae", "--backend", "--threads", "--max-vram",
 )
 
 private val LORA_PATTERN = Regex("<lora:([^:>]+):([\\d.]+)>")
@@ -119,6 +119,7 @@ internal fun argsToJson(args: List<String>): String {
         append(""""clipGPath":"${str("--clip_g")}","t5xxlPath":"${str("--t5xxl")}",""")
         append(""""vaePath":"${str("--vae")}","llmPath":"${str("--llm")}",""")
         append(""""backend":"${str("--backend")}","nThreads":${int("--threads", -1)},""")
+        append(""""maxVram":"${str("--max-vram")}","streamLayers":${"--stream-layers" in flags},""")
         append(""""diffusionFa":${"--diffusion-fa" in flags || "--fa" in flags},""")
         append(""""loraPaths":[$loraPathJson],"loraMultipliers":[$loraMultJson]}""")
     }

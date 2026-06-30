@@ -6,8 +6,9 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Default model paths — override via config port values at runtime.
-// Q2_K (~6.9 GB) fits a 12 GB card; Q4_K_M (~13 GB) OOMs the diffusion forward pass.
-private const val QWEN_DIFFUSION = "/models/qwen/diffusion/qwen-image-2512-Q2_K.gguf"
+// Q4_K_M (~13 GB) exceeds a 12 GB card on its own, but the sd.context max_vram auto-offload
+// (-1, server default) graph-cuts it to fit. Drop to Q2_K only if offload is too slow.
+private const val QWEN_DIFFUSION = "/models/qwen/diffusion/qwen-image-2512-Q4_K_M.gguf"
 private const val QWEN_TEXT_ENC  = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf"
 private const val QWEN_VAE       = "/models/qwen/vae/qwen_image_vae.safetensors"
 private const val QWEN_LORA_DIR  = "/models/qwen/lora"
