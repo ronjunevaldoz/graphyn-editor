@@ -6,7 +6,8 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Default model paths — override via config port values at runtime.
-private const val QWEN_EDIT_DIFFUSION = "/models/qwen/diffusion/qwen-image-edit-2511-Q4_K_M.gguf"
+// Q3_K_M to stay within 12 GB VRAM; raise to Q4_K_M only on a larger card.
+private const val QWEN_EDIT_DIFFUSION = "/models/qwen/diffusion/qwen-image-edit-2511-Q3_K_M.gguf"
 private const val QWEN_EDIT_TEXT_ENC  = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf"
 private const val QWEN_EDIT_VAE       = "/models/qwen/vae/qwen_image_vae.safetensors"
 private const val QWEN_EDIT_LORA_DIR  = "/models/qwen/lora"

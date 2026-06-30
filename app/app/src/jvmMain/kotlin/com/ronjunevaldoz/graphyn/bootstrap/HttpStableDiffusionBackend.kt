@@ -37,16 +37,39 @@ class HttpStableDiffusionBackend(
 
     override fun generateImage(args: List<String>): SdImageResult {
         val bytes = runBlocking {
-            postJson("$baseUrl/api/sd/generate-ex", argsToJson(stageLocalImages(args)))
+            val staged = stageLocalImages(args)
+            assertServerFilesExist(staged)
+            postJson("$baseUrl/api/sd/generate-ex", argsToJson(staged))
         }
         return SdImageResult(imagePaths = listOf(saveArtifact(bytes, "png").absolutePath))
     }
 
     override fun generateVideo(args: List<String>): SdVideoResult {
         val bytes = runBlocking {
-            postJson("$baseUrl/api/sd/generate-video", videoArgsToJson(stageLocalImages(args)))
+            val staged = stageLocalImages(args)
+            assertServerFilesExist(staged)
+            postJson("$baseUrl/api/sd/generate-video", videoArgsToJson(staged))
         }
         return SdVideoResult(framePaths = listOf(saveArtifact(bytes, "mp4").absolutePath))
+    }
+
+    // Pre-flight: fail fast with a clear list when a model/LoRA/input file is missing on the server,
+    // instead of after a multi-minute model load (or a native OOM crash).
+    private suspend fun assertServerFilesExist(args: List<String>) {
+        val paths = collectServerPaths(args)
+        if (paths.isEmpty()) return
+        val body = paths.joinToString(",") { "\"${it.replace("\\", "\\\\").replace("\"", "\\\"")}\"" }
+        val resp = client.post("$baseUrl/api/sd/models/exists") {
+            contentType(ContentType.Application.Json); setBody("""{"paths":[$body]}""")
+        }
+        if (!resp.status.isSuccess()) return // older server without the endpoint — skip the check
+        val text = resp.bodyAsBytes().toString(Charsets.UTF_8)
+        val missing = Regex("\"([^\"]+)\"")
+            .findAll(text.substringAfter("\"missing\"", "").substringAfter('[', "").substringBefore(']'))
+            .map { it.groupValues[1] }.toList()
+        if (missing.isNotEmpty()) {
+            error("Missing on server (check the model paths on the sd.* nodes):\n" + missing.joinToString("\n") { "  $it" })
+        }
     }
 
     private fun saveArtifact(bytes: ByteArray, ext: String): File {
@@ -58,6 +81,20 @@ class HttpStableDiffusionBackend(
 
     private companion object {
         val counter = java.util.concurrent.atomic.AtomicLong(0)
+
+        // Flags whose value is a server-side file path, plus inline <lora:PATH:mult> tags.
+        val MODEL_FLAGS = setOf(
+            "--diffusion-model", "--high-noise-diffusion-model", "--clip_l", "--clip_g",
+            "--clip_vision", "--t5xxl", "--llm", "--vae", "--init-img", "--control-image", "--mask",
+        )
+        val LORA_RE = Regex("<lora:([^:>]+):")
+
+        fun collectServerPaths(args: List<String>): List<String> {
+            val paths = mutableListOf<String>()
+            args.forEachIndexed { i, a -> if (a in MODEL_FLAGS) args.getOrNull(i + 1)?.let { paths += it } }
+            args.forEach { a -> LORA_RE.findAll(a).forEach { paths += it.groupValues[1] } }
+            return paths.filter { it.isNotBlank() }.distinct()
+        }
 
         fun defaultArtifactsDir(): File =
             System.getenv("GRAPHYN_ARTIFACTS_DIR")?.ifBlank { null }?.let(::File)
