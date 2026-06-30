@@ -1,5 +1,8 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
+import com.ronjunevaldoz.graphyn.core.store.ArtifactHistory
+import com.ronjunevaldoz.graphyn.core.store.ArtifactKind
+import com.ronjunevaldoz.graphyn.core.store.FileArtifactHistory
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdImageResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdVideoResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionBackend
@@ -27,6 +30,7 @@ import java.io.File
 class HttpStableDiffusionBackend(
     private val baseUrl: String = System.getenv("GRAPHYN_SD_SERVER_URL") ?: "http://192.168.254.104:8082",
     private val artifactsDir: File = defaultArtifactsDir(),
+    private val history: ArtifactHistory = FileArtifactHistory(),
 ) : StableDiffusionBackend {
 
     private val client = HttpClient(CIO) {
@@ -36,21 +40,29 @@ class HttpStableDiffusionBackend(
     }
 
     override fun generateImage(args: List<String>): SdImageResult {
-        val bytes = runBlocking {
+        val file = runBlocking {
             val staged = stageLocalImages(args)
             assertServerFilesExist(staged)
-            postJson("$baseUrl/api/sd/generate-ex", argsToJson(staged))
+            val start = System.currentTimeMillis()
+            val bytes = postJson("$baseUrl/api/sd/generate-ex", argsToJson(staged))
+            saveArtifact(bytes, "png").also {
+                history.record(buildArtifactRecord(it, ArtifactKind.Image, args, System.currentTimeMillis() - start, "sd.txt2img"))
+            }
         }
-        return SdImageResult(imagePaths = listOf(saveArtifact(bytes, "png").absolutePath))
+        return SdImageResult(imagePaths = listOf(file.absolutePath))
     }
 
     override fun generateVideo(args: List<String>): SdVideoResult {
-        val bytes = runBlocking {
+        val file = runBlocking {
             val staged = stageLocalImages(args)
             assertServerFilesExist(staged)
-            postJson("$baseUrl/api/sd/generate-video", videoArgsToJson(staged))
+            val start = System.currentTimeMillis()
+            val bytes = postJson("$baseUrl/api/sd/generate-video", videoArgsToJson(staged))
+            saveArtifact(bytes, "mp4").also {
+                history.record(buildArtifactRecord(it, ArtifactKind.Video, args, System.currentTimeMillis() - start, "sd.img2vid"))
+            }
         }
-        return SdVideoResult(framePaths = listOf(saveArtifact(bytes, "mp4").absolutePath))
+        return SdVideoResult(framePaths = listOf(file.absolutePath))
     }
 
     // Pre-flight: fail fast with a clear list when a model/LoRA/input file is missing on the server,
@@ -81,20 +93,6 @@ class HttpStableDiffusionBackend(
 
     private companion object {
         val counter = java.util.concurrent.atomic.AtomicLong(0)
-
-        // Flags whose value is a server-side file path, plus inline <lora:PATH:mult> tags.
-        val MODEL_FLAGS = setOf(
-            "--diffusion-model", "--high-noise-diffusion-model", "--clip_l", "--clip_g",
-            "--clip_vision", "--t5xxl", "--llm", "--vae", "--init-img", "--control-image", "--mask",
-        )
-        val LORA_RE = Regex("<lora:([^:>]+):")
-
-        fun collectServerPaths(args: List<String>): List<String> {
-            val paths = mutableListOf<String>()
-            args.forEachIndexed { i, a -> if (a in MODEL_FLAGS) args.getOrNull(i + 1)?.let { paths += it } }
-            args.forEach { a -> LORA_RE.findAll(a).forEach { paths += it.groupValues[1] } }
-            return paths.filter { it.isNotBlank() }.distinct()
-        }
 
         fun defaultArtifactsDir(): File =
             System.getenv("GRAPHYN_ARTIFACTS_DIR")?.ifBlank { null }?.let(::File)
