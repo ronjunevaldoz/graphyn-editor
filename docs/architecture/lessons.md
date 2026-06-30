@@ -1710,3 +1710,24 @@ Three things had to line up; missing any one re-breaks it:
 4-step 512² image. Smaller quants (Q2_K, ~41 s) remain a per-workflow speed/quality choice via the
 model path. Diagnose offload issues from the server log lines `graph cut max_vram=` (good) vs
 `disabling graph splitting` + `Enabling CPU param offload` (RAM-starved).
+
+---
+
+## Qwen-Image-Edit needs vision weights; SD elapsed is model-load-dominated
+
+**Category:** SD models — img2img editing, benchmarking
+
+Empirical results testing the AI workflows via the server-sd API (RTX 5070, 12 GB):
+
+- **Text→Image works across tiers.** FLUX.1-schnell ~32 s (6.4 GB, fits VRAM, fastest), Qwen-Image
+  Q2_K ~179 s, Q4_K_M ~159 s. The Qwen times are **model-load-dominated**, not compute — each tier
+  swaps the cached model, forcing a 7–13 GB reload from disk. Re-running the *same* model reuses the
+  SdEngineCache and is far faster. Report load vs sample separately when benchmarking.
+- **Qwen-Image-Edit (img2img) is broken without vision weights.** With only the Qwen2.5-VL text GGUF
+  and no mmproj/vision file, sd.cpp logs `no vision weights detected, vision disabled` and the edit
+  can't condition on the input image — output is a green-tinted subject surrounded by a tiled mosaic
+  of fragments (classic "vision off" artifact), not an edit of the source. Qwen-Edit requires its
+  vision/mmproj projector to be present; otherwise prefer a single-stream editor.
+- **Recommended swaps:** image editing → **FLUX.1-Kontext-dev** (instruction editor, no separate
+  vision encoder, ~12B, faster than Qwen-Edit's ~20B). Fast video → **Wan2.2-TI2V-5B** (already on
+  the server, single model vs the A14B MoE pair) or **LTX-Video** for near-real-time i2v.
