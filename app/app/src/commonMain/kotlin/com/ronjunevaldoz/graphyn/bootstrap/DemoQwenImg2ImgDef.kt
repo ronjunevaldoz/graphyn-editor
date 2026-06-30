@@ -79,8 +79,10 @@ internal val qwenImg2ImgWorkflow = WorkflowDefinition(
             id = "ctx",
             type = "sd.context",
             config = mapOf(
-                "diffusion_flash_attn" to WorkflowValue.BooleanValue(true),
-                "n_threads"            to WorkflowValue.IntValue(-1),
+                "diffusion_flash_attn"    to WorkflowValue.BooleanValue(true),
+                "n_threads"               to WorkflowValue.IntValue(-1),
+                // Mandatory for Qwen-Image-Edit 2511 — without it edit quality degrades badly.
+                "qwen_image_zero_cond_t"  to WorkflowValue.BooleanValue(true),
             ),
         ),
         NodeRef(
