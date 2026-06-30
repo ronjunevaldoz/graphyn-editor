@@ -57,6 +57,8 @@ enum class WorkflowCatalog(
         "Overlay a second clip onto a base video for a timed window."),
     SyncCalibration("Sync Calibration", syncCalibrationWorkflow, Media,
         "Average measured A/V drift into delay offsets."),
+    FluxTxt2Img("FLUX Text to Image", fluxTxt2ImgWorkflow, Media,
+        "Generate an image from a prompt using FLUX.1-schnell (4-step distilled)."),
     ImageEdit("Image Edit", imageEditWorkflow, Media,
         "Resize an image and crop a region out of it."),
     Slideshow("Slideshow", slideshowWorkflow, Media,
