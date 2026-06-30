@@ -4,12 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.BasicText
@@ -55,13 +52,13 @@ internal fun NumericRow(
         onValueChange(parsed)
     }
     LaunchedEffect(editText) { if (editText != null) focusRequester.requestFocus() }
-    FieldRow(name = input.name, hasValue = currentValue != null) {
+    FieldRow(name = input.name, description = input.description, hasValue = false) {
         if (currentValue != null) {
             if (editText != null) {
                 BasicTextField(
                     value = editText!!,
                     onValueChange = { if (isValidIntermediate(input.type, it)) editText = it },
-                    modifier = Modifier.width(VALUE_DP.dp).focusRequester(focusRequester)
+                    modifier = Modifier.weight(1f).focusRequester(focusRequester)
                         .onFocusChanged { if (it.isFocused) focusGranted = true else if (focusGranted) commit() },
                     textStyle = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center),
                     decorationBox = { inner ->
@@ -69,7 +66,7 @@ internal fun NumericRow(
                     },
                 )
             } else {
-                StepperChip(currentValue.label(), theme,
+                StepperChip(currentValue.label(), theme, modifier = Modifier.weight(1f),
                     onMinus = { stepValue(currentValue, -step)?.let(onValueChange) },
                     onEdit = { focusGranted = false; editText = currentValue.label() },
                     onPlus = { stepValue(currentValue, step)?.let(onValueChange) },
@@ -83,19 +80,20 @@ internal fun NumericRow(
 private fun StepperChip(
     label: String,
     theme: FieldNodeTheme,
+    modifier: Modifier = Modifier,
     onMinus: () -> Unit,
     onEdit: () -> Unit,
     onPlus: () -> Unit,
 ) {
     Row(
-        Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()),
+        modifier.clip(RoundedCornerShape(GraphynSpacingValues.spacing.md)).background(theme.valueBg()),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.clickable(onClick = onMinus).padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm)) {
             BasicText("−", style = appTheme.typography.nodeLabel.copy(color = theme.valueText()))
         }
         Box(Modifier.width(GraphynSpacingValues.spacing.xs).height(GraphynSpacingValues.spacing.huge).background(theme.divider()))
-        Box(Modifier.widthIn(min = GraphynSpacingValues.spacing.cardRow).clickable(onClick = onEdit).padding(horizontal = GraphynSpacingValues.spacing.lg, vertical = GraphynSpacingValues.spacing.sm), Alignment.Center) {
+        Box(Modifier.weight(1f).clickable(onClick = onEdit).padding(horizontal = GraphynSpacingValues.spacing.lg, vertical = GraphynSpacingValues.spacing.sm), Alignment.Center) {
             BasicText(label, style = appTheme.typography.nodeLabel.copy(color = theme.valueText(), textAlign = TextAlign.Center))
         }
         Box(Modifier.width(GraphynSpacingValues.spacing.xs).height(GraphynSpacingValues.spacing.huge).background(theme.divider()))

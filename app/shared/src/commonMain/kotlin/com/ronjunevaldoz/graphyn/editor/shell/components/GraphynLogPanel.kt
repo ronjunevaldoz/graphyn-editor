@@ -16,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,11 +38,7 @@ internal fun GraphynLogPanel(
     var expanded by remember { mutableStateOf(false) }
     var activeTab by remember { mutableStateOf(OutputTab.Output) }
 
-    // Auto-open and switch to Output tab when a run finishes
     val result = state.lastExecutionResult
-    LaunchedEffect(result) {
-        if (result != null) { expanded = true; activeTab = OutputTab.Output }
-    }
 
     Column(
         modifier = modifier

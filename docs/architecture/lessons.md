@@ -1552,3 +1552,47 @@ directly into `sd.txt2img.context`, bypassing `sd.model` and `sd.context` entire
 
 **Fix:** Add six new color constants to `SdNodeColors.kt`; update each spec file so output and
 matching input use the same channel-specific constant.
+
+---
+
+## `GraphynLogPanel` auto-expand on run caused tall cards to appear shorter
+
+**Category:** Compose layout — panel expansion, canvas viewport
+
+`GraphynLogPanel` had `LaunchedEffect(result) { if (result != null) { expanded = true; ... } }`
+which auto-opened the log panel on every run completion. The panel can grow up to ~274dp
+(34dp header + 240dp body). The canvas area uses `Box(weight=1f)` above the log panel, so
+when the log panel expands the canvas shrinks by the same amount. A 697dp tall node like
+`sd.context` that filled the visible canvas suddenly overflows the bottom fold — visually
+appearing shorter even though its rendered height didn't change.
+
+**Rule:** Never auto-expand a bottom panel in response to state changes when the panel is
+in-flow with a canvas area. The canvas already has `GraphynJobBadge` (top-right pill) to
+surface run status. Remove the auto-expand so the canvas height stays stable. Users can
+expand the log panel manually by clicking the header tabs.
+
+**Fix location:** `GraphynLogPanel.kt` — removed the `LaunchedEffect(result)` block.
+
+---
+
+## `StepperChip` fixed width pushed `+` away from the card right edge
+
+**Category:** Compose layout — row weight, chip sizing
+
+`StepperChip` used `Modifier.width(VALUE_DP.dp)` (100dp fixed). Inside a `FieldRow` whose
+`hasValue = true` adds a `Spacer(weight=1f)` before the chip, the chip starts at
+`row_width − 100dp` from the left. The `+` button sits at the chip's right edge which IS
+at the row right edge — but only when `currentValue != null` for the hasValue condition.
+When `currentValue == null`, `hasValue = false` → no spacer → chip left-aligns after the
+name with `+` nowhere near the right edge. More importantly, as the chip was fixed-width
+regardless of the label name length, there was dead space and the chip appeared misaligned
+against cards with wider/narrower labels.
+
+**Fix:** Pass `hasValue = false` unconditionally in `NumericRow` (removing the spacer
+from `FieldRow`), then pass `Modifier.weight(1f)` on `StepperChip` from the `RowScope`
+content lambda. The chip fills remaining width from after the name label to the row right
+edge. Inside `StepperChip`, the center value box uses `Modifier.weight(1f)` instead of
+`widthIn(min = ...)` so it expands between the `−` and `+` buttons. The `+` is always
+at the row right edge = card content right edge.
+
+**Fix location:** `FieldCardStepper.kt` — `NumericRow`, `StepperChip`.
