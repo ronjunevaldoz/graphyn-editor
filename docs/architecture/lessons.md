@@ -1596,3 +1596,23 @@ edge. Inside `StepperChip`, the center value box uses `Modifier.weight(1f)` inst
 at the row right edge = card content right edge.
 
 **Fix location:** `FieldCardStepper.kt` — `NumericRow`, `StepperChip`.
+
+---
+
+## `weight(1f)` for StepperChip causes inconsistent widths across rows
+
+**Category:** Compose layout — chip sizing, FieldRow
+
+Using `Modifier.weight(1f)` on `StepperChip` inside `FieldRow` makes each chip fill the
+remaining space after the name label. Because name labels have different widths
+("txt_cfg" vs "distilled_guidance"), the chip width varies per row — visually jarring.
+
+**Rule:** Use a fixed `Modifier.width(VALUE_DP.dp)` (100dp) on `StepperChip` so all
+chips are the same width. Pair it with `hasValue = currentValue != null` on `FieldRow`
+so the `Spacer(weight=1f)` pushes the chip to the right edge only when there's something
+to show. Inside `StepperChip`, the center value box can still use `Modifier.weight(1f)`
+because it's constrained within the fixed-width chip Row.
+
+**Fix location:** `FieldCardStepper.kt` — `NumericRow` (`hasValue`, `width(VALUE_DP.dp)`),
+`StepperChip` (outer modifier fixed width, center box weight(1f)).
+
