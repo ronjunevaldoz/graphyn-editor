@@ -1755,7 +1755,15 @@ semantic path needs it.
 
 With `max_vram` graph-cut offload, the Wan 2.2 **A14B** i2v model (two-stage high+low-noise, ~25.8 GB unoffloaded) *does* fit a 12 GB card — it never OOMs. But every diffusion stage streams the 9.8 GB of offloaded weights from RAM per step, so throughput collapses: an 832×480×81 run logged `encode_first_stage` at **394.8 s** and `generate_video` stages in the hundreds of seconds each — a full run is 30–60 min. The dense **TI2V-5B** (~6 GB, fits natively) is the only practical i2v tier on 12 GB.
 
-**Rule:** "Fits after offload" ≠ "usable." Tier a model by measured throughput, not just whether it OOMs. Keep A14B out of the automated template suite; TI2V-5B is the shipped i2v tier.
+**Rule:** "Fits after offload" ≠ "usable." Tier a model by measured throughput, not just whether it OOMs. Keep A14B out of the automated template suite.
+
+## Wan i2v "VAE decode OOM" was actually a native compute failure, not OOM
+
+**Category:** Stable Diffusion — Wan video VAE decode / server-sd native
+
+Both Wan A14B and TI2V-5B i2v renders on server-sd fail at the VAE decode step with `vae decode compute failed while processing a tile` → `decode_first_stage failed for video`. The instinct is "12 GB can't fit the decode," but it reproduces at **320×320×9 with only 8.7 GB used** — enormous headroom — so it is *not* OOM. Tiled decode is already active (the error names a tile) and still fails, so lowering frames/resolution doesn't help. This is a compute/kernel failure in server-sd's Wan video VAE decode path (likely an unsupported ggml op / quantization on this GPU+driver+build), fixable only in the native layer, not from the editor.
+
+**Rule:** Read the actual error verb. "compute failed" ≠ "out of memory." Don't tier a model or shrink inputs to dodge an OOM that isn't one — trace it to the native decode. The image tiers (FLUX + Qwen txt2img, Qwen-Edit img2img) all render fine; only the Wan video VAE decode is blocked.
 
 ## A blocking native generate monopolizes the single-model engine — order tests fast-first
 

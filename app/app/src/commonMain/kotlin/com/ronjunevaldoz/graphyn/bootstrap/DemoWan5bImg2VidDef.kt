@@ -89,7 +89,9 @@ internal val wan5bImg2VidWorkflow = WorkflowDefinition(
                 "prompt"       to WorkflowValue.StringValue("the scene comes alive, gentle camera push-in, natural motion"),
                 "width"        to WorkflowValue.IntValue(480),
                 "height"       to WorkflowValue.IntValue(480),
-                // 17 frames fits the Wan VAE decode buffer on 12 GB; 49 OOMs the decode (even tiled).
+                // NOTE: as of 2026-07 the server-sd Wan i2v VAE decode fails ("vae decode compute
+                // failed while processing a tile") for every size tried, incl. 320x320x9 — a native
+                // compute bug, not OOM. This tier won't render until server-sd's decode is fixed.
                 "video_frames" to WorkflowValue.IntValue(17),
                 "fps"          to WorkflowValue.IntValue(16),
                 "seed"         to WorkflowValue.IntValue(-1),
