@@ -8,6 +8,8 @@ import com.ronjunevaldoz.graphyn.plugins.stablesd.SdVideoResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionBackend
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsBytes
@@ -37,6 +39,10 @@ class HttpStableDiffusionBackend(
     private val client = HttpClient(CIO) {
         engine {
             requestTimeout = 600_000
+        }
+        // Authenticate to a publicly-exposed server-sd when a key is configured (no-op otherwise).
+        System.getenv("GRAPHYN_SD_API_KEY")?.ifBlank { null }?.let { key ->
+            install(DefaultRequest) { header("Authorization", "Bearer $key") }
         }
     }
 
