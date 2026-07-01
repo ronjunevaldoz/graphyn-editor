@@ -32,6 +32,7 @@ private enum class OutputTab { Output, Artifacts, Logs, Debug }
 internal fun GraphynLogPanel(
     modifier: Modifier = Modifier,
     state: GraphynEditorState,
+    artifactHistory: com.ronjunevaldoz.graphyn.core.store.ArtifactHistory? = null,
     onArtifactClick: (ArtifactItem) -> Unit = {},
 ) {
     val colors = GraphynDs.colors
@@ -108,7 +109,11 @@ internal fun GraphynLogPanel(
                         }
                     }
                     OutputTab.Artifacts -> {
-                        GraphynArtifactsTab(artifacts = artifacts, onView = onArtifactClick)
+                        GraphynArtifactsHistoryView(
+                            thisRun = artifacts,
+                            history = artifactHistory,
+                            onView = onArtifactClick,
+                        )
                     }
                     OutputTab.Logs -> {
                         val logs = state.debugLogEntries

@@ -64,6 +64,7 @@ internal fun GraphynEditorShellCanvas(
             GraphynLogPanel(
                 modifier = Modifier.fillMaxWidth(),
                 state = state,
+                artifactHistory = dependencies.artifactHistory,
                 onArtifactClick = { viewingArtifact = it },
             )
         }

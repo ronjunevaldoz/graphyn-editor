@@ -44,6 +44,7 @@ fun GraphynApp(
     canvasBounds: GraphynCanvasBounds = GraphynCanvasBounds(),
     store: WorkflowStore? = null,
     settingsStore: com.ronjunevaldoz.graphyn.core.store.SettingsStore? = null,
+    artifactHistory: com.ronjunevaldoz.graphyn.core.store.ArtifactHistory? = null,
     workflowGenerator: WorkflowGenerator? = null,
 ) {
     var recentWorkflows by remember { mutableStateOf(emptyList<WorkflowTemplate>()) }
@@ -120,6 +121,7 @@ fun GraphynApp(
                             executionEngine = executionEngine ?: engine,
                             workflowGenerator = generator,
                             settingsStore = settingsStore,
+                            artifactHistory = artifactHistory,
                         ),
                         appearanceState = appearanceState,
                         onHome = { openWorkflow = null; openWithStore = true },

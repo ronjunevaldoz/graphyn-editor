@@ -68,6 +68,8 @@ data class GraphynEditorShellDependencies(
     val workflowGenerator: com.ronjunevaldoz.graphyn.ai.WorkflowGenerator? = null,
     /** When set, the toolbar shows a "⚙" toggle that opens the credentials/settings dialog. */
     val settingsStore: com.ronjunevaldoz.graphyn.core.store.SettingsStore? = null,
+    /** When set, the Artifacts tab offers a History view of all past generations, not just this run. */
+    val artifactHistory: com.ronjunevaldoz.graphyn.core.store.ArtifactHistory? = null,
 )
 
 @Composable

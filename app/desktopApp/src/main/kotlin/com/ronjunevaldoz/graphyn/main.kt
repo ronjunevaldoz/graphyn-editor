@@ -6,6 +6,7 @@ import com.ronjunevaldoz.graphyn.ai.OllamaConfig
 import com.ronjunevaldoz.graphyn.ai.OllamaWorkflowGenerator
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrapJvm
+import com.ronjunevaldoz.graphyn.core.store.FileArtifactHistory
 import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
 import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
 import com.ronjunevaldoz.graphyn.plugins.script.ScriptEditorPlugin
@@ -32,6 +33,7 @@ fun main() = application {
             ),
             store = store,
             settingsStore = FileSettingsStore(),
+            artifactHistory = FileArtifactHistory(),
             workflowGenerator = generator,
         )
     }
