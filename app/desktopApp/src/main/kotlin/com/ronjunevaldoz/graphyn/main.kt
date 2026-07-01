@@ -9,6 +9,7 @@ import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrapJvm
 import com.ronjunevaldoz.graphyn.core.store.FileArtifactHistory
 import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
 import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
+import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
 import com.ronjunevaldoz.graphyn.plugins.script.ScriptEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.script.ScriptPlugin
 import com.ronjunevaldoz.graphyn.plugins.gmail.GmailPlugin
@@ -16,7 +17,10 @@ import com.ronjunevaldoz.graphyn.plugins.linkedin.LinkedInPlugin
 
 fun main() = application {
     val store = FileWorkflowStore()
-    val ollamaHost = System.getenv("GRAPHYN_OLLAMA_HOST") ?: OllamaConfig.DEFAULT_BASE_URL
+    val settingsStore = FileSettingsStore()
+    // AI assistant URL: active-environment setting, then env var, then default. (Applies on launch.)
+    val ollamaHost = settingsStore.read().value(GraphynSettings.KEY_AI_URL)
+        ?: System.getenv("GRAPHYN_OLLAMA_HOST") ?: OllamaConfig.DEFAULT_BASE_URL
     val generator = OllamaWorkflowGenerator(OllamaConfig(baseUrl = ollamaHost))
 
     Window(
@@ -32,7 +36,7 @@ fun main() = application {
                 extraPlugins = listOf(ScriptEditorPlugin) + GraphynBootstrapJvm.serviceIntegrationEditorPlugins,
             ),
             store = store,
-            settingsStore = FileSettingsStore(),
+            settingsStore = settingsStore,
             artifactHistory = FileArtifactHistory(),
             workflowGenerator = generator,
         )

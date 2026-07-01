@@ -14,10 +14,10 @@ private const val DEFAULT_SD_URL = "https://ron-local-home.duckdns.org/stabledif
  * a stale environment. Precedence: [settings] value → env var → built-in default. Blank = unset.
  */
 fun resolveSdConnection(settings: GraphynSettings): SdConnection {
-    val url = settings.sdServerUrl.ifBlank { null }
+    val url = settings.value(GraphynSettings.KEY_SD_URL)
         ?: System.getenv("GRAPHYN_SD_SERVER_URL")?.ifBlank { null }
         ?: DEFAULT_SD_URL
-    val key = settings.sdApiKey.ifBlank { null }
+    val key = settings.value(GraphynSettings.KEY_SD_API_KEY)
         ?: System.getenv("GRAPHYN_SD_API_KEY")?.ifBlank { null }
     return SdConnection(baseUrl = url, apiKey = key)
 }

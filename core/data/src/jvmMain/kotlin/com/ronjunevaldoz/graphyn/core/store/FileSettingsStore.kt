@@ -19,11 +19,11 @@ class FileSettingsStore(
 ) : SettingsStore {
     private val mutex = Mutex()
 
-    /** Synchronous best-effort read; returns defaults when the file is absent or malformed. */
+    /** Synchronous best-effort read; migrates legacy fields and returns defaults when absent/malformed. */
     fun read(): GraphynSettings =
-        file.takeIf { it.isFile }
+        (file.takeIf { it.isFile }
             ?.let { runCatching { settingsJson.decodeFromString<GraphynSettings>(it.readText()) }.getOrNull() }
-            ?: GraphynSettings()
+            ?: GraphynSettings()).migrated()
 
     override suspend fun load(): GraphynSettings = mutex.withLock { read() }
 
