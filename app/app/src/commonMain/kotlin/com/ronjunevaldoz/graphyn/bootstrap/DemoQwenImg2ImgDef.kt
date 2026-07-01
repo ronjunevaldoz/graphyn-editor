@@ -6,8 +6,9 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Default model paths — override via config port values at runtime.
-// Q4_K_M fits a 12 GB card via the sd.context max_vram auto-offload (-1, server default).
-private const val QWEN_EDIT_DIFFUSION = "/models/qwen/diffusion/qwen-image-edit-2511-Q4_K_M.gguf"
+// Use the Q2_K edit diffusion by default on 12 GB GPUs so img2img stays resident instead of
+// graph-cut paging a Q4_K_M checkpoint through RAM each run.
+private const val QWEN_EDIT_DIFFUSION = "/models/qwen/diffusion/qwen-image-edit-2511-Q2_K.gguf"
 private const val QWEN_EDIT_TEXT_ENC  = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf"
 // Qwen2.5-VL vision projector — drives the editor's semantic path (sees the reference image).
 private const val QWEN_EDIT_MMPROJ    = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct.mmproj-Q8_0.gguf"
@@ -105,7 +106,7 @@ internal val qwenImg2ImgWorkflow = WorkflowDefinition(
                 "sample_steps"       to WorkflowValue.IntValue(4),
                 "txt_cfg"            to WorkflowValue.DoubleValue(1.0),
                 "distilled_guidance" to WorkflowValue.DoubleValue(1.0),
-                "flow_shift"         to WorkflowValue.DoubleValue(3.0),
+                "flow_shift"         to WorkflowValue.DoubleValue(12.0),
             ),
         ),
         NodeRef(

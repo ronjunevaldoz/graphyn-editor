@@ -4,6 +4,7 @@ package com.ronjunevaldoz.graphyn.bootstrap
 
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.validation.WorkflowGraphValidator
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import kotlin.test.Test
@@ -18,6 +19,13 @@ import kotlin.test.assertTrue
  * outside the tolerated preview sink — i.e. the LoRA wiring isn't silently broken.
  */
 class SdLoraWorkflowValidationTest {
+    private companion object {
+        const val QWEN_TXT2IMG_DIFFUSION = "/models/qwen/diffusion/qwen-image-2512-Q2_K.gguf"
+        const val QWEN_IMG2IMG_DIFFUSION = "/models/qwen/diffusion/qwen-image-edit-2511-Q2_K.gguf"
+        const val QWEN_TXT2IMG_LORA = "/models/qwen/lora/Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors"
+        const val QWEN_IMG2IMG_LORA = "/models/qwen/lora/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors"
+    }
+
     private val registry = DefaultGraphynPluginRegistry().apply {
         (GraphynDemoPlugins.runtime + GraphynBootstrapJvm.mediaRuntimePlugins).forEach { install(it) }
     }
@@ -34,7 +42,40 @@ class SdLoraWorkflowValidationTest {
         assertTrue(badMismatch.isEmpty(), "unexpected type mismatches: $badMismatch")
     }
 
+    private fun assertNodePath(wf: WorkflowDefinition, nodeId: String, expected: String) {
+        val node = wf.nodes.firstOrNull { it.id == nodeId }
+        val actual = (node?.config?.get("path") as? WorkflowValue.StringValue)?.value
+        assertEquals(expected, actual, "unexpected LoRA path on node '$nodeId'")
+    }
+
+    private fun assertStringConfig(wf: WorkflowDefinition, nodeId: String, key: String, expected: String) {
+        val node = wf.nodes.firstOrNull { it.id == nodeId }
+        val actual = (node?.config?.get(key) as? WorkflowValue.StringValue)?.value
+        assertEquals(expected, actual, "unexpected '$key' on node '$nodeId'")
+    }
+
+    private fun assertDoubleConfig(wf: WorkflowDefinition, nodeId: String, key: String, expected: Double) {
+        val node = wf.nodes.firstOrNull { it.id == nodeId }
+        val actual = (node?.config?.get(key) as? WorkflowValue.DoubleValue)?.value
+        assertEquals(expected, actual, "unexpected '$key' on node '$nodeId'")
+    }
+
     @Test fun qwenTxt2ImgIsSound() = assertStructurallySound(qwenTxt2ImgWorkflow)
     @Test fun qwenImg2ImgIsSound() = assertStructurallySound(qwenImg2ImgWorkflow)
     @Test fun wanImg2VidIsSound() = assertStructurallySound(wanImg2VidWorkflow)
+    @Test fun qwenTxt2ImgUses2512LightningLora() =
+        assertNodePath(qwenTxt2ImgWorkflow, nodeId = "lora", expected = QWEN_TXT2IMG_LORA)
+
+    @Test fun qwenImg2ImgUses2511EditLightningLora() =
+        assertNodePath(qwenImg2ImgWorkflow, nodeId = "lora", expected = QWEN_IMG2IMG_LORA)
+
+    @Test fun qwenTxt2ImgUsesQ2DiffusionAndQwenFlowShift() {
+        assertStringConfig(qwenTxt2ImgWorkflow, nodeId = "sddiffusion", key = "diffusion_model_path", expected = QWEN_TXT2IMG_DIFFUSION)
+        assertDoubleConfig(qwenTxt2ImgWorkflow, nodeId = "sampler", key = "flow_shift", expected = 12.0)
+    }
+
+    @Test fun qwenImg2ImgUsesQ2DiffusionAndQwenFlowShift() {
+        assertStringConfig(qwenImg2ImgWorkflow, nodeId = "sddiffusion", key = "diffusion_model_path", expected = QWEN_IMG2IMG_DIFFUSION)
+        assertDoubleConfig(qwenImg2ImgWorkflow, nodeId = "sampler", key = "flow_shift", expected = 12.0)
+    }
 }

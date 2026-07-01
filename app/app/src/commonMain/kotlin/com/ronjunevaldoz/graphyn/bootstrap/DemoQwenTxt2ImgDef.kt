@@ -6,9 +6,9 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Default model paths — override via config port values at runtime.
-// Q4_K_M (~13 GB) exceeds a 12 GB card on its own, but the sd.context max_vram auto-offload
-// (-1, server default) graph-cuts it to fit. Drop to Q2_K only if offload is too slow.
-private const val QWEN_DIFFUSION = "/models/qwen/diffusion/qwen-image-2512-Q4_K_M.gguf"
+// Use the Q2_K diffusion by default on 12 GB GPUs: it stays resident instead of paging a Q4_K_M
+// checkpoint through graph-cut offload every run.
+private const val QWEN_DIFFUSION = "/models/qwen/diffusion/qwen-image-2512-Q2_K.gguf"
 private const val QWEN_TEXT_ENC  = "/models/qwen/text_encoder/Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf"
 private const val QWEN_VAE       = "/models/qwen/vae/qwen_image_vae.safetensors"
 private const val QWEN_LORA_DIR  = "/models/qwen/lora"
@@ -27,7 +27,7 @@ private const val QWEN_LORA_4STEP = "$QWEN_LORA_DIR/Qwen-Image-2512-Lightning-4s
  *
  * The 4-step Lightning LoRA is wired through the sd.lora node into the txt2img `loras` port
  * (resolved under `lora_model_dir` on sd.model). Qwen-Image is CFG-distilled, so with the
- * LoRA: sample_steps = 4, txt_cfg = 1.0, flow_shift = 3.0.
+ * LoRA: sample_steps = 4, txt_cfg = 1.0, flow_shift = 12.0.
  */
 internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
     id = "qwen-txt2img",
@@ -100,7 +100,7 @@ internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
                 "sample_steps"       to WorkflowValue.IntValue(4),
                 "txt_cfg"            to WorkflowValue.DoubleValue(1.0),
                 "distilled_guidance" to WorkflowValue.DoubleValue(1.0),
-                "flow_shift"         to WorkflowValue.DoubleValue(3.0),
+                "flow_shift"         to WorkflowValue.DoubleValue(12.0),
             ),
         ),
         NodeRef(
@@ -109,8 +109,8 @@ internal val qwenTxt2ImgWorkflow = WorkflowDefinition(
             config = mapOf(
                 "prompt"          to WorkflowValue.StringValue("a serene mountain lake at sunrise, mist over the water, ultra detailed"),
                 "negative_prompt" to WorkflowValue.StringValue(""),
-                "width"           to WorkflowValue.IntValue(1328),
-                "height"          to WorkflowValue.IntValue(1328),
+                "width"           to WorkflowValue.IntValue(1024),
+                "height"          to WorkflowValue.IntValue(1024),
                 "seed"            to WorkflowValue.IntValue(-1),
                 "batch_count"     to WorkflowValue.IntValue(1),
             ),
