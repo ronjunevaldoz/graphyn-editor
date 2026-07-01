@@ -50,12 +50,7 @@ internal val sdContextComputePorts: List<PortSpec> = listOf(
         description = "CLI: --stream-layers. Enable layer residency + prefetch streaming on top of --max-vram. Has no effect without max_vram set."),
     PortSpec("eager_load", BooleanType, portColor = COLOR_BOOL,
         description = "CLI: --eager-load. Load all parameters into the params backend at model-load time instead of lazily on first use."),
-    PortSpec("circular", BooleanType, portColor = COLOR_BOOL,
-        description = "CLI: --circular. Enable circular padding in BOTH X and Y dimensions (equivalent to setting circular_x=true AND circular_y=true). Enables seamless tiling."),
-    PortSpec("circular_x", BooleanType, portColor = COLOR_BOOL,
-        description = "CLI: --circularx. Enable circular padding in the X dimension only (horizontal tiling). Use circular for both axes."),
-    PortSpec("circular_y", BooleanType, portColor = COLOR_BOOL,
-        description = "CLI: --circulary. Enable circular padding in the Y dimension only (vertical tiling). Use circular for both axes."),
+    // circular / circular_x / circular_y moved to the sd.seamless sub-node (wired to the seamless port).
     PortSpec("force_sdxl_vae_conv_scale", BooleanType, portColor = COLOR_BOOL,
         description = "CLI: --force-sdxl-vae-conv-scale. Force the SDXL VAE conv scale factor. Fixes VAE decode artefacts on some merged SDXL checkpoints."),
     PortSpec("chroma_use_dit_mask", BooleanType, portColor = COLOR_BOOL,

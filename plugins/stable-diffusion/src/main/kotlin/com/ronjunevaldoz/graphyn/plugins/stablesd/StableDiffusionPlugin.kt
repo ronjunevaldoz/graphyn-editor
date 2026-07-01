@@ -57,6 +57,7 @@ class StableDiffusionPlugin(
         registrar.registerNodeSpec(SdEncodersSpec.encoders)
         registrar.registerNodeSpec(SdVaeSpec.vae)
         registrar.registerNodeSpec(SdContextSpec.context)
+        registrar.registerNodeSpec(SdSeamlessSpec.seamless)
         registrar.registerNodeSpec(SdSamplerSpec.sampler)
         registrar.registerNodeSpec(SdLoraSpec.lora)
         registrar.registerNodeSpec(SdHiresSpec.hires)
@@ -94,7 +95,15 @@ class StableDiffusionPlugin(
         registrar.registerExecutor(SdContextSpec.context.type) { inputs ->
             val modelFields = (inputs["model"] as? WorkflowValue.RecordValue)
                 ?.fields?.minus("_type") ?: emptyMap()
-            mapOf("context" to SdTokens.context(modelFields + inputs.minus("model")))
+            // Merge the optional sd.seamless sub-node's flags back into the context record.
+            val seamlessFields = (inputs["seamless"] as? WorkflowValue.RecordValue)
+                ?.fields?.minus("_type") ?: emptyMap()
+            mapOf("context" to SdTokens.context(
+                modelFields + seamlessFields + inputs.minus("model").minus("seamless"),
+            ))
+        }
+        registrar.registerExecutor(SdSeamlessSpec.seamless.type) { inputs ->
+            mapOf("seamless" to SdTokens.seamless(inputs))
         }
         registrar.registerExecutor(SdSamplerSpec.sampler.type) { inputs ->
             mapOf("sampler" to SdTokens.sampler(inputs))

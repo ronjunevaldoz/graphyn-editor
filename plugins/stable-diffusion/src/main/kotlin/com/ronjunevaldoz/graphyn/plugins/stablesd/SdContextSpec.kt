@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.plugins.stablesd
 
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType.NullableType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType.OpaqueType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
@@ -24,6 +25,8 @@ object SdContextSpec {
         inputs = listOf(
             PortSpec("model", OpaqueType, portColor = COLOR_MODEL,
                 description = "Opaque model-paths token from sd.model."),
+            PortSpec("seamless", NullableType(OpaqueType), portColor = COLOR_CONTEXT,
+                description = "Optional sd.seamless token (circular/tiling flags). Null = no seamless tiling."),
         ) + sdContextComputePorts,
         outputs = listOf(
             PortSpec("context", OpaqueType, portColor = COLOR_CONTEXT,
@@ -44,9 +47,6 @@ object SdContextSpec {
             "stream_layers"       to WorkflowValue.BooleanValue(false),
             "eager_load"          to WorkflowValue.BooleanValue(false),
             "offload_params_to_cpu" to WorkflowValue.BooleanValue(false),
-            "circular"            to WorkflowValue.BooleanValue(false),
-            "circular_x"          to WorkflowValue.BooleanValue(false),
-            "circular_y"          to WorkflowValue.BooleanValue(false),
             "force_sdxl_vae_conv_scale" to WorkflowValue.BooleanValue(false),
             "chroma_use_dit_mask" to WorkflowValue.BooleanValue(true),
             "chroma_use_t5_mask"  to WorkflowValue.BooleanValue(false),
