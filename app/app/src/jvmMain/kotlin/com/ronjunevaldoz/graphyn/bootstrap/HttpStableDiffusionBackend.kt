@@ -9,8 +9,6 @@ import com.ronjunevaldoz.graphyn.plugins.stablesd.SdVideoResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionBackend
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.DefaultRequest
-import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsBytes
@@ -21,39 +19,30 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
- * Forwards generation to a running `server-sd` instance over HTTP.
- * Translates the executor's CLI-flag list into a JSON body for `/api/sd/generate-ex`
- * (images) or `/api/sd/generate-video` (Wan2.2 video), then persists the returned bytes.
+ * Forwards generation to a running `server-sd` over HTTP: translates the executor's CLI-flag list
+ * into `/api/sd/generate-ex` (image) or `/api/sd/generate-video` (video), persists the bytes to a
+ * durable artifacts dir, and records each run in [history].
  *
- * Outputs are written to a durable artifacts directory (not the OS temp dir) so generated
- * media survives app restarts and can be fed back in as `init_image` for another run.
- * Configure the server URL via `GRAPHYN_SD_SERVER_URL` and the output dir via
- * `GRAPHYN_ARTIFACTS_DIR` (default `~/.graphyn/artifacts`).
+ * The server URL + API key are resolved fresh **per run** from [settingsStore] (then env, then
+ * default), so a change in the credentials panel applies on the next generation without a restart.
  */
 class HttpStableDiffusionBackend(
-    connection: SdConnection = resolveSdConnection(FileSettingsStore().read()),
+    private val settingsStore: FileSettingsStore = FileSettingsStore(),
     private val artifactsDir: File = defaultArtifactsDir(),
     private val history: ArtifactHistory = FileArtifactHistory(),
 ) : StableDiffusionBackend {
 
-    private val baseUrl = connection.baseUrl
+    private val client = HttpClient(CIO) { engine { requestTimeout = 600_000 } }
 
-    private val client = HttpClient(CIO) {
-        engine {
-            requestTimeout = 600_000
-        }
-        // Authenticate to a publicly-exposed server-sd when a key is configured (no-op otherwise).
-        connection.apiKey?.let { key ->
-            install(DefaultRequest) { header("Authorization", "Bearer $key") }
-        }
-    }
+    private fun connection(): SdConnection = resolveSdConnection(settingsStore.read())
 
     override fun generateImage(args: List<String>): SdImageResult {
+        val conn = connection()
         val file = runBlocking {
-            val staged = stageLocalImages(args)
-            assertServerFilesExist(staged)
+            val staged = stageLocalImages(args, conn)
+            assertServerFilesExist(staged, conn)
             val start = System.currentTimeMillis()
-            val bytes = postJson("$baseUrl/api/sd/generate-ex", argsToJson(staged))
+            val bytes = postJson("${conn.baseUrl}/api/sd/generate-ex", argsToJson(staged), conn)
             saveArtifact(bytes, "png").also {
                 history.record(buildArtifactRecord(it, ArtifactKind.Image, args, System.currentTimeMillis() - start, "sd.txt2img"))
             }
@@ -62,11 +51,12 @@ class HttpStableDiffusionBackend(
     }
 
     override fun generateVideo(args: List<String>): SdVideoResult {
+        val conn = connection()
         val file = runBlocking {
-            val staged = stageLocalImages(args)
-            assertServerFilesExist(staged)
+            val staged = stageLocalImages(args, conn)
+            assertServerFilesExist(staged, conn)
             val start = System.currentTimeMillis()
-            val bytes = postJson("$baseUrl/api/sd/generate-video", videoArgsToJson(staged))
+            val bytes = postJson("${conn.baseUrl}/api/sd/generate-video", videoArgsToJson(staged), conn)
             saveArtifact(bytes, "mp4").also {
                 history.record(buildArtifactRecord(it, ArtifactKind.Video, args, System.currentTimeMillis() - start, "sd.img2vid"))
             }
@@ -76,12 +66,12 @@ class HttpStableDiffusionBackend(
 
     // Pre-flight: fail fast with a clear list when a model/LoRA/input file is missing on the server,
     // instead of after a multi-minute model load (or a native OOM crash).
-    private suspend fun assertServerFilesExist(args: List<String>) {
+    private suspend fun assertServerFilesExist(args: List<String>, conn: SdConnection) {
         val paths = collectServerPaths(args)
         if (paths.isEmpty()) return
         val body = paths.joinToString(",") { "\"${it.replace("\\", "\\\\").replace("\"", "\\\"")}\"" }
-        val resp = client.post("$baseUrl/api/sd/models/exists") {
-            contentType(ContentType.Application.Json); setBody("""{"paths":[$body]}""")
+        val resp = client.post("${conn.baseUrl}/api/sd/models/exists") {
+            contentType(ContentType.Application.Json); setBody("""{"paths":[$body]}"""); authWith(conn)
         }
         if (!resp.status.isSuccess()) return // older server without the endpoint — skip the check
         val text = resp.bodyAsBytes().toString(Charsets.UTF_8)
@@ -110,24 +100,24 @@ class HttpStableDiffusionBackend(
 
     // Path-based image inputs are resolved on the server's filesystem, so any local file must be
     // uploaded first and its flag value rewritten to the returned server path.
-    private suspend fun stageLocalImages(args: List<String>): List<String> {
+    private suspend fun stageLocalImages(args: List<String>, conn: SdConnection): List<String> {
         val imageFlags = setOf("--init-img", "--control-image", "--mask")
         val out = args.toMutableList()
         var i = 0
         while (i < out.size) {
             if (out[i] in imageFlags && i + 1 < out.size) {
-                out[i + 1] = uploadIfLocal(out[i + 1])
+                out[i + 1] = uploadIfLocal(out[i + 1], conn)
                 i += 2
             } else i++
         }
         return out
     }
 
-    private suspend fun uploadIfLocal(path: String): String {
+    private suspend fun uploadIfLocal(path: String, conn: SdConnection): String {
         val file = File(path)
         if (!file.isFile) return path // already a server-side path, or nothing to upload
         val ext = file.extension.ifBlank { "png" }
-        val response = client.post("$baseUrl/api/sd/upload?ext=$ext") { setBody(file.readBytes()) }
+        val response = client.post("${conn.baseUrl}/api/sd/upload?ext=$ext") { setBody(file.readBytes()); authWith(conn) }
         check(response.status.isSuccess()) {
             "server-sd upload responded ${response.status}: ${response.bodyAsBytes().toString(Charsets.UTF_8)}"
         }
@@ -136,10 +126,11 @@ class HttpStableDiffusionBackend(
             ?: error("server-sd upload returned no path: $body")
     }
 
-    private suspend fun postJson(url: String, json: String): ByteArray {
+    private suspend fun postJson(url: String, json: String, conn: SdConnection): ByteArray {
         val response = client.post(url) {
             contentType(ContentType.Application.Json)
             setBody(json)
+            authWith(conn)
         }
         check(response.status.isSuccess()) {
             "server-sd responded ${response.status}: ${response.bodyAsBytes().toString(Charsets.UTF_8)}"

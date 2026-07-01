@@ -1,6 +1,8 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
 
 /** Resolved connection to the SD server: where to reach it and the bearer key (null = no auth). */
 data class SdConnection(val baseUrl: String, val apiKey: String?)
@@ -18,4 +20,9 @@ fun resolveSdConnection(settings: GraphynSettings): SdConnection {
     val key = settings.sdApiKey.ifBlank { null }
         ?: System.getenv("GRAPHYN_SD_API_KEY")?.ifBlank { null }
     return SdConnection(baseUrl = url, apiKey = key)
+}
+
+/** Adds the bearer header for [conn] when a key is set; no-op otherwise. */
+internal fun HttpRequestBuilder.authWith(conn: SdConnection) {
+    conn.apiKey?.let { header("Authorization", "Bearer $it") }
 }
