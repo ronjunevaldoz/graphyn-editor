@@ -198,6 +198,84 @@ No Compose import anywhere in this file.
 
 ---
 
+## Multi-Source State with `combine`
+
+When a screen needs data from two or more independent flows, merge them with `combine`
+into a single `StateFlow`. Never call `collect` inside a `collect` — that nests coroutines
+and causes stale data when either source changes.
+
+```kotlin
+class DashboardViewModel(
+    private val userRepo: UserRepository,
+    private val notificationsRepo: NotificationsRepository,
+    private val connectivityRepo: ConnectivityRepository,
+) : ViewModel() {
+
+    // ✓ Three independent flows merged into one StateFlow
+    val uiState: StateFlow<DashboardUiState> =
+        combine(
+            userRepo.observeUser(),
+            notificationsRepo.observeUnread(),
+            connectivityRepo.observeConnected(),
+        ) { user, unreadCount, isConnected ->
+            DashboardUiState.Success(
+                user = user,
+                unreadCount = unreadCount,
+                isOffline = !isConnected,
+            )
+        }
+        .catch { emit(DashboardUiState.Error(it.message ?: "Unknown")) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = DashboardUiState.Loading,
+        )
+}
+```
+
+### Why `SharingStarted.WhileSubscribed(5_000)`?
+
+| `SharingStarted` value | Upstream behaviour | Problem |
+|---|---|---|
+| `Eagerly` | Starts immediately, never stops | Upstream runs even when no screen is showing — wastes resources |
+| `Lazily` | Starts on first subscriber, never stops | Same leak after screen leaves |
+| `WhileSubscribed(5_000)` | Starts on first subscriber, stops 5 s after last subscriber leaves | Survives a config change (rotation takes < 1 s); stops when screen is gone for good |
+
+The 5 000 ms window is long enough to survive an Android config change (rotation, dark-mode
+toggle) without restarting the upstream, and short enough to stop it after genuine navigation.
+
+### Dependent flows with `flatMapLatest`
+
+When the second flow depends on a value emitted by the first, use `flatMapLatest`.
+It cancels the inner flow and restarts it whenever the outer emits a new value.
+
+```kotlin
+class TeamDetailViewModel(
+    private val teamRepo: TeamRepository,
+    private val memberRepo: MemberRepository,
+    private val selectedTeamId: StateFlow<String>,  // from a shared parent ViewModel
+) : ViewModel() {
+
+    // ✓ Members reload whenever selectedTeamId changes; previous load is cancelled
+    val members: StateFlow<List<Member>> = selectedTeamId
+        .flatMapLatest { teamId -> memberRepo.observeMembers(teamId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+}
+```
+
+```kotlin
+// ❌ Never nest collect — the inner coroutine outlives the outer emission
+viewModelScope.launch {
+    selectedTeamId.collect { teamId ->
+        memberRepo.observeMembers(teamId).collect { members ->  // leaks!
+            _state.update { it.copy(members = members) }
+        }
+    }
+}
+```
+
+---
+
 ## Koin Wiring
 
 ### Annotated mode (default)
@@ -291,6 +369,9 @@ private fun AuthContentSuccessPreview() {
 
 ## Common Anti-Patterns
 
+- nesting `collect` inside `collect` for multi-source state — use `combine()` instead; nested collectors leak coroutines and miss updates
+- using `SharingStarted.Eagerly` or `SharingStarted.Lazily` in `stateIn` — upstream never stops after navigation; use `WhileSubscribed(5_000)` so it stops 5 s after the screen leaves
+- using `flatMap` instead of `flatMapLatest` for dependent flows — previous inner coroutine keeps running alongside the new one
 - importing `androidx.compose.*` or `org.jetbrains.compose.*` in `:presenter` — kills JVM testability
 - putting `UiState` / `UiIntent` in `:ui` — they must live in `:presenter` so tests can use them without Compose
 - calling use cases directly from `:ui` screens — all business invocations must go through the ViewModel
@@ -316,4 +397,5 @@ When asked to set up a presenter module or ViewModel, respond in this order:
 
 | Date | Change |
 |---|---|
+| 2026-06-28 | Add multi-source state patterns: combine() for merging flows, SharingStarted.WhileSubscribed(5_000) explanation, flatMapLatest for dependent flows. Three new anti-patterns. |
 | 2026-06-18 | Initial release. |

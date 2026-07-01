@@ -370,6 +370,101 @@ var selectedId by savedStateHandle.saveable { mutableStateOf<String?>(null) }
 
 ---
 
+## `derivedStateOf` — Memoized Derived State
+
+When a value is derived from other `State` but changes less frequently than its inputs,
+wrap it in `derivedStateOf` so Compose only recomposes consumers when the derived value
+actually changes.
+
+```kotlin
+// ❌ Recomputes canSubmit on every keystroke — recomposes Button even when result is stable
+val canSubmit = email.isNotBlank() && password.length >= 8
+
+// ✓ derivedStateOf — Button only recomposes when canSubmit flips true ↔ false
+val canSubmit by remember(email, password) {
+    derivedStateOf { email.isNotBlank() && password.length >= 8 }
+}
+```
+
+Always wrap `derivedStateOf` in `remember` — without it, a new `DerivedState` is created
+each recomposition and the memoization is lost.
+
+See `kotlin-multiplatform-compose-state-hoisting` for full decision table and examples.
+
+---
+
+## `snapshotFlow` — Compose State as a Flow
+
+`snapshotFlow` converts Compose `State` into a `Flow` so you can apply coroutine operators
+(debounce, distinctUntilChanged, flatMapLatest) to Compose state changes.
+
+```kotlin
+// Debounce a search field — local Compose state → debounced coroutine → ViewModel intent
+@Composable
+fun SearchBar(onIntent: (SearchContract.Intent) -> Unit) {
+    var query by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { query }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect { q -> onIntent(SearchContract.Intent.Search(q)) }
+    }
+
+    AppTextField(value = query, onValueChange = { query = it })
+}
+```
+
+| Use `snapshotFlow` when | Avoid it when |
+|---|---|
+| You need to debounce or throttle Compose state changes | The value already comes from a `StateFlow` — collect it normally |
+| You need `distinctUntilChanged` on a Compose state | The transformation is pure — `derivedStateOf` is lighter |
+| Bridging Compose state to analytics, accessibility, or an external SDK | |
+
+---
+
+## `rememberUpdatedState` — Latest Value Without Restarting an Effect
+
+When a `LaunchedEffect(Unit)` captures a value or lambda that might change between
+recompositions, wrap the captured value with `rememberUpdatedState`. The effect keeps a
+stable reference that always points to the latest value — without restarting the coroutine.
+
+```kotlin
+// ✓ rememberUpdatedState — timer reads the latest onTick without restarting every recompose
+@Composable
+fun Ticker(onTick: () -> Unit) {
+    val currentOnTick by rememberUpdatedState(onTick)
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1_000)
+            currentOnTick()   // always the latest lambda
+        }
+    }
+}
+```
+
+```kotlin
+// ❌ Stale capture — onTick at launch time, not the latest
+LaunchedEffect(Unit) {
+    while (true) { delay(1_000); onTick() }   // stale if parent recomposes with new lambda
+}
+
+// ❌ Lambda as key — effect restarts (and timer resets) on every parent recompose
+LaunchedEffect(onTick) {
+    while (true) { delay(1_000); onTick() }
+}
+```
+
+**When to use:**
+- `LaunchedEffect(Unit)` that reads a callback or config value that may change
+- Any long-running effect that should NOT restart when a captured value changes
+
+**When NOT needed:**
+- Effect key already tracks the value (the effect will restart cleanly on key change)
+- The captured value is `val` and provably never reassigned
+
+---
+
 ## Common Mistakes
 
 **1. `remember` for form data**
@@ -450,11 +545,14 @@ state survival strategy accordingly if cross-platform survival matters.
 
 ## Common Anti-Patterns
 
+- using `derivedStateOf` without `remember` — memoization is lost; wrap every `derivedStateOf` in `remember`
+- reading a `StateFlow` inside `snapshotFlow {}` — collect it with `collectAsState()` first; `snapshotFlow` only tracks Compose `State` objects
 - storing domain objects in `remember` — they don't survive config change and belong in a ViewModel
 - using `rememberSaveable` for large or non-parcelable types without a custom `Saver` — crashes at runtime
 - scoping a ViewModel to the whole NavHost when it belongs to a nested graph — leaks state across features
 - hoisting a `ViewModel` to a parent composable that doesn't need it — breaks the boundary between features
 - using `remember` state to track loading/error — those are screen-state concerns and belong in the ViewModel
+- capturing a changing lambda in `LaunchedEffect(Unit)` without `rememberUpdatedState` — the effect calls a stale closure; use `val current by rememberUpdatedState(lambda)` and call `current()` inside the loop
 
 If state is disappearing on rotation, audit whether `rememberSaveable` or ViewModel is the right container.
 
@@ -486,4 +584,6 @@ Keep the survival matrix reference tight. Map to actual state names when the use
 
 | Date | Change |
 |---|---|
+| 2026-06-28 | Add rememberUpdatedState section: stable reference to latest value in LaunchedEffect(Unit), when to use vs not, one new anti-pattern. |
+| 2026-06-28 | Add derivedStateOf (memoized derived state, remember rule) and snapshotFlow (Compose State → Flow, debounce bridge) sections. Two new anti-patterns. |
 | 2026-06-06 | Initial release. |

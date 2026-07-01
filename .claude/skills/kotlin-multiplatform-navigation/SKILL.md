@@ -47,6 +47,7 @@ KMP navigation, type-safe routes, Decompose, Navigation Compose,
 navigate to screen, go to screen, back stack, push screen, pop back,
 navigate back, pass arguments, route arguments, nested navigation, screen transition,
 web routing, browser fragment, hash navigation, wasmJs routing,
+bindToBrowserNavigation, browser history sync, SerialName route, hash deep link,
 navigate, routing, move between screens, switch screens, go to, page navigation,
 navigate from screen, pass data between screens, link screens.
 
@@ -320,27 +321,122 @@ https://example.com/#login
 If you customize route-to-URL mapping, keep generated routes fragment-safe and use the
 browser fragment as the source of truth for manual entry and copy/paste.
 
----
+#### WasmJs: binding browser history to NavController (`bindToBrowserNavigation`)
 
-### Step 7: Pass NavController to feature ViewModels via Koin (optional)
+Use `bindToBrowserNavigation` (from `androidx.navigation:navigation-compose`) in
+`wasmJsMain/main.kt` so that the browser's URL bar, Back button, and history stack stay
+in sync with the in-app NavController. This requires no server configuration — the `#`
+prefix means every URL is handled client-side.
 
-For navigation triggered from a ViewModel (e.g., after a successful login):
+**Step 1 — annotate every route with `@SerialName`** so the fragment is a short,
+stable token instead of the full qualified class name:
 
 ```kotlin
-// In :feature:auth:domain
-interface AuthNavigator {
-    fun navigateToHome()
-    fun navigateToRegister()
-}
+// commonMain
+@Serializable @SerialName("home")         data object HomeRoute
+@Serializable @SerialName("login")        data object LoginRoute
+@Serializable @SerialName("profile")      data object ProfileRoute
+@Serializable @SerialName("admin_dashboard") data object AdminDashboardRoute
 
-// In :shared (Android/common)
-class AuthNavigatorImpl(private val navController: NavController) : AuthNavigator {
-    override fun navigateToHome() = navController.navigate(HomeRoute)
-    override fun navigateToRegister() = navController.navigate(RegisterRoute)
+// Routes with arguments still use @SerialName on the class
+@Serializable @SerialName("accept_invite")
+data class AcceptInviteRoute(val code: String)
+```
+
+**Step 2 — call `bindToBrowserNavigation` inside `onNavHostReady`** in `wasmJsMain`:
+
+```kotlin
+// wasmJsMain/main.kt
+@OptIn(ExperimentalBrowserHistoryApi::class)
+fun main() {
+    ComposeViewport {
+        App(
+            onNavHostReady = { navController ->
+                // ① On first load: read the URL hash and navigate to the matching route
+                val hash = window.location.hash.substringAfter('#', "")
+                when {
+                    hash.startsWith("accept_invite/") ->
+                        navController.navigate(AcceptInviteRoute(hash.substringAfter("accept_invite/")))
+                    hash == "profile" -> navController.navigate(ProfileRoute)
+                    hash.startsWith("login") -> navController.navigate(LoginRoute)
+                    // … other deep-link paths …
+                }
+
+                // ② Translate NavController destinations → browser URL fragments
+                navController.bindToBrowserNavigation { entry ->
+                    val route = entry.destination.route.orEmpty()
+                    when {
+                        // Parametric routes: reconstruct the fragment from the typed route
+                        route.startsWith("accept_invite") ->
+                            "#accept_invite/${entry.toRoute<AcceptInviteRoute>().code}"
+                        // No-arg routes: @SerialName becomes the fragment directly
+                        else -> {
+                            val name = route.substringBefore("/").substringBefore("?")
+                            if (name.isNotBlank()) "#$name" else ""
+                        }
+                    }
+                }
+            }
+        )
+    }
 }
 ```
 
-Register in Koin scoped to the NavController lifecycle.
+**Step 3 — add the opt-in annotation** to the file or module that calls
+`bindToBrowserNavigation`:
+
+```kotlin
+@OptIn(ExperimentalBrowserHistoryApi::class)
+```
+
+**Rules:**
+- Always use `#` prefix — bare paths require server-side rewrite rules
+- `@SerialName` on every no-arg route gives you short, human-readable fragments
+- Read `window.location.hash` before binding so users can share and reload URLs
+- For argument routes, extract values via `entry.toRoute<T>()` inside the lambda
+
+---
+
+### Step 7: AppNavigator — cross-feature navigation from ViewModels
+
+When a ViewModel in `:presenter` needs to navigate across features (e.g., cart → checkout),
+inject `AppNavigator` from `:core:api`. Use a `NavControllerHolder` so Koin can construct
+the impl at startup before the `NavController` exists in Compose:
+
+```kotlin
+// :core:api
+interface AppNavigator {
+    fun navigateToHome()
+    fun navigateToCheckout(cartId: String)
+}
+
+// :app — holder bridges Koin startup time and Compose time
+class NavControllerHolder { var current: NavController? = null }
+
+class AppNavigatorImpl(private val holder: NavControllerHolder) : AppNavigator {
+    override fun navigateToHome() =
+        holder.current?.navigate(HomeRoute) ?: Unit
+    override fun navigateToCheckout(cartId: String) =
+        holder.current?.navigate(CheckoutRoute(cartId)) ?: Unit
+}
+
+val appModule = module {
+    single { NavControllerHolder() }
+    single<AppNavigator> { AppNavigatorImpl(get()) }
+}
+
+// AppNavHost — set the holder as soon as navController is ready
+@Composable
+fun AppNavHost() {
+    val navController = rememberNavController()
+    val holder: NavControllerHolder = koinInject()
+    DisposableEffect(navController) {
+        holder.current = navController
+        onDispose { holder.current = null }
+    }
+    NavHost(navController = navController, startDestination = HomeRoute) { ... }
+}
+```
 
 ---
 
@@ -401,6 +497,198 @@ class RootComponent(
 
 ---
 
+## MVI + NavHost + Clean Architecture: End-to-End Wiring
+
+These three patterns only work correctly when wired together. Here is the complete picture.
+
+### Full data flow — from user tap to screen change
+
+```
+:feature:auth:presenter       :feature:auth:ui         :app (AppNavHost)
+  AuthViewModel                 AuthScreen               NavHost
+    handleIntent
+    (LoginClicked)                LaunchedEffect
+       │                            collectEffect
+       │  loginUseCase()               │
+       │  → success                    │
+       ▼                               │
+    sendEffect(                 Effect.NavigateToHome
+      Effect.NavigateToHome)           │
+                                       ▼
+                               onNavigateToHome()  ──────►  navController.navigate(HomeRoute)
+                               (lambda from NavHost)
+```
+
+The `NavController` stays in `AppNavHost`. The ViewModel never sees it.
+
+### Lambda vs AppNavigator — when to use which
+
+| Scenario | Use | Why |
+|---|---|---|
+| Same-feature nav (login → register, within authGraph) | Lambda from NavHost | NavController is local; no interface needed |
+| Cross-feature nav (cart → checkout) | `AppNavigator` in `:core:api` | Features must not depend on each other |
+| ViewModel in `:presenter` triggers nav | `sendEffect(Effect.Navigate...)` → Screen → lambda | ViewModel has no Compose dependency |
+| ViewModel needs cross-feature nav (no Effect needed) | Inject `AppNavigator`, call from `handleIntent` | `AppNavigator` is a pure interface, safe in `:presenter` |
+
+**Rule:** Within one feature graph, lambdas. Across feature boundaries, `AppNavigator`.
+
+### Feature NavGraphBuilder extension — the correct module boundary
+
+Each feature's `:ui` module exposes a `NavGraphBuilder` extension. The host calls it. The
+extension receives lambdas for graph-entry and graph-exit navigation — never the `NavController`.
+
+```kotlin
+// :feature:auth:ui
+fun NavGraphBuilder.authGraph(
+    onAuthComplete: () -> Unit,
+) {
+    navigation<AuthGraph>(startDestination = LoginRoute) {
+        composable<LoginRoute> {
+            LoginScreen(
+                onNavigateToRegister = { /* internal — navController captured by NavHost closure */ },
+                onLoginSuccess = onAuthComplete,
+            )
+        }
+        composable<RegisterRoute> {
+            RegisterScreen(onBack = { /* pop internal */ })
+        }
+    }
+}
+
+// :app — AppNavHost wires the graph, owns the navController
+NavHost(navController = navController, startDestination = AuthGraph) {
+    authGraph(onAuthComplete = {
+        navController.navigate(HomeRoute) {
+            popUpTo<AuthGraph> { inclusive = true }   // clear auth stack
+        }
+    })
+    homeGraph()
+    profileGraph()
+}
+```
+
+### Auth gate — conditional start destination
+
+Guard the entire app with a session check. Handle both cold-start (via `startDestination`)
+and runtime logout (via `LaunchedEffect`):
+
+```kotlin
+@Composable
+fun AppNavHost(
+    sessionViewModel: SessionViewModel = koinViewModel(),
+) {
+    val navController = rememberNavController()
+    val session by sessionViewModel.state.collectAsStateWithLifecycle()
+
+    // Runtime auth loss — navigate to auth and clear the entire back stack
+    LaunchedEffect(session.isAuthenticated) {
+        if (!session.isAuthenticated) {
+            navController.navigate(AuthGraph) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
+    NavHost(
+        navController = navController,
+        startDestination = if (session.isAuthenticated) HomeRoute else AuthGraph,
+    ) {
+        authGraph(onAuthComplete = {
+            navController.navigate(HomeRoute) {
+                popUpTo<AuthGraph> { inclusive = true }
+            }
+        })
+        homeGraph()
+        profileGraph()
+    }
+}
+```
+
+**Rules:**
+- `startDestination` covers cold-start. `LaunchedEffect` covers runtime logout.
+- Always use `popUpTo(0) { inclusive = true }` on logout — never navigate to `AuthGraph`
+  on top of `HomeRoute` or the user can press Back to return to authenticated content.
+- `SessionViewModel` lives in `:core:presenter` — it is shared, not feature-scoped.
+
+### Passing a result back to the previous screen
+
+When a child screen (e.g., a picker) returns a value to its parent:
+
+```kotlin
+// NavHost — wire result through previousBackStackEntry.savedStateHandle
+composable<CheckoutRoute> {
+    CheckoutScreen(...)
+}
+composable<CityPickerRoute> {
+    CityPickerScreen(
+        onCitySelected = { city ->
+            navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("selected_city", city)
+            navController.popBackStack()
+        }
+    )
+}
+
+// Parent ViewModel — consume the result from SavedStateHandle
+class CheckoutViewModel(
+    savedStateHandle: SavedStateHandle,
+) : MviViewModel<CheckoutContract.State, ...>(...) {
+
+    init {
+        viewModelScope.launch {
+            savedStateHandle.getStateFlow<String?>("selected_city", null)
+                .filterNotNull()
+                .collect { city ->
+                    updateState { copy(city = city) }
+                    savedStateHandle["selected_city"] = null  // consume once
+                }
+        }
+    }
+}
+```
+
+**Rule:** The result key is owned by the parent feature. Document it in the child screen's
+`NavGraphBuilder` extension KDoc so callers know what to read.
+
+### Scaffold + NavHost innerPadding
+
+Apply `innerPadding` at the `NavHost` level when all screens share the same bottom bar:
+
+```kotlin
+Scaffold(
+    bottomBar = { AppBottomBar(navController) },
+) { innerPadding ->
+    NavHost(
+        navController = navController,
+        startDestination = HomeRoute,
+        modifier = Modifier.padding(innerPadding),   // ✓ screens fill padded area
+    ) {
+        homeGraph()
+        profileGraph()
+    }
+}
+```
+
+For screens that need to control their own insets (e.g., a `LazyColumn` that wants bottom
+padding but not top), pass `innerPadding` as a parameter instead of applying it at the NavHost:
+
+```kotlin
+Scaffold { innerPadding ->
+    NavHost(...) {
+        composable<HomeRoute> {
+            HomeScreen(contentPadding = innerPadding)   // screen decides how to use it
+        }
+    }
+}
+```
+
+Never apply `innerPadding` in both the NavHost modifier AND the screen — padding doubles
+and the bottom bar overlaps content.
+
+---
+
 ## Guidelines
 
 - Always use `@Serializable` route classes — never string-based routes
@@ -408,7 +696,9 @@ class RootComponent(
 - Use `launchSingleTop = true` + `restoreState = true` for bottom nav tabs
 - Keep route classes in a shared `:core:navigation` or `:shared` module — not in feature UI modules
 - Feature UI modules receive navigation lambdas as parameters — they do NOT hold a `NavController`
-- For back-stack aware logic (auth gates), use `NavHost`'s `route` parameter on nested graphs
+- Same-feature navigation uses lambdas; cross-feature navigation uses `AppNavigator`
+- Auth gate: set `startDestination` for cold-start, use `LaunchedEffect` for runtime logout
+- Always use `popUpTo(0) { inclusive = true }` when clearing the back stack on logout
 
 ---
 
@@ -471,6 +761,10 @@ class RootComponent(
 - defining all routes in one flat `NavHost` — leads to unnavigable spaghetti; use nested graphs per feature
 - sharing a `navController` between nested graphs — each graph should own its back stack
 - storing navigation state in `ViewModel` as a flag — `Effect` is the correct mechanism for navigation events
+- navigating to `AuthGraph` on logout without clearing the back stack — user can press Back to return to authenticated screens; always use `popUpTo(0) { inclusive = true }`
+- applying `innerPadding` in both NavHost modifier and the screen — padding doubles; apply it in one place only
+- setting `startDestination` only (no `LaunchedEffect`) for the auth gate — handles cold-start but ignores runtime session expiry
+- passing a result back via a `State` field in the child ViewModel — use `previousBackStackEntry.savedStateHandle` instead; ViewModel state is not the back-stack result channel
 
 If back stack is broken or navigation effects replay, audit the above list first.
 
@@ -502,5 +796,7 @@ Keep each snippet to one route and one composable destination. Map to the user's
 
 | Date | Change |
 |---|---|
+| 2026-06-28 | Fixed AppNavigator Step 7: use NavControllerHolder singleton so Koin can construct AppNavigatorImpl at startup; AppNavHost sets holder.current via DisposableEffect. Added end-to-end MVI + NavHost + Clean Architecture wiring section, auth gate, result passing, innerPadding rule. Four new anti-patterns. |
+| 2026-06-28 | Added `bindToBrowserNavigation` pattern with full WasmJs hash-routing example and `@SerialName` route convention. |
 | 2026-06-24 | Added web/WasmJs browser fragment routing guidance and hash-navigation keywords. |
 | 2026-06-06 | Initial release. |

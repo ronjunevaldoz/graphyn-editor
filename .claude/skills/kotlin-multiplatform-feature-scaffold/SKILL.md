@@ -82,7 +82,7 @@ baked in:
   (replaces the old `kotlin("multiplatform")` + `com.android.library` pair for library modules)
 - **build-logic** as a Gradle included build providing precompiled convention plugins
 - **Version catalog** (`gradle/libs.versions.toml`) with proper group prefixes and bundles
-- **Feature split**: every feature is 6 modules — `:model` / `:api` / `:domain` / `:data` / `:presenter` / `:ui`
+- **Feature split**: thin (`:ui`), medium (`:presenter`+`:ui`), or full (all 6) — chosen in Step 0
 - **Core modules**: `:core:common`, `:core:network`, `:core:database`, `:core:ui`
 - **Compose Multiplatform (CMP)** as the default shared UI layer (CMP-first)
 - **Koin 4** DI — annotated (default, via Koin Compiler Plugin) or manual
@@ -119,6 +119,37 @@ Before doing anything, inspect the working directory:
 
 ---
 
+## Step 0: Decide Layer Depth Before Scaffolding
+
+**Ask this before generating any modules.** The 6-layer structure is the maximum — not
+the default. Scaffold only the layers the feature actually needs.
+
+Ask the user (or infer from context):
+
+| Question | Yes → add this layer |
+|---|---|
+| Does the feature load or write data from a server or database? | `:data` |
+| Does it apply business rules that must be tested without a ViewModel? | `:domain` |
+| Does it have user interactions and/or navigation effects? | `:presenter` (MVI) |
+| Does it display a screen in Compose? | `:ui` |
+| Does it define types shared across the above layers? | `:model` + `:api` |
+
+**Three tiers:**
+
+| Tier | Modules | When to use |
+|---|---|---|
+| **Thin** | `:ui` only | Static display screen, no async, no ViewModel needed |
+| **Medium** | `:presenter` + `:ui` | Async load + navigation, no business logic to isolate |
+| **Full** | `:model` + `:api` + `:domain` + `:data` + `:presenter` + `:ui` | CRUD, offline-first, business rules, or cross-feature shared types |
+
+Default to **Medium** for most product features. Upgrade to Full when `:data` complexity
+or cross-feature type sharing justifies it. Use Thin only for standalone utility screens.
+
+Do not scaffold unused layers "in case they're needed later" — empty modules add Gradle
+configuration overhead and signal to the team that something should be there.
+
+---
+
 ## Step 1: Gather User Input
 
 **Always ask before creating any files.** Collect these values from the user:
@@ -128,9 +159,10 @@ Before doing anything, inspect the working directory:
 | `PROJECT_NAME` | Root project name (PascalCase) | `MyAwesomeApp` |
 | `GROUP_ID` | Base package / Maven group ID | `com.example.myapp` |
 | `FEATURE_NAME` | First feature to scaffold (snake_case) | `auth` |
+| `TIER` | `thin` / `medium` / `full` (from Step 0) | `full` |
 | `DI_APPROACH` | `annotated` (default) or `manual` | `annotated` |
 
-In **Add Feature mode**, only `GROUP_ID`, `FEATURE_NAME`, and `DI_APPROACH` are needed.
+In **Add Feature mode**, only `GROUP_ID`, `FEATURE_NAME`, `TIER`, and `DI_APPROACH` are needed.
 
 ---
 

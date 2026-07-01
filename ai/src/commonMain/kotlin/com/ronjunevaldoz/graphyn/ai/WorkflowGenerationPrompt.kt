@@ -30,7 +30,7 @@ internal object WorkflowGenerationPrompt {
         catalog.forEach { spec ->
             val ins = spec.inputs.joinToString(", ") { "${it.name}:${typeName(it.type)}" }.ifEmpty { "none" }
             val outs = spec.outputs.joinToString(", ") { "${it.name}:${typeName(it.type)}" }.ifEmpty { "none" }
-            appendLine("- ${spec.type} — [$ins] -> [$outs]${spec.description?.let { " — $it" } ?: ""}")
+            appendLine("- ${spec.type} — [$ins] -> [$outs]")
         }
     }
 

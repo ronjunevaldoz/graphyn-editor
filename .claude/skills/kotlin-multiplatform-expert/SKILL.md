@@ -176,7 +176,7 @@ versions when the local repo can be checked directly.
 
 ---
 
-## The 53 Skills and What They Own
+## The 54 Skills and What They Own
 
 ### Layer 0 — Architecture Contract
 | Skill | Owns |
@@ -192,7 +192,8 @@ versions when the local repo can be checked directly.
 | `kotlin-multiplatform-flavor-environment` | Dev/staging/prod config, BuildKonfig, secrets, `AppConfig` facade |
 | `kotlin-multiplatform-ci-github-actions` | GitHub Actions, test matrix, XCFramework release workflow YAML |
 | `kotlin-multiplatform-release` | Versioning (`gradle.properties`), Maven Central (vanniktech), GPG signing, git-cliff changelog, GitHub Release, secrets management, local publish script |
-| `kotlin-multiplatform-audit` | Existing project health checks, boundary review, architecture drift, readiness gaps |
+| `kotlin-multiplatform-audit` | Existing project health checks, boundary review, architecture drift, readiness gaps; `--roadmap` for adoption plan |
+| `kotlin-multiplatform-migration` | Incremental adoption guide: assess current state, prioritized skill adoption order, MVVM→MVI, monolith→multi-module, Hilt→Koin migration paths |
 | `kotlin-multiplatform-project-docs-maintainer` | Consumer-facing README, onboarding, and docs/reference sync for downstream KMP projects |
 | `kotlin-multiplatform-layout-system` | ASCII wireframe docs for screens — draft and document app layout before or after implementation; lives in `docs/layout-system/` |
 | `kotlin-multiplatform-lessons` | Structured lesson files capturing pattern mismatches and fixes; feeds the skill-harvester |
@@ -271,6 +272,7 @@ kotlin-multiplatform-feature-scaffold       ← scaffold second (implements the 
 ├── kotlin-multiplatform-release            (depends on: ci-github-actions, xcframework-spm)
 ├── kotlin-multiplatform-dependency-injection (no deps)
 ├── kotlin-multiplatform-audit              (no deps for review work)
+├── kotlin-multiplatform-migration          (depends on: audit, clean-architecture, mvi)
 ├── kotlin-multiplatform-project-docs-maintainer (depends on: audit)
 ├── kotlin-multiplatform-layout-system      (no deps)
 ├── kotlin-multiplatform-lessons            (no deps)
@@ -524,6 +526,7 @@ When the user asks about one of these topics, invoke the corresponding skill:
 | "layout system", "screen wireframe", "ASCII wireframe", "draft screen", "document screen layout", "layout doc", "screen layout", "layout-system" | `kotlin-multiplatform-layout-system` |
 | "write a lesson", "capture lesson", "document a finding", "pattern mismatch", "lesson file" | `kotlin-multiplatform-lessons` |
 | "harvest lessons", "propose skill amendments", "skill harvester", "harvest findings", "update skills from lessons" | `kotlin-multiplatform-skill-harvester` |
+| "migrate existing project", "adopt MVI", "LiveData to StateFlow", "migrate to clean architecture", "incremental adoption", "where to start", "brownfield", "refactor architecture", "migration path", "legacy project" | `kotlin-multiplatform-migration` |
 | "repo README", "repo docs", "agent docs", "command docs", "routing text", "skills repo docs" | `docs-maintainer` |
 | "wireframes", "screen flows", "layout specs", "design handoff", "component API", "visual direction" | `designer` |
 | "release notes", "consumer release notes", "per-skill changelog", "CHANGELOG.md" | `changelog` |

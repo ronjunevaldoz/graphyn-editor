@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import com.ronjunevaldoz.graphyn.ai.WorkflowGenerationResult
 import com.ronjunevaldoz.graphyn.ai.WorkflowGenerator
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 
 /** One exchange in the assistant transcript: the user's prompt and the assistant's outcome. */
@@ -33,6 +34,8 @@ class GraphynAiAssistantState(
     private val generator: WorkflowGenerator,
     private val catalog: List<NodeSpec>,
     private val onApply: (WorkflowDefinition) -> Unit,
+    private val currentWorkflow: () -> WorkflowDefinition? = { null },
+    private val validateWorkflow: ((WorkflowDefinition) -> List<ValidationError>)? = null,
 ) {
     var turns by mutableStateOf<List<AiChatTurn>>(emptyList())
         private set
@@ -44,15 +47,20 @@ class GraphynAiAssistantState(
         if (prompt.isBlank() || generating) return
         generating = true
         turns = turns + AiChatTurn(prompt, AiTurnStatus.Pending)
-        val status = when (val result = generator.generate(prompt, catalog)) {
-            is WorkflowGenerationResult.Success -> {
-                onApply(result.workflow)
-                AiTurnStatus.Done(summary = summarize(result), warning = warningOf(result))
+        val status = try {
+            if (isAnalysisPrompt(prompt)) {
+                analyzeCurrentWorkflow()
+            } else when (val result = generator.generate(prompt, catalog)) {
+                is WorkflowGenerationResult.Success -> {
+                    onApply(result.workflow)
+                    AiTurnStatus.Done(summary = summarize(result), warning = warningOf(result))
+                }
+                is WorkflowGenerationResult.Failure -> AiTurnStatus.Error(result.message)
             }
-            is WorkflowGenerationResult.Failure -> AiTurnStatus.Error(result.message)
+        } finally {
+            generating = false
         }
         turns = turns.dropLast(1) + AiChatTurn(prompt, status)
-        generating = false
     }
 
     fun clear() { turns = emptyList() }
@@ -72,6 +80,51 @@ class GraphynAiAssistantState(
             parts.add("Dropped ${r.droppedConnections} invalid connection${plural(r.droppedConnections)}")
         }
         return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
+    }
+
+    private fun isAnalysisPrompt(prompt: String): Boolean {
+        val text = prompt.trim().lowercase()
+        val analysisHints = listOf(
+            "analy", "review", "inspect", "explain", "summar", "what does",
+            "what is wrong", "what's wrong", "why ", "issue", "problem",
+            "refine", "improve", "validate", "audit",
+        )
+        val generationHints = listOf("build ", "generate ", "create ", "make ")
+        return analysisHints.any { text.contains(it) } && generationHints.none { text.contains(it) }
+    }
+
+    private fun analyzeCurrentWorkflow(): AiTurnStatus {
+        val workflow = currentWorkflow()
+            ?: return AiTurnStatus.Error("Open a workflow first, then ask me to analyze it.")
+        val errors = validateWorkflow?.invoke(workflow).orEmpty()
+        val nodeMix = workflow.nodes
+            .groupingBy { it.type }
+            .eachCount()
+            .entries
+            .sortedByDescending { it.value }
+            .take(4)
+            .joinToString(", ") { (type, count) -> "$type ×$count" }
+
+        val summary = buildString {
+            append("${workflow.name} has ${workflow.nodes.size} node${plural(workflow.nodes.size)} and ")
+            append("${workflow.connections.size} connection${plural(workflow.connections.size)}.")
+            if (nodeMix.isNotBlank()) append(" Main node mix: $nodeMix.")
+            append(
+                if (errors.isEmpty()) " Validator found no structural issues."
+                else " Validator found ${errors.size} issue${plural(errors.size)}."
+            )
+        }
+        val warning = errors
+            .take(3)
+            .joinToString(" · ") { error ->
+                buildString {
+                    append(error.code)
+                    error.nodeId?.let { append(" @ $it") }
+                    append(": ${error.message}")
+                }
+            }
+            .takeIf { it.isNotBlank() }
+        return AiTurnStatus.Done(summary = summary, warning = warning)
     }
 
     private fun plural(n: Int) = if (n == 1) "" else "s"

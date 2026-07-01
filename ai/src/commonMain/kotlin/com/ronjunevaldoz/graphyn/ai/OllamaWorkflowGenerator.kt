@@ -2,9 +2,10 @@ package com.ronjunevaldoz.graphyn.ai
 
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.timeout
+import io.ktor.client.statement.bodyAsText
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -51,9 +52,13 @@ class OllamaWorkflowGenerator(
             val response = httpClient.post(config.generateUrl) {
                 contentType(ContentType.Application.Json)
                 setBody(body)
+                timeout {
+                    requestTimeoutMillis = config.timeoutMs
+                }
             }
             if (!response.status.isSuccess()) {
-                return WorkflowGenerationResult.Failure("Ollama returned HTTP ${response.status.value}.")
+                val details = response.bodyAsText().trim().takeIf { it.isNotEmpty() }?.let { " $it" } ?: ""
+                return WorkflowGenerationResult.Failure("Ollama returned HTTP ${response.status.value}.$details")
             }
             // Ollama may return a single JSON object or NDJSON (one frame per line) even with
             // stream=false behind a proxy. Concatenate every frame's `response` field for both cases.

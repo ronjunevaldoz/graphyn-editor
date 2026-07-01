@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-06'
+  last-updated: '2026-06-28'
   keywords:
     - MVI
     - Model-View-Intent
@@ -52,7 +52,10 @@ navigation effect, one-shot event, single event, show toast from ViewModel,
 trigger navigation, event driven UI, MVVM vs MVI, unidirectional event,
 screen, implement screen, add screen, new screen, screen logic, UI logic,
 screen behavior, screen interaction, handle user input, form state, form handling,
-user interaction, screen state management, UI state, state management.
+user interaction, screen state management, UI state, state management,
+nav args ViewModel, route arguments ViewModel, pass id to ViewModel,
+search debounce ViewModel, cancel job intent, in-flight cancellation,
+typed error state, UiError sealed, shared ViewModel, wizard ViewModel, multi-step flow.
 
 **Freshness rule:** `lifecycle-viewmodel-compose` and CMP lifecycle integration change between
 releases — recheck the AndroidX lifecycle and JetBrains CMP docs before upgrading.
@@ -61,15 +64,82 @@ releases — recheck the AndroidX lifecycle and JetBrains CMP docs before upgrad
 
 ## Recommendation First
 
-Default to the **Contract pattern + MviViewModel + `Channel<Effect>`**.
+**Start thin. Add MviViewModel + Contract only when the screen has async state, user intents, and one-shot effects — all three.**
 
-Why:
-- sealed `State`, `Intent`, and `Effect` types make the screen contract explicit and testable
+Decision in order:
+1. No async, no persistent state → plain `@Composable`, no ViewModel
+2. Async load only (no user actions) → thin `ViewModel` + `StateFlow`, no Contract
+3. Async + user actions + navigation → full `MviViewModel` + `Contract`
+
+When you do reach step 3, default to the **Contract pattern + MviViewModel + `Channel<Effect>`**:
+- sealed `State`, `Intent`, and `Effect` make the full screen contract visible in one place
 - `Channel<Effect>` prevents one-shot effects from replaying on recomposition
-- `MutableStateFlow.update {}` avoids state-copy races under concurrent updates
+- `MutableStateFlow.update {}` is atomic under concurrent intent handling
 
-Use a different state container only when the screen has no side effects and no ViewModel
-boundary — for example, a purely presentational component owned by a parent screen.
+---
+
+## When NOT to Use MviViewModel
+
+Start with the thinnest option that works. Add layers only when they carry weight.
+
+| Screen type | Pattern | Why |
+|---|---|---|
+| Static display (help, legal, empty state) | `@Composable` with no ViewModel | No state to manage — props come from the caller |
+| Simple local toggle / counter | `remember` / `rememberSaveable` | State doesn't survive process death anyway; no business logic |
+| Parent-owned form field | Stateless composable + lambda | Parent screen owns the state; child just renders |
+| Async load, no user actions | Thin `ViewModel` + `StateFlow` (no Contract) | Lifecycle awareness needed, but no intents or effects |
+| Async load + user actions + navigation | Full `MviViewModel` + Contract | All three concerns present — Contract pays for itself |
+| Multi-step flow | One shared `MviViewModel` + thin step screens | Steps share state; per-step ViewModels add no value |
+
+### Thin pattern 1 — no ViewModel at all
+
+```kotlin
+// Static screen — no ViewModel, no Contract
+@Composable
+fun TermsScreen(onAccept: () -> Unit, onDecline: () -> Unit) {
+    Column {
+        TermsContent()
+        AppButton(onClick = onAccept) { AppText("Accept") }
+        AppButton(onClick = onDecline, variant = ButtonVariant.Ghost) { AppText("Decline") }
+    }
+}
+```
+
+### Thin pattern 2 — ViewModel with no Contract
+
+For screens that load data and display it with no user-driven state transitions:
+
+```kotlin
+// No Contract object, no sealed Intent, no Channel<Effect>
+class UserProfileViewModel(
+    private val userId: String,
+    private val repo: UserProfileRepository,
+) : ViewModel() {
+
+    val state: StateFlow<ProfileState> = flow { emit(repo.getProfile(userId)) }
+        .map<User, ProfileState> { ProfileState.Success(it) }
+        .catch { emit(ProfileState.Error(it.message.orEmpty())) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProfileState.Loading)
+}
+
+sealed interface ProfileState {
+    data object Loading : ProfileState
+    data class Success(val user: User) : ProfileState
+    data class Error(val message: String) : ProfileState
+}
+```
+
+The `ProfileState` sealed interface lives in the same file as the ViewModel — no
+`Contract` object wrapper needed until there are Intents and Effects to group with it.
+
+### When the full Contract pattern earns its place
+
+Add a `Contract` object when a screen has **at least two** of:
+- Observable state with multiple fields that change independently
+- User intents that trigger async operations
+- One-shot effects (navigation, toasts, dialogs)
+
+If only one is present, the thin pattern handles it with less indirection.
 
 ---
 
@@ -162,6 +232,30 @@ object AuthContract {
 - Always a `data class` — enables `copy()` and structural equality
 - All fields have defaults — the initial state needs no arguments
 - No business objects (domain models) directly in state — map to UI-specific types
+- Annotate `State` with `@Stable` (or `@Immutable` when all fields are truly immutable) so
+  the Compose compiler can skip recomposition of consumers when the reference hasn't changed
+
+```kotlin
+import androidx.compose.runtime.Immutable
+
+@Immutable
+data class State(
+    val email: String = "",
+    val password: String = "",
+    val isLoading: Boolean = false,
+    val error: String? = null,
+)
+```
+
+**`@Stable` vs `@Immutable`:**
+
+| Annotation | Contract | Use when |
+|---|---|---|
+| `@Immutable` | All public fields are deeply immutable (only `val` of immutable types) | `data class` whose fields are primitives, `String`, or other `@Immutable` types |
+| `@Stable` | Reads are stable (same inputs → same outputs) and Compose is notified of changes via snapshot state | Fields include mutable collections or types Compose can't infer stability for |
+
+Without either annotation, the Compose compiler conservatively marks the type as **unstable**
+and recomposes every consumer on every parent recomposition — even when `State` hasn't changed.
 
 **Rules for Intent:**
 - `sealed interface`, not `sealed class` — Kotlin 1.9+ `data object` for no-arg intents
@@ -215,6 +309,7 @@ package GROUP_ID.core.mvi
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -257,11 +352,17 @@ abstract class MviViewModel<State : Any, Intent : Any, Effect : Any>(
     private val _effect = Channel<Effect>(Channel.BUFFERED)
     val effect: Flow<Effect> = _effect.receiveAsFlow()
 
+    // Catches uncaught exceptions from handleIntent coroutines; subclasses may override
+    // to update error state instead of crashing silently on KMP targets.
+    protected open val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        throw throwable  // rethrow so crash reporters and tests can see it
+    }
+
     /**
      * Called by the UI layer. Routes the intent to [handleIntent] on [viewModelScope].
      */
     fun onIntent(intent: Intent) {
-        viewModelScope.launch { handleIntent(intent) }
+        viewModelScope.launch(exceptionHandler) { handleIntent(intent) }
     }
 
     /**
@@ -502,6 +603,119 @@ private fun AuthContentErrorPreview() {
 }
 ```
 
+### `collectAsStateWithLifecycle` vs `collectAsState`
+
+Always use `collectAsStateWithLifecycle()` in production screens. It pauses collection
+when the composable's lifecycle drops below `STARTED` (screen goes to background) —
+saving battery and stopping unnecessary work.
+
+```kotlin
+// ❌ collectAsState — keeps collecting even when the screen is in the background
+val state by viewModel.state.collectAsState()
+
+// ✓ collectAsStateWithLifecycle — pauses when lifecycle < STARTED
+val state by viewModel.state.collectAsStateWithLifecycle()
+```
+
+| | `collectAsState` | `collectAsStateWithLifecycle` |
+|---|---|---|
+| Lifecycle-aware | No — always active | Yes — pauses below `STARTED` |
+| Battery / CPU | Wastes work in background | Efficient |
+| Use in | `@Preview`, tests | Production screens |
+| Import | `androidx.compose.runtime` | `androidx.lifecycle.compose` |
+
+Exception: inside `@Preview` composables there is no lifecycle, so `collectAsState` is
+required. Never use `collectAsStateWithLifecycle` in a preview — it throws at preview time.
+
+---
+
+### `LaunchedEffect` vs `DisposableEffect` vs `SideEffect`
+
+| Effect API | When it runs | Has cleanup? | Use for |
+|---|---|---|---|
+| `LaunchedEffect(key)` | On entry + when key changes; cancels on exit or key change | No (cancel is implicit) | Collecting flows, one-shot coroutines, side-effect on key change |
+| `DisposableEffect(key)` | Synchronously on entry + when key changes; `onDispose` on exit | Yes — `onDispose {}` | Add/remove listeners, set/clear a holder, subscribe/unsubscribe resources |
+| `SideEffect` | After **every** successful recomposition; no key | No | Sync Compose state to non-Compose code (analytics screen name, system UI flags) |
+
+```kotlin
+// LaunchedEffect — collect effects from ViewModel (coroutine, cancels when composable exits)
+LaunchedEffect(viewModel) {
+    viewModel.effect.collect { effect -> handleEffect(effect) }
+}
+
+// DisposableEffect — set/clear NavControllerHolder (synchronous, cleanup guaranteed)
+DisposableEffect(navController) {
+    holder.current = navController
+    onDispose { holder.current = null }
+}
+
+// SideEffect — push current screen name to analytics after every recomposition
+SideEffect {
+    analytics.setCurrentScreen(screenName)
+}
+```
+
+**Choosing between them:**
+1. If you need a coroutine → `LaunchedEffect`
+2. If you need guaranteed cleanup (listener, holder, resource) → `DisposableEffect`
+3. If you need to push state out to non-Compose code on every frame → `SideEffect`
+
+---
+
+### `rememberUpdatedState` — latest lambda without restarting the effect
+
+When a `LaunchedEffect` captures a lambda (callback from a parent) that might change
+between recompositions, the effect has two bad options:
+- use the lambda as the key → effect restarts on every callback change (defeats the point)
+- ignore the change → effect calls a stale lambda
+
+`rememberUpdatedState` solves both: it gives the effect a **stable reference** that always
+delegates to the latest value, without restarting the coroutine.
+
+```kotlin
+@Composable
+fun AutoSavingTimer(onAutoSave: () -> Unit) {
+    // ✓ Always reads the latest onAutoSave without restarting the LaunchedEffect
+    val currentOnAutoSave by rememberUpdatedState(onAutoSave)
+
+    LaunchedEffect(Unit) {   // key = Unit — this coroutine never restarts
+        while (true) {
+            delay(30_000)
+            currentOnAutoSave()   // delegates to the latest lambda
+        }
+    }
+}
+```
+
+```kotlin
+// ❌ Without rememberUpdatedState — lambda from parent may be stale after recomposition
+LaunchedEffect(Unit) {
+    while (true) {
+        delay(30_000)
+        onAutoSave()   // captured at launch time, not the latest value
+    }
+}
+
+// ❌ Using the lambda as the key — effect restarts on every parent recomposition
+LaunchedEffect(onAutoSave) {
+    while (true) {
+        delay(30_000)
+        onAutoSave()   // correct value, but the timer resets on every parent recompose
+    }
+}
+```
+
+**When to reach for `rememberUpdatedState`:**
+
+| Situation | Use |
+|---|---|
+| `LaunchedEffect(Unit)` captures a lambda that may change | `rememberUpdatedState(lambda)` |
+| `LaunchedEffect(Unit)` captures a value that may change but shouldn't restart the effect | `rememberUpdatedState(value)` |
+| Effect key already tracks the source of truth (e.g., `LaunchedEffect(viewModel)`) | Not needed — the effect restarts cleanly on key change |
+| The lambda is stable (never reassigned after initial composition) | Not needed |
+
+---
+
 ### Why `LaunchedEffect(viewModel)` not `LaunchedEffect(Unit)`?
 
 `LaunchedEffect(Unit)` is started once per composition entry and cancelled when the
@@ -519,19 +733,124 @@ cases, but `viewModel` is more correct when the ViewModel outlives a single comp
 package GROUP_ID.feature.auth.ui.di
 
 import GROUP_ID.feature.auth.ui.AuthViewModel
-import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val authUiModule = module {
-    viewModel { AuthViewModel(get()) }
+    viewModelOf(::AuthViewModel)   // preferred — Koin 4 zero-boilerplate form
 }
 ```
+
+Use `viewModel { AuthViewModel(get()) }` only when you need custom qualifiers or
+conditional wiring. For everything else, `viewModelOf` is less code and identical behavior.
+
+**ViewModels that need `SavedStateHandle`** (nav args, back-stack results):
+
+```kotlin
+class CheckoutViewModel(
+    private val savedStateHandle: SavedStateHandle,
+    private val repo: CheckoutRepository,
+) : MviViewModel<...>(...) { ... }
+
+val checkoutModule = module {
+    viewModelOf(::CheckoutViewModel)   // SavedStateHandle injected automatically via CreationExtras
+}
+```
+
+Never construct `SavedStateHandle()` yourself — Koin's ViewModelFactory provides it from
+the AndroidX `CreationExtras` bag. See `kotlin-multiplatform-dependency-injection` for
+the full SavedStateHandle + Koin reference.
 
 With **Koin annotated mode** (Koin Compiler Plugin):
 ```kotlin
 @KoinViewModel
 class AuthViewModel(private val authRepository: AuthRepository) : MviViewModel<...>(...) { ... }
 ```
+
+---
+
+## Nav Args as Initial State
+
+Route arguments (e.g. `userId`, `orderId`) must reach the ViewModel as constructor
+parameters — not as `Intent`. They are identity, not user input.
+
+```kotlin
+// commonMain nav route
+@Serializable
+data class UserProfileRoute(val userId: String)
+
+// ViewModel receives the arg directly
+class UserProfileViewModel(
+    private val userId: String,           // from NavBackStackEntry via Koin
+    private val repo: UserProfileRepository,
+) : MviViewModel<UserProfileContract.State, ...>(UserProfileContract.State.Loading) {
+
+    init { loadProfile() }
+
+    private fun loadProfile() {
+        viewModelScope.launch {
+            updateState { UserProfileContract.State.Loading }
+            repo.getProfile(userId).fold(
+                onSuccess = { updateState { UserProfileContract.State.Success(it) } },
+                onFailure = { updateState { UserProfileContract.State.Error(it.message.orEmpty()) } },
+            )
+        }
+    }
+}
+```
+
+Wire the arg through Koin using `getNavArguments()` or a `SavedStateHandle`:
+
+```kotlin
+// :feature:profile:ui/di
+val profileUiModule = module {
+    viewModel { params ->
+        UserProfileViewModel(userId = params.get(), repo = get())
+    }
+}
+
+// Screen — passes arg at call site
+@Composable
+fun UserProfileScreen(
+    route: UserProfileRoute,
+    onBack: () -> Unit,
+    viewModel: UserProfileViewModel = koinViewModel(parameters = { parametersOf(route.userId) }),
+) { ... }
+```
+
+**Rule:** never pass identity args as `Intent.Load(id)` — the ViewModel would need to
+guard against double-loads and the arg would not survive process death.
+
+---
+
+## In-flight Cancellation
+
+When an intent triggers a job that should supersede any prior job of the same type
+(search, filter, reload), cancel the previous job before launching the new one.
+
+```kotlin
+private var searchJob: Job? = null
+
+private fun search(query: String) {
+    searchJob?.cancel()
+    if (query.isBlank()) {
+        updateState { copy(results = emptyList(), isSearching = false) }
+        return
+    }
+    searchJob = viewModelScope.launch {
+        updateState { copy(isSearching = true) }
+        delay(300)                    // debounce — skip if cancelled during delay
+        val results = repo.search(query)
+        updateState { copy(results = results, isSearching = false) }
+    }
+}
+```
+
+The `delay(300)` acts as a debounce: if a new `SearchQueryChanged` intent arrives within
+300 ms the coroutine is cancelled before the network call fires.
+
+**When NOT to cancel:** submit, save, and delete actions should not be cancellable by
+re-typing — guard those with an `isLoading` flag instead (see `login()` example above).
 
 ---
 
@@ -736,6 +1055,281 @@ class UserProfileViewModel(
 | `data class State(isLoading: Boolean, ...)` | Screen shows content AND a loading overlay simultaneously (e.g., saving while form is visible) |
 | `sealed interface State { Loading; Success; Error }` | Screen shows fundamentally different UI in each phase (skeleton vs content vs error page) |
 
+### Typed errors in State
+
+Prefer a `sealed class UiError` over raw `String` when the screen needs to distinguish
+error categories (network vs auth vs validation) to show different UI or recovery actions.
+
+```kotlin
+// :feature:auth:ui
+object AuthContract {
+
+    sealed class UiError {
+        data object NetworkUnavailable : UiError()
+        data object InvalidCredentials : UiError()
+        data class Unknown(val message: String) : UiError()
+    }
+
+    data class State(
+        val isLoading: Boolean = false,
+        val error: UiError? = null,
+    )
+}
+
+// ViewModel maps domain error → UiError at the boundary
+private suspend fun login() {
+    updateState { copy(isLoading = true, error = null) }
+    when (val result = repo.login(email, password)) {
+        is LoginResult.Success -> {
+            updateState { copy(isLoading = false) }
+            sendEffect(AuthContract.Effect.NavigateToHome)
+        }
+        is LoginResult.Error.Network ->
+            updateState { copy(isLoading = false, error = AuthContract.UiError.NetworkUnavailable) }
+        is LoginResult.Error.Unauthorized ->
+            updateState { copy(isLoading = false, error = AuthContract.UiError.InvalidCredentials) }
+        is LoginResult.Error.Unknown ->
+            updateState { copy(isLoading = false, error = AuthContract.UiError.Unknown(result.message)) }
+    }
+}
+```
+
+The content composable switches on `UiError` type to show the right copy and recovery action
+(retry button for network errors, inline message for auth errors).
+
+Use raw `String` only when there is one error category and the message is always safe to
+display directly (e.g., form validation messages from the server).
+
+### Shared ViewModel (multi-step flow / wizard)
+
+When multiple screens form a linear flow (onboarding, checkout, multi-step form), scope a
+single ViewModel to the parent `NavBackStackEntry` so all steps share state without
+passing data through route arguments.
+
+```kotlin
+// The shared ViewModel — lives in :feature:onboarding:ui
+class OnboardingViewModel : MviViewModel<OnboardingContract.State, ...>(OnboardingContract.State()) {
+    override suspend fun handleIntent(intent: OnboardingContract.Intent) { ... }
+}
+
+// Parent destination in NavHost (the flow entry point)
+composable<OnboardingRoute> { parentEntry ->
+    val viewModel: OnboardingViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
+    OnboardingFlowHost(viewModel = viewModel)
+}
+
+// Step screen inside the flow — retrieves the same ViewModel instance
+@Composable
+fun OnboardingStep1Screen(navController: NavController) {
+    val parentEntry = remember(navController) {
+        navController.getBackStackEntry<OnboardingRoute>()
+    }
+    val viewModel: OnboardingViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
+    ...
+}
+```
+
+**Rules:**
+- The shared ViewModel is owned by the parent entry — it is cleared when the user exits the flow
+- Each step screen must retrieve it via `getBackStackEntry<ParentRoute>()`, never via `koinViewModel()` alone (that would create a separate instance per step)
+- Only use this pattern when steps genuinely share mutable state; if steps are independent, give each its own ViewModel
+
+---
+
+## Multi-Source State and Flow Operators
+
+### `combine` — merge two or more flows into one State
+
+When a screen's `State` depends on more than one data source, use `combine` to merge
+the flows. The ViewModel then exposes a single `StateFlow<State>` — no separate
+`collect` calls, no manual synchronization.
+
+```kotlin
+class HomeViewModel(
+    private val userRepo: UserRepository,
+    private val feedRepo: FeedRepository,
+) : MviViewModel<HomeContract.State, HomeContract.Intent, HomeContract.Effect>(
+    initialState = HomeContract.State(),
+) {
+    // Derive state from two independent flows
+    val derivedState: StateFlow<HomeContract.State> =
+        combine(userRepo.observeUser(), feedRepo.observeFeed()) { user, feed ->
+            HomeContract.State(
+                userName = user.name,
+                feedItems = feed,
+                isEmpty = feed.isEmpty(),
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeContract.State())
+}
+```
+
+### `SharingStarted.WhileSubscribed(5_000)` — why 5 000 ms?
+
+| Value | Upstream stops when… | Problem |
+|---|---|---|
+| `Eagerly` | Never | Keeps running even with no collector — wastes battery |
+| `Lazily` | Never (after first subscriber) | Same post-login leak |
+| `WhileSubscribed(5_000)` | 5 s after last collector leaves | Survives rotation (< 1 s); stops after genuine navigation away |
+
+Always use `WhileSubscribed(5_000)` for `stateIn` in ViewModels exposed to the UI.
+
+### `flatMapLatest` — dependent flows (inner depends on outer)
+
+Use `flatMapLatest` when the inner flow must restart every time the outer emits.
+It cancels the running inner coroutine before starting the new one.
+
+```kotlin
+class TeamViewModel(
+    private val memberRepo: MemberRepository,
+    private val selectedTeamId: StateFlow<String>,
+) : ViewModel() {
+
+    // Restarts member observation whenever selected team changes
+    val members: StateFlow<List<Member>> = selectedTeamId
+        .flatMapLatest { teamId -> memberRepo.observeMembers(teamId) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+}
+```
+
+### `snapshotFlow` — convert Compose State to a Flow
+
+`snapshotFlow` reads Compose `State` inside a coroutine and emits whenever the value
+changes. Use it to bridge Compose state into a coroutine for debouncing, analytics,
+or triggering side-effects without polluting the ViewModel with Compose imports.
+
+```kotlin
+// Debounce a search text field — field is Compose State, search is a coroutine
+@Composable
+fun SearchBar(
+    query: String,
+    onIntent: (SearchContract.Intent) -> Unit,
+) {
+    var localQuery by remember { mutableStateOf(query) }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { localQuery }
+            .debounce(300)
+            .distinctUntilChanged()
+            .collect { debouncedQuery ->
+                onIntent(SearchContract.Intent.Search(debouncedQuery))
+            }
+    }
+
+    AppTextField(value = localQuery, onValueChange = { localQuery = it })
+}
+```
+
+**Rules:**
+- `snapshotFlow` only reads `State` declared with `mutableStateOf` / `mutableStateListOf`
+- Do not read a `StateFlow` inside `snapshotFlow` — use `collectAsState()` first, then read the `State`
+- `snapshotFlow` runs in the composition snapshot; avoid side-effects inside the lambda
+
+---
+
+## ViewModel Size and Decomposition
+
+A ViewModel that grows beyond ~150 lines is a smell. Beyond 300 lines it is a violation —
+the ViewModel has taken on responsibilities that belong elsewhere.
+
+### God ViewModel symptoms
+
+Stop and decompose when the ViewModel:
+- calls more than two unrelated repositories directly
+- has multiple `private suspend fun` blocks that each contain their own business logic branches
+- mixes data fetching, validation, formatting, and navigation logic in `handleIntent`
+- has a `State` data class with more than ~8 fields
+- contains `if/else` or `when` chains that span more than 10–15 lines per branch
+
+### Decision table: what to extract
+
+| Symptom | Extract to |
+|---|---|
+| `handleIntent` branch calls multiple repos in sequence | Use case (`operator fun invoke`) in `:domain` |
+| Business rule lives inline (validate, calculate, transform) | Use case or domain function |
+| Two unrelated screen sections share one ViewModel | Split into parent + child (shared ViewModel or separate) |
+| State has a sub-group of fields that only change together | Nested data class in `State`, or separate ViewModel |
+| The same logic appears in two different ViewModels | Use case extracted to `:domain`, shared via injection |
+
+### Extracting a use case
+
+Move logic out of the ViewModel when a `handleIntent` branch:
+- calls two or more repositories
+- contains branching business rules (eligibility, validation, rollback)
+- is long enough to need its own test suite independent of UI state
+
+```kotlin
+// ❌ Before — business logic inline in ViewModel (god ViewModel symptom)
+private suspend fun placeOrder() {
+    val cart = cartRepo.getCart()
+    if (cart.items.isEmpty()) {
+        updateState { copy(error = "Cart is empty") }
+        return
+    }
+    val inventory = inventoryRepo.check(cart.items)
+    if (!inventory.allAvailable) {
+        updateState { copy(error = "Some items out of stock") }
+        return
+    }
+    val order = orderRepo.place(cart)
+    updateState { copy(isLoading = false) }
+    sendEffect(Effect.NavigateToConfirmation(order.id))
+}
+
+// ✓ After — use case owns the orchestration
+class PlaceOrderUseCase(
+    private val cartRepo: CartRepository,
+    private val inventoryRepo: InventoryRepository,
+    private val orderRepo: OrderRepository,
+) {
+    suspend operator fun invoke(): PlaceOrderResult {
+        val cart = cartRepo.getCart()
+        if (cart.items.isEmpty()) return PlaceOrderResult.EmptyCart
+        val inventory = inventoryRepo.check(cart.items)
+        if (!inventory.allAvailable) return PlaceOrderResult.OutOfStock(inventory.unavailable)
+        val order = orderRepo.place(cart)
+        return PlaceOrderResult.Success(order.id)
+    }
+}
+
+// ViewModel is now thin — one call, one when
+private suspend fun placeOrder() {
+    updateState { copy(isLoading = true) }
+    when (val result = placeOrderUseCase()) {
+        is PlaceOrderResult.Success      -> sendEffect(Effect.NavigateToConfirmation(result.orderId))
+        PlaceOrderResult.EmptyCart       -> updateState { copy(isLoading = false, error = "Cart is empty") }
+        is PlaceOrderResult.OutOfStock   -> updateState { copy(isLoading = false, error = "Some items out of stock") }
+    }
+    updateState { copy(isLoading = false) }
+}
+```
+
+### Splitting a ViewModel
+
+Split into two ViewModels when the screen has two genuinely independent sections —
+different data sources, different lifecycles, no shared state between them.
+
+```kotlin
+// ✓ Profile screen with independent "user info" and "activity feed" sections
+// Each has its own loading state, error state, and data source
+
+class ProfileInfoViewModel(private val userRepo: UserRepository) :
+    MviViewModel<ProfileInfoContract.State, ...>(...) { ... }
+
+class ActivityFeedViewModel(private val feedRepo: FeedRepository) :
+    MviViewModel<ActivityFeedContract.State, ...>(...) { ... }
+
+@Composable
+fun ProfileScreen(...) {
+    val infoVm: ProfileInfoViewModel = koinViewModel()
+    val feedVm: ActivityFeedViewModel = koinViewModel()
+    // each section gets its own ViewModel, no shared ViewModel needed
+}
+```
+
+Split into a **shared (parent) ViewModel** only when sections share mutable state and
+must stay synchronized — see the Shared ViewModel section above for the pattern.
+
 ---
 
 ## Common Anti-Patterns
@@ -752,8 +1346,24 @@ class UserProfileViewModel(
 - using `GlobalScope` or bare `CoroutineScope()` in a ViewModel — always use `viewModelScope`
 - calling `onIntent` from inside the ViewModel — `onIntent` is a UI-layer API; call private suspend functions directly
 - using `LaunchedEffect(state.someField)` for effect collection — restarts on every state change; use `LaunchedEffect(viewModel)` instead
+- nesting `collect` inside `collect` for multi-source state — use `combine()` to merge flows into one `StateFlow`
+- using `SharingStarted.Eagerly` or `Lazily` in `stateIn` — upstream never stops after navigation; always use `WhileSubscribed(5_000)`
+- using `flatMap` instead of `flatMapLatest` for dependent flows — the previous inner coroutine keeps running in parallel with the new one
+- reading a `StateFlow` directly inside `snapshotFlow {}` — collect it with `collectAsState()` first, then read the resulting `State` inside the lambda
+- using `collectAsState()` instead of `collectAsStateWithLifecycle()` in production screens — keeps collecting in the background; wastes battery; use `collectAsState()` only in `@Preview`
+- using `LaunchedEffect` when cleanup is needed — if you add a listener or set a holder, use `DisposableEffect` so `onDispose` can remove it
+- using `SideEffect` for coroutines — `SideEffect` is synchronous and has no cancel; use `LaunchedEffect` for any suspend work
+- constructing `SavedStateHandle()` manually — always let Koin/AndroidX provide it via `viewModelOf(::ViewModel)` or `viewModel { ViewModel(get(), get()) }`
+- god ViewModel (400–900+ lines) — all screen logic in one place instead of delegating business operations to use cases; extract any `handleIntent` branch that touches two or more repos into a use case
+- direct repository calls in ViewModel for complex orchestration — if the ViewModel `when` branch needs multiple repos or has business rules, it belongs in a use case, not the ViewModel
+- storing auth status as `isAuthenticated: Boolean` in `State` and navigating on state change — use `SessionViewModel` + a `LaunchedEffect` in `AppNavHost` to guard the entire nav graph; MVI screens should not own auth gate logic
+- using `Effect.NavigateBack` without a clear back-stack contract — always pair it with the correct NavHost `popUpTo` rule; bare `popBackStack()` can leave the user on an authenticated screen after logout
+- not annotating `State` data class with `@Immutable` or `@Stable` — Compose conservatively marks it unstable and recomposes all consumers on every parent recomposition, even when state hasn't changed
+- bare `viewModelScope.launch {}` with no `CoroutineExceptionHandler` — uncaught exceptions from `handleIntent` coroutines are swallowed silently on some KMP targets; override `exceptionHandler` in the ViewModel to surface them as error state
+- reading a changing lambda inside `LaunchedEffect(Unit)` without `rememberUpdatedState` — the effect captures a stale closure and calls the wrong version of the callback; wrap with `val current by rememberUpdatedState(lambda)` and call `current()` inside the loop
 
 If effects are replaying or the state machine is hard to test, audit the above list first.
+If the ViewModel is growing beyond 150–200 lines, apply the decomposition decision table above.
 
 ---
 
@@ -783,4 +1393,10 @@ Keep each snippet to one block. Use the user's actual screen name and state fiel
 
 | Date | Change |
 |---|---|
+| 2026-06-28 | Add @Stable/@Immutable rule for State types; CoroutineExceptionHandler in MviViewModel base class; rememberUpdatedState section with decision table. Three new anti-patterns.
+| 2026-06-28 | Add multi-source state: combine(), WhileSubscribed(5_000) table, flatMapLatest, snapshotFlow with debounce example. Four new anti-patterns.
+| 2026-06-28 | Add collectAsStateWithLifecycle vs collectAsState rule; LaunchedEffect vs DisposableEffect vs SideEffect decision table; SavedStateHandle + viewModelOf Koin wiring; four new anti-patterns.
+| 2026-06-28 | Add auth gate and back-stack anti-patterns. Two new anti-patterns: storing auth state in MVI State for nav, and Effect.NavigateBack without popUpTo contract. |
+| 2026-06-28 | Add ViewModel size rule, god ViewModel symptoms, use case extraction guide, and ViewModel split patterns. Two new anti-patterns for monolithic ViewModels. |
+| 2026-06-28 | Added "When NOT to Use MviViewModel" with thin patterns (no-ViewModel, no-Contract). Updated Recommendation First to lead with start-thin principle. Added Nav Args as Initial State, In-flight Cancellation, Typed Errors in State, Shared ViewModel. |
 | 2026-06-06 | Initial release. |

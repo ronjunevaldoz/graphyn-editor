@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.ai.WorkflowGenerationResult
 import com.ronjunevaldoz.graphyn.ai.WorkflowGenerator
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -82,5 +83,28 @@ class GraphynAiAssistantStateTest {
         s.submit("build it")
         s.clear()
         assertTrue(s.turns.isEmpty())
+    }
+
+    @Test
+    fun analysisPromptSummarizesCurrentWorkflowWithoutCallingGenerator() = runTest {
+        val s = GraphynAiAssistantState(
+            generator = object : WorkflowGenerator {
+                override suspend fun generate(prompt: String, catalog: List<NodeSpec>) =
+                    error("generator should not run for local analysis")
+            },
+            catalog = emptyList(),
+            onApply = {},
+            currentWorkflow = { sampleWorkflow },
+            validateWorkflow = {
+                listOf(ValidationError(code = "missing_required_input", message = "Need prompt", nodeId = "a"))
+            },
+        )
+
+        s.submit("analyze this workflow")
+
+        val done = s.turns.single().status as AiTurnStatus.Done
+        assertTrue(done.summary.contains("2 nodes"))
+        assertTrue(done.summary.contains("Validator found 1 issue"))
+        assertTrue(done.warning!!.contains("missing_required_input"))
     }
 }

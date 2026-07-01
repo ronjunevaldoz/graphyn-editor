@@ -116,7 +116,8 @@ private fun GraphynEditorShellContent(
     val generator = dependencies.workflowGenerator
     var aiOpen by remember { mutableStateOf(false) }
     var settingsOpen by remember { mutableStateOf(false) }
-    val assistant = remember(generator, dependencies.nodeSpecs, state) {
+    val validator = remember(dependencies.nodeSpecs) { WorkflowGraphValidator(dependencies.nodeSpecs) }
+    val assistant = remember(generator, dependencies.nodeSpecs, state, validator) {
         generator?.let {
             GraphynAiAssistantState(
                 generator = it,
@@ -125,10 +126,11 @@ private fun GraphynEditorShellContent(
                     state.withHistory { state.workflow = wf }
                     state.dispatch(GraphynEditorIntent.AutoLayout)
                 },
+                currentWorkflow = { state.workflow },
+                validateWorkflow = validator::validate,
             )
         }
     }
-    val validator = remember(dependencies.nodeSpecs) { WorkflowGraphValidator(dependencies.nodeSpecs) }
     val validationErrors = remember(state.workflow, dependencies.nodeSpecs) {
         state.workflow?.let(validator::validate).orEmpty()
     }

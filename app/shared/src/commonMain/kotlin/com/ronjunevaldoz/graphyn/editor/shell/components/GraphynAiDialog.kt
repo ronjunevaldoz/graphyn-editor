@@ -89,7 +89,7 @@ internal fun GraphynAiDialog(
             ) {
                 if (assistant.turns.isEmpty()) {
                     BasicText(
-                        "Describe a workflow and I'll build it on the canvas. e.g. \"Fetch a URL and save the body to a file\".",
+                    "Describe a workflow to build, or ask me to analyze the current one.",
                         style = type.bodySmall.copy(color = colors.textSecondary),
                     )
                 }
@@ -101,7 +101,7 @@ internal fun GraphynAiDialog(
                     .border(1.dp, colors.border, RoundedCornerShape(8.dp)).padding(10.dp),
             ) {
                 if (prompt.text.isEmpty()) {
-                    BasicText("Describe a workflow…", style = type.bodySmall.copy(color = colors.textDisabled))
+                    BasicText("Build or analyze a workflow…", style = type.bodySmall.copy(color = colors.textDisabled))
                 }
                 BasicTextField(
                     value = prompt,
@@ -112,7 +112,7 @@ internal fun GraphynAiDialog(
                 )
             }
             MiniButton(
-                label = if (assistant.generating) "Generating…" else "Generate",
+                label = if (assistant.generating) "Thinking…" else "Ask",
                 filled = true,
                 enabled = !assistant.generating && prompt.text.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
