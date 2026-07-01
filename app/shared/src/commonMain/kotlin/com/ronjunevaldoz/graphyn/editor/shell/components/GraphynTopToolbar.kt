@@ -44,6 +44,8 @@ internal fun GraphynTopToolbar(
     workflowName: String? = null,
     onToggleAi: (() -> Unit)? = null,
     aiActive: Boolean = false,
+    onToggleSettings: (() -> Unit)? = null,
+    settingsActive: Boolean = false,
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
@@ -93,6 +95,20 @@ internal fun GraphynTopToolbar(
                 contentAlignment = Alignment.Center,
             ) {
                 BasicText("✨ AI", style = type.label.copy(color = if (aiActive) colors.accentForeground else colors.textSecondary))
+            }
+        }
+        if (onToggleSettings != null) {
+            val settingsInteraction = remember { MutableInteractionSource() }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (settingsActive) colors.accent else colors.panelBackground)
+                    .border(1.dp, if (settingsActive) colors.accent else colors.border, RoundedCornerShape(6.dp))
+                    .clickable(interactionSource = settingsInteraction, indication = null, onClick = onToggleSettings)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                BasicText("⚙", style = type.label.copy(color = if (settingsActive) colors.accentForeground else colors.textSecondary))
             }
         }
         ShortcutsToolbarButton(shortcutState = shortcutState)

@@ -37,6 +37,7 @@ import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
 import com.ronjunevaldoz.graphyn.editor.ai.GraphynAiAssistantState
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynAiDialog
+import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynCredentialsDialog
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynInspectorPanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynPalettePanel
 import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
@@ -65,6 +66,8 @@ data class GraphynEditorShellDependencies(
     val onHome: (() -> Unit)? = null,
     /** When set, the toolbar shows an "✨ AI" toggle that opens the workflow-generation panel. */
     val workflowGenerator: com.ronjunevaldoz.graphyn.ai.WorkflowGenerator? = null,
+    /** When set, the toolbar shows a "⚙" toggle that opens the credentials/settings dialog. */
+    val settingsStore: com.ronjunevaldoz.graphyn.core.store.SettingsStore? = null,
 )
 
 @Composable
@@ -108,6 +111,7 @@ private fun GraphynEditorShellContent(
     val executionEngine = dependencies.executionEngine
     val generator = dependencies.workflowGenerator
     var aiOpen by remember { mutableStateOf(false) }
+    var settingsOpen by remember { mutableStateOf(false) }
     val assistant = remember(generator, dependencies.nodeSpecs, state) {
         generator?.let {
             GraphynAiAssistantState(
@@ -149,6 +153,8 @@ private fun GraphynEditorShellContent(
                 workflowName = if (dependencies.onHome != null) state.workflow?.name else null,
                 onToggleAi = if (assistant != null) ({ aiOpen = !aiOpen }) else null,
                 aiActive = aiOpen,
+                onToggleSettings = dependencies.settingsStore?.let { { settingsOpen = !settingsOpen } },
+                settingsActive = settingsOpen,
             )
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 GraphynPalettePanel(
@@ -177,6 +183,9 @@ private fun GraphynEditorShellContent(
         }
         if (aiOpen && assistant != null) {
             GraphynAiDialog(assistant = assistant, onDismiss = { aiOpen = false })
+        }
+        dependencies.settingsStore?.let { store ->
+            if (settingsOpen) GraphynCredentialsDialog(store = store, onDismiss = { settingsOpen = false })
         }
     }
 }

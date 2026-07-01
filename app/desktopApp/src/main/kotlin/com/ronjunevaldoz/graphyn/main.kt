@@ -6,6 +6,7 @@ import com.ronjunevaldoz.graphyn.ai.OllamaConfig
 import com.ronjunevaldoz.graphyn.ai.OllamaWorkflowGenerator
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrapJvm
+import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
 import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
 import com.ronjunevaldoz.graphyn.plugins.script.ScriptEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.script.ScriptPlugin
@@ -30,6 +31,7 @@ fun main() = application {
                 extraPlugins = listOf(ScriptEditorPlugin) + GraphynBootstrapJvm.serviceIntegrationEditorPlugins,
             ),
             store = store,
+            settingsStore = FileSettingsStore(),
             workflowGenerator = generator,
         )
     }
