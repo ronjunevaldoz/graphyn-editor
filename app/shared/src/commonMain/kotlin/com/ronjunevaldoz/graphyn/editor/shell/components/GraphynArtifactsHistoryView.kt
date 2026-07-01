@@ -73,8 +73,12 @@ private fun SwitchChip(label: String, active: Boolean, onClick: () -> Unit) {
 
 private fun ArtifactRecord.toArtifactItem(): ArtifactItem = ArtifactItem(
     nodeId = id,
-    nodeLabel = nodeType?.substringAfterLast('.') ?: "history",
-    portName = model ?: prompt?.take(28).orEmpty(),
+    nodeLabel = workflowName ?: nodeType?.substringAfterLast('.') ?: "history",
+    portName = listOfNotNull(
+        elapsedMs?.let { "${it / 1000}s" },
+        model?.substringBeforeLast('.'),
+        prompt?.take(24),
+    ).joinToString(" · "),
     filePath = path,
     type = when (kind) {
         ArtifactKind.Image -> ArtifactType.Image

@@ -27,6 +27,8 @@ data class ArtifactRecord(
     val prompt: String? = null,
     val model: String? = null,
     val elapsedMs: Long? = null,
+    /** Key generation inputs (steps, seed, size, cfg, …) as flag → value, for provenance. */
+    val inputs: Map<String, String> = emptyMap(),
 )
 
 /**
