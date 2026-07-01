@@ -32,7 +32,9 @@ class HttpStableDiffusionBackend(
     private val history: ArtifactHistory = FileArtifactHistory(),
 ) : StableDiffusionBackend {
 
-    private val client = HttpClient(CIO) { engine { requestTimeout = 600_000 } }
+    // Video jobs (Wan i2v) run for tens of minutes on a 12 GB card once weights offload to RAM, so
+    // the request cap must be generous — a 10 min cap silently killed otherwise-successful renders.
+    private val client = HttpClient(CIO) { engine { requestTimeout = 1_800_000 } }
 
     private fun connection(): SdConnection = resolveSdConnection(settingsStore.read())
 

@@ -1748,3 +1748,17 @@ Takeaway: don't declare a model "unusable" from one bad output — check the mod
 first. For best structure preservation Qwen-Edit also wants the Qwen2.5-VL mmproj (`--llm_vision`,
 from mradermacher/Qwen2.5-VL-7B-Instruct-GGUF); the appearance/VAE path works without it but the
 semantic path needs it.
+
+## Wan A14B "OOM" on a 12 GB card is actually a throughput failure, not a fit failure
+
+**Category:** Stable Diffusion — VRAM offload / model tiering
+
+With `max_vram` graph-cut offload, the Wan 2.2 **A14B** i2v model (two-stage high+low-noise, ~25.8 GB unoffloaded) *does* fit a 12 GB card — it never OOMs. But every diffusion stage streams the 9.8 GB of offloaded weights from RAM per step, so throughput collapses: an 832×480×81 run logged `encode_first_stage` at **394.8 s** and `generate_video` stages in the hundreds of seconds each — a full run is 30–60 min. The dense **TI2V-5B** (~6 GB, fits natively) is the only practical i2v tier on 12 GB.
+
+**Rule:** "Fits after offload" ≠ "usable." Tier a model by measured throughput, not just whether it OOMs. Keep A14B out of the automated template suite; TI2V-5B is the shipped i2v tier.
+
+## A blocking native generate monopolizes the single-model engine — order tests fast-first
+
+**Category:** Testing — shared SD engine
+
+`SdEngineCache` holds one model; a `generateEx` call is blocking C++ that a client TCP disconnect can't cancel. When JUnit scheduled `wanA14bImg2Vid` first, the abandoned ~1 hr A14B job kept the engine busy and every queued image request timed out client-side (the server still produced the image, but the client had given up — so nothing was saved). Run SD templates **individually, fast-first** (`--tests …fluxTxt2Img` etc.), never as one unordered class, so a slow video model can't block the image tier. There is no in-flight cancel — only draining or a container restart frees a stuck engine.
