@@ -92,7 +92,8 @@ class DemoSceneWorkflowTest {
         "media.videos_list",
         // stable-diffusion.cpp nodes — JVM-only, installed by the desktop host's media runtime.
         "sd.diffusion", "sd.encoders", "sd.vae", "sd.model", "sd.context", "sd.sampler",
-        "sd.seamless", "sd.lora", "sd.txt2img", "sd.img2img", "sd.txt2vid", "sd.img2vid",
+        "sd.seamless", "sd.chroma", "sd.offload", "sd.lora",
+        "sd.txt2img", "sd.img2img", "sd.txt2vid", "sd.img2vid",
     )
 
     @Test

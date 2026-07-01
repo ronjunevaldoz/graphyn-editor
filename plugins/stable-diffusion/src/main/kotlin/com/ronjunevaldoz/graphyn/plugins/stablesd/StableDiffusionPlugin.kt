@@ -58,6 +58,8 @@ class StableDiffusionPlugin(
         registrar.registerNodeSpec(SdVaeSpec.vae)
         registrar.registerNodeSpec(SdContextSpec.context)
         registrar.registerNodeSpec(SdSeamlessSpec.seamless)
+        registrar.registerNodeSpec(SdChromaSpec.chroma)
+        registrar.registerNodeSpec(SdOffloadSpec.offload)
         registrar.registerNodeSpec(SdSamplerSpec.sampler)
         registrar.registerNodeSpec(SdLoraSpec.lora)
         registrar.registerNodeSpec(SdHiresSpec.hires)
@@ -95,15 +97,23 @@ class StableDiffusionPlugin(
         registrar.registerExecutor(SdContextSpec.context.type) { inputs ->
             val modelFields = (inputs["model"] as? WorkflowValue.RecordValue)
                 ?.fields?.minus("_type") ?: emptyMap()
-            // Merge the optional sd.seamless sub-node's flags back into the context record.
-            val seamlessFields = (inputs["seamless"] as? WorkflowValue.RecordValue)
-                ?.fields?.minus("_type") ?: emptyMap()
+            // Merge the optional sub-nodes (seamless/offload/chroma) back into the context record.
+            val subPorts = listOf("seamless", "offload", "chroma")
+            val subFields = subPorts.fold(emptyMap<String, WorkflowValue>()) { acc, port ->
+                acc + ((inputs[port] as? WorkflowValue.RecordValue)?.fields?.minus("_type") ?: emptyMap())
+            }
             mapOf("context" to SdTokens.context(
-                modelFields + seamlessFields + inputs.minus("model").minus("seamless"),
+                modelFields + subFields + inputs.minus("model").minus(subPorts.toSet()),
             ))
         }
         registrar.registerExecutor(SdSeamlessSpec.seamless.type) { inputs ->
             mapOf("seamless" to SdTokens.seamless(inputs))
+        }
+        registrar.registerExecutor(SdChromaSpec.chroma.type) { inputs ->
+            mapOf("chroma" to SdTokens.chroma(inputs))
+        }
+        registrar.registerExecutor(SdOffloadSpec.offload.type) { inputs ->
+            mapOf("offload" to SdTokens.offload(inputs))
         }
         registrar.registerExecutor(SdSamplerSpec.sampler.type) { inputs ->
             mapOf("sampler" to SdTokens.sampler(inputs))

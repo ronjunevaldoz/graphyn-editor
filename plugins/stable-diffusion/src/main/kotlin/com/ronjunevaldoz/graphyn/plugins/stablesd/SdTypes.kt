@@ -20,6 +20,12 @@ internal object SdTokens {
     fun seamless(inputs: Map<String, WorkflowValue>): WorkflowValue =
         RecordValue(mapOf("_type" to StringValue("sd.seamless")) + inputs.mapValues { it.value })
 
+    fun chroma(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.chroma")) + inputs.mapValues { it.value })
+
+    fun offload(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.offload")) + inputs.mapValues { it.value })
+
     fun sampler(inputs: Map<String, WorkflowValue>): WorkflowValue =
         RecordValue(mapOf("_type" to StringValue("sd.sampler")) + inputs.mapValues { it.value })
 
