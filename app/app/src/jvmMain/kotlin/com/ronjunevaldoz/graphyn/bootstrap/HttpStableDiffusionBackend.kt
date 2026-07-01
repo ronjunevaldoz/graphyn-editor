@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.store.ArtifactHistory
 import com.ronjunevaldoz.graphyn.core.store.ArtifactKind
 import com.ronjunevaldoz.graphyn.core.store.FileArtifactHistory
+import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdImageResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdVideoResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionBackend
@@ -30,18 +31,19 @@ import java.io.File
  * `GRAPHYN_ARTIFACTS_DIR` (default `~/.graphyn/artifacts`).
  */
 class HttpStableDiffusionBackend(
-    private val baseUrl: String = System.getenv("GRAPHYN_SD_SERVER_URL")
-        ?: "https://ron-local-home.duckdns.org/stablediffusion",
+    connection: SdConnection = resolveSdConnection(FileSettingsStore().read()),
     private val artifactsDir: File = defaultArtifactsDir(),
     private val history: ArtifactHistory = FileArtifactHistory(),
 ) : StableDiffusionBackend {
+
+    private val baseUrl = connection.baseUrl
 
     private val client = HttpClient(CIO) {
         engine {
             requestTimeout = 600_000
         }
         // Authenticate to a publicly-exposed server-sd when a key is configured (no-op otherwise).
-        System.getenv("GRAPHYN_SD_API_KEY")?.ifBlank { null }?.let { key ->
+        connection.apiKey?.let { key ->
             install(DefaultRequest) { header("Authorization", "Bearer $key") }
         }
     }
