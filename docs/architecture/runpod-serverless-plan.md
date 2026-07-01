@@ -67,13 +67,23 @@ worker generates in seconds-to-low-minutes, so jobs fit. Mitigations, in order:
    Kotlin reimplementation of RunPod's internal job-poll — would be justified. Design to avoid it.
 
 ## Phases
-1. **Worker image** — add `/ping`, `$PORT` binding, model-root → `/runpod-volume`; push to a registry.
+1. **[DONE] Worker readiness** — `server-sd`: `/ping` route, bind to `$PORT`, symlink
+   `/models → /runpod-volume/models` (Dockerfile entrypoint). Still to do: build the CUDA image
+   (`SD_CUDA=ON`, `CMAKE_CUDA_ARCHITECTURES=89` for L40S/A6000) and push to a registry.
 2. **Endpoint + volume** — create the Load Balancing endpoint (48 GB), attach the network volume,
    upload models/LoRAs once.
-3. **Editor wiring** — RunPod profile (URL + key) in the panel; auth header; select prod.
+3. **[DONE] Editor wiring** — one-click **RunPod** preset in the credentials panel scaffolds a
+   `runpod` environment (URL template + key); `resolveSdConnection` + `authWith` already send
+   `Authorization: Bearer <key>`. Switching env = switching backend, no code change.
 4. **Verify** — run the same templates against RunPod; confirm Wan video decodes with no tiling;
    test multi-LoRA stacking. Reuse `SdTemplateApiRunTest` pointed at the RunPod URL.
 5. **Tune** — FlashBoot / min-max workers / idle timeout for cost vs latency.
+
+## Open question to resolve at endpoint standup
+Does the Load Balancing endpoint require RunPod's **own** `Authorization: Bearer <RUNPOD_API_KEY>`
+at the edge? If so it collides with `server-sd`'s `SdApiKeyAuth` (also `Authorization: Bearer`).
+Fix if needed: make `SdApiKeyAuth` also accept the key via `X-API-Key`, so RunPod's `Authorization`
+and our app key don't clash. Deferred until we can observe the live endpoint — not built speculatively.
 
 ## References
 - Load Balancing endpoints (own HTTP server, /ping, PORT, limits): https://docs.runpod.io/serverless/load-balancing/overview

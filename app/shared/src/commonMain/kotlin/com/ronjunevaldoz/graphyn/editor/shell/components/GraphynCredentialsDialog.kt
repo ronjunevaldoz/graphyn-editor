@@ -76,15 +76,23 @@ internal fun GraphynCredentialsDialog(store: SettingsStore, onDismiss: () -> Uni
                 BasicText("Settings", style = type.nodeTitle.copy(color = colors.textPrimary))
                 MiniButton("✕") { onDismiss() }
             }
-            Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(6.dp), Alignment.CenterVertically) {
-                settings.environments.forEach { env -> EnvChip(env.name, env.name == activeEnv) { switchTo(env.name) } }
-                CredInput(newEnv, "new env", Modifier.width(96.dp)) { newEnv = it }
-                MiniButton("＋") {
+            EnvSelectorRow(
+                settings = settings,
+                activeEnv = activeEnv,
+                newEnv = newEnv,
+                onNewEnv = { newEnv = it },
+                onSwitch = { switchTo(it) },
+                onAdd = {
                     settings = addEnv(foldRows(settings, activeEnv, rows), newEnv)
                     if (settings.activeEnvironment != activeEnv && newEnv.isNotBlank()) { activeEnv = newEnv.trim(); rows = rowsForEnv(settings, activeEnv) }
                     newEnv = ""
-                }
-            }
+                },
+                onRunPod = {
+                    settings = addRunPodEnv(foldRows(settings, activeEnv, rows))
+                    activeEnv = settings.activeEnvironment
+                    rows = rowsForEnv(settings, activeEnv)
+                },
+            )
             Column(
                 Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -118,20 +126,7 @@ private fun ValueRow(row: EnvRow, onValue: (String) -> Unit, onKey: (String) -> 
 }
 
 @Composable
-private fun EnvChip(name: String, active: Boolean, onClick: () -> Unit) {
-    val colors = GraphynDs.colors
-    val shape = RoundedCornerShape(6.dp)
-    Box(
-        Modifier.clip(shape).background(if (active) colors.accent else colors.panelBackground)
-            .border(1.dp, if (active) colors.accent else colors.border, shape)
-            .clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 4.dp),
-    ) {
-        BasicText(name, style = GraphynDs.type.label.copy(color = if (active) colors.accentForeground else colors.textSecondary))
-    }
-}
-
-@Composable
-private fun CredInput(value: String, hint: String, modifier: Modifier = Modifier, onChange: (String) -> Unit) {
+internal fun CredInput(value: String, hint: String, modifier: Modifier = Modifier, onChange: (String) -> Unit) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
     Box(

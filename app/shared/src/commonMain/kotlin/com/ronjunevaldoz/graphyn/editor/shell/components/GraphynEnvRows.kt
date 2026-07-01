@@ -39,3 +39,24 @@ internal fun addEnv(settings: GraphynSettings, name: String): GraphynSettings {
         activeEnvironment = trimmed,
     )
 }
+
+internal const val RUNPOD_ENV = "runpod"
+
+/**
+ * Scaffolds a "runpod" environment pointing at a RunPod serverless load-balancing endpoint, and
+ * makes it active. Pre-fills the URL template (user replaces `ENDPOINT_ID`) and leaves the SD API
+ * key blank. If the environment already exists it's just activated, preserving the user's values.
+ */
+internal fun addRunPodEnv(settings: GraphynSettings): GraphynSettings {
+    if (settings.environments.any { it.name == RUNPOD_ENV }) {
+        return settings.copy(activeEnvironment = RUNPOD_ENV)
+    }
+    val values = mapOf(
+        GraphynSettings.KEY_SD_URL to "https://ENDPOINT_ID.api.runpod.ai",
+        GraphynSettings.KEY_SD_API_KEY to "",
+    )
+    return settings.copy(
+        environments = settings.environments + GraphynEnvironment(RUNPOD_ENV, values),
+        activeEnvironment = RUNPOD_ENV,
+    )
+}
