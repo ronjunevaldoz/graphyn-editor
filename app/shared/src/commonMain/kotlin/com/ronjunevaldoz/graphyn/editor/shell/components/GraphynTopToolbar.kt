@@ -46,6 +46,7 @@ internal fun GraphynTopToolbar(
     aiActive: Boolean = false,
     onToggleSettings: (() -> Unit)? = null,
     settingsActive: Boolean = false,
+    sdServerControl: com.ronjunevaldoz.graphyn.editor.server.SdServerControl? = null,
 ) {
     val colors = GraphynDs.colors
     val type = GraphynDs.type
@@ -111,6 +112,7 @@ internal fun GraphynTopToolbar(
                 BasicText("⚙", style = type.label.copy(color = if (settingsActive) colors.accentForeground else colors.textSecondary))
             }
         }
+        if (sdServerControl != null) GraphynServerStatusChip(sdServerControl)
         ShortcutsToolbarButton(shortcutState = shortcutState)
         ThemeControls(appearanceState = appearanceState)
         if (onAutoLayout != null) {

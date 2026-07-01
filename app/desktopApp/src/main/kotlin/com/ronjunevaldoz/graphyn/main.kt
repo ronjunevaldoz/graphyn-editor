@@ -4,6 +4,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrap
 import com.ronjunevaldoz.graphyn.bootstrap.GraphynBootstrapJvm
+import com.ronjunevaldoz.graphyn.bootstrap.HttpSdServerControl
 import com.ronjunevaldoz.graphyn.bootstrap.SettingsBackedWorkflowGenerator
 import com.ronjunevaldoz.graphyn.core.store.FileArtifactHistory
 import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
@@ -38,6 +39,7 @@ fun main() = application {
             store = store,
             settingsStore = settingsStore,
             artifactHistory = FileArtifactHistory(),
+            sdServerControl = HttpSdServerControl(settingsStore),
             workflowGenerator = generator,
         )
     }

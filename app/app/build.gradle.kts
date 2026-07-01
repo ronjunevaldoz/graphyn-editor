@@ -57,6 +57,7 @@ kotlin {
             implementation(projects.plugins.stableDiffusion)
             implementation(libs.ktor.clientCore)
             implementation(libs.ktor.clientCio)
+            implementation(libs.serialization.json)
         }
         jsMain.dependencies {
             implementation(projects.plugins.gmail)

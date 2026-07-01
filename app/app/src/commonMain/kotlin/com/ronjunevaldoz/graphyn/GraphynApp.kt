@@ -45,6 +45,7 @@ fun GraphynApp(
     store: WorkflowStore? = null,
     settingsStore: com.ronjunevaldoz.graphyn.core.store.SettingsStore? = null,
     artifactHistory: com.ronjunevaldoz.graphyn.core.store.ArtifactHistory? = null,
+    sdServerControl: com.ronjunevaldoz.graphyn.editor.server.SdServerControl? = null,
     workflowGenerator: WorkflowGenerator? = null,
 ) {
     var recentWorkflows by remember { mutableStateOf(emptyList<WorkflowTemplate>()) }
@@ -122,6 +123,7 @@ fun GraphynApp(
                             workflowGenerator = generator,
                             settingsStore = settingsStore,
                             artifactHistory = artifactHistory,
+                            sdServerControl = sdServerControl,
                         ),
                         appearanceState = appearanceState,
                         onHome = { openWorkflow = null; openWithStore = true },

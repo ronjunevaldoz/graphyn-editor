@@ -70,6 +70,8 @@ data class GraphynEditorShellDependencies(
     val settingsStore: com.ronjunevaldoz.graphyn.core.store.SettingsStore? = null,
     /** When set, the Artifacts tab offers a History view of all past generations, not just this run. */
     val artifactHistory: com.ronjunevaldoz.graphyn.core.store.ArtifactHistory? = null,
+    /** When set, the toolbar shows a live SD server status chip (GPU/VRAM/model) with an unload button. */
+    val sdServerControl: com.ronjunevaldoz.graphyn.editor.server.SdServerControl? = null,
 )
 
 @Composable
@@ -157,6 +159,7 @@ private fun GraphynEditorShellContent(
                 aiActive = aiOpen,
                 onToggleSettings = dependencies.settingsStore?.let { { settingsOpen = !settingsOpen } },
                 settingsActive = settingsOpen,
+                sdServerControl = dependencies.sdServerControl,
             )
             Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 GraphynPalettePanel(
