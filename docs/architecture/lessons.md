@@ -1757,13 +1757,18 @@ With `max_vram` graph-cut offload, the Wan 2.2 **A14B** i2v model (two-stage hig
 
 **Rule:** "Fits after offload" ≠ "usable." Tier a model by measured throughput, not just whether it OOMs. Keep A14B out of the automated template suite.
 
-## Wan i2v "VAE decode OOM" was actually a native compute failure, not OOM
+## Wan i2v VAE decode on 12 GB: a huge decode buffer + a known sd.cpp tiling bug (not a simple OOM)
 
-**Category:** Stable Diffusion — Wan video VAE decode / server-sd native
+**Category:** Stable Diffusion — Wan video VAE decode / stable-diffusion.cpp
 
-Both Wan A14B and TI2V-5B i2v renders on server-sd fail at the VAE decode step with `vae decode compute failed while processing a tile` → `decode_first_stage failed for video`. The instinct is "12 GB can't fit the decode," but it reproduces at **320×320×9 with only 8.7 GB used** — enormous headroom — so it is *not* OOM. Tiled decode is already active (the error names a tile) and still fails, so lowering frames/resolution doesn't help. This is a compute/kernel failure in server-sd's Wan video VAE decode path (likely an unsupported ggml op / quantization on this GPU+driver+build), fixable only in the native layer, not from the editor.
+Both Wan A14B and TI2V-5B i2v renders fail at VAE decode with `vae decode compute failed while processing a tile` → `decode_first_stage failed for video`. Two compounding causes, confirmed by research (leejet/stable-diffusion.cpp), not by guessing:
 
-**Rule:** Read the actual error verb. "compute failed" ≠ "out of memory." Don't tier a model or shrink inputs to dodge an OOM that isn't one — trace it to the native decode. The image tiers (FLUX + Qwen txt2img, Qwen-Edit img2img) all render fine; only the Wan video VAE decode is blocked.
+1. **The Wan VAE decode compute buffer is enormous** — ~12 GB @ 640×360, ~20.9 GB @ 832×480 (sd.cpp discussion #868). It exceeds a 12 GB card's headroom at real resolutions.
+2. **Wan 2.2 VAE *tiling* — the escape hatch — is broken in sd.cpp** (issue #1284): tiled decode asserts/fails, which is exactly the "while processing a tile" error. So you cannot tile your way under the limit, and shrinking frames/resolution doesn't rescue it (it still tries to tile, and still fails).
+
+The models themselves are compatible (correct VAE pairing: TI2V-5B→Wan2.2 VAE, A14B→Wan2.1 VAE; correct umt5 + clip_vision). On 12 GB the only working paths are `--vae-on-cpu` (~27 min/2 s clip) or the TAE tiny decoder (A14B only, not 5B) — both impractical.
+
+**Rule:** When a native error mixes "compute failed" with "tile," check *both* the buffer size (is it an OOM the tiler should absorb?) *and* whether tiling is even functional for that model in that build — don't stop at "not OOM." The real fix is more VRAM (≥24 GB fits the untiled decode); see `runpod-serverless-plan.md`. Image tiers (FLUX + Qwen txt2img, Qwen-Edit img2img) all render fine on 12 GB.
 
 ## A blocking native generate monopolizes the single-model engine — order tests fast-first
 
