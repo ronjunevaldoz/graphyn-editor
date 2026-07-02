@@ -5,8 +5,12 @@ package com.ronjunevaldoz.graphyn.editor.launcher
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
+import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowType
+import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynTheme
 import org.junit.Rule
 import org.junit.Test
@@ -130,5 +134,26 @@ class GraphynWorkflowLauncherUiTest {
         rule.onNodeWithText("Templates  2").performClick()
         rule.onNodeWithText("Starter").assertExists()
         rule.onNodeWithText("Past Run").assertDoesNotExist()
+    }
+
+    @Test
+    fun schemaTabShowsInstalledSpecs() {
+        val specs = listOf(
+            NodeSpec(
+                type = "demo.schema",
+                label = "Demo Schema",
+                inputs = listOf(PortSpec("source", WorkflowType.StringType)),
+                outputs = listOf(PortSpec("result", WorkflowType.StringType)),
+                defaultValues = mapOf("source" to WorkflowValue.StringValue("input.txt")),
+                category = "Custom",
+                description = "Example schema card",
+            ),
+        )
+        rule.setContent {
+            GraphynTheme { GraphynWorkflowLauncher(templates = templates, nodeSpecs = specs, onOpen = {}) }
+        }
+        rule.onNodeWithText("Schema  1").performClick()
+        rule.onNodeWithText("Demo Schema").assertExists()
+        rule.onNodeWithText("source: String").assertExists()
     }
 }

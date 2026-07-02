@@ -36,6 +36,7 @@ internal fun LauncherTabs(
     selected: LauncherView,
     workflowCount: Int,
     templateCount: Int,
+    schemaCount: Int,
     onSelect: (LauncherView) -> Unit,
 ) {
     val colors = GraphynDs.colors
@@ -47,7 +48,11 @@ internal fun LauncherTabs(
     ) {
         LauncherView.entries.forEach { view ->
             val isSelected = view == selected
-            val count = if (view == LauncherView.Workflows) workflowCount else templateCount
+            val count = when (view) {
+                LauncherView.Workflows -> workflowCount
+                LauncherView.Templates -> templateCount
+                LauncherView.Schema -> schemaCount
+            }
             val shape = RoundedCornerShape(6.dp)
             BasicText(
                 "${view.label}  $count",
@@ -68,6 +73,7 @@ internal fun LauncherTabs(
 internal enum class LauncherView(val label: String) {
     Workflows("Workflows"),
     Templates("Templates"),
+    Schema("Schema"),
 }
 
 @Composable
