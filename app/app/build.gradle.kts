@@ -35,6 +35,8 @@ kotlin {
         commonMain.dependencies {
             api(projects.app.shared)
             api(projects.runtime)
+            implementation(projects.plugins.mediaCore)
+            implementation(projects.plugins.mediaAi)
             implementation(projects.plugins.sampleLogger)
             implementation(projects.plugins.sampleLoggerUi)
             implementation(projects.plugins.sampleStyleNodes)
@@ -52,8 +54,6 @@ kotlin {
         jvmMain.dependencies {
             implementation(projects.plugins.gmail)
             implementation(projects.plugins.linkedin)
-            implementation(projects.plugins.mediaCore)
-            implementation(projects.plugins.mediaAi)
             implementation(projects.plugins.stableDiffusion)
             implementation(libs.ktor.clientCore)
             implementation(libs.ktor.clientCio)

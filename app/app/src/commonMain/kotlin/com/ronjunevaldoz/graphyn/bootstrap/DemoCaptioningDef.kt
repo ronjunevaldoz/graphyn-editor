@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiSpecs
 
 /**
  * End-to-end captioning workflow (media Phase 2).
@@ -42,12 +43,7 @@ internal val captionedVideoWorkflow = WorkflowDefinition(
         NodeRef("transcribe", "media.speech_to_text", config = mapOf(
             "language" to WorkflowValue.StringValue("en"),
         )),
-        NodeRef("caption_style", "media.caption_style", config = mapOf(
-            "color" to WorkflowValue.StringValue("#FFFFFF"),
-            "background_color" to WorkflowValue.StringValue("#000000"),
-            "font_size" to WorkflowValue.IntValue(28),
-            "position" to WorkflowValue.StringValue("bottom"),
-        )),
+        NodeRef("caption_style", MediaAiSpecs.captionStyle.type, config = MediaAiSpecs.captionStyle.defaultValues),
         NodeRef("caption_overlay", "media.caption_overlay"),
         NodeRef("encode", "media.video_encode", config = mapOf(
             "output_path" to WorkflowValue.StringValue("captioned.mp4"),

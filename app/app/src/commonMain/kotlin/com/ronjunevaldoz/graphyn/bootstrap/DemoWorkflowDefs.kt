@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiSpecs
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesSpecs
 
 internal val styleNodesDemoWorkflow = WorkflowDefinition(
@@ -138,7 +139,7 @@ internal val apiIngestionDemoWorkflow = WorkflowDefinition(
 
 // Media sample fixtures live under app/app resources; paths resolve via io.resolve_path so they
 // work regardless of the process working directory.
-internal const val MEDIA_DIR = "../../app/app/src/commonMain/resources/media"
+internal const val MEDIA_DIR = "app/app/src/commonMain/resources/media"
 
 /**
  * On-canvas guide note shown beside each media template. Auto-layout parks annotation nodes in a
@@ -297,12 +298,7 @@ internal val audioMixWorkflow = WorkflowDefinition(
         )),
         NodeRef("collect", "media.audios_list"),
         NodeRef("mix", "media.audio_mix"),
-        NodeRef("caption_style", "media.caption_style", config = mapOf(
-            "color" to WorkflowValue.StringValue("#FFFFFF"),
-            "background_color" to WorkflowValue.StringValue("#000000"),
-            "font_size" to WorkflowValue.IntValue(24),
-            "position" to WorkflowValue.StringValue("bottom"),
-        )),
+        NodeRef("caption_style", MediaAiSpecs.captionStyle.type, config = MediaAiSpecs.captionStyle.defaultValues), // TODO Strict Standard for reuseable specs, apply for the others
         NodeRef("encode", "media.audio_encode", config = mapOf(
             "output_path" to WorkflowValue.StringValue("mixed.mp3"),
             "format" to WorkflowValue.StringValue("mp3"),
