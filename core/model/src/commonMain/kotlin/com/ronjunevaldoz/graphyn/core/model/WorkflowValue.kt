@@ -58,6 +58,8 @@ fun Map<String, WorkflowValue>.stringOrError(key: String): String =
 
 fun Map<String, WorkflowValue>.stringOr(key: String, default: String): String =
     (this[key] as? WorkflowValue.StringValue)?.value ?: default
+fun Map<String, WorkflowValue>.stringOrNull(key: String): String? =
+    (this[key] as? WorkflowValue.StringValue)?.value
 
 fun Map<String, WorkflowValue>.doubleOr(key: String, default: Double): Double =
     when (val value = this[key]) {
@@ -100,3 +102,5 @@ fun Map<String, WorkflowValue>.booleanOrError(name: String): Boolean {
     return (getValue(name) as? WorkflowValue.BooleanValue)?.value
         ?: error("Expected boolean field '$name'.")
 }
+fun WorkflowValue.record(): Map<String, WorkflowValue> =
+    (this as? WorkflowValue.RecordValue)?.fields ?: error("Expected a record value.")

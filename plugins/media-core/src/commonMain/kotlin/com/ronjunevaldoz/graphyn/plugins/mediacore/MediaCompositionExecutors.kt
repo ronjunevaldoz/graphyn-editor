@@ -5,6 +5,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.listOrEmpty
 import com.ronjunevaldoz.graphyn.core.model.listOrError
 import com.ronjunevaldoz.graphyn.core.model.numberOrError
+import com.ronjunevaldoz.graphyn.core.model.record
 import com.ronjunevaldoz.graphyn.core.model.recordOrError
 import com.ronjunevaldoz.graphyn.core.model.stringOr
 import com.ronjunevaldoz.graphyn.core.model.stringOrError
@@ -77,9 +78,6 @@ internal fun timingControllerExecutor() = NodeExecutor { inputs ->
         ),
     )
 }
-
-fun WorkflowValue.record(): Map<String, WorkflowValue> =
-    (this as? WorkflowValue.RecordValue)?.fields ?: error("Expected a record value.")
 
 fun WorkflowValue.toCaption(): Caption {
     val fields = record()

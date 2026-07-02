@@ -13,17 +13,23 @@ class AssCaptionRenderer : CaptionRenderer<String> {
         width: Int,
         height: Int,
     ): String {
+        val styleName = "Graphyn"
+
         val events = captions.joinToString("\n") { caption ->
             require(caption.endMs >= caption.startMs) {
                 "Caption end_ms must be >= start_ms."
             }
 
-            "Dialogue: 0,${caption.startMs.toAssTimeFromMs()},${caption.endMs.toAssTimeFromMs()},Default,,0,0,0,,${caption.text.escapeAssText()}"
+            "Dialogue: 0,${caption.startMs.toAssTimeFromMs()},${caption.endMs.toAssTimeFromMs()},$styleName,,0,0,0,,${caption.text.escapeAssText()}"
         }
 
-        val borderStyle = if (style.backgroundColor != null && style.backgroundColor.alpha > 0.01f) 3 else 1
-        // For BorderStyle 3 (opaque box), the BackColour slot is used for the box background
-        val backColor = style.backgroundColor?.toAssColor() ?: "&HFF000000"
+        val hasBackground = style.backgroundColor != null &&
+                style.backgroundColor.alpha > 0.01f
+
+        val borderStyle = if (hasBackground) 3 else 1
+
+        val backColor = style.backgroundColor?.toAssColor()
+            ?: "&HFF000000" // fully transparent black
 
         return """
             [Script Info]
@@ -34,11 +40,11 @@ class AssCaptionRenderer : CaptionRenderer<String> {
 
             [V4+ Styles]
             Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-            Style: Graphyn,${style.fontFamily.escapeAssField()},${style.fontSize},${style.textColor.toAssColor()},&H000000FF,${style.outlineColor.toAssColor()},$backColor,${style.bold.toAssFlag()},${style.italic.toAssFlag()},0,0,100,100,0,0,$borderStyle,${style.outlineWidth},${style.shadow},${style.alignment.toAssAlignment()},${style.marginHorizontal},${style.marginHorizontal},${style.marginVertical},1
+            Style: $styleName,${style.fontFamily.escapeAssField()},${style.fontSize},${style.textColor.toAssColor()},&H000000FF,${style.outlineColor.toAssColor()},$backColor,${style.bold.toAssFlag()},${style.italic.toAssFlag()},0,0,100,100,0,0,$borderStyle,${style.outlineWidth},${style.shadow},${style.alignment.toAssAlignment()},${style.marginHorizontal},${style.marginHorizontal},${style.marginVertical},1
 
             [Events]
             Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-            ${events.replace("Default", "Graphyn")}
+            $events
         """.trimIndent() + "\n"
     }
 }
