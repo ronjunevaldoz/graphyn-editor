@@ -24,7 +24,7 @@ class SettingsBackedWorkflowGenerator(
 
     private fun delegate(): OllamaWorkflowGenerator {
         val url = settingsStore.read().value(GraphynSettings.KEY_AI_URL)
-            ?: System.getenv("GRAPHYN_OLLAMA_HOST")?.ifBlank { null }
+            ?: envValue("ollama_host", "GRAPHYN_OLLAMA_HOST")
             ?: fallbackUrl
         return synchronized(lock) {
             if (url != cachedUrl || cached == null) {

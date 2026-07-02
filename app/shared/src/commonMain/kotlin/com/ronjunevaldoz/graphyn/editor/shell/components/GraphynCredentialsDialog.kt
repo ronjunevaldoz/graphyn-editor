@@ -10,14 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
 import com.ronjunevaldoz.graphyn.core.store.SettingsStore
@@ -105,37 +101,13 @@ internal fun GraphynCredentialsDialog(store: SettingsStore, onDismiss: () -> Uni
                         onRemove = { rows = rows.filterIndexed { j, _ -> j != i } },
                     )
                 }
-                MiniButton("Add value") { rows = rows + EnvRow("", "", known = false) }
+                MiniButton("Add value") { rows = rows + EnvRow("", "", pinned = false) }
             }
             MiniButton("Save", filled = true, modifier = Modifier.fillMaxWidth()) {
                 val toSave = foldRows(settings, activeEnv, rows).copy(activeEnvironment = activeEnv)
                 scope.launch { store.save(toSave); onDismiss() }
             }
         }
-    }
-}
-
-@Composable
-private fun ValueRow(row: EnvRow, onValue: (String) -> Unit, onKey: (String) -> Unit, onRemove: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(6.dp), Alignment.CenterVertically) {
-        if (row.known) BasicText(row.label, Modifier.width(140.dp), style = GraphynDs.type.bodySmall.copy(color = GraphynDs.colors.textSecondary))
-        else CredInput(row.key, "KEY", Modifier.width(140.dp), onKey)
-        CredInput(row.value, "value", Modifier.weight(1f), onValue)
-        if (!row.known) MiniButton("✕") { onRemove() }
-    }
-}
-
-@Composable
-internal fun CredInput(value: String, hint: String, modifier: Modifier = Modifier, onChange: (String) -> Unit) {
-    val colors = GraphynDs.colors
-    val type = GraphynDs.type
-    Box(
-        modifier.heightIn(min = 32.dp).clip(RoundedCornerShape(6.dp)).background(colors.surfaceCard)
-            .border(1.dp, colors.border, RoundedCornerShape(6.dp)).padding(horizontal = 8.dp, vertical = 6.dp),
-    ) {
-        if (value.isEmpty()) BasicText(hint, style = type.bodySmall.copy(color = colors.textDisabled))
-        BasicTextField(value, onChange, textStyle = type.bodySmall.copy(color = colors.textPrimary),
-            cursorBrush = SolidColor(colors.accent), modifier = Modifier.fillMaxWidth())
     }
 }
 

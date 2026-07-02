@@ -2,9 +2,11 @@ package com.ronjunevaldoz.graphyn.editor.shell.components
 
 import com.ronjunevaldoz.graphyn.core.store.GraphynEnvironment
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
+import com.ronjunevaldoz.graphyn.core.store.canonicalSettingKey
+import com.ronjunevaldoz.graphyn.core.store.settingValue
 
-/** One editable key/value row. [known] rows show a friendly label and a fixed key; custom rows are free-form. */
-internal data class EnvRow(val key: String, val value: String, val known: Boolean, val label: String = key)
+/** One editable key/value row. [pinned] rows keep the built-in defaults visible but still editable. */
+internal data class EnvRow(val key: String, val value: String, val pinned: Boolean, val label: String = "")
 
 private val KNOWN_KEYS = listOf(
     GraphynSettings.KEY_SD_URL to "SD Server URL",
@@ -15,15 +17,15 @@ private val KNOWN_KEYS = listOf(
 /** Editable rows for [envName]: the three well-known keys first, then any custom keys. */
 internal fun rowsForEnv(settings: GraphynSettings, envName: String): List<EnvRow> {
     val values = settings.environments.firstOrNull { it.name == envName }?.values.orEmpty()
-    val known = KNOWN_KEYS.map { (key, label) -> EnvRow(key, values[key].orEmpty(), known = true, label = label) }
-    val custom = values.filterKeys { k -> KNOWN_KEYS.none { it.first == k } }
-        .map { (k, v) -> EnvRow(k, v, known = false) }
+    val known = KNOWN_KEYS.map { (key, label) -> EnvRow(key, values.settingValue(key).orEmpty(), pinned = true, label = label) }
+    val custom = values.filterKeys { k -> KNOWN_KEYS.none { canonicalSettingKey(it.first) == canonicalSettingKey(k) } }
+        .map { (k, v) -> EnvRow(canonicalSettingKey(k), v, pinned = false) }
     return known + custom
 }
 
 /** Folds [rows] back into [envName] within [settings] (blank keys dropped), returning updated settings. */
 internal fun foldRows(settings: GraphynSettings, envName: String, rows: List<EnvRow>): GraphynSettings {
-    val values = rows.filter { it.key.isNotBlank() }.associate { it.key to it.value }
+    val values = rows.filter { it.key.isNotBlank() }.associate { canonicalSettingKey(it.key.trim()) to it.value }
     val envs = settings.environments.toMutableList()
     val idx = envs.indexOfFirst { it.name == envName }
     if (idx >= 0) envs[idx] = envs[idx].copy(values = values) else envs += GraphynEnvironment(envName, values)

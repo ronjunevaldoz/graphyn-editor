@@ -5,6 +5,51 @@ across projects and to serve as raw material for agent skills.
 
 ---
 
+## Settings keys should be canonical snake_case with legacy aliases
+
+**Category:** Editor settings migration
+
+When the credentials dialog only edits a subset of rows or stores legacy `GRAPHYN_*` keys
+verbatim, users end up with a split-brain config: some values are editable in the UI, while
+others are effectively frozen under old names.
+
+**Rule:** Store the editor-facing settings keys in snake_case, let every built-in row edit both
+key and value, and keep a compatibility layer that reads legacy keys and normalizes them on save.
+
+## OpenAPI should decide the cancel path shape
+
+**Category:** Stable Diffusion worker contract
+
+The live `server-sd` spec exposes both `/api/sd/cancel` and `/api/sd/cancel/{jobId}`. Posting a
+JSON body to the generic route works only if the worker tolerates that guess; the documented path
+variant is the safer contract for specific job cancellation.
+
+**Rule:** When the worker publishes OpenAPI, align the client to the documented path and method
+first, then keep a compatibility fallback only if the server version in the wild still needs it.
+
+## Stable Diffusion workers should be selected by settings, not by hardcoded hostnames
+
+**Category:** Editor integration — configurable inference backends
+
+When the editor or backend code hardcodes a deployment hostname, local dev and hosted
+RunPod workers drift into separate code paths. That makes readiness, status, job polling, and
+cancelation checks harder to keep aligned, and it hides the real contract behind the worker URL.
+
+**Rule:** Keep the worker adapter behind a single HTTP client that resolves `baseUrl` + API key
+from the active environment on every request. Local and RunPod profiles should differ only by
+URL and auth key; the workflow graph must stay unchanged.
+
+## Stitching requires video clips, not stills
+
+**Category:** Media workflow composition
+
+`media.video_stitch` only concatenates compatible video handles. It cannot take a stack of still
+images or raw caption data directly, so a shorts pipeline needs to generate or render each scene
+into its own clip first.
+
+**Rule:** Generate per-scene motion clips before stitching, then apply caption burn-in to the final
+stitched video unless the caption timing depends on the combined runtime.
+
 ## Nullable fields should round-trip as `NullValue`, not empty strings
 
 **Category:** Workflow value mapping — media caption styles
@@ -16,6 +61,39 @@ renderer.
 
 **Rule:** Preserve `WorkflowValue.NullValue` for absent nullable fields. Only emit empty strings
 when the contract truly means "present but blank."
+
+---
+
+## Script-based media templates need the script plugin in the JVM runtime bundle
+
+**Category:** Desktop launcher / catalog visibility
+
+Any launcher template that uses `script.eval` will be filtered out unless the desktop runtime
+installs the script plugin alongside the media plugins. That makes the template look "missing"
+even when the workflow definition itself is valid.
+
+**Rule:** If a first-party desktop template depends on `script.eval`, add `ScriptPlugin` to the JVM
+runtime bundle and the corresponding Gradle source-set dependency so the template is visible and
+compiles together with the host.
+
+---
+
+## Subgraph boundary ports are not automatically understood by the structural validator
+
+**Category:** Workflow validation
+
+The execution engine can inject outer subgraph inputs into inner free ports by name, but the
+structural validator still sees the registered subgraph node shape. That means intentional
+connections into derived subgraph ports can surface as `missing_input_port` during graph
+validation.
+
+**Rule:** When a template deliberately uses subgraph boundary injection, either keep the validator
+exception scoped to that template family or model the boundary with an explicitly registered node
+spec that advertises the same ports.
+
+**Follow-up:** Generic pass-through subgraphs are still useful for demos, but a reusable template
+that fans out prompts or fans in multiple clips should get a dedicated node spec with matching
+outer ports. That keeps validation, editor wiring, and runtime execution aligned.
 
 ---
 

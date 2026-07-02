@@ -7,7 +7,10 @@ import io.ktor.client.request.header
 /** Resolved connection to the SD server: where to reach it and the bearer key (null = no auth). */
 data class SdConnection(val baseUrl: String, val apiKey: String?)
 
-private const val DEFAULT_SD_URL = "https://ron-local-home.duckdns.org/stablediffusion"
+private const val DEFAULT_SD_URL = "http://127.0.0.1:5000"
+
+internal fun envValue(vararg names: String): String? =
+    names.asSequence().mapNotNull { System.getenv(it)?.ifBlank { null } }.firstOrNull()
 
 /**
  * Resolves the SD server URL and API key, in-app settings first so the credential panel wins over
@@ -15,11 +18,11 @@ private const val DEFAULT_SD_URL = "https://ron-local-home.duckdns.org/stabledif
  */
 fun resolveSdConnection(settings: GraphynSettings): SdConnection {
     val url = settings.value(GraphynSettings.KEY_SD_URL)
-        ?: System.getenv("GRAPHYN_SD_SERVER_URL")?.ifBlank { null }
+        ?: envValue("sd_server_url", "GRAPHYN_SD_SERVER_URL")
         ?: DEFAULT_SD_URL
     val key = settings.value(GraphynSettings.KEY_SD_API_KEY)
-        ?: System.getenv("GRAPHYN_SD_API_KEY")?.ifBlank { null }
-    return SdConnection(baseUrl = url, apiKey = key)
+        ?: envValue("sd_api_key", "GRAPHYN_SD_API_KEY")
+    return SdConnection(baseUrl = url.trimEnd('/'), apiKey = key)
 }
 
 /** Adds the bearer header for [conn] when a key is set; no-op otherwise. */

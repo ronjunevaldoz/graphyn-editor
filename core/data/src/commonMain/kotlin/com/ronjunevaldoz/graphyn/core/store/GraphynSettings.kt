@@ -14,6 +14,41 @@ data class GraphynEnvironment(
     val values: Map<String, String> = emptyMap(),
 )
 
+/** Maps a legacy env key to the canonical snake_case key the editor now stores. */
+fun canonicalSettingKey(key: String): String = when (key) {
+    LEGACY_SD_URL -> GraphynSettings.KEY_SD_URL
+    LEGACY_SD_API_KEY -> GraphynSettings.KEY_SD_API_KEY
+    LEGACY_AI_URL -> GraphynSettings.KEY_AI_URL
+    else -> key
+}
+
+/** Reads a setting by canonical key while still honoring legacy key aliases. */
+fun Map<String, String>.settingValue(key: String): String? =
+    sequenceOf(key, canonicalSettingKey(key), legacySettingKey(key))
+        .distinct()
+        .mapNotNull { get(it)?.ifBlank { null } }
+        .firstOrNull()
+
+internal fun Map<String, String>.normalizedSettingKeys(): Map<String, String> {
+    val normalized = linkedMapOf<String, String>()
+    for ((key, value) in this) {
+        val canonical = canonicalSettingKey(key)
+        if (canonical !in normalized || key == canonical) normalized[canonical] = value
+    }
+    return normalized
+}
+
+private fun legacySettingKey(key: String): String? = when (canonicalSettingKey(key)) {
+    GraphynSettings.KEY_SD_URL -> LEGACY_SD_URL
+    GraphynSettings.KEY_SD_API_KEY -> LEGACY_SD_API_KEY
+    GraphynSettings.KEY_AI_URL -> LEGACY_AI_URL
+    else -> null
+}
+
+private const val LEGACY_SD_URL = "GRAPHYN_SD_SERVER_URL"
+private const val LEGACY_SD_API_KEY = "GRAPHYN_SD_API_KEY"
+private const val LEGACY_AI_URL = "GRAPHYN_OLLAMA_HOST"
+
 /**
  * User-editable app settings that survive restarts — the in-app alternative to environment
  * variables, which GUI-launched desktop apps don't reliably inherit.
@@ -34,7 +69,7 @@ data class GraphynSettings(
         environments.firstOrNull { it.name == activeEnvironment }?.values.orEmpty()
 
     /** Active-environment value for [key], then the legacy field for well-known keys, else null. */
-    fun value(key: String): String? = activeValues()[key]?.ifBlank { null } ?: when (key) {
+    fun value(key: String): String? = activeValues().settingValue(key) ?: when (canonicalSettingKey(key)) {
         KEY_SD_URL -> sdServerUrl.ifBlank { null }
         KEY_SD_API_KEY -> sdApiKey.ifBlank { null }
         else -> null
@@ -47,7 +82,8 @@ data class GraphynSettings(
             if (sdApiKey.isNotBlank()) put(KEY_SD_API_KEY, sdApiKey)
         }
         val active = activeEnvironment.ifBlank { DEFAULT_ENV }
-        val base = environments.ifEmpty { listOf(GraphynEnvironment(active)) }
+        val base = environments.map { it.copy(values = it.values.normalizedSettingKeys()) }
+            .ifEmpty { listOf(GraphynEnvironment(active)) }
         if (legacy.isEmpty()) return copy(activeEnvironment = active, environments = base)
         val envs = base.map { if (it.name == active) it.copy(values = legacy + it.values) else it }
         return GraphynSettings(active, envs)
@@ -55,9 +91,9 @@ data class GraphynSettings(
 
     companion object {
         const val DEFAULT_ENV = "default"
-        const val KEY_SD_URL = "GRAPHYN_SD_SERVER_URL"
-        const val KEY_SD_API_KEY = "GRAPHYN_SD_API_KEY"
-        const val KEY_AI_URL = "GRAPHYN_OLLAMA_HOST"
+        const val KEY_SD_URL = "sd_server_url"
+        const val KEY_SD_API_KEY = "sd_api_key"
+        const val KEY_AI_URL = "ollama_host"
     }
 }
 
