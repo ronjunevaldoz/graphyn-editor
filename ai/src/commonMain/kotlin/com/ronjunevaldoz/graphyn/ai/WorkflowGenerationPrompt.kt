@@ -16,7 +16,7 @@ internal object WorkflowGenerationPrompt {
     fun system(catalog: List<NodeSpec>): String = buildString {
         appendLine("You are a workflow graph generator. Output ONLY a JSON object, no prose, no markdown fences.")
         appendLine("Schema:")
-        appendLine("""{"id":string,"name":string,"nodes":[{"id":string,"type":string,"config":{portName:value}}],"connections":[{"fromNodeId":string,"fromPort":string,"toNodeId":string,"toPort":string}]}""")
+        appendLine("""{"id":string,"name":string,"nodes":[{"id":string,"type":string,"config":{portName:value}}],"connections":[{"fromNodeId":string,"fromPort":string,"toNodeId":string,"toPort":string}],"nodePositions":{"nodeId":{"x":int,"y":int}}}""")
         appendLine()
         appendLine("Rules:")
         appendLine("- Use ONLY node types from the catalog below. Never invent a type.")
@@ -24,6 +24,7 @@ internal object WorkflowGenerationPrompt {
         appendLine("- A connection's fromPort must be an output port of its fromNode's type; toPort must be an input port of its toNode's type.")
         appendLine("- Fill each node's \"config\" with concrete literal values for its input ports that are NOT fed by a connection.")
         appendLine("  Match the port's type: string -> \"text\", int -> 42, double -> 1.5, boolean -> true. Omit ports you connect.")
+        appendLine("- Include nodePositions for every node so the editor can open the graph without a fallback auto-layout.")
         appendLine("- Prefer a small, correct graph over a large speculative one.")
         appendLine()
         appendLine("Catalog (type — inputs[name:type] -> outputs[name:type]):")

@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.ai
 
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -24,6 +25,8 @@ class PlaceholderWorkflowGeneratorTest {
         assertEquals(3, result.workflow.nodes.size)
         assertEquals(2, result.workflow.connections.size)
         assertEquals("anything", result.workflow.name)
+        assertEquals(WorkflowNodePosition(0, 0), result.workflow.nodePositions["a-0"])
+        assertEquals(WorkflowNodePosition(360, 0), result.workflow.nodePositions["b-1"])
     }
 
     @Test

@@ -50,6 +50,17 @@ catalog feel stale even though the underlying workflows were current.
 **Rule:** Sort launcher catalogs explicitly by section, then by badge priority, then by recency
 within the section. Use enum order only as the recency signal, not as the whole layout policy.
 
+## AI-generated workflows should emit node positions, not rely on fallback auto-layout
+
+**Category:** AI workflow generation
+
+The workflow model already persists `nodePositions`, so leaving that map empty means the editor
+has to guess a layout after the fact. That makes generated graphs less intentional and creates
+different behavior between AI drafts and saved templates.
+
+**Rule:** Ask generators to output `nodePositions` alongside nodes and connections, preserve them
+through parsing, and keep auto-layout only as the fallback for hand-authored or incomplete graphs.
+
 ## Stitching requires video clips, not stills
 
 **Category:** Media workflow composition

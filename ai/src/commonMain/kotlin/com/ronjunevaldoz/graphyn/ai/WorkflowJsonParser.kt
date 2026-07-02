@@ -5,6 +5,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlinx.serialization.Serializable
@@ -25,7 +26,6 @@ import kotlinx.serialization.json.jsonPrimitive
  * what it sanitized rather than failing outright.
  */
 internal object WorkflowJsonParser {
-
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     @Serializable
@@ -34,6 +34,7 @@ internal object WorkflowJsonParser {
         val name: String? = null,
         val nodes: List<RawNode> = emptyList(),
         val connections: List<RawConnection> = emptyList(),
+        val nodePositions: Map<String, WorkflowNodePosition> = emptyMap(),
     )
 
     @Serializable
@@ -86,6 +87,7 @@ internal object WorkflowJsonParser {
             connections = validConnections.map {
                 ConnectionRef(it.fromNodeId, it.fromPort, it.toNodeId, it.toPort)
             },
+            nodePositions = parsed.nodePositions,
         )
         return WorkflowGenerationResult.Success(workflow, droppedNodes, droppedConnections)
     }

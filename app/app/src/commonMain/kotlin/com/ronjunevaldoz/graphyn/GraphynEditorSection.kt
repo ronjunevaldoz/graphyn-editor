@@ -29,7 +29,7 @@ internal fun GraphynEditorSection(
         canvasBounds = canvasBounds,
         store = store,
     )
-    // Templates ship without positions; lay them out once the canvas is measured.
+    // Use stored positions when present; otherwise lay the graph out once the canvas is measured.
     // Guarded on empty positions so a stored/edited layout is never clobbered.
     LaunchedEffect(Unit) {
         snapshotFlow { state.canvasSize to state.hasCanvasCards }

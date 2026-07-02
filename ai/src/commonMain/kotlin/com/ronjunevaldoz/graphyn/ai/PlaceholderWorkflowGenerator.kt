@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -26,6 +27,7 @@ class PlaceholderWorkflowGenerator(
         }
         val picked = catalog.take(maxNodes)
         val nodes = picked.mapIndexed { i, spec -> NodeRef(id = "${spec.type}-$i", type = spec.type) }
+        val nodePositions = nodes.mapIndexed { i, node -> node.id to WorkflowNodePosition(x = (i % 2) * 360, y = (i / 2) * 220) }.toMap()
         val connections = buildList {
             for (i in 0 until nodes.size - 1) {
                 val out = picked[i].outputs.firstOrNull()?.name ?: continue
@@ -38,6 +40,7 @@ class PlaceholderWorkflowGenerator(
             name = prompt.take(40).ifBlank { "Generated Workflow" },
             nodes = nodes,
             connections = connections,
+            nodePositions = nodePositions,
         )
         return WorkflowGenerationResult.Success(workflow)
     }

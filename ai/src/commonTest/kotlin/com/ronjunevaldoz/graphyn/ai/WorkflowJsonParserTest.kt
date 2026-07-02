@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.ai
 
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlin.test.Test
@@ -22,11 +23,13 @@ class WorkflowJsonParserTest {
     @Test
     fun parsesValidWorkflow() {
         val raw = """{"id":"w1","name":"Pipe","nodes":[{"id":"a","type":"source"},{"id":"b","type":"sink"}],
-            "connections":[{"fromNodeId":"a","fromPort":"out","toNodeId":"b","toPort":"in"}]}"""
+            "connections":[{"fromNodeId":"a","fromPort":"out","toNodeId":"b","toPort":"in"}],
+            "nodePositions":{"a":{"x":0,"y":0},"b":{"x":320,"y":0}}}"""
         val result = parse(raw) as WorkflowGenerationResult.Success
         assertEquals(2, result.workflow.nodes.size)
         assertEquals(1, result.workflow.connections.size)
         assertEquals("w1", result.workflow.id)
+        assertEquals(mapOf("a" to WorkflowNodePosition(0, 0), "b" to WorkflowNodePosition(320, 0)), result.workflow.nodePositions)
     }
 
     @Test
