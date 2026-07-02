@@ -3,7 +3,9 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
+import com.ronjunevaldoz.graphyn.editor.launcher.WorkflowCategory
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -19,6 +21,8 @@ class WorkflowCatalogTemplatesTest {
         // media.* and script.eval are JVM-only — not installed in the common runtime.
         assertFalse("Text to Speech" in names, "media template should be hidden on web")
         assertFalse("Captioned Video" in names, "media template should be hidden on web")
+        assertFalse("AI Shorts (Image Motion)" in names, "media template should be hidden on web")
+        assertFalse("AI Shorts (Video Motion)" in names, "media template should be hidden on web")
         assertFalse("Script" in names, "script template should be hidden on web")
         // Core-node templates remain available.
         assertTrue("List Ops" in names, "core template should be visible on web")
@@ -35,5 +39,21 @@ class WorkflowCatalogTemplatesTest {
         assertTrue("Text to Speech" in names)
         assertTrue("Picture-in-Picture" in names)
         assertTrue("Slideshow" in names)
+        assertTrue("AI Shorts (Image Motion)" in names)
+        assertTrue("AI Shorts (Video Motion)" in names)
+    }
+
+    @Test
+    fun aiMediaTemplatesSortBeforeOlderMediaTemplates() {
+        val desktopRuntime = DefaultGraphynPluginRegistry().apply {
+            (GraphynDemoPlugins.runtime + GraphynBootstrapJvm.mediaRuntimePlugins).forEach { install(it) }
+        }
+        val mediaNames = catalogTemplatesFor(desktopRuntime.nodeSpecs)
+            .filter { it.category == WorkflowCategory.Media }
+            .map { it.name }
+
+        assertEquals("AI Shorts (Video Motion)", mediaNames.first())
+        assertEquals("AI Shorts (Image Motion)", mediaNames[1])
+        assertTrue(mediaNames.indexOf("Text to Speech") > mediaNames.indexOf("FLUX Text to Image"))
     }
 }

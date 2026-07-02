@@ -39,6 +39,17 @@ cancelation checks harder to keep aligned, and it hides the real contract behind
 from the active environment on every request. Local and RunPod profiles should differ only by
 URL and auth key; the workflow graph must stay unchanged.
 
+## Launcher catalogs need an explicit priority rule once badges and recency matter
+
+**Category:** Workflow launcher ordering
+
+When the launcher relied on enum declaration order alone, the media catalog looked random as
+new templates were appended and badge-highlighted entries drifted below older ones. That made the
+catalog feel stale even though the underlying workflows were current.
+
+**Rule:** Sort launcher catalogs explicitly by section, then by badge priority, then by recency
+within the section. Use enum order only as the recency signal, not as the whole layout policy.
+
 ## Stitching requires video clips, not stills
 
 **Category:** Media workflow composition
