@@ -159,10 +159,18 @@ class MediaWorkflowTemplateTest {
         )
         assertConfig(
             workflow.node("caption_style"),
-            "color" to stringValue("#FFFFFF"),
-            "background_color" to stringValue("#000000"),
-            "font_size" to WorkflowValue.IntValue(24),
-            "position" to stringValue("bottom"),
+            "font_family" to stringValue("Arial"),
+            "font_size" to WorkflowValue.IntValue(42),
+            "text_color" to stringValue("#FFFFFF"),
+            "background_color" to WorkflowValue.NullValue,
+            "outline_color" to stringValue("#000000"),
+            "outline_width" to WorkflowValue.IntValue(2),
+            "shadow" to WorkflowValue.IntValue(0),
+            "bold" to WorkflowValue.BooleanValue(true),
+            "italic" to WorkflowValue.BooleanValue(false),
+            "alignment" to stringValue("BottomCenter"),
+            "margin_horizontal" to WorkflowValue.IntValue(40),
+            "margin_vertical" to WorkflowValue.IntValue(60),
         )
     }
 
@@ -468,6 +476,6 @@ class MediaWorkflowTemplateTest {
     private fun stringValue(value: String) = WorkflowValue.StringValue(value)
 
     private companion object {
-        const val MEDIA_RESOURCES_DIR = "../../app/app/src/commonMain/resources/media"
+        const val MEDIA_RESOURCES_DIR = "app/app/src/commonMain/resources/media"
     }
 }

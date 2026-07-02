@@ -1,7 +1,8 @@
 package com.ronjunevaldoz.graphyn.plugins.mediacore
 
-import com.ronjunevaldoz.graphyn.plugins.mediacore.ffmpeg.FfmpegMediaCoreBackend
+import androidx.compose.ui.graphics.Color
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.Caption
+import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionAlignment
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionStyle
 import java.io.File
 import java.nio.file.Files
@@ -74,10 +75,18 @@ class FfmpegMediaCoreBackendTest {
                 videoPath = base,
                 captions = listOf(Caption("Hello", 0.0, 500.0), Caption("World", 500.0, 1000.0)),
                 style = CaptionStyle(
-                    color = "#FFFFFF",
-                    backgroundColor = "#80000000",
+                    fontFamily = "Arial",
                     fontSize = 18,
-                    position = "bottom"
+                    textColor = Color.White,
+                    backgroundColor = Color(red = 0f, green = 0f, blue = 0f, alpha = 0.5f),
+                    outlineColor = Color.Black,
+                    outlineWidth = 2,
+                    shadow = 0,
+                    bold = true,
+                    italic = false,
+                    alignment = CaptionAlignment.BottomCenter,
+                    marginHorizontal = 40,
+                    marginVertical = 60,
                 ),
             )
             assertTrue(File(captioned.path).isFile)

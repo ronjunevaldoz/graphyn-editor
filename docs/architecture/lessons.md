@@ -5,6 +5,20 @@ across projects and to serve as raw material for agent skills.
 
 ---
 
+## Nullable fields should round-trip as `NullValue`, not empty strings
+
+**Category:** Workflow value mapping — media caption styles
+
+When a record field is modeled as nullable, serializing `null` to `StringValue("")` creates a
+false value that downstream mappers may still try to parse as real data. In the media caption
+style path, that turns "no background color" into an invalid color string and breaks the
+renderer.
+
+**Rule:** Preserve `WorkflowValue.NullValue` for absent nullable fields. Only emit empty strings
+when the contract truly means "present but blank."
+
+---
+
 ## KMP `implementation()` deps still leak into the published POM
 
 **Category:** Maven publishing — Kotlin Multiplatform

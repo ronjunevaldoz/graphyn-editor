@@ -68,7 +68,7 @@ class MediaWorkflowExecutionTest {
         )
         assertEquals("mixed.mp3" to "mp3", fixture.lastAudioEncode)
         assertEquals(
-            WorkflowValue.IntValue(24),
+            WorkflowValue.IntValue(42),
             (result.output("caption_style", "style_config") as WorkflowValue.RecordValue)
                 .fields["font_size"],
         )
@@ -289,10 +289,18 @@ private class MediaExecutionFixture {
             mapOf(
                 "style_config" to WorkflowValue.RecordValue(
                     mapOf(
-                        "color" to inputs.getValue("color"),
-                        "background_color" to inputs.getValue("background_color"),
+                        "font_family" to inputs.getValue("font_family"),
                         "font_size" to inputs.getValue("font_size"),
-                        "position" to inputs.getValue("position"),
+                        "text_color" to inputs.getValue("text_color"),
+                        "background_color" to inputs.getValue("background_color"),
+                        "outline_color" to inputs.getValue("outline_color"),
+                        "outline_width" to inputs.getValue("outline_width"),
+                        "shadow" to inputs.getValue("shadow"),
+                        "bold" to inputs.getValue("bold"),
+                        "italic" to inputs.getValue("italic"),
+                        "alignment" to inputs.getValue("alignment"),
+                        "margin_horizontal" to inputs.getValue("margin_horizontal"),
+                        "margin_vertical" to inputs.getValue("margin_vertical"),
                     ),
                 ),
             )

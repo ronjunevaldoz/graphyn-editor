@@ -6,7 +6,6 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.booleanOrError
 import com.ronjunevaldoz.graphyn.core.model.intOrError
 import com.ronjunevaldoz.graphyn.core.model.stringOrError
-import com.ronjunevaldoz.graphyn.core.model.stringOrNull
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionAlignment
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionStyle
 
@@ -18,7 +17,12 @@ fun Map<String, WorkflowValue>.toCaptionStyle(): CaptionStyle =
         fontFamily = stringOrError("font_family"),
         fontSize = intOrError("font_size"),
         textColor = stringOrError("text_color").toColor(),
-        backgroundColor = stringOrNull("background_color")?.toColor(),
+        backgroundColor = when (val raw = get("background_color")) {
+            null,
+            WorkflowValue.NullValue -> null
+            is WorkflowValue.StringValue -> raw.value.takeIf(String::isNotBlank)?.toColor()
+            else -> error("Expected string field 'background_color'.")
+        },
         outlineColor = stringOrError("outline_color").toColor(),
         outlineWidth = intOrError("outline_width"),
         shadow = intOrError("shadow"),
@@ -35,9 +39,8 @@ fun CaptionStyle.toWorkflowValue(): WorkflowValue.RecordValue =
             "font_family" to WorkflowValue.StringValue(fontFamily),
             "font_size" to WorkflowValue.IntValue(fontSize),
             "text_color" to WorkflowValue.StringValue(textColor.toHexColor()),
-            "background_color" to WorkflowValue.StringValue(
-                backgroundColor?.toHexColor().orEmpty()
-            ),
+            "background_color" to (backgroundColor?.let { WorkflowValue.StringValue(it.toHexColor()) }
+                ?: WorkflowValue.NullValue),
             "outline_color" to WorkflowValue.StringValue(outlineColor.toHexColor()),
             "outline_width" to WorkflowValue.IntValue(outlineWidth),
             "shadow" to WorkflowValue.IntValue(shadow),
@@ -48,5 +51,4 @@ fun CaptionStyle.toWorkflowValue(): WorkflowValue.RecordValue =
             "margin_vertical" to WorkflowValue.IntValue(marginVertical),
         ),
     )
-
 
