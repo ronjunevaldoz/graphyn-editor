@@ -13,6 +13,7 @@ kotlin {
             api(projects.pluginApi)
             api(projects.editorApi)
             api(projects.ui.cards)
+            implementation(projects.core.common)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)

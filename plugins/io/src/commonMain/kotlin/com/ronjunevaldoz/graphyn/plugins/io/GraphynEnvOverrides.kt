@@ -1,5 +1,7 @@
 package com.ronjunevaldoz.graphyn.plugins.io
 
+import kotlin.concurrent.Volatile
+
 /**
  * A resolver consulted by [EnvReader] before the real process environment. The app points
  * [provider] at the active settings environment, so a workflow's `env` node (and anything else

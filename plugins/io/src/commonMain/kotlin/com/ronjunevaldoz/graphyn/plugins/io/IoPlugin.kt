@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.plugins.io
 
+import com.ronjunevaldoz.graphyn.core.common.FileIO
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.pluginapi.GRAPHYN_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
@@ -88,9 +89,14 @@ object IoPlugin : GraphynPlugin {
         }
 
         registrar.registerExecutor(specResolvePath.type) { inputs ->
-            val baseDir = (inputs["base_dir"] as? WorkflowValue.StringValue)?.value ?: ""
-            val relativePath = (inputs["relative_path"] as? WorkflowValue.StringValue)?.value ?: ""
-            val resolvedPath = FileIO.resolvePath(baseDir, relativePath)
+            val baseDirVal = inputs["base_dir"] as? WorkflowValue.StringValue
+            val relativePathVal = inputs["relative_path"] as? WorkflowValue.StringValue
+
+            if (baseDirVal == null || relativePathVal == null) {
+                return@registerExecutor mapOf("error" to WorkflowValue.StringValue("Missing or invalid input types: 'base_dir' and 'relative_path' must both be Strings."))
+            }
+
+            val resolvedPath = FileIO.resolvePath(baseDirVal.value, relativePathVal.value)
             mapOf("resolved_path" to WorkflowValue.StringValue(resolvedPath))
         }
     }
