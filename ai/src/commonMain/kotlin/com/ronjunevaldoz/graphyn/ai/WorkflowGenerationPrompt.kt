@@ -7,9 +7,9 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 /**
  * Builds the LLM instruction for workflow generation. Pure and testable — no I/O.
  *
- * The model is told the exact JSON schema and the available node catalog (with input port types),
- * and asked to return only JSON. Each node may carry a `config` object filling its input ports
- * with literal values; ports fed by a connection should be left out of config.
+ * The model is told the exact JSON schema and the available node catalog (with input port types
+ * and descriptions), and asked to return only JSON. Each node may carry a `config` object filling
+ * its input ports with literal values; ports fed by a connection should be left out of config.
  */
 internal object WorkflowGenerationPrompt {
 
@@ -25,13 +25,15 @@ internal object WorkflowGenerationPrompt {
         appendLine("- Fill each node's \"config\" with concrete literal values for its input ports that are NOT fed by a connection.")
         appendLine("  Match the port's type: string -> \"text\", int -> 42, double -> 1.5, boolean -> true. Omit ports you connect.")
         appendLine("- Include nodePositions for every node so the editor can open the graph without a fallback auto-layout.")
+        appendLine("- Use each node's description as its use case or intent when deciding the graph structure.")
         appendLine("- Prefer a small, correct graph over a large speculative one.")
         appendLine()
         appendLine("Catalog (type — inputs[name:type] -> outputs[name:type]):")
         catalog.forEach { spec ->
             val ins = spec.inputs.joinToString(", ") { "${it.name}:${typeName(it.type)}" }.ifEmpty { "none" }
             val outs = spec.outputs.joinToString(", ") { "${it.name}:${typeName(it.type)}" }.ifEmpty { "none" }
-            appendLine("- ${spec.type} — [$ins] -> [$outs]")
+            val useCase = spec.description?.let { " | use: $it" }.orEmpty()
+            appendLine("- ${spec.type} — [$ins] -> [$outs]$useCase")
         }
     }
 

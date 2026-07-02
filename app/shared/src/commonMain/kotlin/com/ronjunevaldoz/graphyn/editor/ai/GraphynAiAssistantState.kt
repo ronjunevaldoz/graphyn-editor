@@ -8,7 +8,6 @@ import com.ronjunevaldoz.graphyn.ai.WorkflowGenerator
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-
 /** One exchange in the assistant transcript: the user's prompt and the assistant's outcome. */
 data class AiChatTurn(
     val prompt: String,
@@ -37,6 +36,7 @@ class GraphynAiAssistantState(
     private val currentWorkflow: () -> WorkflowDefinition? = { null },
     private val validateWorkflow: ((WorkflowDefinition) -> List<ValidationError>)? = null,
 ) {
+    private val catalogByType = catalog.associateBy { it.type }
     var turns by mutableStateOf<List<AiChatTurn>>(emptyList())
         private set
     var generating by mutableStateOf(false)
@@ -62,7 +62,6 @@ class GraphynAiAssistantState(
         }
         turns = turns.dropLast(1) + AiChatTurn(prompt, status)
     }
-
     fun clear() { turns = emptyList() }
 
     private fun summarize(r: WorkflowGenerationResult.Success): String {
@@ -87,6 +86,7 @@ class GraphynAiAssistantState(
         val analysisHints = listOf(
             "analy", "review", "inspect", "explain", "summar", "what does",
             "what is wrong", "what's wrong", "why ", "issue", "problem",
+            "how does", "can you", "tell me", "compare", "recommend",
             "refine", "improve", "validate", "audit",
         )
         val generationHints = listOf("build ", "generate ", "create ", "make ")
@@ -104,11 +104,31 @@ class GraphynAiAssistantState(
             .sortedByDescending { it.value }
             .take(4)
             .joinToString(", ") { (type, count) -> "$type ×$count" }
+        val layout = workflow.nodePositions
+        val layoutNote = when {
+            layout.isEmpty() -> " Layout has no saved positions yet."
+            layout.size < workflow.nodes.size -> " Layout is partially saved for ${layout.size}/${workflow.nodes.size} node${plural(layout.size)}."
+            else -> " Layout positions are saved for all nodes."
+        }
+        val useCases = workflow.nodes.mapNotNull { node ->
+            val spec = catalogByType[node.type] ?: return@mapNotNull null
+            spec.description?.let { "${spec.label}: $it" }
+        }.distinct().take(3).joinToString(" · ")
+        val layoutSpan = layout.takeIf { it.isNotEmpty() }?.let { positions ->
+            val minX = positions.values.minOf { it.x }
+            val minY = positions.values.minOf { it.y }
+            val maxX = positions.values.maxOf { it.x }
+            val maxY = positions.values.maxOf { it.y }
+            " Layout span: ${maxX - minX}px wide by ${maxY - minY}px tall."
+        }.orEmpty()
 
         val summary = buildString {
             append("${workflow.name} has ${workflow.nodes.size} node${plural(workflow.nodes.size)} and ")
             append("${workflow.connections.size} connection${plural(workflow.connections.size)}.")
             if (nodeMix.isNotBlank()) append(" Main node mix: $nodeMix.")
+            if (useCases.isNotBlank()) append(" Use cases: $useCases.")
+            append(layoutNote)
+            append(layoutSpan)
             append(
                 if (errors.isEmpty()) " Validator found no structural issues."
                 else " Validator found ${errors.size} issue${plural(errors.size)}."
@@ -126,6 +146,5 @@ class GraphynAiAssistantState(
             .takeIf { it.isNotBlank() }
         return AiTurnStatus.Done(summary = summary, warning = warning)
     }
-
     private fun plural(n: Int) = if (n == 1) "" else "s"
 }

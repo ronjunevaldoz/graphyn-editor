@@ -61,6 +61,17 @@ different behavior between AI drafts and saved templates.
 **Rule:** Ask generators to output `nodePositions` alongside nodes and connections, preserve them
 through parsing, and keep auto-layout only as the fallback for hand-authored or incomplete graphs.
 
+## Assistant analysis improves when it can see catalog descriptions and saved layout
+
+**Category:** AI workflow assistant
+
+The assistant can already summarize structure, but it becomes much more useful when it can name
+the dominant node use cases and tell whether the graph has saved positions, partial positions, or
+none at all. That gives the user a quick read on both the graph's intent and its layout health.
+
+**Rule:** Feed the assistant the node catalog descriptions and include layout state in analysis
+responses. Treat those as first-class context, not optional polish.
+
 ## Stitching requires video clips, not stills
 
 **Category:** Media workflow composition

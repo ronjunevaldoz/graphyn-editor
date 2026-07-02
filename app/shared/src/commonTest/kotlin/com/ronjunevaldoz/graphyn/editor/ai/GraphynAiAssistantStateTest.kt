@@ -104,6 +104,7 @@ class GraphynAiAssistantStateTest {
 
         val done = s.turns.single().status as AiTurnStatus.Done
         assertTrue(done.summary.contains("2 nodes"))
+        assertTrue(done.summary.contains("Layout has no saved positions yet"))
         assertTrue(done.summary.contains("Validator found 1 issue"))
         assertTrue(done.warning!!.contains("missing_required_input"))
     }
