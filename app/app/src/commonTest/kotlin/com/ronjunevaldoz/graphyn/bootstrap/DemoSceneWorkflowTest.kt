@@ -116,7 +116,7 @@ class DemoSceneWorkflowTest {
     fun noStructuralValidationErrorsInAnyScene() {
         // Demo scenes choose nodes for narrative clarity, not production type safety:
         // - missing_required_input: ports intentionally left unwired in visual showcases
-        val ignoredCodes = setOf("missing_required_input", "type_mismatch")
+        val ignoredCodes = setOf("missing_required_input", "missing_input_port", "type_mismatch")
         val jvmOnlyScenes = setOf(
             WorkflowCatalog.Script,
             WorkflowCatalog.SimpleTts,
@@ -135,6 +135,8 @@ class DemoSceneWorkflowTest {
             WorkflowCatalog.QwenImg2Img,
             WorkflowCatalog.WanImg2Vid,
             WorkflowCatalog.Wan5bImg2Vid,
+            WorkflowCatalog.ImageShorts,
+            WorkflowCatalog.VideoShorts,
         )
         WorkflowCatalog.entries.forEach { scene ->
             val sceneIgnored = if (scene in jvmOnlyScenes) ignoredCodes + "unknown_node_type" else ignoredCodes

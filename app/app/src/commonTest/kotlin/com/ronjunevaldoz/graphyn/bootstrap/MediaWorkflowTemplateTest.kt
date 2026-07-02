@@ -29,6 +29,8 @@ class MediaWorkflowTemplateTest {
                 WorkflowCatalog.SyncCalibration,
                 WorkflowCatalog.ImageEdit,
                 WorkflowCatalog.Slideshow,
+                WorkflowCatalog.ImageShorts,
+                WorkflowCatalog.VideoShorts,
             ),
             mediaScenes,
         )

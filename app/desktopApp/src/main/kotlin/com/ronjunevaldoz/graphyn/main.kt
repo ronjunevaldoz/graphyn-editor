@@ -11,7 +11,6 @@ import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
 import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
 import com.ronjunevaldoz.graphyn.plugins.io.GraphynEnvOverrides
 import com.ronjunevaldoz.graphyn.plugins.script.ScriptEditorPlugin
-import com.ronjunevaldoz.graphyn.plugins.script.ScriptPlugin
 import com.ronjunevaldoz.graphyn.plugins.gmail.GmailPlugin
 import com.ronjunevaldoz.graphyn.plugins.linkedin.LinkedInPlugin
 
@@ -30,7 +29,7 @@ fun main() = application {
     ) {
         GraphynApp(
             runtimePlugins = GraphynBootstrap.runtimePlugins(
-                extraPlugins = listOf(ScriptPlugin, GmailPlugin, LinkedInPlugin) +
+                extraPlugins = listOf(GmailPlugin, LinkedInPlugin) +
                     GraphynBootstrapJvm.mediaRuntimePlugins,
             ),
             editorPlugins = GraphynBootstrap.editorPlugins(

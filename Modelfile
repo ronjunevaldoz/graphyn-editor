@@ -1,0 +1,2 @@
+FROM qwen3-coder:30b
+PARAMETER num_ctx 65536

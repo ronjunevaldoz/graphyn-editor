@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.editor.shell.components
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -21,11 +22,14 @@ import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 
 @Composable
 internal fun ValueRow(row: EnvRow, onValue: (String) -> Unit, onKey: (String) -> Unit, onRemove: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(6.dp), Alignment.CenterVertically) {
-        Box(Modifier.width(100.dp)) { if (row.label.isNotBlank()) BasicText(row.label, style = GraphynDs.type.bodySmall.copy(color = GraphynDs.colors.textSecondary)) }
-        CredInput(row.key, "key", Modifier.width(120.dp), onKey)
-        CredInput(row.value, "value", Modifier.fillMaxWidth(0.4f), onValue)
-        if (!row.pinned) MiniButton("✕") { onRemove() }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val actionWidth = if (row.pinned) 0.dp else 28.dp
+        val valueWidth = (maxWidth - 120.dp - actionWidth - 12.dp).coerceAtLeast(120.dp)
+        Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(6.dp), Alignment.CenterVertically) {
+            CredInput(row.key, "key", Modifier.width(120.dp), onKey)
+            CredInput(row.value, "value", Modifier.width(valueWidth), onValue)
+            if (!row.pinned) MiniButton("✕") { onRemove() }
+        }
     }
 }
 

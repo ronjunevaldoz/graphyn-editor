@@ -4,7 +4,6 @@ import com.ronjunevaldoz.graphyn.core.store.GraphynEnvironment
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class GraphynEnvRowsTest {
@@ -13,7 +12,6 @@ class GraphynEnvRowsTest {
         val rows = rowsForEnv(GraphynSettings(), GraphynSettings.DEFAULT_ENV)
         assertEquals(listOf("sd_server_url", "sd_api_key", "ollama_host"), rows.take(3).map { it.key })
         assertTrue(rows.take(3).all { it.pinned })
-        assertFalse(rows.take(3).any { it.label.isBlank() })
     }
 
     @Test

@@ -2,14 +2,6 @@ package com.ronjunevaldoz.graphyn.bootstrap
 
 import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
 import com.ronjunevaldoz.graphyn.editor.server.SdServerControl
-import com.ronjunevaldoz.graphyn.editor.server.SdServerStatusModel
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.isSuccess
-import kotlinx.serialization.json.Json
 
 /**
  * [SdServerControl] backed by HTTP to server-sd. Resolves the server URL + API key from settings
@@ -17,23 +9,12 @@ import kotlinx.serialization.json.Json
  */
 class HttpSdServerControl(
     private val settingsStore: FileSettingsStore = FileSettingsStore(),
-    private val client: HttpClient = HttpClient(CIO),
 ) : SdServerControl {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val api = ServerSdApi(settingsStore)
 
-    override suspend fun status(): SdServerStatusModel? = request { c ->
-        client.get("${c.baseUrl}/api/sd/status") { authWith(c) }
-    }
-
-    override suspend fun unload(): SdServerStatusModel? = request { c ->
-        client.post("${c.baseUrl}/api/sd/unload") { authWith(c) }
-    }
-
-    private suspend fun request(
-        call: suspend (SdConnection) -> io.ktor.client.statement.HttpResponse,
-    ): SdServerStatusModel? = runCatching {
-        val resp = call(resolveSdConnection(settingsStore.read()))
-        if (!resp.status.isSuccess()) return null
-        json.decodeFromString<SdServerStatusModel>(resp.bodyAsText())
-    }.getOrNull()
+    override suspend fun ping(): Boolean = api.ping()
+    override suspend fun status() = api.status()
+    override suspend fun jobs() = api.jobs()
+    override suspend fun cancel(jobId: String) = api.cancel(jobId)
+    override suspend fun unload() = api.unload()
 }

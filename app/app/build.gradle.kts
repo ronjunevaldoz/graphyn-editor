@@ -54,6 +54,7 @@ kotlin {
         jvmMain.dependencies {
             implementation(projects.plugins.gmail)
             implementation(projects.plugins.linkedin)
+            implementation(projects.plugins.script)
             implementation(projects.plugins.stableDiffusion)
             implementation(libs.ktor.clientCore)
             implementation(libs.ktor.clientCio)

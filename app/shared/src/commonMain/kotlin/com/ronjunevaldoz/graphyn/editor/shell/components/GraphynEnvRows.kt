@@ -6,7 +6,7 @@ import com.ronjunevaldoz.graphyn.core.store.canonicalSettingKey
 import com.ronjunevaldoz.graphyn.core.store.settingValue
 
 /** One editable key/value row. [pinned] rows keep the built-in defaults visible but still editable. */
-internal data class EnvRow(val key: String, val value: String, val pinned: Boolean, val label: String = "")
+internal data class EnvRow(val key: String, val value: String, val pinned: Boolean)
 
 private val KNOWN_KEYS = listOf(
     GraphynSettings.KEY_SD_URL to "SD Server URL",
@@ -17,7 +17,7 @@ private val KNOWN_KEYS = listOf(
 /** Editable rows for [envName]: the three well-known keys first, then any custom keys. */
 internal fun rowsForEnv(settings: GraphynSettings, envName: String): List<EnvRow> {
     val values = settings.environments.firstOrNull { it.name == envName }?.values.orEmpty()
-    val known = KNOWN_KEYS.map { (key, label) -> EnvRow(key, values.settingValue(key).orEmpty(), pinned = true, label = label) }
+    val known = KNOWN_KEYS.map { (key, _) -> EnvRow(key, values.settingValue(key).orEmpty(), pinned = true) }
     val custom = values.filterKeys { k -> KNOWN_KEYS.none { canonicalSettingKey(it.first) == canonicalSettingKey(k) } }
         .map { (k, v) -> EnvRow(canonicalSettingKey(k), v, pinned = false) }
     return known + custom
