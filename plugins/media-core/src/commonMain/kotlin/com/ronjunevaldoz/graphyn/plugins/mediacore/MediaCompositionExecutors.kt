@@ -10,8 +10,6 @@ import com.ronjunevaldoz.graphyn.core.model.stringOr
 import com.ronjunevaldoz.graphyn.core.model.stringOrError
 import com.ronjunevaldoz.graphyn.plugins.mediacore.mapper.toCaptionStyle
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.Caption
-import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionAlignment
-import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionStyle
 
 /** Executor factories for the Phase 2 image/composition nodes, registered by [MediaCorePlugin]. */
 internal fun imageImportExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
@@ -67,7 +65,9 @@ internal fun timingControllerExecutor() = NodeExecutor { inputs ->
     val audioDelayMs = if (syncPoints.isEmpty()) {
         0.0
     } else {
-        syncPoints.sumOf { it.getValue("target_ms").numberOrError() - it.getValue("source_ms").numberOrError() } / syncPoints.size
+        syncPoints.sumOf {
+            it.getValue("target_ms").numberOrError() - it.getValue("source_ms").numberOrError()
+        } / syncPoints.size
     }
     mapOf(
         "config" to MediaCompositionTypes.timingConfigValue(
@@ -78,10 +78,10 @@ internal fun timingControllerExecutor() = NodeExecutor { inputs ->
     )
 }
 
-private fun WorkflowValue.record(): Map<String, WorkflowValue> =
+fun WorkflowValue.record(): Map<String, WorkflowValue> =
     (this as? WorkflowValue.RecordValue)?.fields ?: error("Expected a record value.")
 
-private fun WorkflowValue.toCaption(): Caption {
+fun WorkflowValue.toCaption(): Caption {
     val fields = record()
     return Caption(
         text = (fields["text"] as? WorkflowValue.StringValue)?.value
@@ -90,7 +90,8 @@ private fun WorkflowValue.toCaption(): Caption {
         endMs = fields.getValue("end_ms").numberOrError(),
     )
 }
-private fun WorkflowValue.toVideoOverlay(): VideoOverlay {
+
+fun WorkflowValue.toVideoOverlay(): VideoOverlay {
     val fields = record()
     return VideoOverlay(
         sourcePath = MediaTypes.path(fields["source"], "video"),

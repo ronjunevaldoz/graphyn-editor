@@ -191,7 +191,7 @@ class FfmpegMediaCoreBackend(
             run(
                 ffmpeg, "-v", "error", "-y",
                 "-i", source.absolutePath,
-                "-vf", "ass=${assFile.absolutePath.escapeFilterPath()}",
+                "-vf", "ass='${assFile.absolutePath.escapeFilterPath()}'",
                 "-c:a", "copy",
                 "-movflags", "+faststart",
                 output.absolutePath,

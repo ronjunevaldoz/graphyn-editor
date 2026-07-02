@@ -46,8 +46,8 @@ internal fun parseSttJson(raw: String): SpeechToTextResult {
 
         SpeechSegment(
             text = fields["text"]?.jsonPrimitive?.content.orEmpty(),
-            startMs = (fields["start"]?.jsonPrimitive?.doubleOrNull ?: 0.0) * 1000.0,
-            endMs = (fields["end"]?.jsonPrimitive?.doubleOrNull ?: 0.0) * 1000.0,
+            startMs = fields["start"]?.jsonPrimitive?.doubleOrNull ?: 0.0,
+            endMs = fields["end"]?.jsonPrimitive?.doubleOrNull ?: 0.0
         )
     }
 

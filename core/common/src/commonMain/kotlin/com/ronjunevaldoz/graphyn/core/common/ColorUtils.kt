@@ -5,14 +5,34 @@ import androidx.compose.ui.graphics.Color
 fun String.toColor(): Color {
     val hex = removePrefix("#")
 
-    val value = when (hex.length) {
-        6 -> ("FF$hex").toULong(16)   // RRGGBB
-        8 -> hex.toULong(16)          // AARRGGBB
+    val argb = when (hex.length) {
+        6 -> "FF$hex"
+        8 -> hex
         else -> error("Invalid color: $this. Expected #RRGGBB or #AARRGGBB.")
     }
-    return Color(value)
+
+    val a = argb.substring(0, 2).toInt(16)
+    val r = argb.substring(2, 4).toInt(16)
+    val g = argb.substring(4, 6).toInt(16)
+    val b = argb.substring(6, 8).toInt(16)
+
+    return Color(
+        red = r,
+        green = g,
+        blue = b,
+        alpha = a,
+    )
 }
 
+  fun Color.toAssColor(): String {
+    // ASS color is &HAABBGGRR. Note that Alpha is inverted (00=opaque, FF=transparent)
+    val a = (255 - (alpha * 255).toInt()).coerceIn(0, 255).toHex()
+    val r = (red * 255).toInt().coerceIn(0, 255).toHex()
+    val g = (green * 255).toInt().coerceIn(0, 255).toHex()
+    val b = (blue * 255).toInt().coerceIn(0, 255).toHex()
+
+    return "&H$a$b$g$r"
+}
 
 fun Color.toHexColor(): String {
     val alpha = (alpha * 255).toInt().coerceIn(0, 255).toHex()

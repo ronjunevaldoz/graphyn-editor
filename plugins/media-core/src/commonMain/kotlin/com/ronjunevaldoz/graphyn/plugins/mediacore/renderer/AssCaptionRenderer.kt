@@ -1,6 +1,6 @@
 package com.ronjunevaldoz.graphyn.plugins.mediacore.renderer
 
-import androidx.compose.ui.graphics.Color
+import com.ronjunevaldoz.graphyn.core.common.toAssColor
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.Caption
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionAlignment
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.CaptionStyle
@@ -18,27 +18,33 @@ class AssCaptionRenderer : CaptionRenderer<String> {
                 "Caption end_ms must be >= start_ms."
             }
 
-            "Dialogue: 0,${caption.startMs.toAssTime()},${caption.endMs.toAssTime()},Default,,0,0,0,,${caption.text.escapeAssText()}"
+            "Dialogue: 0,${caption.startMs.toAssTimeFromMs()},${caption.endMs.toAssTimeFromMs()},Default,,0,0,0,,${caption.text.escapeAssText()}"
         }
+
+        val borderStyle = if (style.backgroundColor != null && style.backgroundColor.alpha > 0.01f) 3 else 1
+        // For BorderStyle 3 (opaque box), the BackColour slot is used for the box background
+        val backColor = style.backgroundColor?.toAssColor() ?: "&HFF000000"
 
         return """
             [Script Info]
             ScriptType: v4.00+
             PlayResX: $width
             PlayResY: $height
+            ScaledBorderAndShadow: yes
 
             [V4+ Styles]
             Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-            Style: Default,${style.fontFamily},${style.fontSize},${style.textColor.toAssColor()},&H000000FF,${style.outlineColor.toAssColor()},${style.backgroundColor?.toAssColor() ?: "&H80000000"},${style.bold.toAssFlag()},${style.italic.toAssFlag()},0,0,100,100,0,0,3,${style.outlineWidth},${style.shadow},${style.alignment.toAssAlignment()},${style.marginHorizontal},${style.marginHorizontal},${style.marginVertical},1
+            Style: Graphyn,${style.fontFamily.escapeAssField()},${style.fontSize},${style.textColor.toAssColor()},&H000000FF,${style.outlineColor.toAssColor()},$backColor,${style.bold.toAssFlag()},${style.italic.toAssFlag()},0,0,100,100,0,0,$borderStyle,${style.outlineWidth},${style.shadow},${style.alignment.toAssAlignment()},${style.marginHorizontal},${style.marginHorizontal},${style.marginVertical},1
 
             [Events]
             Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-            $events
+            ${events.replace("Default", "Graphyn")}
         """.trimIndent() + "\n"
     }
 }
 
-
+private fun String.escapeAssField(): String =
+    replace(",", "")
 
 
 private fun CaptionAlignment.toAssAlignment(): Int = when (this) {
@@ -56,19 +62,11 @@ private fun CaptionAlignment.toAssAlignment(): Int = when (this) {
 private fun Boolean.toAssFlag(): Int =
     if (this) -1 else 0
 
-private fun Color.toAssColor(): String {
-    val alpha = (255 - (alpha * 255).toInt()).toHex()
-    val blue = (blue * 255).toInt().toHex()
-    val green = (green * 255).toInt().toHex()
-    val red = (red * 255).toInt().toHex()
-
-    return "&H$alpha$blue$green$red"
-}
 
 private fun Int.toHex(): String =
     toString(16).padStart(2, '0').uppercase()
 
-internal fun Double.toAssTime(): String {
+internal fun Double.toAssTimeFromMs(): String {
     val totalCentis = (this / 10.0).toLong().coerceAtLeast(0)
 
     val centis = totalCentis % 100
