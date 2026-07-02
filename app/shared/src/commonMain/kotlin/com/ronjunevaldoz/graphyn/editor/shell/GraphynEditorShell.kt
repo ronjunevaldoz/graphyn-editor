@@ -2,53 +2,30 @@
 
 package com.ronjunevaldoz.graphyn.editor.shell
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
-import com.ronjunevaldoz.graphyn.core.validation.WorkflowGraphValidator
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasSurface
-import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
-import com.ronjunevaldoz.graphyn.editor.design.GraphynDsColors
-import com.ronjunevaldoz.graphyn.editor.design.GraphynDsTheme
-import com.ronjunevaldoz.graphyn.editor.design.GraphynDsTypography
-import com.ronjunevaldoz.graphyn.editor.design.fromPalette
-import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.canvas.DefaultNodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryRegistry
 import com.ronjunevaldoz.graphyn.editor.panels.DefaultEditorPanelRegistry
-import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.panels.EditorPanelRegistry
-import com.ronjunevaldoz.graphyn.editor.ai.GraphynAiAssistantState
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynAiDialog
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynCredentialsDialog
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynInspectorPanel
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynPalettePanel
-import com.ronjunevaldoz.graphyn.editor.shell.components.GraphynTopToolbar
 import com.ronjunevaldoz.graphyn.editor.shortcuts.GraphynShortcutState
 import com.ronjunevaldoz.graphyn.editor.shortcuts.rememberGraphynShortcutState
-import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.rememberGraphynEditorState
-import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
-import com.ronjunevaldoz.graphyn.editor.theme.systemIsDarkTheme
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynBranding
 import com.ronjunevaldoz.graphyn.editor.theme.rememberGraphynAppearanceState
+import com.ronjunevaldoz.graphyn.editor.theme.GraphynAppearanceState
+import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
+import com.ronjunevaldoz.graphyn.editor.theme.systemIsDarkTheme
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDsColors
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDsTheme
+import com.ronjunevaldoz.graphyn.editor.design.GraphynDsTypography
+import com.ronjunevaldoz.graphyn.editor.design.fromPalette
 
 data class GraphynEditorShellDependencies(
     val nodeSpecs: NodeSpecRegistry,
@@ -98,101 +75,5 @@ fun GraphynEditorShell(
             state = resolvedState,
             canvas = canvas,
         )
-    }
-}
-
-@Composable
-private fun GraphynEditorShellContent(
-    dependencies: GraphynEditorShellDependencies,
-    branding: GraphynBranding,
-    appearanceState: GraphynAppearanceState,
-    shortcutState: GraphynShortcutState,
-    state: GraphynEditorState,
-    canvas: (@Composable () -> Unit)?,
-) {
-    SideEffect { state.canvasCards = dependencies.canvasCards }
-    val colors = GraphynDs.colors
-    val executionEngine = dependencies.executionEngine
-    val generator = dependencies.workflowGenerator
-    var aiOpen by remember { mutableStateOf(false) }
-    var settingsOpen by remember { mutableStateOf(false) }
-    val validator = remember(dependencies.nodeSpecs) { WorkflowGraphValidator(dependencies.nodeSpecs) }
-    val assistant = remember(generator, dependencies.nodeSpecs, state, validator) {
-        generator?.let {
-            GraphynAiAssistantState(
-                generator = it,
-                catalog = dependencies.nodeSpecs.all(),
-                onApply = { wf ->
-                    state.withHistory { state.workflow = wf }
-                    state.dispatch(GraphynEditorIntent.AutoLayout)
-                },
-                currentWorkflow = { state.workflow },
-                validateWorkflow = validator::validate,
-            )
-        }
-    }
-    val validationErrors = remember(state.workflow, dependencies.nodeSpecs) {
-        state.workflow?.let(validator::validate).orEmpty()
-    }
-    val canvasContent: @Composable () -> Unit = canvas ?: {
-        GraphynCanvasSurface(
-            state = state,
-            nodeSpecs = dependencies.nodeSpecs,
-            canvasCards = dependencies.canvasCards,
-            shortcutState = shortcutState,
-            onEnterSubgraph = dependencies.onEnterSubgraph,
-            onExitSubgraph = dependencies.onExitSubgraph,
-            canvasTopStart = dependencies.canvasTopStart,
-        )
-    }
-
-    Box(modifier = Modifier.fillMaxSize().background(colors.canvasBackground)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            GraphynTopToolbar(
-                branding = branding,
-                appearanceState = appearanceState,
-                shortcutState = shortcutState,
-                canRun = executionEngine != null,
-                onRun = { executionEngine?.let { state.execute(it) } },
-                onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },
-                onHome = dependencies.onHome,
-                workflowName = if (dependencies.onHome != null) state.workflow?.name else null,
-                onToggleAi = if (assistant != null) ({ aiOpen = !aiOpen }) else null,
-                aiActive = aiOpen,
-                onToggleSettings = dependencies.settingsStore?.let { { settingsOpen = !settingsOpen } },
-                settingsActive = settingsOpen,
-                sdServerControl = dependencies.sdServerControl,
-            )
-            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                GraphynPalettePanel(
-                    modifier = Modifier.width(220.dp).fillMaxHeight(),
-                    nodeSpecs = dependencies.nodeSpecs,
-                    categoryRegistry = dependencies.categoryRegistry,
-                    onAddNode = { spec -> state.dispatch(GraphynEditorIntent.AddNode(spec)) },
-                )
-                GraphynEditorShellCanvas(state = state, dependencies = dependencies, modifier = Modifier.weight(1f), canvasContent = canvasContent)
-                GraphynInspectorPanel(
-                    modifier = Modifier.width(260.dp).fillMaxHeight(),
-                    state = state,
-                    nodeSpecs = dependencies.nodeSpecs,
-                    panels = dependencies.panels,
-                    validationErrors = validationErrors,
-                    onEnterSubgraph = dependencies.onEnterSubgraph?.let { callback ->
-                        { inner ->
-                            val selectedNode = state.selectedNode()
-                            val label = selectedNode?.let { dependencies.nodeSpecs.resolve(it.type)?.label ?: it.type }
-                                ?: inner.name
-                            callback(label, inner)
-                        }
-                    },
-                )
-            }
-        }
-        if (aiOpen && assistant != null) {
-            GraphynAiDialog(assistant = assistant, onDismiss = { aiOpen = false })
-        }
-        dependencies.settingsStore?.let { store ->
-            if (settingsOpen) GraphynCredentialsDialog(store = store, onDismiss = { settingsOpen = false })
-        }
     }
 }

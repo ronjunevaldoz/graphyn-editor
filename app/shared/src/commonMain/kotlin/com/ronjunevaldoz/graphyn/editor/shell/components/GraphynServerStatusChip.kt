@@ -37,7 +37,7 @@ internal fun GraphynServerStatusChip(control: SdServerControl) {
     var status by remember { mutableStateOf<SdServerStatusModel?>(null) }
     LaunchedEffect(control) {
         while (true) {
-            status = control.status()
+            status = if (control.ping()) control.status() else null
             delay(if (status?.busy == true) 1500 else 4000)
         }
     }
