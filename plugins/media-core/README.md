@@ -29,3 +29,22 @@ Phase 2 — captioning / composition:
 Media handles are typed records containing `kind`, `path`, and `mime_type`. Phase 1 stitching
 supports compatible clips with a cut transition. Encode writes H.264/AAC MP4 to the required
 `output_path` input.
+
+
+## Recommended structure (can be discuss)
+ffmpeg/
+├── FfmpegMediaCoreBackend.kt
+├── FfmpegVideoExtensions.kt
+├── FfmpegImageExtensions.kt
+├── FfmpegAudioExtensions.kt
+├── FfmpegCaptionExtensions.kt   ⭐
+├── FfmpegComposeExtensions.kt   ⭐
+├── renderer/
+│   ├── CaptionRenderer.kt
+│   ├── AssCaptionRenderer.kt
+│   ├── DrawTextCaptionRenderer.kt
+│   └── WebVttCaptionRenderer.kt
+└── util/
+├── FfmpegFilterUtils.kt
+├── AssUtils.kt
+└── TimeUtils.kt
