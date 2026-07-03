@@ -24,9 +24,9 @@ ARTIFACTS=(
     graphyn-plugin-control graphyn-plugin-list-ops graphyn-plugin-types graphyn-plugin-text
     graphyn-plugin-io graphyn-plugin-json graphyn-plugin-preview
     graphyn-plugin-sticky-notes graphyn-plugin-script
-    graphyn-plugin-media-core graphyn-plugin-media-ai
+    graphyn-plugin-media-core graphyn-plugin-media-ai graphyn-plugin-stable-diffusion
     graphyn-plugin-gmail graphyn-plugin-linkedin
-    graphyn-runtime graphyn-editor graphyn-server
+    graphyn-runtime graphyn-editor graphyn-ktor-plugin
 )
 
 echo "Verifying ${#ARTIFACTS[@]} artifacts at version $VERSION on Maven Central (timeout ${TIMEOUT}s)…"

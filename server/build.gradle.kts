@@ -35,9 +35,9 @@ dependencies {
 // jar, so the Maven groupId is passed explicitly here rather than inherited from the
 // convention plugin's project.group default.
 mavenPublishing {
-    coordinates("io.github.ronjunevaldoz", "graphyn-server", libraryVersion)
+    coordinates("io.github.ronjunevaldoz", "graphyn-ktor-plugin", libraryVersion)
     pom {
-        name.set("Graphyn Server")
+        name.set("Graphyn Ktor Plugin")
         description.set("Ktor server + embeddable plugin for running Graphyn workflow execution server-side")
     }
 }

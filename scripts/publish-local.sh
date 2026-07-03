@@ -50,6 +50,7 @@ declare -a PUBLISH_GROUPS=(
     ":plugins:sticky-notes :plugins:script :plugins:gmail :plugins:linkedin"
     ":plugins:media-core"
     ":plugins:media-ai"
+    ":plugins:stable-diffusion"
     ":runtime"
     ":app:shared"
     ":server"

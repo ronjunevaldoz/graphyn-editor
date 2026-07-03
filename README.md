@@ -89,7 +89,7 @@ plugins/* (node definitions + executors)
 | `app/shared` | `graphyn-editor` | Compose Multiplatform canvas + editor shell |
 | `ai` | `graphyn-ai` | LLM workflow generation (Ollama) |
 | `runtime` | `graphyn-runtime` | Convenience bundle of all first-party plugins |
-| `server` | `graphyn-server` | Ktor execution API + `install(Graphyn)` |
+| `server` | `graphyn-ktor-plugin` | Ktor execution API + `install(Graphyn)` |
 | `plugins/control` | `graphyn-plugin-control` | Branch, loop, merge |
 | `plugins/list-ops` | `graphyn-plugin-list-ops` | Map, filter, reduce, sort |
 | `plugins/types` | `graphyn-plugin-types` | Type conversion and casting |

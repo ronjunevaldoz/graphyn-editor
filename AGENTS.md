@@ -85,11 +85,11 @@ the signing guard, group/version, and the shared license/developer/scm POM. **Do
 | `:runtime` | `graphyn-runtime` |
 | `:ui:cards` | `graphyn-ui-cards` |
 | `:app:shared` | `graphyn-editor` |
-| `:server` | `graphyn-server` |
+| `:server` | `graphyn-ktor-plugin` |
 
 ### Rules
 
-- **To make a module publishable:** apply `id("graphyn-maven-publish")` in its `plugins {}` block (instead of the `dokka` + `mavenPublish` aliases), then add a minimal `mavenPublishing { coordinates(artifactId = "graphyn-…"); pom { name.set(…); description.set(…) } }`. Everything else (automaticRelease, signing, group, version, license/scm) comes from the convention plugin. The `:server` module is the one exception — it sets its own `project.group` for the application jar, so it passes the Maven groupId explicitly: `coordinates("io.github.ronjunevaldoz", "graphyn-server", libraryVersion)`.
+- **To make a module publishable:** apply `id("graphyn-maven-publish")` in its `plugins {}` block (instead of the `dokka` + `mavenPublish` aliases), then add a minimal `mavenPublishing { coordinates(artifactId = "graphyn-…"); pom { name.set(…); description.set(…) } }`. Everything else (automaticRelease, signing, group, version, license/scm) comes from the convention plugin. The `:server` module is the one exception — it sets its own `project.group` for the application jar, so it passes the Maven groupId explicitly: `coordinates("io.github.ronjunevaldoz", "graphyn-ktor-plugin", libraryVersion)`.
 - **`api()` deps in published modules must themselves be published.** If a project dep would appear in the POM but isn't on Maven Central, change it to `implementation()`. Source-only modules (`plugins/*`, `core:designsystem`) must never be `api()` deps of a published module. The `verifyPublishing` task enforces this.
 - **When adding a new published module:** add it to the `publishedModulePaths` set in `build.gradle.kts`, the `ARTIFACTS` array in `scripts/verify-maven-central.sh`, `publish.yml` (in dependency order), and the `PUBLISH_GROUPS` array in `scripts/publish-local.sh`.
 - **Guardrails (don't bypass them):**

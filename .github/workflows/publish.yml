@@ -62,13 +62,16 @@ jobs:
       - name: Publish graphyn-plugin-media-ai
         run: ./gradlew :plugins:media-ai:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      - name: Publish graphyn-plugin-stable-diffusion
+        run: ./gradlew :plugins:stable-diffusion:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
       - name: Publish graphyn-runtime
         run: ./gradlew :runtime:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
       - name: Publish graphyn-editor (app/shared)
         run: ./gradlew :app:shared:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
-      - name: Publish graphyn-server
+      - name: Publish graphyn-ktor-plugin
         run: ./gradlew :server:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
       # Postflight: a green publish job must mean the artifacts actually reached

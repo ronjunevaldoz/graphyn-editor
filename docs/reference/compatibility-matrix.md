@@ -17,9 +17,9 @@ All artifacts share the same version and are published to [Maven Central](https:
 | `graphyn-editor` | `io.github.ronjunevaldoz:graphyn-editor` | 0.3.0 | Compose Multiplatform editor shell, canvas, launcher |
 | `graphyn-ai` | `io.github.ronjunevaldoz:graphyn-ai` | **0.7.0** | LLM workflow generation — Ollama adapter and generator contracts |
 | `graphyn-runtime` | `io.github.ronjunevaldoz:graphyn-runtime` | **0.7.0** | Convenience bundle of all first-party plugins (control, list-ops, types, text, io, json, preview) |
-| `graphyn-server` | `io.github.ronjunevaldoz:graphyn-server` | **0.6.0** | Ktor server + `install(Graphyn)` embeddable plugin |
+| `graphyn-ktor-plugin` | `io.github.ronjunevaldoz:graphyn-ktor-plugin` | **0.6.0** (renamed next release) | Ktor server + `install(Graphyn)` embeddable plugin |
 
-> **`graphyn-server` first published in 0.6.0** — available on Maven Central as `io.github.ronjunevaldoz:graphyn-server:0.6.0`.
+> **`graphyn-ktor-plugin` renamed from `graphyn-server`.** Versions 0.6.0–0.7.6 remain published and frozen on Maven Central as `io.github.ronjunevaldoz:graphyn-server` — that coordinate receives no further updates. Starting with the next release this artifact publishes as `io.github.ronjunevaldoz:graphyn-ktor-plugin`; existing consumers must switch coordinates manually to keep receiving updates.
 > **`graphyn-runtime` first published in 0.7.0** — was previously missing publish config (library bug fixed in 0.7.0).
 > **`graphyn-ui-design` first published in 0.7.1** — was previously an internal-only module; promoted to fix unpublished coordinate leaking into `graphyn-editor` POM.
 
@@ -40,9 +40,9 @@ All artifacts share the same version and are published to [Maven Central](https:
 | `graphyn-ai` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-runtime` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `graphyn-editor` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `graphyn-server` | ✅ | — | — | — | — |
+| `graphyn-ktor-plugin` | ✅ | — | — | — | — |
 
-`graphyn-server` is JVM-only — it is a Ktor server, not a KMP library.
+`graphyn-ktor-plugin` is JVM-only — it is a Ktor server, not a KMP library.
 
 ---
 
@@ -87,7 +87,7 @@ These ship in the repository and are depended on by the demo app. They are **not
 | Java | 17 | Compile target; 21 recommended for runtime |
 | Android Gradle Plugin | 8.7 | Required for `androidLibrary {}` KMP target |
 | Compose Multiplatform | 1.7+ | Canvas and editor shell |
-| Ktor | 3.x | `graphyn-server` and `io.http_request` node |
+| Ktor | 3.x | `graphyn-ktor-plugin` and `io.http_request` node |
 | FFmpeg | 4.0+ | `plugins/media-core`; must be on system `PATH` |
 | Tesseract | 5.x | `plugins/media-ai` OCR fallback (optional) |
 
@@ -110,11 +110,11 @@ graphyn-runtime
   └── graphyn-plugin-api  (same chain as above)
   └── graphyn-editor-api
 
-graphyn-server
+graphyn-ktor-plugin
   └── graphyn-runtime
   └── graphyn-core-{model,execution,serialization,data}
   └── Ktor server (core, netty, sse)
 ```
 
-Consumers wanting only server-side execution with no editor UI depend on `graphyn-server` alone.
+Consumers wanting only server-side execution with no editor UI depend on `graphyn-ktor-plugin` alone.
 Consumers embedding the editor in a Compose Multiplatform app depend on `graphyn-editor`.
