@@ -56,6 +56,9 @@ class SdTemplateApiRunTest {
     // run for the record and don't assert until the native decode is fixed. Image tiers all pass.
     @Test fun wan5bImg2Vid() = run(wan5bImg2VidWorkflow.withInit("img2vid", initImage), "img2vid", "frames", assertOk = false).let {}
 
+    /** A14B supports 480P too; this preset keeps the same model family at a lower resolution. */
+    @Test fun wan480pImg2Vid() = run(wan480pImg2VidWorkflow.withInit("img2vid", initImage), "img2vid", "frames", assertOk = false).let {}
+
     /** A14B (~25.8 GB) also runs impractically slowly on 12 GB (395 s VAE encode) — record only. */
     @Test fun wanA14bImg2Vid() = run(wanImg2VidWorkflow.withInit("img2vid", initImage), "img2vid", "frames", assertOk = false).let {}
 }

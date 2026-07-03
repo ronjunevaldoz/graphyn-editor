@@ -63,6 +63,7 @@ class SdLoraWorkflowValidationTest {
     @Test fun qwenTxt2ImgIsSound() = assertStructurallySound(qwenTxt2ImgWorkflow)
     @Test fun qwenImg2ImgIsSound() = assertStructurallySound(qwenImg2ImgWorkflow)
     @Test fun wanImg2VidIsSound() = assertStructurallySound(wanImg2VidWorkflow)
+    @Test fun wan480pImg2VidIsSound() = assertStructurallySound(wan480pImg2VidWorkflow)
     @Test fun qwenTxt2ImgUses2512LightningLora() =
         assertNodePath(qwenTxt2ImgWorkflow, nodeId = "lora", expected = QWEN_TXT2IMG_LORA)
 

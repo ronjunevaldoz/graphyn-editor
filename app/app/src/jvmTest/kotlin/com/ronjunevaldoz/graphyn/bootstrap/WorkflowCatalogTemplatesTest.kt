@@ -21,6 +21,9 @@ class WorkflowCatalogTemplatesTest {
         // media.* and script.eval are JVM-only — not installed in the common runtime.
         assertFalse("Text to Speech" in names, "media template should be hidden on web")
         assertFalse("Captioned Video" in names, "media template should be hidden on web")
+        assertFalse("Wan Image to Video (720p)" in names, "media template should be hidden on web")
+        assertFalse("Wan Image to Video (480p)" in names, "media template should be hidden on web")
+        assertFalse("Wan Image to Video (5B)" in names, "media template should be hidden on web")
         assertFalse("AI Shorts (Image Motion)" in names, "media template should be hidden on web")
         assertFalse("AI Shorts (Video Motion)" in names, "media template should be hidden on web")
         assertFalse("Script" in names, "script template should be hidden on web")
@@ -39,6 +42,9 @@ class WorkflowCatalogTemplatesTest {
         assertTrue("Text to Speech" in names)
         assertTrue("Picture-in-Picture" in names)
         assertTrue("Slideshow" in names)
+        assertTrue("Wan Image to Video (720p)" in names)
+        assertTrue("Wan Image to Video (480p)" in names)
+        assertTrue("Wan Image to Video (5B)" in names)
         assertTrue("AI Shorts (Image Motion)" in names)
         assertTrue("AI Shorts (Video Motion)" in names)
     }
@@ -55,5 +61,8 @@ class WorkflowCatalogTemplatesTest {
         assertEquals("AI Shorts (Video Motion)", mediaNames.first())
         assertEquals("AI Shorts (Image Motion)", mediaNames[1])
         assertTrue(mediaNames.indexOf("Text to Speech") > mediaNames.indexOf("FLUX Text to Image"))
+        assertTrue(mediaNames.indexOf("Wan Image to Video (5B)") < mediaNames.indexOf("Wan Image to Video (480p)"))
+        assertTrue(mediaNames.indexOf("Wan Image to Video (480p)") < mediaNames.indexOf("Wan Image to Video (720p)"))
+        assertTrue(mediaNames.indexOf("Wan Image to Video (720p)") < mediaNames.indexOf("Qwen Image Edit"))
     }
 }

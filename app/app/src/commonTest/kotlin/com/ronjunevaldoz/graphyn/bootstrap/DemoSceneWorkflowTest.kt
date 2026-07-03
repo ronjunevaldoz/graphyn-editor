@@ -15,7 +15,6 @@ class DemoSceneWorkflowTest {
         GraphynDemoPlugins.runtime.forEach { install(it) }
     }
     private val validator = WorkflowGraphValidator(plugins.nodeSpecs)
-
     // --- structural integrity ---
 
     @Test
@@ -62,7 +61,6 @@ class DemoSceneWorkflowTest {
     }
 
     // --- plugin registration ---
-
     // Script and media execution depend on JVM-only plugins installed by the desktop host.
     private val jvmOnlyTypes = setOf(
         "script.eval",
@@ -94,6 +92,7 @@ class DemoSceneWorkflowTest {
         "sd.diffusion", "sd.encoders", "sd.vae", "sd.model", "sd.context", "sd.sampler",
         "sd.seamless", "sd.chroma", "sd.offload", "sd.lora",
         "sd.txt2img", "sd.img2img", "sd.txt2vid", "sd.img2vid",
+        "graphyn.subgraph",
     )
 
     @Test
@@ -109,8 +108,6 @@ class DemoSceneWorkflowTest {
                 }
         }
     }
-
-    // --- full graph validation ---
 
     @Test
     fun noStructuralValidationErrorsInAnyScene() {
@@ -134,6 +131,7 @@ class DemoSceneWorkflowTest {
             WorkflowCatalog.QwenTxt2Img,
             WorkflowCatalog.QwenImg2Img,
             WorkflowCatalog.WanImg2Vid,
+            WorkflowCatalog.Wan480pImg2Vid,
             WorkflowCatalog.Wan5bImg2Vid,
             WorkflowCatalog.ImageShorts,
             WorkflowCatalog.VideoShorts,

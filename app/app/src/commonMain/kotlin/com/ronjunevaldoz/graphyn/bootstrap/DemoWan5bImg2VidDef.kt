@@ -6,17 +6,18 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Wan2.2-TI2V-5B: a dense single-stream model (no high/low-noise MoE pair), so it fits a 12 GB card
-// where the A14B (~25.8 GB) cannot. Uses the Wan2.2 VAE (not 2.1) and the umt5 text encoder.
+// where the A14B (~25.8 GB) cannot. Uses the Wan2.2 VAE and the fp8 UMT5 text encoder.
 private const val WAN5B_DIFFUSION   = "/models/wan/Wan2.2-TI2V-5B-Q4_K_M.gguf"
-private const val WAN5B_T5          = "/models/wan/umt5-xxl-encoder-Q5_K_M.gguf"
+private const val WAN5B_T5          = "/models/wan/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
 private const val WAN5B_CLIP_VISION = "/models/wan/clip_vision_h.safetensors"
-private const val WAN5B_VAE         = "/models/wan/Wan2.2_VAE.safetensors"
+private const val WAN5B_VAE         = "/models/wan/wan2.2_vae.safetensors"
 private const val WAN5B_INIT_IMAGE  = "../../app/app/src/commonMain/resources/media/input.png"
 
 /**
  * Wan2.2-TI2V-5B image-to-video — the **fast tier** that fits a 12 GB GPU.
  *
- * Distinct from the A14B workflow ([wanImg2VidWorkflow]): TI2V-5B is a single dense model (~6 GB),
+ * Distinct from the A14B workflows ([wanImg2VidWorkflow] and [wan480pImg2VidWorkflow]):
+ * TI2V-5B is a single dense model (~6 GB),
  * so there is no high-noise expert, no MoE LoRAs, and no `high_noise_sampler`. Runs in ~20 steps at
  * real CFG. (For ~4-step speed, drop in the FastWan 5B LoRA once it is on the server.)
  *
