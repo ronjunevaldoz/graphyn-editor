@@ -1,31 +1,26 @@
+// JVM/Desktop only: shells out to FFmpeg on PATH. Only a jvmMain actual exists — Android, iOS,
+// JS, and WasmJS have no FFmpeg CLI to shell out to, so this deliberately doesn't declare those
+// targets (previously used the full graphyn-kmp-compose-library convention plugin, which declared
+// all 6 targets despite only ever having a JVM actual — broke compileAndroidMain/iOS/JS/WasmJS).
 plugins {
-    id("graphyn-kmp-compose-library")
     id("graphyn-maven-publish")
+    alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
     alias(libs.plugins.serialization)
 }
 
-kotlin {
-    androidLibrary {
-        namespace = "com.ronjunevaldoz.graphyn.plugins.media-core"
-    }
-
-    sourceSets {
-        commonMain.dependencies {
-            api(projects.pluginApi)
-            implementation(projects.editorApi)
-            implementation(projects.ui.cards)
-            implementation(projects.core.common)
-            implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.kotlinx.coroutinesCore)
-            implementation(libs.serialization.json)
-        }
-
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutinesTest)
-        }
-    }
+dependencies {
+    api(projects.pluginApi)
+    implementation(projects.editorApi)
+    implementation(projects.ui.cards)
+    implementation(projects.core.common)
+    implementation(libs.compose.runtime)
+    implementation(libs.compose.foundation)
+    implementation(libs.kotlinx.coroutinesCore)
+    implementation(libs.serialization.json)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutinesTest)
 }
 
 mavenPublishing {

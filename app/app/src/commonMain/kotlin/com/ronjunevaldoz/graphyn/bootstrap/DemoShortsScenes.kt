@@ -4,7 +4,6 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-import com.ronjunevaldoz.graphyn.plugins.mediaai.promptEnhanceSpec
 
 private const val FLUX_DIFFUSION = "/models/flux/diffusion/flux1-schnell-Q4_K_S.gguf"
 private const val FLUX_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
@@ -64,7 +63,7 @@ private fun sceneSubgraph(index: Int, useImageMotion: Boolean) = WorkflowDefinit
         // this subgraph — it would silently receive the scene list too, with no validation error.
         add(NodeRef("scenePrompt", "script.eval", config = mapOf("code" to s(shortsScenePromptScript(index)))))
         if (useImageMotion) {
-            add(NodeRef("promptEnhance", promptEnhanceSpec.type))
+            add(NodeRef("promptEnhance", PROMPT_ENHANCE_NODE_TYPE))
             add(NodeRef("sampler", "sd.sampler", config = mapOf(
                 "sample_method" to s("euler"),
                 "scheduler" to s("discrete"),
@@ -85,7 +84,7 @@ private fun sceneSubgraph(index: Int, useImageMotion: Boolean) = WorkflowDefinit
             add(NodeRef("frames", "media.images_list"))
             add(NodeRef("sequence", "media.image_sequence_to_video", config = mapOf("fps" to d(1.0))))
         } else {
-            add(NodeRef("promptEnhance", promptEnhanceSpec.type))
+            add(NodeRef("promptEnhance", PROMPT_ENHANCE_NODE_TYPE))
             add(NodeRef("sampler", "sd.sampler", config = mapOf(
                 "sample_method" to s("euler"),
                 "scheduler" to s("discrete"),

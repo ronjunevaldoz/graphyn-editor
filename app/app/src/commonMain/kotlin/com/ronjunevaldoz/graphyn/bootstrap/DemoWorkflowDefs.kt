@@ -4,7 +4,6 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiSpecs
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesSpecs
 
 internal val styleNodesDemoWorkflow = WorkflowDefinition(
@@ -298,7 +297,7 @@ internal val audioMixWorkflow = WorkflowDefinition(
         )),
         NodeRef("collect", "media.audios_list"),
         NodeRef("mix", "media.audio_mix"),
-        NodeRef("caption_style", MediaAiSpecs.captionStyle.type, config = MediaAiSpecs.captionStyle.defaultValues), // TODO Strict Standard for reuseable specs, apply for the others
+        NodeRef("caption_style", CAPTION_STYLE_NODE_TYPE, config = CAPTION_STYLE_DEFAULTS),
         NodeRef("encode", "media.audio_encode", config = mapOf(
             "output_path" to WorkflowValue.StringValue("mixed.mp3"),
             "format" to WorkflowValue.StringValue("mp3"),

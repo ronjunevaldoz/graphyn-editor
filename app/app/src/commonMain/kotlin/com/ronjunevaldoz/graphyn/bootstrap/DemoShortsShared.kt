@@ -2,7 +2,6 @@ package com.ronjunevaldoz.graphyn.bootstrap
 
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiSpecs
 
 internal const val SHORTS_SCENE_MS = 4_000
 internal const val SHORTS_SCENE_COUNT = 8
@@ -100,6 +99,6 @@ private fun i(value: Int) = WorkflowValue.IntValue(value)
 private fun d(value: Double) = WorkflowValue.DoubleValue(value)
 
 internal fun shortsCaptionStyleNode() = NodeRef(
-    "captionStyle", MediaAiSpecs.captionStyle.type,
-    config = MediaAiSpecs.captionStyle.defaultValues,
+    "captionStyle", CAPTION_STYLE_NODE_TYPE,
+    config = CAPTION_STYLE_DEFAULTS,
 )
