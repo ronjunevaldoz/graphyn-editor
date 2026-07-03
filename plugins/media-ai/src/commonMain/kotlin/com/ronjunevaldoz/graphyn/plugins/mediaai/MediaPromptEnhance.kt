@@ -6,7 +6,6 @@ import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.stringOr
-import com.ronjunevaldoz.graphyn.core.model.stringOrError
 
 internal val promptEnhanceExecutor = NodeExecutor { inputs ->
     val prompt = buildShortPrompt(inputs)
@@ -24,7 +23,7 @@ val promptEnhanceSpec = NodeSpec(
     description = "Turns a rough scene brief into a richer generation prompt.",
     category = CATEGORY_MEDIA_AI,
     inputs = listOf(
-        PortSpec("prompt", WorkflowType.StringType),
+        PortSpec("prompt", WorkflowType.OpaqueType),
         PortSpec("topic", WorkflowType.StringType),
         PortSpec("visual_style", WorkflowType.StringType),
         PortSpec("camera_move", WorkflowType.StringType),
@@ -49,7 +48,7 @@ val promptEnhanceSpec = NodeSpec(
 )
 
 internal fun buildShortPrompt(inputs: Map<String, WorkflowValue>): String {
-    val base = inputs.stringOrError("prompt").trim()
+    val base = inputs.stringOr("prompt", "").trim()
     val parts = listOf(
         inputs.stringOr("topic", ""),
         inputs.stringOr("visual_style", ""),
@@ -59,5 +58,5 @@ internal fun buildShortPrompt(inputs: Map<String, WorkflowValue>): String {
         inputs.stringOr("details", ""),
         "vertical, cinematic, highly detailed",
     ).filter(String::isNotBlank)
-    return (listOf(base) + parts).joinToString(", ")
+    return (listOf(base) + parts).filter(String::isNotBlank).joinToString(", ")
 }

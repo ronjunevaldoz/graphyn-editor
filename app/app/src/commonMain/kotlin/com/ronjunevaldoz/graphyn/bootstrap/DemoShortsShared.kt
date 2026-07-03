@@ -79,6 +79,22 @@ val image = when (input) {
 WorkflowValue.ListValue(List($SHORTS_FRAME_COUNT) { MediaTypes.imageValue(image) })
 """.trimIndent()
 
+internal fun shortsScenePromptScript(index: Int) = """
+val scenes = input as? List<*> ?: emptyList<Any?>()
+val scene = scenes.getOrNull(${index - 1}) as? Map<*, *> ?: emptyMap<String, Any?>()
+listOf(
+    scene["prompt"] as? String,
+    scene["caption"] as? String,
+    scene["title"] as? String,
+    scene["topic"] as? String,
+    scene["visual_style"] as? String,
+    scene["camera_move"] as? String,
+    scene["framing"] as? String,
+    scene["lighting"] as? String,
+    scene["details"] as? String,
+).firstOrNull { !it.isNullOrBlank() }.orEmpty()
+""".trimIndent()
+
 private fun s(value: String) = WorkflowValue.StringValue(value)
 private fun i(value: Int) = WorkflowValue.IntValue(value)
 private fun d(value: Double) = WorkflowValue.DoubleValue(value)

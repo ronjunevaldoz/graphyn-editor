@@ -57,6 +57,7 @@ private fun sceneSubgraph(index: Int, useImageMotion: Boolean) = WorkflowDefinit
         add(NodeRef("vae", "sd.vae", config = mapOf("vae_path" to s(if (useImageMotion) FLUX_VAE else WAN5B_VAE))))
         add(NodeRef("model", "sd.model"))
         add(NodeRef("ctx", "sd.context", config = mapOf("diffusion_flash_attn" to b(true), "n_threads" to i(-1))))
+        add(NodeRef("scenePrompt", "script.eval", config = mapOf("code" to s(shortsScenePromptScript(index)))))
         if (useImageMotion) {
             add(NodeRef("promptEnhance", promptEnhanceSpec.type))
             add(NodeRef("sampler", "sd.sampler", config = mapOf(
@@ -105,6 +106,7 @@ private fun sceneSubgraph(index: Int, useImageMotion: Boolean) = WorkflowDefinit
         add(ConnectionRef("encoders", "encoders", "model", "encoders"))
         add(ConnectionRef("vae", "vae", "model", "vae"))
         add(ConnectionRef("model", "model", "ctx", "model"))
+        add(ConnectionRef("scenePrompt", "result", "promptEnhance", "prompt"))
         if (useImageMotion) {
             add(ConnectionRef("promptEnhance", "prompt", "txt2img", "prompt"))
             add(ConnectionRef("promptEnhance", "negative_prompt", "txt2img", "negative_prompt"))

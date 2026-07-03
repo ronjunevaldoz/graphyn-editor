@@ -36,7 +36,7 @@ internal val imageShortsWorkflow = WorkflowDefinition(
         add(ConnectionRef("scenes", "result", "captions", "input"))
         repeat(SHORTS_SCENE_COUNT) { index ->
             val scene = index + 1
-            add(ConnectionRef("scenes", "result", "scene$scene", "prompt"))
+            add(ConnectionRef("scenes", "result", "scene$scene", "input"))
         }
         repeat(SHORTS_SCENE_COUNT - 1) { index ->
             val scene = index + 1

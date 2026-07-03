@@ -35,6 +35,7 @@ internal fun shortsSceneNodePositions(useImageMotion: Boolean) = mapOf(
     "ctx" to p(380, 360),
     "sampler" to p(380, 560),
     "promptEnhance" to p(760, 120),
+    "scenePrompt" to p(380, 120),
     if (useImageMotion) "txt2img" to p(1140, 120) else "txt2vid" to p(1140, 120),
     if (useImageMotion) "import" to p(1520, 120) else "wrap" to p(1520, 120),
     if (useImageMotion) "frames" to p(1900, 120) else "sequence" to p(1900, 120),

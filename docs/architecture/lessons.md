@@ -8,10 +8,12 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
 - AI-generated workflows should emit `nodePositions`; auto-layout should stay a fallback.
 - AI assistants are more useful when they can see node descriptions and layout state.
 - Shorts prompt shaping belongs in a real node contract, not inline `script.eval` glue.
+- Scene prompt scripts should fall back across caption/title/topic fields so one missing `prompt` key does not break the whole shorts pipeline.
 - Reusable subgraphs work best when they expose one clean boundary value.
 - `media.video_stitch` needs video clips, not stills; generate clips first, then stitch.
 - Nullable workflow fields should round-trip as `NullValue`, not empty strings.
 - Script-based media templates need the script plugin in the JVM runtime bundle.
+- Desktop-only demo templates should be validated with the desktop runtime plugin set, or common-runtime tests will report missing-node false positives.
 - Subgraph boundary ports still need explicit validation handling when they are intentionally injected.
 
 ## Stable Diffusion and Media Runtime
@@ -36,4 +38,3 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
 
 - Never write from a fallback value that differs from the real initial state.
 - Keep viewport and auto-layout limits aligned so manual zoom and layout behavior feel consistent.
-

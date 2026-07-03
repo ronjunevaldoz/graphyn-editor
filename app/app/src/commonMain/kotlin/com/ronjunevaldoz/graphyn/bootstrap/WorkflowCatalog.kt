@@ -80,6 +80,8 @@ enum class WorkflowCatalog(
         "Render a set of images into a video at a fixed frame rate.", badges = listOf("Stable")),
     ApiIngestion("API Ingestion", apiIngestionDemoWorkflow, DataAndIo,
         "Fetch JSON over HTTP, extract fields, and persist to a file.", badges = listOf("Stable", "HTTP")),
+    ApiIngestionPro("API Ingestion Pro", productIngestionWorkflow, DataAndIo,
+        "Normalize a live API payload, preview the shape, and persist the cleaned record.", badges = listOf("HTTP", "Stable", "Desktop")),
     AiPipeline("AI Pipeline", aiPipelineWorkflow, Examples,
         "Showcase of the AI node category.", badges = listOf("Demo")),
     GeometryPipeline("Geometry", geometryPipelineWorkflow, Examples,

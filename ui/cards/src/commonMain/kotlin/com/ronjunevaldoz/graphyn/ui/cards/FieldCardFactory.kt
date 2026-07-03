@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
@@ -86,7 +85,7 @@ class FieldCardFactory(
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) {
         CompositionLocalProvider(LocalFieldNodeTheme provides theme) {
-            FieldCard(context)
+            FieldCardColorPickerHost { FieldCard(context) }
         }
     }
 }
@@ -99,7 +98,9 @@ private fun FieldCard(ctx: NodeCanvasContext) {
     val shape = RoundedCornerShape(appTheme.shapes.md)
     Box(
         modifier = Modifier
-            .width(CARD_WIDTH_DP.dp).clip(shape).background(bg).border(1.dp, borderColor, shape)
+            .width(CARD_WIDTH_DP.dp)
+            .background(bg, shape)
+            .border(1.dp, borderColor, shape)
             .clickable { ctx.onSelect() },
     ) {
         Column {

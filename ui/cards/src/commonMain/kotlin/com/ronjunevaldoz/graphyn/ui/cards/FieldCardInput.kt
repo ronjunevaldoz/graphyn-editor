@@ -28,7 +28,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
@@ -44,7 +43,6 @@ internal fun InputRow(
 ) {
     var editText by remember { mutableStateOf<String?>(null) }
     var focusGranted by remember { mutableStateOf(false) }
-    var colorPickerOpen by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     fun commit() {
         val raw = editText ?: return
@@ -84,14 +82,14 @@ internal fun InputRow(
                     },
                 )
             } else {
+                val valueShape = RoundedCornerShape(GraphynSpacingValues.spacing.md)
                 Box(
-                    modifier = Modifier.width(VALUE_DP.dp).clip(RoundedCornerShape(GraphynSpacingValues.spacing.md))
-                        .background(theme.valueBg())
+                    modifier = Modifier.width(VALUE_DP.dp)
+                        .background(theme.valueBg(), valueShape)
                         .clickable { focusGranted = false; editText = currentValue.label() }
                         .padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm),
-                    contentAlignment = Alignment.Center,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End) {
                         BasicText(
                             currentValue.label(),
                             style = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
@@ -99,23 +97,9 @@ internal fun InputRow(
                             overflow = TextOverflow.Ellipsis,
                         )
                         if (supportsColorPicker(input.name, currentValue.label())) {
-                            Spacer(Modifier.width(GraphynSpacingValues.spacing.xs))
-                            ColorPickerButton(currentValue.label()) { colorPickerOpen = !colorPickerOpen }
+                            ColorPickerFieldValue(currentValue.label()) { onValueChange(WorkflowValue.StringValue(it)) }
                         }
                     }
-                    if (colorPickerOpen && supportsColorPicker(input.name, currentValue.label())) Popup(alignment = Alignment.BottomEnd, onDismissRequest = { colorPickerOpen = false }) {
-                            Box(
-                                Modifier.clip(RoundedCornerShape(appTheme.shapes.md))
-                                    .background(theme.background())
-                                    .border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md))
-                                    .padding(GraphynSpacingValues.spacing.sm),
-                            ) {
-                                ColorPickerPalette { hex ->
-                                    onValueChange(WorkflowValue.StringValue(hex))
-                                    colorPickerOpen = false
-                                }
-                            }
-                        }
                 }
             }
         }

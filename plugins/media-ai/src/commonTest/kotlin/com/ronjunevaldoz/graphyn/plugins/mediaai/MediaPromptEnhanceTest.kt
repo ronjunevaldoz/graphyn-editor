@@ -33,6 +33,26 @@ class MediaPromptEnhanceTest {
         assertTrue((result["prompt"] as WorkflowValue.StringValue).value.contains("cinematic lighting"))
         assertEquals("blurry, low quality, cropped, watermark", (result["negative_prompt"] as WorkflowValue.StringValue).value)
     }
+
+    @Test
+    fun promptEnhanceFallsBackWhenPromptIsBlank() = runBlocking {
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaAiPlugin(
+                textToSpeechEngine = fakeTts(),
+                ttsCacheEngine = fakeCache(),
+                speechToTextEngine = fakeStt(),
+                ocrEngine = fakeOcr(),
+            ))
+        }
+        val result = registry.nodeExecutors.resolve(promptEnhanceSpec.type)!!.execute(
+            mapOf(
+                "prompt" to WorkflowValue.StringValue(""),
+                "topic" to WorkflowValue.StringValue("street chase"),
+                "visual_style" to WorkflowValue.StringValue("moody neon noir"),
+            ),
+        )
+        assertTrue((result["prompt"] as WorkflowValue.StringValue).value.contains("street chase"))
+    }
 }
 
 private fun fakeTts() = TextToSpeechEngine { _, _ -> }

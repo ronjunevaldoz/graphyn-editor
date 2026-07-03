@@ -26,6 +26,7 @@ class WorkflowCatalogTemplatesTest {
         assertFalse("Wan Image to Video (5B)" in names, "media template should be hidden on web")
         assertFalse("AI Shorts (Image Motion)" in names, "media template should be hidden on web")
         assertFalse("AI Shorts (Video Motion)" in names, "media template should be hidden on web")
+        assertFalse("API Ingestion Pro" in names, "script-based ingestion template should be hidden on web")
         assertFalse("Script" in names, "script template should be hidden on web")
         // Core-node templates remain available.
         assertTrue("List Ops" in names, "core template should be visible on web")
@@ -47,6 +48,7 @@ class WorkflowCatalogTemplatesTest {
         assertTrue("Wan Image to Video (5B)" in names)
         assertTrue("AI Shorts (Image Motion)" in names)
         assertTrue("AI Shorts (Video Motion)" in names)
+        assertTrue("API Ingestion Pro" in names)
     }
 
     @Test
