@@ -22,7 +22,7 @@ internal fun ColorPickerButton(value: String, onClick: () -> Unit) {
     Box(
         Modifier.size(28.dp).clip(RoundedCornerShape(appTheme.shapes.xs))
             .background(color)
-            .border(1.dp, appTheme.colors.outline, RoundedCornerShape(appTheme.shapes.xs))
+            .border(1.dp, appTheme.colors.border, RoundedCornerShape(appTheme.shapes.xs))
             .clickable { onClick() },
     )
 }
@@ -38,7 +38,7 @@ internal fun ColorPickerPalette(onPick: (String) -> Unit) {
                     Box(
                         Modifier.size(20.dp).clip(RoundedCornerShape(5.dp))
                             .background(color)
-                            .border(1.dp, appTheme.colors.outlineVariant, RoundedCornerShape(5.dp))
+                            .border(1.dp, appTheme.colors.border, RoundedCornerShape(5.dp))
                             .clickable { onPick(hex) },
                     )
                 }
