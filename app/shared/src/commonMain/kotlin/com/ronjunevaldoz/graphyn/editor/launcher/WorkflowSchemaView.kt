@@ -22,10 +22,13 @@ import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 
 @Composable
 internal fun WorkflowSchemaView(nodeSpecs: List<NodeSpec>) {
+    // .toSortedMap() wraps java.util.TreeMap and is JVM-only — sort the entries as a List instead
+    // so this compiles on every KMP target.
     val grouped = remember(nodeSpecs) {
         nodeSpecs.sortedBy { it.label }
             .groupBy { it.category ?: "Uncategorized" }
-            .toSortedMap()
+            .toList()
+            .sortedBy { (category, _) -> category }
     }
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         grouped.forEach { (category, specs) ->

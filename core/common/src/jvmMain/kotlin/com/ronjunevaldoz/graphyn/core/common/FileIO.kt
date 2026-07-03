@@ -12,11 +12,8 @@ actual object FileIO {
             if (append) file.appendText(content) else file.writeText(content)
         }.isSuccess
 
-    /**
-     * Test passed!
-     */
     actual fun resolvePath(baseDir: String, relativePath: String): String {
-        val base = expandPath(baseDir).normalizePath()
+        val base = anchorToCwd(expandPath(baseDir).normalizePath())
         val path = expandPath(relativePath).replace('\\', '/')
 
         val resolved = when {
@@ -31,6 +28,14 @@ actual object FileIO {
         }
 
         return resolved.normalizePath()
+    }
+
+    // A non-blank base_dir that isn't already rooted is anchored to the working directory —
+    // "media" means "./media", not a bare label to string-concat onto whatever relativePath is.
+    private fun anchorToCwd(base: String): String {
+        if (base.isBlank() || base.startsWith("/")) return base
+        val cwd = System.getProperty("user.dir").orEmpty()
+        return if (cwd.isBlank()) base else "${cwd.trimEnd('/')}/${base.trimStart('/')}"
     }
 
     private fun String.normalizePath(): String =

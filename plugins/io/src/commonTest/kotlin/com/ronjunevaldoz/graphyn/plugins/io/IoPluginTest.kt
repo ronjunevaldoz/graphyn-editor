@@ -97,6 +97,9 @@ class IoPluginTest {
             ),
         )
         val resolved = (result["resolved_path"] as WorkflowValue.StringValue).value
-        assertTrue(resolved.replace('\\', '/').endsWith("/media/clips/input.mp4"))
+        // A relative base_dir is anchored to the working directory on platforms that have one
+        // (JVM/Android/iOS), so the full result is absolute there; a browser (JS/WasmJS) has no
+        // cwd to anchor to and stays relative. Assert the relative composition, true everywhere.
+        assertTrue(resolved.replace('\\', '/').endsWith("media/clips/input.mp4"))
     }
 }

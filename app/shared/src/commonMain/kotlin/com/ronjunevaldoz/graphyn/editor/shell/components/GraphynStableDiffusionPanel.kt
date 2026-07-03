@@ -128,4 +128,5 @@ private fun SpecLine(label: String, value: String) {
     }
 }
 
-private fun formatGb(mb: Long): String = "${(mb / 1024.0).let { String.format("%.1f", it) }} GB"
+// String.format is JVM-only; round to 1 decimal place manually so this compiles on every target.
+private fun formatGb(mb: Long): String = "${kotlin.math.round(mb / 1024.0 * 10) / 10} GB"

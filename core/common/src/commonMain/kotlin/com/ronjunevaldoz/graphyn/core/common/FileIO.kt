@@ -32,9 +32,14 @@ expect object FileIO {
     fun resolvePath(baseDir: String, relativePath: String): String
 }
 
-internal fun joinPath(baseDir: String, relativePath: String): String = when {
-    relativePath.startsWith("/") -> relativePath
-    baseDir.isBlank() -> relativePath
-    relativePath.isBlank() -> baseDir
-    else -> "${baseDir.trimEnd('/')}/${relativePath.trimStart('/')}"
+internal fun joinPath(baseDir: String, relativePath: String): String {
+    val joined = when {
+        baseDir.isBlank() -> relativePath
+        relativePath.isBlank() -> baseDir
+        // A single leading slash is a real absolute path — keep it as-is. A double (or more)
+        // leading slash is treated as a typo, not an absolute-path override, and still joined.
+        relativePath.startsWith("/") && !relativePath.startsWith("//") -> relativePath
+        else -> "${baseDir.trimEnd('/')}/${relativePath.trimStart('/')}"
+    }
+    return joined.replace(Regex("/{2,}"), "/").removeSuffix("/")
 }

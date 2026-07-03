@@ -1,5 +1,7 @@
 package com.ronjunevaldoz.graphyn.editor.state
 
+import kotlin.concurrent.Volatile
+
 /**
  * The workflow currently being executed, so the SD backend can attribute recorded artifacts to it.
  *
