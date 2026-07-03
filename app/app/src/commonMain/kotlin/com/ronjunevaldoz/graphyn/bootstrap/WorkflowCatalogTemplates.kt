@@ -14,15 +14,14 @@ import com.ronjunevaldoz.graphyn.editor.launcher.WorkflowTemplate
 fun catalogTemplatesFor(nodeSpecs: NodeSpecRegistry): List<WorkflowTemplate> =
     WorkflowCatalog.entries
         .sortedWith(
-            compareBy<WorkflowCatalog>({ it.category.ordinal }, { badgePriority(it.badge) }, { -it.ordinal }),
+            compareBy<WorkflowCatalog>({ it.category.ordinal }, { badgePriority(it.badges) }, { -it.ordinal }),
         )
         .filter { entry -> entry.workflow.nodes.all { it.subgraph != null || nodeSpecs.resolve(it.type) != null } }
-        .map { WorkflowTemplate(it.label, it.description, it.workflow, it.category, it.badge) }
+        .map { WorkflowTemplate(it.label, it.description, it.workflow, it.category, it.badges) }
 
-private fun badgePriority(badge: String?): Int = when (badge) {
-    "AI" -> 0
-    "Stable" -> 1
-    "Demo" -> 2
-    null -> 3
-    else -> 4
+private fun badgePriority(badges: List<String>): Int = when {
+    "AI" in badges -> 0
+    "Stable" in badges -> 1
+    "Demo" in badges -> 2
+    else -> 3
 }

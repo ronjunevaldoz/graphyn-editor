@@ -40,19 +40,13 @@ internal fun WorkflowLauncherCard(
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             BasicText(template.name, style = type.nodeTitle.copy(color = colors.textPrimary))
-            template.badge?.let { badge ->
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF6B6BF7).copy(alpha = 0.15f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                ) {
-                    BasicText(badge, style = type.mono.copy(color = Color(0xFF9B9BFF)))
+            if (template.badges.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    template.badges.forEach { badge ->
+                        BadgePill(text = badge)
+                    }
                 }
             }
         }
@@ -72,5 +66,18 @@ internal fun WorkflowLauncherCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun BadgePill(text: String) {
+    val type = GraphynDs.type
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color(0xFF6B6BF7).copy(alpha = 0.15f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        BasicText(text, style = type.mono.copy(color = Color(0xFF9B9BFF)))
     }
 }
