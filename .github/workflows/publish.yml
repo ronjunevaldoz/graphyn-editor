@@ -41,6 +41,9 @@ jobs:
       - name: Publish graphyn-ui-design (core/designsystem)
         run: ./gradlew :core:designsystem:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      - name: Publish graphyn-ui-common (core/common)
+        run: ./gradlew :core:common:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
       - name: Publish plugin-api
         run: ./gradlew :plugin-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 

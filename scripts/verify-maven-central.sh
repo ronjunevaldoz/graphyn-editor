@@ -20,7 +20,7 @@ BASE="https://repo1.maven.org/maven2/io/github/ronjunevaldoz"
 # Keep in sync with publishedModulePaths in build.gradle.kts and publish.yml.
 ARTIFACTS=(
     graphyn-core-model graphyn-core-execution graphyn-core-serialization graphyn-core-data
-    graphyn-ui-design graphyn-plugin-api graphyn-ai graphyn-editor-api graphyn-ui-cards
+    graphyn-ui-design graphyn-ui-common graphyn-plugin-api graphyn-ai graphyn-editor-api graphyn-ui-cards
     graphyn-plugin-control graphyn-plugin-list-ops graphyn-plugin-types graphyn-plugin-text
     graphyn-plugin-io graphyn-plugin-json graphyn-plugin-preview
     graphyn-plugin-sticky-notes graphyn-plugin-script
