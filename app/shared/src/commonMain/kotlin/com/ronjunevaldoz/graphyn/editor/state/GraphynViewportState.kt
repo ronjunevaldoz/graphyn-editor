@@ -15,7 +15,7 @@ internal class GraphynViewportState(
     private val canvasBounds: GraphynCanvasBounds,
 ) {
     companion object {
-        const val MinScale = 0.45f
+        const val MinScale = 0.05f
         const val MaxScale = 5.0f
         // Fit-to-content may zoom out below the interactive MinScale so a wide graph
         // can be fully contained in a narrow canvas instead of spilling past the edges.

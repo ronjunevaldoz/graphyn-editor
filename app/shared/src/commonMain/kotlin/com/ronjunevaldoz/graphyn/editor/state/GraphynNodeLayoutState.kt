@@ -56,7 +56,7 @@ internal class GraphynNodeLayoutState(
     }
 
     fun nodePosition(nodeId: String, index: Int): IntOffset =
-        nodePositionsByNodeId[nodeId] ?: GraphynCanvasLayout.fallbackPosition(index)
+        nodePositionsByNodeId[nodeId] ?: GraphynCanvasLayout.fallbackPosition(index, canvasBounds)
 
     fun nodeSize(): IntSize = GraphynCanvasMetrics.NodeSize
 

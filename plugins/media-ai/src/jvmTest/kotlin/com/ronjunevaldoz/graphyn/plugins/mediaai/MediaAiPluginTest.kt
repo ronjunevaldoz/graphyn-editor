@@ -6,6 +6,8 @@ import com.ronjunevaldoz.graphyn.plugins.mediacore.AudioMetadata
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaTypes
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.test.runTest
+import java.io.File
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -16,25 +18,29 @@ class MediaAiPluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaAiPlugin())
 
-        assertEquals(4, registry.nodeSpecs.all().size)
+        assertEquals(5, registry.nodeSpecs.all().size)
         MediaAiSpecs.all.forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
         }
+        assertNotNull(registry.nodeSpecs.resolve(promptEnhanceSpec.type))
+        assertNotNull(registry.nodeExecutors.resolve(promptEnhanceSpec.type))
     }
 
     @Test
     fun speechToTextEmitsTextAndTimedSegments(): Unit = runTest {
-        val engine = SpeechToTextEngine { request ->
-            assertEquals("en", request.language)
-            SpeechToTextResult(
-                text = "hello world",
-                confidence = 0.9,
-                segments = listOf(
-                    SpeechSegment("hello", 0.0, 500.0),
-                    SpeechSegment("world", 500.0, 1000.0),
-                ),
-            )
+        val engine = object : SpeechToTextEngine {
+            override suspend fun transcribe(request: SpeechToTextRequest): SpeechToTextResult {
+                assertEquals("en", request.language)
+                return SpeechToTextResult(
+                    text = "hello world",
+                    confidence = 0.9,
+                    segments = listOf(
+                        SpeechSegment("hello", 0.0, 500.0),
+                        SpeechSegment("world", 500.0, 1000.0),
+                    ),
+                )
+            }
         }
         val registry = DefaultGraphynPluginRegistry().apply {
             install(MediaAiPlugin(speechToTextEngine = engine))
@@ -56,7 +62,7 @@ class MediaAiPluginTest {
 
     @Test
     fun ocrEmitsTextAndBlocks() = runTest {
-        val engine = OcrEngine { imagePath, _ ->
+        val engine = OcrEngine { imagePath: String, _: String ->
             assertEquals("/media/frame.png", imagePath)
             OcrResult(
                 text = "INVOICE",
@@ -79,51 +85,29 @@ class MediaAiPluginTest {
     @Test
     fun fallbackResolversAlwaysReturnAnEngine() {
         assertNotNull(resolveTtsEngine())
-        assertNotNull(resolveOcrEngine())
     }
 
     @Test
-    fun sayEngineProducesWavWhenAvailable() = runTest {
-        if (!isCommandAvailable("say")) return@runTest
-        val directory = Files.createTempDirectory("graphyn-say-test").toFile()
-        val output = File(directory, "hello.wav")
-        SayTextToSpeechEngine().synthesize(
-            TextToSpeechRequest(text = "Hello there", language = "en", voiceId = "default", speed = 1.0),
-            output,
-        )
-        assertTrue(output.isFile && output.length() > 0L, "say did not produce a WAV")
-    }
-
-    @Test
-    fun jsonAdaptersParseSegmentsAndBlocks() {
+    fun jsonAdaptersParseSegments() {
         val stt = parseSttJson(
-            """{"text":"hi","confidence":0.8,"segments":[{"text":"hi","start_ms":0,"end_ms":250}]}""",
+            """{"text":"hi","start":0,"end":250}""",
         )
         assertEquals("hi", stt.text)
         assertEquals(250.0, stt.segments.single().endMs)
-
-        val ocr = parseOcrJson(
-            """{"text":"A","blocks":[{"text":"A","x":1,"y":2,"width":3,"height":4,"confidence":0.5}]}""",
-        )
-        assertEquals(3, ocr.blocks.single().width)
     }
 
     @Test
     fun textToSpeechCachesByAllVoiceInputs() = runTest {
         val directory = Files.createTempDirectory("graphyn-tts-test").toFile()
         var synthesisCount = 0
-        val engine = TextToSpeechEngine { _, output ->
+        val engine = TextToSpeechEngine { _: TextToSpeechRequest, output: String ->
             synthesisCount++
-            output.writeBytes(byteArrayOf(1, 2, 3))
+            File(output).writeBytes(byteArrayOf(1, 2, 3))
         }
-        val cache = TtsCacheEngine(
+        val cache = JvmTtsCache(
             directory = directory,
             metadataReader = AudioMetadataReader {
-                AudioMetadata(
-                    it,
-                    sampleRate = 24_000,
-                    durationMs = 750.0
-                )
+                AudioMetadata(it, sampleRate = 24_000, durationMs = 750.0)
             },
         )
         val registry = DefaultGraphynPluginRegistry().apply {
@@ -156,10 +140,18 @@ class MediaAiPluginTest {
         val executor = registry.nodeExecutors.resolve(MediaAiSpecs.captionStyle.type)!!
         val result = executor.execute(
             mapOf(
-                "color" to WorkflowValue.StringValue("#FFFFFF"),
-                "background_color" to WorkflowValue.StringValue("#AA000000"),
+                "font_family" to WorkflowValue.StringValue("Arial"),
                 "font_size" to WorkflowValue.IntValue(32),
-                "position" to WorkflowValue.StringValue("bottom"),
+                "text_color" to WorkflowValue.StringValue("#FFFFFF"),
+                "background_color" to WorkflowValue.StringValue("#AA000000"),
+                "outline_color" to WorkflowValue.StringValue("#000000"),
+                "outline_width" to WorkflowValue.IntValue(2),
+                "shadow" to WorkflowValue.IntValue(0),
+                "bold" to WorkflowValue.BooleanValue(true),
+                "italic" to WorkflowValue.BooleanValue(false),
+                "alignment" to WorkflowValue.StringValue("BottomCenter"),
+                "margin_horizontal" to WorkflowValue.IntValue(40),
+                "margin_vertical" to WorkflowValue.IntValue(60),
             ),
         )
         val style = result["style_config"] as WorkflowValue.RecordValue

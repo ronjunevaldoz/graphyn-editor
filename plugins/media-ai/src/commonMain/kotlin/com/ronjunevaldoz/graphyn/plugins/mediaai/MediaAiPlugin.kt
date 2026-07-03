@@ -29,10 +29,12 @@ class MediaAiPlugin(
 
     override fun register(registrar: GraphynPluginRegistrar) {
         MediaAiSpecs.all.forEach(registrar::registerNodeSpec)
+        registrar.registerNodeSpec(promptEnhanceSpec)
         registrar.registerExecutor(MediaAiSpecs.textToSpeech.type, textToSpeechExecutor())
         registrar.registerExecutor(MediaAiSpecs.captionStyle.type, captionStyleExecutor)
         registrar.registerExecutor(MediaAiSpecs.speechToText.type, speechToTextExecutor())
         registrar.registerExecutor(MediaAiSpecs.ocr.type, ocrExecutor())
+        registrar.registerExecutor(promptEnhanceSpec.type, promptEnhanceExecutor)
     }
 
     private fun speechToTextExecutor() = NodeExecutor { inputs ->

@@ -52,13 +52,17 @@ internal object ScriptExecutor : NodeExecutor {
 
     private fun Any?.toWorkflowValue(): WorkflowValue = when (this) {
         is WorkflowValue -> this
-        is String        -> WorkflowValue.StringValue(this)
-        is Int           -> WorkflowValue.IntValue(this)
-        is Long          -> WorkflowValue.IntValue(this.toInt())
-        is Double        -> WorkflowValue.DoubleValue(this)
-        is Float         -> WorkflowValue.DoubleValue(this.toDouble())
-        is Boolean       -> WorkflowValue.BooleanValue(this)
-        null             -> WorkflowValue.NullValue
-        else             -> WorkflowValue.StringValue(this.toString())
+        is Map<*, *> -> WorkflowValue.RecordValue(
+            this.entries.associate { (key, value) -> key.toString() to value.toWorkflowValue() },
+        )
+        is List<*> -> WorkflowValue.ListValue(this.map { it.toWorkflowValue() })
+        is String -> WorkflowValue.StringValue(this)
+        is Int -> WorkflowValue.IntValue(this)
+        is Long -> WorkflowValue.IntValue(this.toInt())
+        is Double -> WorkflowValue.DoubleValue(this)
+        is Float -> WorkflowValue.DoubleValue(this.toDouble())
+        is Boolean -> WorkflowValue.BooleanValue(this)
+        null -> WorkflowValue.NullValue
+        else -> WorkflowValue.StringValue(this.toString())
     }
 }

@@ -20,6 +20,8 @@ fun catalogTemplatesFor(nodeSpecs: NodeSpecRegistry): List<WorkflowTemplate> =
 
 private fun badgePriority(badge: String?): Int = when (badge) {
     "AI" -> 0
-    null -> 1
-    else -> 2
+    "Stable" -> 1
+    "Demo" -> 2
+    null -> 3
+    else -> 4
 }

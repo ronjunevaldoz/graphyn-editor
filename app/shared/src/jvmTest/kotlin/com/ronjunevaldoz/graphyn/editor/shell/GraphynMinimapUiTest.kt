@@ -40,7 +40,7 @@ class GraphynMinimapUiTest {
             setNodePosition("logger-1", IntOffset(0, 0))
             setNodePosition("logger-2", IntOffset(1200, 0))
             // scale=1.0 shows the nodes at natural size; the viewport rect is wide enough in the
-            // minimap (graphWorldBounds = 4096×3072) to sample clearly inside and outside it.
+            // minimap (graphWorldBounds = 8192×6144) to sample clearly inside and outside it.
             viewport = GraphynViewport(offset = Offset(0f, 0f), scale = 1.0f)
         }
 

@@ -37,7 +37,10 @@ private val ShortsSceneSubgraphNodeSpec = NodeSpec(
     label = "Scene Subgraph",
     description = "Runs one reusable shorts scene and exposes the rendered video",
     category = SUBGRAPH_CATEGORY,
-    inputs = listOf(PortSpec("prompt", WorkflowType.OpaqueType, description = "Scene prompt")),
+    inputs = listOf(
+        PortSpec("prompt", WorkflowType.OpaqueType, description = "Scene prompt"),
+        PortSpec("gate", WorkflowType.OpaqueType, description = "Dependency token used to serialize scene generation"),
+    ),
     outputs = listOf(PortSpec("video", WorkflowType.OpaqueType, description = "Rendered scene video")),
 )
 

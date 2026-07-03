@@ -24,6 +24,7 @@ import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import com.ronjunevaldoz.graphyn.editor.state.execute
 import com.ronjunevaldoz.graphyn.editor.state.updateNodeOutputs
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasInset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -118,8 +119,8 @@ class EditorRegistryTest {
             ),
         )
 
-        assertEquals(IntOffset.Zero, state.nodePosition("first", 0))
-        assertEquals(IntOffset(304, 0), state.nodePosition("second", 1))
+        assertEquals(IntOffset(GraphynCanvasInset, GraphynCanvasInset), state.nodePosition("first", 0))
+        assertEquals(IntOffset(GraphynCanvasInset + 304, GraphynCanvasInset), state.nodePosition("second", 1))
 
         state.setNodePosition("first", IntOffset(120, 80))
         state.dispatch(GraphynEditorIntent.MoveNode("first", IntOffset(10, 20)))

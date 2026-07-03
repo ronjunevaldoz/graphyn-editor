@@ -190,7 +190,10 @@ class GraphynCanvasSurfaceUiTest {
 
     @Test
     fun clickingInputPortWithNoDraftStartsInputDraft() {
-        val state = GraphynEditorState(twoNodeWorkflow())
+        val state = GraphynEditorState(twoNodeWorkflow()).apply {
+            setNodePosition("logger-1", IntOffset(0, 0))
+            setNodePosition("logger-2", IntOffset(0, 220))
+        }
 
         rule.setContent {
             GraphynEditorShell(

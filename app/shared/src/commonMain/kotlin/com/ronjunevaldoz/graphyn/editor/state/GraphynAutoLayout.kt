@@ -5,8 +5,8 @@ import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasBounds
+import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasInset
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
-import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
 
 internal object GraphynAutoLayout {
     private const val GRID_COLS = 3
@@ -113,47 +113,6 @@ internal object GraphynAutoLayout {
         val maxY = positions.entries.maxOf { (id, p) -> p.y + (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) }
         val shiftX = GraphynCanvasBounds.DefaultLogicalCanvasWidth / 2 - (minX + maxX) / 2
         val shiftY = GraphynCanvasBounds.DefaultLogicalCanvasHeight / 2 - (minY + maxY) / 2
-        return positions.mapValues { (_, p) -> IntOffset(p.x + shiftX, p.y + shiftY) }
+        return positions.mapValues { (_, p) -> IntOffset(p.x + shiftX + GraphynCanvasInset, p.y + shiftY + GraphynCanvasInset) }
     }
-}
-
-internal data class AutoLayoutResult(
-    val positions: Map<String, IntOffset>,
-    val sizes: Map<String, IntSize>,
-)
-
-internal fun GraphynEditorState.performAutoLayout(): AutoLayoutResult? {
-    val wf = workflow ?: return null
-    val registry = canvasCards
-    val nodeSize: (String) -> IntSize = { type ->
-        registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) }
-            ?: nodeSpecs?.resolve(type)?.let { spec ->
-                val f = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
-                IntSize(f.nodeWidth, f.nodeHeight)
-            }
-            ?: GraphynCanvasMetrics.NodeSize
-    }
-    // Annotations (sticky notes, frames) are not part of the dataflow DAG; lay out the graph
-    // nodes, then park annotations in a column to the left so they read as a legend.
-    val (annotationNodes, graphNodes) = wf.nodes.partition { registry?.resolve(it.type)?.isAnnotation == true }
-    if (graphNodes.size > GraphynAutoLayout.MAX_NODES) {
-        log.push("Auto-layout skipped: ${graphNodes.size} nodes exceeds limit of ${GraphynAutoLayout.MAX_NODES}")
-        return null
-    }
-    val positions = GraphynAutoLayout.computePositions(graphNodes, wf.connections, nodeSize).toMutableMap()
-    if (annotationNodes.isNotEmpty()) {
-        val gap = GraphynCanvasMetrics.NodeSize.width
-        val maxAnnW = annotationNodes.maxOf { nodeSize(it.type).width }
-        val graphMinX = positions.values.minOfOrNull { it.x } ?: 0
-        val graphMinY = positions.values.minOfOrNull { it.y } ?: 0
-        val annX = graphMinX - maxAnnW - gap
-        var annY = graphMinY
-        annotationNodes.forEach { ann ->
-            positions[ann.id] = IntOffset(annX, annY)
-            annY += nodeSize(ann.type).height + GraphynCanvasMetrics.NodeSize.height
-        }
-    }
-    positions.forEach { (id, pos) -> layout.setNodePosition(id, pos) }
-    val sizes = wf.nodes.associate { it.id to nodeSize(it.type) }
-    return AutoLayoutResult(positions, sizes)
 }

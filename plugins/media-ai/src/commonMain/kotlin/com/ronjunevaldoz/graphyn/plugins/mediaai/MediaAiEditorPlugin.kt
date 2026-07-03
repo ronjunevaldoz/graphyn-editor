@@ -20,6 +20,7 @@ object MediaAiEditorPlugin : GraphynEditorPlugin {
         registrar.registerCanvasCard(MediaAiSpecs.captionStyle.type, FieldCardFactory(inputRows = 4, outputRows = 1))
         registrar.registerCanvasCard(MediaAiSpecs.speechToText.type, FieldCardFactory(inputRows = 2, outputRows = 3))
         registrar.registerCanvasCard(MediaAiSpecs.ocr.type, FieldCardFactory(inputRows = 2, outputRows = 2))
+        registrar.registerCanvasCard(promptEnhanceSpec.type, FieldCardFactory(inputRows = 7, outputRows = 2))
         registrar.registerCategory(CATEGORY_MEDIA_AI, NodeCategoryMeta("Media / AI", 0xFFEA580CL))
     }
 }
