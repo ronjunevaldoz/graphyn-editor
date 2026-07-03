@@ -6,8 +6,8 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Default model paths — override via config port values at runtime.
-private const val WAN_DIFFUSION_LOW  = "/models/diffusion/wan/Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf"
-private const val WAN_DIFFUSION_HIGH = "/models/diffusion/wan/Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf"
+private const val WAN_DIFFUSION_LOW  = "/models/wan/diffusion/Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf"
+private const val WAN_DIFFUSION_HIGH = "/models/wan/diffusion/Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf"
 private const val WAN_T5            = "/models/wan/umt5-xxl-encoder-Q5_K_M.gguf"
 private const val WAN_CLIP_VISION   = "/models/wan/clip_vision_h.safetensors"
 private const val WAN_VAE           = "/models/wan/wan_2.1_vae.safetensors"

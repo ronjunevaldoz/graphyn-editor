@@ -85,7 +85,8 @@ internal fun InputRow(
                 val valueShape = RoundedCornerShape(GraphynSpacingValues.spacing.md)
                 Box(
                     modifier = Modifier.width(VALUE_DP.dp)
-                        .background(theme.valueBg(), valueShape)
+                        .clip(valueShape)
+                        .background(theme.valueBg())
                         .clickable { focusGranted = false; editText = currentValue.label() }
                         .padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm),
                 ) {
@@ -97,7 +98,9 @@ internal fun InputRow(
                             overflow = TextOverflow.Ellipsis,
                         )
                         if (supportsColorPicker(input.name, currentValue.label())) {
-                            ColorPickerFieldValue(currentValue.label()) { onValueChange(WorkflowValue.StringValue(it)) }
+                            ColorPickerFieldValue(input.name, currentValue.label()) {
+                                onValueChange(WorkflowValue.StringValue(it))
+                            }
                         }
                     }
                 }

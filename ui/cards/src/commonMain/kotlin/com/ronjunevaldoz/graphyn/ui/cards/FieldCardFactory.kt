@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
@@ -99,7 +100,8 @@ private fun FieldCard(ctx: NodeCanvasContext) {
     Box(
         modifier = Modifier
             .width(CARD_WIDTH_DP.dp)
-            .background(bg, shape)
+            .clip(shape)
+            .background(bg)
             .border(1.dp, borderColor, shape)
             .clickable { ctx.onSelect() },
     ) {

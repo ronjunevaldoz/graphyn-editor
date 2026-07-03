@@ -6,11 +6,11 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 // Wan2.2-TI2V-5B: a dense single-stream model (no high/low-noise MoE pair), so it fits a 12 GB card
-// where the A14B (~25.8 GB) cannot. Uses the Wan2.2 VAE and the fp8 UMT5 text encoder.
+// where the A14B (~25.8 GB) cannot. Uses the Wan2.2 VAE and the canonical UMT5 text encoder.
 private const val WAN5B_DIFFUSION   = "/models/wan/Wan2.2-TI2V-5B-Q4_K_M.gguf"
-private const val WAN5B_T5          = "/models/wan/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+private const val WAN5B_T5          = "/models/wan/umt5-xxl-encoder-Q8_0.gguf"
 private const val WAN5B_CLIP_VISION = "/models/wan/clip_vision_h.safetensors"
-private const val WAN5B_VAE         = "/models/wan/wan2.2_vae.safetensors"
+private const val WAN5B_VAE         = "/models/wan/Wan2.2_VAE.safetensors"
 private const val WAN5B_INIT_IMAGE  = "../../app/app/src/commonMain/resources/media/input.png"
 
 /**

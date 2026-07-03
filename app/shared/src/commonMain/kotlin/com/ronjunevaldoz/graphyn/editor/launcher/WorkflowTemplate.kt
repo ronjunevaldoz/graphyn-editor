@@ -32,6 +32,4 @@ data class WorkflowTemplate(
     val workflow: WorkflowDefinition,
     val category: WorkflowCategory = WorkflowCategory.Examples,
     val badges: List<String> = emptyList(),
-) {
-    val badge: String? get() = badges.firstOrNull()
-}
+)

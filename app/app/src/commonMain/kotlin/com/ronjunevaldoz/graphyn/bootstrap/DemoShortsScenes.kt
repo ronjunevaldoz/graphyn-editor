@@ -57,6 +57,11 @@ private fun sceneSubgraph(index: Int, useImageMotion: Boolean) = WorkflowDefinit
         add(NodeRef("vae", "sd.vae", config = mapOf("vae_path" to s(if (useImageMotion) FLUX_VAE else WAN5B_VAE))))
         add(NodeRef("model", "sd.model"))
         add(NodeRef("ctx", "sd.context", config = mapOf("diffusion_flash_attn" to b(true), "n_threads" to i(-1))))
+        // scenePrompt's "input" port is deliberately left unconnected: ShortsSceneSubgraphNodeSpec's
+        // boundary port is also named "input" (see SubgraphDemoPlugin.kt), and the execution engine
+        // free-matches an outer subgraph value onto any inner port with the same name (buildInputMap
+        // in WorkflowExecutionScheduling.kt). Do not add another unconnected "input"-named port to
+        // this subgraph — it would silently receive the scene list too, with no validation error.
         add(NodeRef("scenePrompt", "script.eval", config = mapOf("code" to s(shortsScenePromptScript(index)))))
         if (useImageMotion) {
             add(NodeRef("promptEnhance", promptEnhanceSpec.type))
