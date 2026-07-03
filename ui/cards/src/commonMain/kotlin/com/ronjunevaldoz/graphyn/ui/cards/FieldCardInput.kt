@@ -1,6 +1,7 @@
 package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
@@ -42,6 +44,7 @@ internal fun InputRow(
 ) {
     var editText by remember { mutableStateOf<String?>(null) }
     var focusGranted by remember { mutableStateOf(false) }
+    var colorPickerOpen by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     fun commit() {
         val raw = editText ?: return
@@ -88,18 +91,36 @@ internal fun InputRow(
                         .padding(horizontal = GraphynSpacingValues.spacing.xl, vertical = GraphynSpacingValues.spacing.sm),
                     contentAlignment = Alignment.Center,
                 ) {
-                    BasicText(
-                        currentValue.label(),
-                        style = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        BasicText(
+                            currentValue.label(),
+                            style = appTheme.typography.nodeLabel.copy(color = theme.valueText()),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (supportsColorPicker(input.name, currentValue.label())) {
+                            Spacer(Modifier.width(GraphynSpacingValues.spacing.xs))
+                            ColorPickerButton(currentValue.label()) { colorPickerOpen = !colorPickerOpen }
+                        }
+                    }
+                    if (colorPickerOpen && supportsColorPicker(input.name, currentValue.label())) Popup(alignment = Alignment.BottomEnd, onDismissRequest = { colorPickerOpen = false }) {
+                            Box(
+                                Modifier.clip(RoundedCornerShape(appTheme.shapes.md))
+                                    .background(theme.background())
+                                    .border(1.dp, theme.border(), RoundedCornerShape(appTheme.shapes.md))
+                                    .padding(GraphynSpacingValues.spacing.sm),
+                            ) {
+                                ColorPickerPalette { hex ->
+                                    onValueChange(WorkflowValue.StringValue(hex))
+                                    colorPickerOpen = false
+                                }
+                            }
+                        }
                 }
             }
         }
     }
 }
-
 @Composable
 internal fun OutputRow(output: PortSpec, theme: FieldNodeTheme) {
     Row(
