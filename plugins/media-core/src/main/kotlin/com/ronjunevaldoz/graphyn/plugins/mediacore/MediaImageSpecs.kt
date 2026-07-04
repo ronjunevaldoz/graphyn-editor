@@ -81,5 +81,37 @@ object MediaImageSpecs {
         defaultValues = mapOf("fps" to WorkflowValue.DoubleValue(1.0)),
     )
 
-    val all = listOf(imageResize, imageCrop, imagesList, imageSequenceToVideo)
+    val kenBurns = NodeSpec(
+        type = "media.ken_burns",
+        label = "Ken Burns Pan/Zoom",
+        description = "Renders a still image into a video clip with a slow pan/zoom, instead of a static repeat.",
+        category = CATEGORY_MEDIA_VIDEO,
+        inputs = listOf(
+            PortSpec("image", MediaTypes.imageHandle),
+            PortSpec("duration_ms", WorkflowType.DoubleType),
+            PortSpec("fps", WorkflowType.DoubleType),
+            PortSpec("zoom_start", WorkflowType.DoubleType),
+            PortSpec("zoom_end", WorkflowType.DoubleType),
+            PortSpec("pan_x", WorkflowType.EnumType(listOf("center", "left_to_right", "right_to_left"))),
+            PortSpec("pan_y", WorkflowType.EnumType(listOf("center", "top_to_bottom", "bottom_to_top"))),
+            PortSpec("width", WorkflowType.IntType),
+            PortSpec("height", WorkflowType.IntType),
+        ),
+        outputs = listOf(
+            PortSpec("video", MediaTypes.videoHandle),
+            PortSpec("duration_ms", WorkflowType.DoubleType),
+        ),
+        defaultValues = mapOf(
+            "duration_ms" to WorkflowValue.DoubleValue(2000.0),
+            "fps" to WorkflowValue.DoubleValue(24.0),
+            "zoom_start" to WorkflowValue.DoubleValue(1.0),
+            "zoom_end" to WorkflowValue.DoubleValue(1.15),
+            "pan_x" to WorkflowValue.StringValue("center"),
+            "pan_y" to WorkflowValue.StringValue("center"),
+            "width" to WorkflowValue.IntValue(720),
+            "height" to WorkflowValue.IntValue(1280),
+        ),
+    )
+
+    val all = listOf(imageResize, imageCrop, imagesList, imageSequenceToVideo, kenBurns)
 }

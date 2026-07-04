@@ -5,7 +5,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import javax.script.ScriptEngineManager
 
 /**
- * Evaluates Kotlin scripts via JSR-223. Engine is lazy — first call pays ~1-2 s warm-up.
+ * Evaluates Kotlin scripts via JSR-223. Each call gets a fresh engine instance — reusing one engine
+ * across multiple *different* scripts within a run was found to corrupt its internal compiler state:
+ * after a handful of sequential eval() calls on the same engine, every subsequent script (regardless
+ * of complexity) started failing with "Backend Internal error: Exception during psi2ir" even for
+ * trivial one-liners. A fresh engine per call costs ~1-2s warm-up each time, but that's cheap next to
+ * silently wrong results.
  *
  * `input` is unwrapped to its native Kotlin type before binding so scripts feel natural:
  * - `StringValue("hi")` → `"hi"` (String)
@@ -17,16 +22,13 @@ import javax.script.ScriptEngineManager
  */
 internal object ScriptExecutor : NodeExecutor {
 
-    private val engine by lazy {
-        ScriptEngineManager().getEngineByExtension("kts")
-            ?: error("Kotlin scripting engine not found on classpath")
-    }
-
     override suspend fun execute(input: Map<String, WorkflowValue>): Map<String, WorkflowValue> {
         val code = (input["code"] as? WorkflowValue.StringValue)?.value
             ?: return outputs(WorkflowValue.NullValue, "No code provided")
         val inputVal = input["input"] ?: WorkflowValue.NullValue
         return try {
+            val engine = ScriptEngineManager().getEngineByExtension("kts")
+                ?: error("Kotlin scripting engine not found on classpath")
             engine.put("input", inputVal.unwrap())
             val raw = engine.eval(code)
             outputs(raw.toWorkflowValue(), "")

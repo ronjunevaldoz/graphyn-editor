@@ -5,6 +5,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.intOrError
 import com.ronjunevaldoz.graphyn.core.model.listOrError
 import com.ronjunevaldoz.graphyn.core.model.numberOr
+import com.ronjunevaldoz.graphyn.core.model.stringOr
 
 /** Executor factories for the Phase 3 image-processing nodes, registered by [MediaCorePlugin]. */
 internal fun imageResizeExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
@@ -34,6 +35,24 @@ internal fun imageSequenceToVideoExecutor(backend: MediaCoreBackend) = NodeExecu
         "video" to MediaTypes.videoValue(metadata.path),
         "duration_ms" to WorkflowValue.DoubleValue(metadata.durationMs),
         "frame_count" to WorkflowValue.IntValue(metadata.frameCount),
+    )
+}
+
+internal fun kenBurnsExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
+    val metadata = backend.kenBurns(
+        imagePath = MediaTypes.path(inputs["image"], "image"),
+        durationMs = inputs.numberOr("duration_ms", 2000.0),
+        fps = inputs.numberOr("fps", 24.0),
+        zoomStart = inputs.numberOr("zoom_start", 1.0),
+        zoomEnd = inputs.numberOr("zoom_end", 1.15),
+        panX = inputs.stringOr("pan_x", "center"),
+        panY = inputs.stringOr("pan_y", "center"),
+        width = inputs.numberOr("width", 720.0).toInt(),
+        height = inputs.numberOr("height", 1280.0).toInt(),
+    )
+    mapOf(
+        "video" to MediaTypes.videoValue(metadata.path),
+        "duration_ms" to WorkflowValue.DoubleValue(metadata.durationMs),
     )
 }
 

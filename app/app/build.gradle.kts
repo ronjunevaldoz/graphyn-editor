@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.serialization)
 }
 
 kotlin {
@@ -83,4 +84,25 @@ kotlin {
             implementation(projects.plugins.script)
         }
     }
+}
+
+// No `application` plugin here — this is a KMP library module. This task runs WorkflowCliRunner.kt's
+// main() against the jvm target's own compiled output + runtime classpath, addressed by the standard
+// KMP-generated task/configuration names (stable across Kotlin Gradle Plugin versions) instead of the
+// internal KotlinCompilation API, whose accessor names shift between KGP releases.
+tasks.register<JavaExec>("runWorkflowCli") {
+    group = "application"
+    description = "Run a workflow headlessly: ./gradlew :app:app:runWorkflowCli --args=\"workflow=storyboard topic='a cozy coffee shop'\""
+    dependsOn("jvmMainClasses")
+    classpath = files(layout.buildDirectory.dir("classes/kotlin/jvm/main")) +
+        files(layout.buildDirectory.dir("processedResources/jvm/main")) +
+        configurations.getByName("jvmRuntimeClasspath")
+    mainClass.set("com.ronjunevaldoz.graphyn.bootstrap.WorkflowCliRunnerKt")
+    // Defaults to the real dev Ollama deployment — without these, GRAPHYN_OLLAMA_HOST/MODEL are
+    // unset in the Gradle daemon's environment, silently falling back to http://localhost:11434 +
+    // llama3.1, which isn't installed there; every storyboard generation then failed to parse the
+    // resulting {"error": "model 'llama3.1' not found"} response and fell back to a hardcoded
+    // placeholder storyboard on every run. Still overridable via real environment variables.
+    environment("GRAPHYN_OLLAMA_HOST", System.getenv("GRAPHYN_OLLAMA_HOST") ?: "https://ron-local-home.duckdns.org/ollama")
+    environment("GRAPHYN_OLLAMA_MODEL", System.getenv("GRAPHYN_OLLAMA_MODEL") ?: "qwen3:8b")
 }

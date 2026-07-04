@@ -82,5 +82,18 @@ interface MediaCoreBackend {
     suspend fun cropImage(imagePath: String, x: Int, y: Int, width: Int, height: Int): ImageMetadata
 
     suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double): VideoMetadata
+
+    /** Renders a still image into a video with a slow pan/zoom (Ken Burns effect) instead of a static repeat. */
+    suspend fun kenBurns(
+        imagePath: String,
+        durationMs: Double,
+        fps: Double,
+        zoomStart: Double,
+        zoomEnd: Double,
+        panX: String,
+        panY: String,
+        width: Int,
+        height: Int,
+    ): VideoMetadata
 }
 

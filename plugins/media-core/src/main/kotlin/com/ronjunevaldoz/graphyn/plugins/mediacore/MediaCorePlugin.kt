@@ -79,6 +79,7 @@ class MediaCorePlugin(
             MediaImageSpecs.imageSequenceToVideo.type,
             imageSequenceToVideoExecutor(backend)
         )
+        registrar.registerExecutor(MediaImageSpecs.kenBurns.type, kenBurnsExecutor(backend))
     }
 
     private fun videoImportExecutor() = NodeExecutor { inputs ->

@@ -27,3 +27,7 @@ node_modules/
 # Workflow run outputs written to the desktop app working dir
 /app/desktopApp/*.mp4
 /app/desktopApp/*.wav
+
+# Workflow run outputs written by runWorkflowCli's working directory
+/app/app/image-motion-*.mp4
+/app/app/image-motion-*.json

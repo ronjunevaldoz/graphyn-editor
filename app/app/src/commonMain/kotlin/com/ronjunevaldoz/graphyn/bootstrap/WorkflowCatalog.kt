@@ -74,6 +74,8 @@ enum class WorkflowCatalog(
         "Animate a still with Wan2.1-I2V-14B-480P + 4-step lightx2v LoRA — single-model, no MoE pass.", badges = listOf("AI")),
     ImageShorts("AI Shorts (Image Motion)", imageShortsWorkflow, Media,
         "Generate FLUX keyframes, repeat them into scene clips, stitch, caption, and encode.", badges = listOf("AI", "Stable")),
+    ImageMotionShort("Image Motion Short (Simple)", imageMotionShortWorkflow, Media,
+        "3 reusable Flux scenes with niche-aware prompts, stitched into one clip. No outline/caption step.", badges = listOf("AI")),
     VideoShorts("AI Shorts (Video Motion)", videoShortsWorkflow, Media,
         "Generate motion-first scene clips with Wan, then stitch, caption, and encode.", badges = listOf("AI", "Stable")),
     ImageEdit("Image Edit", imageEditWorkflow, Media,

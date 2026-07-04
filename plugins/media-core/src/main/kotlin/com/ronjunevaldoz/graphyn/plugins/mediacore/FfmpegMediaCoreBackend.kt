@@ -68,6 +68,18 @@ class FfmpegMediaCoreBackend(
     override suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double) =
         imageSequenceToVideoImpl(imagePaths, fps)
 
+    override suspend fun kenBurns(
+        imagePath: String,
+        durationMs: Double,
+        fps: Double,
+        zoomStart: Double,
+        zoomEnd: Double,
+        panX: String,
+        panY: String,
+        width: Int,
+        height: Int,
+    ) = kenBurnsImpl(imagePath, durationMs, fps, zoomStart, zoomEnd, panX, panY, width, height)
+
     /** Public: reused by the TTS cache to read generated audio metadata. */
     suspend fun inspectAudio(path: String) = inspectAudioImpl(path)
 
