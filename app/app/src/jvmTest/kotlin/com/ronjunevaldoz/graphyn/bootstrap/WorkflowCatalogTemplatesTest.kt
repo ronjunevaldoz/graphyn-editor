@@ -61,7 +61,7 @@ class WorkflowCatalogTemplatesTest {
             .map { it.name }
 
         assertEquals("AI Shorts (Video Motion)", mediaNames.first())
-        assertEquals("AI Shorts (Image Motion)", mediaNames[1])
+        assertEquals("Image Motion Short (Simple)", mediaNames[1])
         assertTrue(mediaNames.indexOf("Text to Speech") > mediaNames.indexOf("FLUX Text to Image"))
         assertTrue(mediaNames.indexOf("Wan Image to Video (5B)") < mediaNames.indexOf("Wan Image to Video (480p)"))
         assertTrue(mediaNames.indexOf("Wan Image to Video (480p)") < mediaNames.indexOf("Wan Image to Video (720p)"))

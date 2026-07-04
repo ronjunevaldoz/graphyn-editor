@@ -30,6 +30,7 @@ class MediaWorkflowTemplateTest {
                 WorkflowCatalog.ImageEdit,
                 WorkflowCatalog.Slideshow,
                 WorkflowCatalog.ImageShorts,
+                WorkflowCatalog.ImageMotionShort,
                 WorkflowCatalog.VideoShorts,
             ),
             mediaScenes,

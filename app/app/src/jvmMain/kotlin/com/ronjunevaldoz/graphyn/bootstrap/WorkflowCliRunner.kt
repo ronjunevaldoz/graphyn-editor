@@ -99,11 +99,34 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
         )
     }
 
-    else -> WorkflowCatalog.entries.firstOrNull { it.name.equals(workflowName, ignoreCase = true) }?.workflow
-        ?: error(
-            "Unknown workflow '$workflowName'. Available: $STORYBOARD_WORKFLOW_KEY, $RECAPTION_WORKFLOW_KEY, " +
-                "$REGENERATE_SCENE_WORKFLOW_KEY, ${WorkflowCatalog.entries.joinToString { it.name }}",
-        )
+    else -> {
+        val base = WorkflowCatalog.entries.firstOrNull { it.name.equals(workflowName, ignoreCase = true) }?.workflow
+            ?: error(
+                "Unknown workflow '$workflowName'. Available: $STORYBOARD_WORKFLOW_KEY, $RECAPTION_WORKFLOW_KEY, " +
+                    "$REGENERATE_SCENE_WORKFLOW_KEY, ${WorkflowCatalog.entries.joinToString { it.name }}",
+            )
+        applyNodeOverrides(base, options)
+    }
+}
+
+/**
+ * Applies `nodeId.port=value` CLI options as node config overrides on a fixed [WorkflowCatalog]
+ * entry — e.g. `img2img.init_image=/path/to.png` — without needing a dedicated CLI mode per
+ * workflow. Values are always sent as strings; use the storyboard/recaption/regenerate-scene
+ * modes above for typed (int/double/bool) overrides.
+ */
+private fun applyNodeOverrides(workflow: WorkflowDefinition, options: Map<String, String>): WorkflowDefinition {
+    val overridesByNode = options.entries
+        .mapNotNull { (key, value) -> key.indexOf('.').takeIf { it > 0 }?.let { key.substring(0, it) to (key.substring(it + 1) to value) } }
+        .groupBy({ it.first }, { it.second })
+    if (overridesByNode.isEmpty()) return workflow
+    return workflow.copy(
+        nodes = workflow.nodes.map { node ->
+            overridesByNode[node.id]?.let { ports ->
+                node.copy(config = node.config + ports.associate { (port, value) -> port to WorkflowValue.StringValue(value) })
+            } ?: node
+        },
+    )
 }
 
 private fun toWorkflowValueLike(default: WorkflowValue, raw: String): WorkflowValue = when (default) {

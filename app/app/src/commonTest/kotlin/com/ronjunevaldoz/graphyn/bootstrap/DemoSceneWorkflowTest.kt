@@ -116,6 +116,7 @@ class DemoSceneWorkflowTest {
         val ignoredCodes = setOf("missing_required_input", "missing_input_port", "type_mismatch")
         val jvmOnlyScenes = setOf(
             WorkflowCatalog.Script,
+            WorkflowCatalog.ApiIngestionPro,
             WorkflowCatalog.SimpleTts,
             WorkflowCatalog.VideoNarration,
             WorkflowCatalog.AudioMix,
@@ -130,10 +131,13 @@ class DemoSceneWorkflowTest {
             WorkflowCatalog.FluxTxt2Img,
             WorkflowCatalog.QwenTxt2Img,
             WorkflowCatalog.QwenImg2Img,
+            WorkflowCatalog.FluxKontextImg2Img,
             WorkflowCatalog.WanImg2Vid,
             WorkflowCatalog.Wan480pImg2Vid,
             WorkflowCatalog.Wan5bImg2Vid,
+            WorkflowCatalog.Wan14b480pImg2Vid,
             WorkflowCatalog.ImageShorts,
+            WorkflowCatalog.ImageMotionShort,
             WorkflowCatalog.VideoShorts,
         )
         WorkflowCatalog.entries.forEach { scene ->
