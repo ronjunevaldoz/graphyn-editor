@@ -3,6 +3,8 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.store.SettingsStore
 import com.ronjunevaldoz.graphyn.editor.server.SdServerJobModel
 import com.ronjunevaldoz.graphyn.editor.server.SdServerStatusModel
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
@@ -19,8 +21,22 @@ internal class ServerSdApi(
         transport.postJson(path, "{}", conn)
     }.ok
     suspend fun unload(): SdServerStatusModel? = callModel("/api/sd/unload", post = true)
-    suspend fun generateImage(args: List<String>): ByteArray = generate(args, image = true)
-    suspend fun generateVideo(args: List<String>): ByteArray = generate(args, image = false)
+
+    suspend fun generateImage(request: SdGenerateImageRequest): ByteArray {
+        val conn = connection()
+        ensureReady()
+        val staged = stageLocalImages(request, conn)
+        assertServerFilesExist(collectServerPaths(staged), conn)
+        return postBytes("/api/sd/generate-ex", imageRequestToJson(staged), conn)
+    }
+
+    suspend fun generateVideo(request: SdGenerateVideoRequest): ByteArray {
+        val conn = connection()
+        ensureReady()
+        val staged = stageLocalVideoImages(request, conn)
+        assertServerFilesExist(collectServerPaths(staged), conn)
+        return postBytes("/api/sd/generate-video", videoRequestToJson(staged), conn)
+    }
 
     suspend fun ready(): Boolean =
         ping() && status()?.busy != true && jobs().none { it.state == "QUEUED" || it.state == "RUNNING" }
@@ -29,27 +45,19 @@ internal class ServerSdApi(
         check(ready()) { "server-sd is not ready; check /ping, /api/sd/status, and /api/sd/jobs" }
     }
 
-    private suspend fun generate(args: List<String>, image: Boolean): ByteArray {
-        val conn = connection()
-        ensureReady()
-        val staged = stageLocalImages(args, conn)
-        assertServerFilesExist(staged, conn)
-        val body = if (image) argsToJson(staged) else videoArgsToJson(staged)
-        return postBytes(if (image) "/api/sd/generate-ex" else "/api/sd/generate-video", body, conn)
-    }
+    private suspend fun stageLocalImages(request: SdGenerateImageRequest, conn: SdConnection): SdGenerateImageRequest =
+        request.copy(
+            initImagePath = request.initImagePath?.let { uploadIfLocal(it, conn) },
+            controlNet = request.controlNet?.let { cn ->
+                cn.copy(
+                    controlImage = cn.controlImage?.let { uploadIfLocal(it, conn) },
+                    maskImage = cn.maskImage?.let { uploadIfLocal(it, conn) },
+                )
+            },
+        )
 
-    private suspend fun stageLocalImages(args: List<String>, conn: SdConnection): List<String> {
-        val flags = setOf("--init-img", "--control-image", "--mask")
-        val out = args.toMutableList()
-        var i = 0
-        while (i < out.size) {
-            if (out[i] in flags && i + 1 < out.size) {
-                out[i + 1] = uploadIfLocal(out[i + 1], conn)
-                i += 2
-            } else i++
-        }
-        return out
-    }
+    private suspend fun stageLocalVideoImages(request: SdGenerateVideoRequest, conn: SdConnection): SdGenerateVideoRequest =
+        request.copy(initImagePath = request.initImagePath?.let { uploadIfLocal(it, conn) })
 
     private suspend fun uploadIfLocal(path: String, conn: SdConnection): String {
         val file = java.io.File(path)
@@ -61,8 +69,7 @@ internal class ServerSdApi(
             ?: error("server-sd upload returned no path: ${resp.body.text()}")
     }
 
-    private suspend fun assertServerFilesExist(args: List<String>, conn: SdConnection) {
-        val paths = collectServerPaths(args)
+    private suspend fun assertServerFilesExist(paths: List<String>, conn: SdConnection) {
         if (paths.isEmpty()) return
         val body = paths.joinToString(",") { "\"${it.escapeJson()}\"" }
         val resp = transport.postJson("/api/sd/models/exists", """{"paths":[$body]}""", conn)

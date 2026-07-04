@@ -1,16 +1,25 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
-// Flags whose value is a server-side file path, plus inline <lora:PATH:mult> tags.
-private val MODEL_FLAGS = setOf(
-    "--diffusion-model", "--high-noise-diffusion-model", "--clip_l", "--clip_g",
-    "--clip_vision", "--t5xxl", "--llm", "--vae", "--init-img", "--control-image", "--mask",
-)
-private val LORA_RE = Regex("<lora:([^:>]+):")
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 
-/** The distinct server-side file paths a generation depends on: model/encoder/vae/input flags + LoRAs. */
-internal fun collectServerPaths(args: List<String>): List<String> {
-    val paths = mutableListOf<String>()
-    args.forEachIndexed { i, a -> if (a in MODEL_FLAGS) args.getOrNull(i + 1)?.let { paths += it } }
-    args.forEach { a -> LORA_RE.findAll(a).forEach { paths += it.groupValues[1] } }
-    return paths.filter { it.isNotBlank() }.distinct()
-}
+/** The distinct server-side file paths an image generation depends on: model/encoder/vae/input paths + LoRAs. */
+internal fun collectServerPaths(request: SdGenerateImageRequest): List<String> = buildList {
+    val ctx = request.context
+    listOfNotNull(
+        ctx.diffusionModelPath, ctx.highNoiseDiffusionModelPath, ctx.clipLPath, ctx.clipGPath,
+        ctx.clipVisionPath, ctx.t5xxlPath, ctx.llmPath, ctx.vaePath,
+        request.initImagePath, request.controlNet?.controlImage, request.controlNet?.maskImage,
+    ).forEach { add(it) }
+    request.loras.forEach { add(it.path) }
+}.filter { it.isNotBlank() }.distinct()
+
+/** The distinct server-side file paths a video generation depends on. */
+internal fun collectServerPaths(request: SdGenerateVideoRequest): List<String> = buildList {
+    val ctx = request.context
+    listOfNotNull(
+        ctx.diffusionModelPath, ctx.highNoiseDiffusionModelPath, ctx.clipVisionPath, ctx.t5xxlPath, ctx.vaePath,
+        request.initImagePath,
+    ).forEach { add(it) }
+    request.loras.forEach { add(it.path) }
+}.filter { it.isNotBlank() }.distinct()

@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.store.GraphynEnvironment
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
 import com.ronjunevaldoz.graphyn.core.store.InMemorySettingsStore
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
 import java.io.File
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -34,7 +35,7 @@ class ServerSdApiTest {
         assertTrue(api.cancel("job-1"))
         transport.respond("GET", "/api/sd/jobs", 200, "[]".encodeToByteArray())
         val temp = File.createTempFile("graphyn-test", ".png").apply { writeText("x"); deleteOnExit() }
-        val bytes = api.generateImage(listOf("--init-img", temp.absolutePath, "--prompt", "hello"))
+        val bytes = api.generateImage(SdGenerateImageRequest(prompt = "hello", initImagePath = temp.absolutePath))
         assertContentEquals(byteArrayOf(1, 2, 3), bytes)
         assertTrue(transport.calls.any { it == "GET /ping" })
         assertTrue(transport.calls.any { it == "POST /api/sd/cancel/job-1" })

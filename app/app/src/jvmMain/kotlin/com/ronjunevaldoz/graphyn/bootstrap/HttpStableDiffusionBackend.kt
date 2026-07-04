@@ -5,6 +5,8 @@ import com.ronjunevaldoz.graphyn.core.store.ArtifactKind
 import com.ronjunevaldoz.graphyn.core.store.FileArtifactHistory
 import com.ronjunevaldoz.graphyn.core.store.FileSettingsStore
 import com.ronjunevaldoz.graphyn.core.store.SettingsStore
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdImageResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdVideoResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionBackend
@@ -12,8 +14,8 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
- * Forwards generation to a running `server-sd` over HTTP: translates the executor's CLI-flag list
- * into `/api/sd/generate-ex` (image) or `/api/sd/generate-video` (video), persists the bytes to a
+ * Forwards generation to a running `server-sd` over HTTP: serializes the typed request into
+ * `/api/sd/generate-ex` (image) or `/api/sd/generate-video` (video), persists the bytes to a
  * durable artifacts dir, and records each run in [history].
  *
  * The server URL + API key are resolved fresh **per run** from [settingsStore] (then env, then
@@ -26,23 +28,23 @@ class HttpStableDiffusionBackend(
 ) : StableDiffusionBackend {
     private val api = ServerSdApi(settingsStore)
 
-    override fun generateImage(args: List<String>): SdImageResult {
+    override fun generateImage(request: SdGenerateImageRequest): SdImageResult {
         val file = runBlocking {
             val start = System.currentTimeMillis()
-            val bytes = api.generateImage(args)
+            val bytes = api.generateImage(request)
             saveArtifact(bytes, "png").also {
-                history.record(buildArtifactRecord(it, ArtifactKind.Image, args, System.currentTimeMillis() - start, "sd.txt2img"))
+                history.record(buildArtifactRecord(it, ArtifactKind.Image, request, System.currentTimeMillis() - start, "sd.txt2img"))
             }
         }
         return SdImageResult(imagePaths = listOf(file.absolutePath))
     }
 
-    override fun generateVideo(args: List<String>): SdVideoResult {
+    override fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
         val file = runBlocking {
             val start = System.currentTimeMillis()
-            val bytes = api.generateVideo(args)
+            val bytes = api.generateVideo(request)
             saveArtifact(bytes, "mp4").also {
-                history.record(buildArtifactRecord(it, ArtifactKind.Video, args, System.currentTimeMillis() - start, "sd.img2vid"))
+                history.record(buildArtifactRecord(it, ArtifactKind.Video, request, System.currentTimeMillis() - start, "sd.img2vid"))
             }
         }
         return SdVideoResult(framePaths = listOf(file.absolutePath))

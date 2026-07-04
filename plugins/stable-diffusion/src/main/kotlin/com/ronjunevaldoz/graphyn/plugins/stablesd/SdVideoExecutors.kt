@@ -9,13 +9,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue.ListValue
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue.NullValue
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue.StringValue
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdTokens.asRecord
-import com.ronjunevaldoz.graphyn.plugins.stablesd.SdTokens.orEmpty
 
 internal fun txt2vidExecutor(backend: StableDiffusionBackend) = NodeExecutor { inputs ->
-    val args = buildVideoArgs(inputs, initImagePath = null, endImagePath = null)
-    val result = backend.generateVideo(args)
+    val request = buildVideoRequest(inputs, initImagePath = null, endImagePath = null, strength = null)
+    val result = backend.generateVideo(request)
     mapOf(
-        "frames"     to ListValue(result.framePaths.map { StringValue(it) }),
+        "frames" to ListValue(result.framePaths.map { StringValue(it) }),
         "audio_path" to (result.audioPath?.let { StringValue(it) } ?: NullValue),
     )
 }
@@ -26,64 +25,53 @@ internal fun img2vidExecutor(backend: StableDiffusionBackend) = NodeExecutor { i
     val endImage = (inputs["end_image"] as? StringValue)?.value
     val strength = when (val v = inputs["strength"]) {
         is DoubleValue -> v.value
-        is IntValue    -> v.value.toDouble()
+        is IntValue -> v.value.toDouble()
         else -> 0.75
     }
-    val args = buildVideoArgs(inputs, initImage, endImage) +
-        listOf("--strength", strength.toString())
-    val result = backend.generateVideo(args)
+    val request = buildVideoRequest(inputs, initImage, endImage, strength)
+    val result = backend.generateVideo(request)
     mapOf(
-        "frames"     to ListValue(result.framePaths.map { StringValue(it) }),
+        "frames" to ListValue(result.framePaths.map { StringValue(it) }),
         "audio_path" to (result.audioPath?.let { StringValue(it) } ?: NullValue),
     )
 }
 
-private fun buildVideoArgs(
+private fun buildVideoRequest(
     inputs: Map<String, WorkflowValue>,
     initImagePath: String?,
     endImagePath: String?,
-): List<String> = buildList {
-    val ctxFields     = inputs["context"]?.asRecord("sd.context") ?: error("sd context required")
+    strength: Double?,
+): SdGenerateVideoRequest {
+    val ctxFields = inputs["context"]?.asRecord("sd.context") ?: error("sd context required")
     val samplerFields = inputs["sampler"]?.asRecord("sd.sampler") ?: error("sd sampler required")
+    val highNoiseToken = inputs["high_noise_sampler"]
+    val highNoiseSampler = if (highNoiseToken != null && highNoiseToken !is NullValue) {
+        extractSamplerConfig(highNoiseToken.asRecord("sd.sampler"))
+    } else null
 
-    addAll(buildContextArgs(ctxFields))
-    addAll(buildSamplerArgs(samplerFields))
-
-    inputs["high_noise_sampler"]?.let { token ->
-        if (token !is NullValue) addAll(buildHighNoiseSamplerArgs(token.asRecord("sd.sampler")))
-    }
-    inputs["hires"]?.let      { if (it !is NullValue) addAll(buildHiresArgs(it.orEmpty())) }
-    inputs["cache"]?.let      { if (it !is NullValue) addAll(buildCacheArgs(it.orEmpty())) }
-    inputs["vae_tiling"]?.let { if (it !is NullValue) addAll(buildTilingArgs(it.orEmpty())) }
-
-    (inputs["loras"] as? ListValue)?.items?.forEach { loraToken ->
-        val lora = loraToken.orEmpty()
-        val path = (lora["path"] as? StringValue)?.value ?: return@forEach
-        val mult = when (val m = lora["multiplier"]) {
-            is DoubleValue -> m.value
-            is IntValue    -> m.value.toDouble()
-            else -> 1.0
-        }
-        add("--prompt"); add("<lora:$path:$mult>")
-    }
-
-    (inputs["prompt"] as? StringValue)?.value?.let { add("--prompt"); add(it) }
-    (inputs["negative_prompt"] as? StringValue)?.value?.let { add("--negative-prompt"); add(it) }
-    (inputs["width"] as? IntValue)?.value?.takeIf { it > 0 }?.let { add("--width"); add(it.toString()) }
-    (inputs["height"] as? IntValue)?.value?.takeIf { it > 0 }?.let { add("--height"); add(it.toString()) }
-    (inputs["seed"] as? IntValue)?.value?.let { add("--seed"); add(it.toString()) }
-    (inputs["clip_skip"] as? IntValue)?.value?.takeIf { it > 0 }
-        ?.let { add("--clip-skip"); add(it.toString()) }
-    (inputs["video_frames"] as? IntValue)?.value?.let { add("--video-frames"); add(it.toString()) }
-    (inputs["fps"] as? IntValue)?.value?.let { add("--fps"); add(it.toString()) }
-    (inputs["moe_boundary"] as? DoubleValue)?.value?.let { add("--moe-boundary"); add(it.toString()) }
-    (inputs["vace_strength"] as? DoubleValue)?.value?.let { add("--vace-strength"); add(it.toString()) }
-
-    if ((inputs["embed_image_metadata"] as? BooleanValue)?.value == false) add("--disable-image-metadata")
-
-    initImagePath?.let { add("--init-img"); add(it) }
-    endImagePath?.let  { add("--end-img"); add(it) }
-
-    (inputs["control_frames"] as? ListValue)?.items?.filterIsInstance<StringValue>()
-        ?.forEach { add("--control-video"); add(it.value) }
+    return SdGenerateVideoRequest(
+        prompt = (inputs["prompt"] as? StringValue)?.value ?: "",
+        negativePrompt = (inputs["negative_prompt"] as? StringValue)?.value ?: "",
+        width = (inputs["width"] as? IntValue)?.value?.takeIf { it > 0 },
+        height = (inputs["height"] as? IntValue)?.value?.takeIf { it > 0 },
+        seed = (inputs["seed"] as? IntValue)?.value?.toLong() ?: -1L,
+        clipSkip = (inputs["clip_skip"] as? IntValue)?.value?.takeIf { it > 0 },
+        videoFrames = (inputs["video_frames"] as? IntValue)?.value,
+        fps = (inputs["fps"] as? IntValue)?.value,
+        moeBoundary = (inputs["moe_boundary"] as? DoubleValue)?.value,
+        vaceStrength = (inputs["vace_strength"] as? DoubleValue)?.value,
+        embedImageMetadata = (inputs["embed_image_metadata"] as? BooleanValue)?.value ?: true,
+        initImagePath = initImagePath,
+        endImagePath = endImagePath,
+        strength = strength,
+        controlFrames = (inputs["control_frames"] as? ListValue)?.items
+            ?.filterIsInstance<StringValue>()?.map { it.value }.orEmpty(),
+        context = extractContextConfig(ctxFields),
+        sampler = extractSamplerConfig(samplerFields),
+        highNoiseSampler = highNoiseSampler,
+        hires = extractHiresConfig(inputs["hires"]),
+        cache = extractCacheConfig(inputs["cache"]),
+        vaeTiling = extractTilingConfig(inputs["vae_tiling"]),
+        loras = extractLoras(inputs),
+    )
 }

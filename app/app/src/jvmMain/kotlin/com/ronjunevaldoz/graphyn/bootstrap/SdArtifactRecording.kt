@@ -3,23 +3,19 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.store.ArtifactKind
 import com.ronjunevaldoz.graphyn.core.store.ArtifactRecord
 import com.ronjunevaldoz.graphyn.editor.state.SdArtifactContext
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 import java.io.File
 
-/** Generation-input flags recorded (without their `--` prefix) for artifact provenance. */
-private val INPUT_FLAGS = listOf(
-    "--steps", "--seed", "--width", "--height", "--cfg-scale", "--guidance", "--flow-shift",
-    "--sampling-method", "--strength", "--negative-prompt", "--video-frames", "--fps", "--max-vram",
-)
-
 /**
- * Builds an [ArtifactRecord] for a generated file: the prompt, diffusion model, key generation
+ * Builds an [ArtifactRecord] for a generated image: the prompt, diffusion model, key generation
  * inputs (steps/seed/size/…), the elapsed time, and the workflow it came from (via
  * [SdArtifactContext]) — so the artifact history is searchable and reproducible.
  */
 internal fun buildArtifactRecord(
     file: File,
     kind: ArtifactKind,
-    args: List<String>,
+    request: SdGenerateImageRequest,
     elapsedMs: Long,
     nodeType: String,
 ): ArtifactRecord = ArtifactRecord(
@@ -30,31 +26,54 @@ internal fun buildArtifactRecord(
     workflowId = SdArtifactContext.workflowId,
     workflowName = SdArtifactContext.workflowName,
     nodeType = nodeType,
-    prompt = promptOf(args),
-    model = File(valueOf(args, "--diffusion-model").orEmpty()).name.ifEmpty { null },
+    prompt = request.prompt.ifBlank { null },
+    model = request.context.diffusionModelPath?.let { File(it).name }?.ifEmpty { null },
     elapsedMs = elapsedMs,
-    inputs = INPUT_FLAGS.mapNotNull { flag -> valueOf(args, flag)?.let { flag.removePrefix("--") to it } }.toMap()
-        + lorasInput(args),
+    inputs = buildMap {
+        request.sampler.sampleSteps?.let { put("steps", it.toString()) }
+        put("seed", request.seed.toString())
+        request.width?.let { put("width", it.toString()) }
+        request.height?.let { put("height", it.toString()) }
+        request.sampler.txtCfg?.let { put("cfg-scale", it.toString()) }
+        request.sampler.distilledGuidance?.let { put("guidance", it.toString()) }
+        request.sampler.flowShift?.let { put("flow-shift", it.toString()) }
+        request.sampler.sampleMethod?.let { put("sampling-method", it) }
+        request.strength?.let { put("strength", it.toString()) }
+        request.negativePrompt.takeIf { it.isNotBlank() }?.let { put("negative-prompt", it) }
+        if (request.loras.isNotEmpty()) put("loras", request.loras.joinToString(",") { File(it.path).name })
+    },
 )
 
-/** LoRA file names (comma-joined) from inline <lora:…> prompt tags, when present. */
-private fun lorasInput(args: List<String>): Map<String, String> {
-    val loras = args.flatMap { LORA_TAG.findAll(it).toList() }
-        .map { it.value.removePrefix("<lora:").substringBefore(':').substringAfterLast('/').substringAfterLast('\\') }
-    return if (loras.isEmpty()) emptyMap() else mapOf("loras" to loras.joinToString(","))
-}
-
-private val LORA_TAG = Regex("<lora:[^>]*>")
-
-/** The positive prompt with any inline `<lora:…>` tags stripped, or null when absent. */
-private fun promptOf(args: List<String>): String? {
-    val prompts = args.withIndex().filter { it.value == "--prompt" }
-        .mapNotNull { args.getOrNull(it.index + 1) }
-    return prompts.lastOrNull { !it.startsWith("<lora:") }
-        ?.replace(LORA_TAG, "")?.trim()?.ifEmpty { null }
-}
-
-private fun valueOf(args: List<String>, flag: String): String? {
-    val i = args.indexOf(flag)
-    return if (i >= 0) args.getOrNull(i + 1) else null
-}
+/** Builds an [ArtifactRecord] for a generated video — same shape as the image overload, video-specific fields. */
+internal fun buildArtifactRecord(
+    file: File,
+    kind: ArtifactKind,
+    request: SdGenerateVideoRequest,
+    elapsedMs: Long,
+    nodeType: String,
+): ArtifactRecord = ArtifactRecord(
+    id = file.name,
+    kind = kind,
+    path = file.absolutePath,
+    createdAt = System.currentTimeMillis(),
+    workflowId = SdArtifactContext.workflowId,
+    workflowName = SdArtifactContext.workflowName,
+    nodeType = nodeType,
+    prompt = request.prompt.ifBlank { null },
+    model = request.context.diffusionModelPath?.let { File(it).name }?.ifEmpty { null },
+    elapsedMs = elapsedMs,
+    inputs = buildMap {
+        request.sampler.sampleSteps?.let { put("steps", it.toString()) }
+        put("seed", request.seed.toString())
+        request.width?.let { put("width", it.toString()) }
+        request.height?.let { put("height", it.toString()) }
+        request.sampler.txtCfg?.let { put("cfg-scale", it.toString()) }
+        request.sampler.flowShift?.let { put("flow-shift", it.toString()) }
+        request.sampler.sampleMethod?.let { put("sampling-method", it) }
+        request.videoFrames?.let { put("video-frames", it.toString()) }
+        request.fps?.let { put("fps", it.toString()) }
+        request.context.maxVram?.let { put("max-vram", it) }
+        request.negativePrompt.takeIf { it.isNotBlank() }?.let { put("negative-prompt", it) }
+        if (request.loras.isNotEmpty()) put("loras", request.loras.joinToString(",") { File(it.path).name })
+    },
+)

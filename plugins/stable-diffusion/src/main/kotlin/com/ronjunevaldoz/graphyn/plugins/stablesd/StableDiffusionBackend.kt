@@ -14,22 +14,14 @@ data class SdVideoResult(
 /**
  * Abstraction over a stable-diffusion.cpp backend.
  *
- * The default implementation ([SdCliBackend]) shells out to the `sd-cli` binary.
- * Swap with a JNI implementation to avoid process-per-generation overhead.
+ * The default implementation ([SdCliBackend]) shells out to the `sd-cli` binary, converting
+ * [SdGenerateImageRequest]/[SdGenerateVideoRequest] into CLI flags. Swap with a JNI or remote
+ * (HTTP) implementation to avoid process-per-generation overhead.
  */
 interface StableDiffusionBackend {
-    /**
-     * Generate images using the CLI `--mode img_gen` path.
-     *
-     * [contextArgs] and [genArgs] are the already-assembled CLI flag lists from [SdCliArgs].
-     * The implementation is responsible for invoking the binary and collecting output paths.
-     */
-    fun generateImage(args: List<String>): SdImageResult
+    /** Generate images using the `img_gen` mode. */
+    fun generateImage(request: SdGenerateImageRequest): SdImageResult
 
-    /**
-     * Generate video frames using the CLI `--mode vid_gen` path.
-     *
-     * Returns frame paths in display order and an optional audio file path.
-     */
-    fun generateVideo(args: List<String>): SdVideoResult
+    /** Generate video frames using the `vid_gen` mode. Returns frame paths and an optional audio path. */
+    fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult
 }

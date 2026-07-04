@@ -1,7 +1,6 @@
 package com.ronjunevaldoz.graphyn.plugins.stablesd
 
 import java.io.File
-import java.nio.file.Files
 
 /**
  * [StableDiffusionBackend] implementation that shells out to the `sd-cli` binary
@@ -17,9 +16,9 @@ class SdCliBackend(
 
     init { File(outputDir).mkdirs() }
 
-    override fun generateImage(args: List<String>): SdImageResult {
+    override fun generateImage(request: SdGenerateImageRequest): SdImageResult {
         val outPrefix = File(outputDir, "img_${System.currentTimeMillis()}").absolutePath
-        val fullArgs = listOf(cliPath, "--mode", "img_gen", "--output", outPrefix) + args
+        val fullArgs = listOf(cliPath, "--mode", "img_gen", "--output", outPrefix) + request.toCliArgs()
         runProcess(fullArgs)
         // sd-cli appends _001.png, _002.png … when batch_count > 1; collect all matching files
         val images = File(outputDir).listFiles { f ->
@@ -29,9 +28,9 @@ class SdCliBackend(
         return SdImageResult(images)
     }
 
-    override fun generateVideo(args: List<String>): SdVideoResult {
+    override fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
         val outPrefix = File(outputDir, "vid_${System.currentTimeMillis()}").absolutePath
-        val fullArgs = listOf(cliPath, "--mode", "vid_gen", "--output", outPrefix) + args
+        val fullArgs = listOf(cliPath, "--mode", "vid_gen", "--output", outPrefix) + request.toCliArgs()
         runProcess(fullArgs)
         val frames = File(outputDir).listFiles { f ->
             f.name.startsWith(File(outPrefix).name) && f.extension == "png"
