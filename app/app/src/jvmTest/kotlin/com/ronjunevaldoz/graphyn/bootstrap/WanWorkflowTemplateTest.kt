@@ -10,7 +10,7 @@ class WanWorkflowTemplateTest {
     private companion object {
         const val WAN_DIFFUSION_LOW = "/models/wan/diffusion/Wan2.2-I2V-A14B-LowNoise-Q4_K_M.gguf"
         const val WAN_DIFFUSION_HIGH = "/models/wan/diffusion/Wan2.2-I2V-A14B-HighNoise-Q4_K_M.gguf"
-        const val WAN5B_DIFFUSION = "/models/wan/Wan2.2-TI2V-5B-Q4_K_M.gguf"
+        const val WAN5B_DIFFUSION = "/models/wan/diffusion/Wan2.2-TI2V-5B-Q4_K_M.gguf"
         const val WAN5B_T5 = "/models/wan/umt5-xxl-encoder-Q8_0.gguf"
         const val WAN5B_VAE = "/models/wan/Wan2.2_VAE.safetensors"
         const val WAN14B480P_DIFFUSION = "/models/wan/wan2.1-i2v-14b-480p-Q3_K_S.gguf"
