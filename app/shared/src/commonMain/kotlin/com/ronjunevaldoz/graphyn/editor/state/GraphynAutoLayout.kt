@@ -106,13 +106,29 @@ internal object GraphynAutoLayout {
             positions[node.id] = IntOffset(col * cellW, gridTop + row * cellH)
         }
 
+        // Scale down first if the raw layout is wider/taller than the logical canvas can hold —
+        // otherwise the downstream position clamp would collapse all overflowing nodes onto the
+        // same edge instead of shrinking the spacing between them.
+        val rawMinX = positions.values.minOf { it.x }
+        val rawMaxX = positions.entries.maxOf { (id, p) -> p.x + (sizes[id]?.width ?: GraphynCanvasMetrics.NodeSize.width) }
+        val rawMinY = positions.values.minOf { it.y }
+        val rawMaxY = positions.entries.maxOf { (id, p) -> p.y + (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) }
+        val availW = (GraphynCanvasBounds.DefaultLogicalCanvasWidth - GraphynCanvasInset * 2).toFloat()
+        val availH = (GraphynCanvasBounds.DefaultLogicalCanvasHeight - GraphynCanvasInset * 2).toFloat()
+        val scale = minOf(1f, availW / (rawMaxX - rawMinX).coerceAtLeast(1), availH / (rawMaxY - rawMinY).coerceAtLeast(1))
+        val scaled = if (scale < 1f) {
+            positions.mapValues { (_, p) ->
+                IntOffset(rawMinX + ((p.x - rawMinX) * scale).toInt(), rawMinY + ((p.y - rawMinY) * scale).toInt())
+            }
+        } else positions
+
         // Shift layout so its bounding-box centre aligns with the logical canvas centre
-        val minX = positions.values.minOf { it.x }
-        val maxX = positions.entries.maxOf { (id, p) -> p.x + (sizes[id]?.width ?: GraphynCanvasMetrics.NodeSize.width) }
-        val minY = positions.values.minOf { it.y }
-        val maxY = positions.entries.maxOf { (id, p) -> p.y + (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) }
+        val minX = scaled.values.minOf { it.x }
+        val maxX = scaled.entries.maxOf { (id, p) -> p.x + (sizes[id]?.width ?: GraphynCanvasMetrics.NodeSize.width) }
+        val minY = scaled.values.minOf { it.y }
+        val maxY = scaled.entries.maxOf { (id, p) -> p.y + (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) }
         val shiftX = GraphynCanvasBounds.DefaultLogicalCanvasWidth / 2 - (minX + maxX) / 2
         val shiftY = GraphynCanvasBounds.DefaultLogicalCanvasHeight / 2 - (minY + maxY) / 2
-        return positions.mapValues { (_, p) -> IntOffset(p.x + shiftX + GraphynCanvasInset, p.y + shiftY + GraphynCanvasInset) }
+        return scaled.mapValues { (_, p) -> IntOffset(p.x + shiftX + GraphynCanvasInset, p.y + shiftY + GraphynCanvasInset) }
     }
 }

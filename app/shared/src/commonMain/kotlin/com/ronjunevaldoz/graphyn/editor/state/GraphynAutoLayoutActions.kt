@@ -3,7 +3,6 @@ package com.ronjunevaldoz.graphyn.editor.state
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
-import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
 
 internal data class AutoLayoutResult(
     val positions: Map<String, IntOffset>,
@@ -13,14 +12,7 @@ internal data class AutoLayoutResult(
 internal fun GraphynEditorState.performAutoLayout(): AutoLayoutResult? {
     val wf = workflow ?: return null
     val registry = canvasCards
-    val nodeSize: (String) -> IntSize = { type ->
-        registry?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) }
-            ?: nodeSpecs?.resolve(type)?.let { spec ->
-                val factory = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
-                IntSize(factory.nodeWidth, factory.nodeHeight)
-            }
-            ?: GraphynCanvasMetrics.NodeSize
-    }
+    val nodeSize: (String) -> IntSize = { type -> resolveNodeSize(type) }
     val (annotationNodes, graphNodes) = wf.nodes.partition { registry?.resolve(it.type)?.isAnnotation == true }
     if (graphNodes.size > GraphynAutoLayout.MAX_NODES) {
         log.push("Auto-layout skipped: ${graphNodes.size} nodes exceeds limit of ${GraphynAutoLayout.MAX_NODES}")
@@ -32,9 +24,17 @@ internal fun GraphynEditorState.performAutoLayout(): AutoLayoutResult? {
         val maxAnnW = annotationNodes.maxOf { nodeSize(it.type).width }
         val graphMinX = positions.values.minOfOrNull { it.x } ?: 0
         val graphMinY = positions.values.minOfOrNull { it.y } ?: 0
+        // The annotation column sits to the left of the graph at graphMinX - maxAnnW - gap.
+        // If that would go negative, shift the whole graph right first so the column still
+        // fits at x=0 without overlapping — otherwise clamp() collapses it onto the graph.
+        val annX = graphMinX - maxAnnW - gap
+        if (annX < 0) {
+            val shift = -annX
+            positions.replaceAll { _, p -> IntOffset(p.x + shift, p.y) }
+        }
         var annY = graphMinY
         annotationNodes.forEach { ann ->
-            positions[ann.id] = IntOffset(graphMinX - maxAnnW - gap, annY)
+            positions[ann.id] = IntOffset(maxOf(annX, 0), annY)
             annY += nodeSize(ann.type).height + GraphynCanvasMetrics.NodeSize.height
         }
     }

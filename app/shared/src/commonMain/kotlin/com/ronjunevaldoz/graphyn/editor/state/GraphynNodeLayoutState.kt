@@ -18,6 +18,7 @@ internal class GraphynNodeLayoutState(
     private val canvasBounds: GraphynCanvasBounds,
     private val viewportScale: () -> Float,
     private val onPositionsChanged: (Map<String, IntOffset>) -> Unit = {},
+    private val nodeSizeResolver: (String) -> IntSize = { GraphynCanvasMetrics.NodeSize },
 ) {
     var nodePositionsByNodeId by mutableStateOf<Map<String, IntOffset>>(emptyMap())
     private val nodeDragRemaindersByNodeId = mutableMapOf<String, Offset>()
@@ -58,11 +59,11 @@ internal class GraphynNodeLayoutState(
     fun nodePosition(nodeId: String, index: Int): IntOffset =
         nodePositionsByNodeId[nodeId] ?: GraphynCanvasLayout.fallbackPosition(index, canvasBounds)
 
-    fun nodeSize(): IntSize = GraphynCanvasMetrics.NodeSize
+    fun nodeSize(nodeId: String): IntSize = nodeSizeResolver(nodeId)
 
     fun nodeBounds(nodeId: String, index: Int): Rect {
         val pos = nodePosition(nodeId, index)
-        val size = nodeSize()
+        val size = nodeSize(nodeId)
         return Rect(pos.x.toFloat(), pos.y.toFloat(), pos.x.toFloat() + size.width, pos.y.toFloat() + size.height)
     }
 
@@ -70,7 +71,7 @@ internal class GraphynNodeLayoutState(
         nodeIds.any { (id, idx) -> nodeBounds(id, idx).contains(worldPosition) }
 
     private fun clamp(nodeId: String, position: IntOffset): IntOffset {
-        val size = nodeSize()
+        val size = nodeSize(nodeId)
         return IntOffset(
             x = position.x.coerceIn(0, (canvasBounds.width - size.width).coerceAtLeast(0)),
             y = position.y.coerceIn(0, (canvasBounds.height - size.height).coerceAtLeast(0)),

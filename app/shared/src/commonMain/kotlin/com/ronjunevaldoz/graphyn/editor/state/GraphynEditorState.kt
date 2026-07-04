@@ -42,6 +42,7 @@ class GraphynEditorState(
         canvasBounds = canvasBounds,
         viewportScale = { viewportState.viewport.scale },
         onPositionsChanged = ::persistNodePositions,
+        nodeSizeResolver = { nodeId -> resolveNodeSizeById(nodeId) },
     )
     internal val log = GraphynDebugLogState()
     internal val telemetry = GraphynDebugLogState()
@@ -139,7 +140,7 @@ class GraphynEditorState(
     fun setNodePosition(nodeId: String, position: IntOffset, clearDragRemainder: Boolean = true) =
         layout.setNodePosition(nodeId, position, clearDragRemainder)
     fun nodePosition(nodeId: String, index: Int): IntOffset = layout.nodePosition(nodeId, index)
-    fun nodeSize(nodeId: String): IntSize = layout.nodeSize()
+    fun nodeSize(nodeId: String): IntSize = layout.nodeSize(nodeId)
     fun nodeBounds(nodeId: String, index: Int): Rect = layout.nodeBounds(nodeId, index)
     fun isWorldPositionOverNode(position: Offset): Boolean {
         val nodes = workflow?.nodes ?: return false
