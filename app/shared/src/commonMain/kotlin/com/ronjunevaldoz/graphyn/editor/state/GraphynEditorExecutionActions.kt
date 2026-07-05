@@ -41,6 +41,7 @@ fun GraphynEditorState.execute(engine: WorkflowExecutionEngine): Job {
                 // Live per-node status as the engine progresses.
                 val status = when (event) {
                     is ExecutionEvent.Started   -> NodeExecutionStatus.Running
+                    is ExecutionEvent.Progress  -> NodeExecutionStatus.Running
                     is ExecutionEvent.Succeeded -> NodeExecutionStatus.Success
                     is ExecutionEvent.Failed    -> NodeExecutionStatus.Error
                     is ExecutionEvent.Skipped   -> NodeExecutionStatus.Skipped

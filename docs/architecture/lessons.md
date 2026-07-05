@@ -10,6 +10,7 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
 - Shorts prompt shaping belongs in a real node contract, not inline `script.eval` glue.
 - Scene prompt scripts should fall back across caption/title/topic fields so one missing `prompt` key does not break the whole shorts pipeline.
 - Reusable subgraphs work best when they expose one clean boundary value.
+- Intra-node progress (e.g. diffusion steps) is reported via a `ProgressReporter` `CoroutineContext.Element` the engine installs around each `executor.execute()` — executors call the opt-in `suspend reportProgress(step, total, phase)`; this keeps `NodeExecutor`'s single-method `fun interface` SAM signature intact so the dozens of `NodeExecutor { }` lambda call sites are untouched. Reports surface as `ExecutionEvent.Progress` on the same `onEvent`/`ExecutionStreamMessage` stream as `Started`/`Succeeded`, so SSE (`GET /executions/{id}/events`) carries them with zero server change. Adding the sealed case only breaks *exhaustive* `when(event)` blocks (one existed: `GraphynEditorExecutionActions`); `.any {}`-style predicate tests are source-compatible.
 - `media.video_stitch` needs video clips, not stills; generate clips first, then stitch.
 - Nullable workflow fields should round-trip as `NullValue`, not empty strings.
 - Script-based media templates need the script plugin in the JVM runtime bundle.

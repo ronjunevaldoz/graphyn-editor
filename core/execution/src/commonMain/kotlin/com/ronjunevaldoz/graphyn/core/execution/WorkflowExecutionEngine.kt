@@ -8,7 +8,18 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlin.time.TimeSource
+
+/** Bridges an executor's [reportProgress] calls to the engine's [ExecutionEvent] stream. */
+private class NodeProgressReporter(
+    private val nodeId: String,
+    private val onEvent: ((ExecutionEvent) -> Unit)?,
+) : ProgressReporter {
+    override fun report(step: Int, total: Int, phase: String?) {
+        onEvent?.invoke(ExecutionEvent.Progress(nodeId, step, total, phase))
+    }
+}
 
 class WorkflowExecutionException(message: String) : IllegalStateException(message)
 
@@ -59,7 +70,7 @@ class WorkflowExecutionEngine(
                         onEvent?.invoke(ExecutionEvent.Started(nodeId))
                         val start = TimeSource.Monotonic.markNow()
                         try {
-                            val (out, sub) = runWithPolicy(node) { runNode(workflow, node, outputs, externalInputs) }
+                            val (out, sub) = runWithPolicy(node) { runNode(workflow, node, outputs, externalInputs, onEvent) }
                             NodeOutcome(nodeId, out, sub, null, start.elapsedNow().inWholeMilliseconds)
                         } catch (e: CancellationException) { throw e }
                         catch (e: Throwable) {
@@ -108,9 +119,13 @@ class WorkflowExecutionEngine(
         node: NodeRef,
         outputs: Map<String, Map<String, WorkflowValue>>,
         externalInputs: Map<String, WorkflowValue>,
+        onEvent: ((ExecutionEvent) -> Unit)?,
     ): Pair<Map<String, WorkflowValue>, WorkflowExecutionResult?> {
         val spec = nodeSpecs?.resolve(node.type)
         val inputs = buildInputMap(workflow, node, spec, outputs, externalInputs)
+        // Installed so the executor body can call reportProgress(); each report becomes an
+        // ExecutionEvent.Progress for node.id on the same stream as Started/Succeeded.
+        val reporter = NodeProgressReporter(node.id, onEvent)
 
         val subgraph = node.subgraph
         if (subgraph != null) {
@@ -120,12 +135,12 @@ class WorkflowExecutionEngine(
                 throw WorkflowExecutionException("Subgraph '${node.id}' failed: ${inner.errorsByNodeId.values.firstOrNull()}")
             val innerOutputs = freeOutputs(subgraph, inner.nodeOutputsByNodeId)
             val executor = nodeExecutors.resolve(node.type)
-            val out = if (executor != null) executor.execute(inputs + innerOutputs) else innerOutputs
+            val out = if (executor != null) withContext(reporter) { executor.execute(inputs + innerOutputs) } else innerOutputs
             return out to inner
         }
 
         val executor = nodeExecutors.resolve(node.type)
             ?: throw WorkflowExecutionException("No executor registered for node type '${node.type}'.")
-        return executor.execute(inputs) to null
+        return withContext(reporter) { executor.execute(inputs) } to null
     }
 }

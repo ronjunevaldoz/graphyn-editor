@@ -20,6 +20,20 @@ sealed interface ExecutionEvent {
     @Serializable
     data class Started(override val nodeId: String) : ExecutionEvent
 
+    /**
+     * The node reported intra-execution progress at [step] of [total], optionally in a named
+     * [phase] (e.g. `"denoise"`). Emitted by an executor via [reportProgress], interleaved between
+     * this node's [Started] and its terminal [Succeeded]/[Failed]. Purely informational — a run
+     * can succeed without ever emitting one.
+     */
+    @Serializable
+    data class Progress(
+        override val nodeId: String,
+        val step: Int,
+        val total: Int,
+        val phase: String? = null,
+    ) : ExecutionEvent
+
     /** The node finished successfully with [outputs] in [durationMs]. */
     @Serializable
     data class Succeeded(
