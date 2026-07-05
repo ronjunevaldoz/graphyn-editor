@@ -39,7 +39,7 @@ class MediaWorkflowExecutionTest {
         result.assertFullSuccess(expectedNodeCount = 11)
         assertEquals(listOf("Narration from narration.txt"), fixture.ttsTexts)
         assertEquals(
-            listOf("/generated/input-extracted.wav", "/generated/narrator.wav"),
+            listOf("/generated/input-extracted.wav", "/generated/Samantha.wav"),
             fixture.lastAudioMixPaths,
         )
         assertEquals(
