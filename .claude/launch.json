@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "graphyn-server",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": [":server:run"],
+      "port": 8080
+    }
+  ]
+}

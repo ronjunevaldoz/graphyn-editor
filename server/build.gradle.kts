@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
     implementation(libs.ktor.serverSse)
+    implementation(libs.ktor.serverSwagger)
     implementation(libs.kotlinx.coroutinesCore)
     implementation(libs.serialization.json)
     testImplementation(libs.ktor.serverTestHost)

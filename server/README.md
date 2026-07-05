@@ -27,6 +27,22 @@ Auth is off by default (see below). To require a Bearer token, uncomment the `en
 block in `server/docker-compose.yml` — do **not** set `GRAPHYN_API_KEY=""`; a present-but-empty
 value is treated as a real (empty-string) key to match, not "no auth".
 
+## Browsing and testing the API
+
+```
+http://localhost:8080/swagger
+```
+
+Swagger UI — browse every route below with its request/response shapes, and use "Try it out" to
+send real requests against the running server (e.g. publish a workflow via `POST /workflows`,
+then run it via `POST /workflows/{id}/run`, right from the browser). The raw spec is at
+`/swagger/documentation.yaml` (source: `server/src/main/resources/openapi/documentation.yaml`).
+
+Node *types* are registered dynamically at runtime by plugins, so the spec documents `GET /nodes`
+as returning an array of `NodeSpec` objects — it can't enumerate every specific node type as its
+own schema. To see what's actually registered, call `GET /nodes` through the UI and read the live
+response.
+
 ## Endpoints
 
 | Method | Path | Description |

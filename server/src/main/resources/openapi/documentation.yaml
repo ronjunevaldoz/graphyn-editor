@@ -1,0 +1,484 @@
+openapi: 3.0.3
+info:
+  title: Graphyn Ktor Plugin
+  description: >
+    Workflow execution API for the Graphyn engine — browse registered node types, publish/run
+    workflows, and execute ad-hoc graphs synchronously or as background jobs.
+
+    Known gotcha: `WorkflowValue`'s JSON type-discriminator key differs by route. `/workflows`
+    (publish/fetch) uses `"kind"`. `/workflows/{id}/run`'s `overrides` body and the outputs in
+    `/execute`/`/executions` results use `"type"`. Not yet unified — see
+    docs/architecture/lessons.md.
+  version: "1.0.0"
+servers:
+  - url: /
+paths:
+  /:
+    get:
+      summary: Health check
+      description: Always exempt from Bearer-token auth so load balancers can probe it freely.
+      responses:
+        "200":
+          description: Server is running
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "Graphyn server is running"
+
+  /nodes:
+    get:
+      summary: List every registered node type
+      tags: [Nodes]
+      responses:
+        "200":
+          description: All registered NodeSpecs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NodeSpec"
+
+  /nodes/{type}:
+    get:
+      summary: Fetch one node spec
+      tags: [Nodes]
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "sd.txt2img"
+      responses:
+        "200":
+          description: The node spec
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NodeSpec"
+        "404":
+          description: No node spec registered for that type
+
+  /workflows:
+    get:
+      summary: List published workflows
+      tags: [Workflows]
+      responses:
+        "200":
+          description: Workflow metadata, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkflowMeta"
+    post:
+      summary: Publish or update a workflow
+      tags: [Workflows]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDocument"
+      responses:
+        "201":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowMeta"
+
+  /workflows/{id}:
+    get:
+      summary: Fetch a published workflow's full definition
+      tags: [Workflows]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      responses:
+        "200":
+          description: The workflow document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDocument"
+        "404":
+          description: Unknown workflow id
+    delete:
+      summary: Unpublish a workflow (and all its version history)
+      tags: [Workflows]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      responses:
+        "204":
+          description: Deleted
+
+  /workflows/{id}/run:
+    post:
+      summary: Run a published workflow by id, with optional per-node/port input overrides
+      description: >
+        Turns any saved workflow into a parameterized API — callers only send the inputs they
+        want to vary. `overrides` uses the `"type"` discriminator for WorkflowValue (not `"kind"`,
+        see the top-level description).
+      tags: [Workflows]
+      parameters:
+        - $ref: "#/components/parameters/WorkflowId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunRequest"
+      responses:
+        "200":
+          description: Synchronous run result (when `async` is false/omitted)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionResult"
+        "202":
+          description: Async run accepted (when `async` is true) — poll via GET /executions/{id}/events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+        "400":
+          description: Validation errors on the merged graph
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationError"
+        "404":
+          description: Unknown workflow id
+
+  /validate:
+    post:
+      summary: Validate an ad-hoc workflow
+      tags: [Execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDocument"
+      responses:
+        "200":
+          description: Empty list means valid
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationError"
+
+  /execute:
+    post:
+      summary: Execute an ad-hoc workflow synchronously
+      tags: [Execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDocument"
+      responses:
+        "200":
+          description: The full execution result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowExecutionResult"
+
+  /executions:
+    post:
+      summary: Queue an ad-hoc workflow in the background
+      tags: [Execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDocument"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  runId:
+                    type: string
+        "400":
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationError"
+        "503":
+          description: Server at capacity
+
+  /executions/{id}/events:
+    get:
+      summary: Stream execution progress via Server-Sent Events
+      description: Emits ExecutionStreamMessage frames until a terminal frame (completed/failed).
+      tags: [Execution]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: text/event-stream of ExecutionStreamMessage frames
+
+  /jobs:
+    post:
+      summary: Queue a workflow as a persisted job
+      tags: [Jobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDocument"
+      responses:
+        "202":
+          description: Job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowJob"
+        "400":
+          description: Validation errors
+    get:
+      summary: List jobs, newest first
+      tags: [Jobs]
+      parameters:
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED]
+      responses:
+        "200":
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkflowJob"
+
+  /jobs/{id}:
+    get:
+      summary: Fetch one job
+      tags: [Jobs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowJob"
+        "404":
+          description: Unknown job id
+    delete:
+      summary: Cancel a queued/running job
+      tags: [Jobs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Cancelled
+        "404":
+          description: Unknown job id
+        "409":
+          description: Already in a terminal state
+
+components:
+  parameters:
+    WorkflowId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "storyboard"
+
+  schemas:
+    NodeSpec:
+      type: object
+      properties:
+        type:
+          type: string
+        label:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        inputs:
+          type: array
+          items:
+            type: object
+        outputs:
+          type: array
+          items:
+            type: object
+        defaultValues:
+          type: object
+
+    WorkflowMeta:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: integer
+          format: int64
+        updatedAt:
+          type: integer
+          format: int64
+        versionCount:
+          type: integer
+
+    WorkflowDocument:
+      type: object
+      required: [version, workflow]
+      properties:
+        version:
+          type: integer
+          example: 1
+        workflow:
+          type: object
+          required: [id, name, nodes, connections]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            nodes:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                  config:
+                    type: object
+                    description: >
+                      Map of port name -> WorkflowValue, discriminator key "kind" here
+                      (e.g. {"kind": "string", "value": "hello"}).
+            connections:
+              type: array
+              items:
+                type: object
+                properties:
+                  fromNodeId: { type: string }
+                  fromPort: { type: string }
+                  toNodeId: { type: string }
+                  toPort: { type: string }
+            nodePositions:
+              type: object
+
+    RunRequest:
+      type: object
+      properties:
+        overrides:
+          type: object
+          description: >
+            node id -> (port name -> WorkflowValue). Discriminator key here is "type", not "kind"
+            (see top-level description).
+          example:
+            fmt:
+              values:
+                type: "record"
+                fields:
+                  name: { type: "string", value: "Claude" }
+        async:
+          type: boolean
+          default: false
+
+    ValidationError:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        nodeId:
+          type: string
+        port:
+          type: string
+
+    WorkflowExecutionResult:
+      type: object
+      properties:
+        nodeOutputsByNodeId:
+          type: object
+          description: node id -> (port name -> WorkflowValue), "type" discriminator
+        executionOrder:
+          type: array
+          items:
+            type: string
+        statusByNodeId:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [Success, Failed, Skipped]
+        durationsByNodeId:
+          type: object
+          additionalProperties:
+            type: integer
+        errorsByNodeId:
+          type: object
+
+    WorkflowJob:
+      type: object
+      properties:
+        id:
+          type: string
+        workflowId:
+          type: string
+        state:
+          type: string
+          enum: [QUEUED, RUNNING, SUCCEEDED, FAILED, CANCELLED]
+        queuedAtEpochMs:
+          type: integer
+          format: int64
+        startedAtEpochMs:
+          type: integer
+          format: int64
+        finishedAtEpochMs:
+          type: integer
+          format: int64
+        result:
+          type: object
+        error:
+          type: string
