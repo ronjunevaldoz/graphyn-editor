@@ -1,0 +1,22 @@
+services:
+  graphyn-server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    ports:
+      - "8080:8080"
+    # GRAPHYN_API_KEY is intentionally not declared here — a present-but-empty env var is a real
+    # (empty-string) auth key to GraphynAuthPlugin, not "no auth". Uncomment to require auth:
+    # environment:
+    #   GRAPHYN_API_KEY: "your-secret-here"
+    volumes:
+      # Persists published workflows (FileWorkflowStore's $HOME/.graphyn/workflows) across restarts.
+      - graphyn-server-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  graphyn-server-data:

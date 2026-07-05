@@ -1,0 +1,11 @@
+.git
+.gradle
+.kotlin
+**/build/
+.idea
+*.iml
+.DS_Store
+node_modules/
+kotlin-js-store/
+local.properties
+*.mp4
