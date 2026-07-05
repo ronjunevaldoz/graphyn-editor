@@ -32,7 +32,7 @@ internal fun recaptionWorkflow(
         NodeRef("captionStyle", CAPTION_STYLE_NODE_TYPE, config = CAPTION_STYLE_DEFAULTS + styleOverrides),
         NodeRef("captionOverlay", "media.caption_overlay"),
         NodeRef("narrate", "media.text_to_speech", config = mapOf(
-            "language" to s("en"), "voice_id" to s("narrator"), "speed" to d(1.0),
+            "language" to s("en"), "voice_id" to s("Samantha"), "speed" to d(1.0),
         )),
         NodeRef("encode", "media.video_encode", config = mapOf(
             "output_path" to s(outputPath), "bitrate" to s("high"), "codec" to s("h264"),

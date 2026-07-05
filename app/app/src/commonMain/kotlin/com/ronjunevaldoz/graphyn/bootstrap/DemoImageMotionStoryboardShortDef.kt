@@ -61,7 +61,7 @@ internal fun imageMotionStoryboardShortWorkflow(topic: String) = WorkflowDefinit
         add(shortsCaptionStyleNode())
         add(NodeRef("captionOverlay", "media.caption_overlay"))
         add(NodeRef("narrate", "media.text_to_speech", config = mapOf(
-            "language" to s("en"), "voice_id" to s("narrator"), "speed" to d(1.0),
+            "language" to s("en"), "voice_id" to s("Samantha"), "speed" to d(1.0),
         )))
         add(NodeRef("encode", "media.video_encode", config = mapOf(
             "output_path" to s("$STORYBOARD_OUTPUT_BASE.mp4"), "bitrate" to s("high"), "codec" to s("h264"),

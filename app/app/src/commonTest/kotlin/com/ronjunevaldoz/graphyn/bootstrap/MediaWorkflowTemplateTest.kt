@@ -112,7 +112,7 @@ class MediaWorkflowTemplateTest {
         assertConfig(
             workflow.node("synthesize"),
             "language" to stringValue("en"),
-            "voice_id" to stringValue("narrator"),
+            "voice_id" to stringValue("Samantha"),
             "speed" to WorkflowValue.DoubleValue(1.0),
         )
         assertConfig(

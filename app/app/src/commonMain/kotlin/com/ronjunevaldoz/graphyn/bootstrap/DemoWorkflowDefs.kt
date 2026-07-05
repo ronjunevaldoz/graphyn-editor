@@ -235,7 +235,7 @@ internal val videoNarrationWorkflow = WorkflowDefinition(
         NodeRef("extract_audio", "media.audio_extract"),
         NodeRef("synthesize", "media.text_to_speech", config = mapOf(
             "language" to WorkflowValue.StringValue("en"),
-            "voice_id" to WorkflowValue.StringValue("narrator"),
+            "voice_id" to WorkflowValue.StringValue("Samantha"),
             "speed" to WorkflowValue.DoubleValue(1.0),
         )),
         NodeRef("collect_audio", "media.audios_list"),
