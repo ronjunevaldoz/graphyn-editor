@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.shorts
 
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
@@ -23,13 +23,13 @@ private fun b(value: Boolean) = WorkflowValue.BooleanValue(value)
  * once per scene in a shorts template — it's a plain builder function, not a shared runtime
  * instance, so each call gets its own prompt.
  */
-internal fun imageMotionSceneSubgraph(
+public fun imageMotionSceneSubgraph(
     prompt: String,
     niche: String,
     imageCount: Int = 2,
     visualStyle: String = "",
     character: String = "",
-) = imageMotionSceneSubgraphInternal(
+): WorkflowDefinition = imageMotionSceneSubgraphInternal(
     id = "image-motion-scene-${prompt.hashCode()}",
     imageCount = imageCount,
     promptEnhanceConfig = mapOf(
@@ -43,7 +43,7 @@ internal fun imageMotionSceneSubgraph(
  * outer subgraph instance receives on ports of the same name. Use this when a storyboard generator
  * supplies prompts/niche at runtime instead of Kotlin-build-time literals.
  */
-internal fun imageMotionSceneSubgraphDynamic(id: String, imageCount: Int = 2) =
+public fun imageMotionSceneSubgraphDynamic(id: String, imageCount: Int = 2): WorkflowDefinition =
     imageMotionSceneSubgraphInternal(id = id, imageCount = imageCount, promptEnhanceConfig = emptyMap())
 
 private fun imageMotionSceneSubgraphInternal(
@@ -61,7 +61,7 @@ private fun imageMotionSceneSubgraphInternal(
             add(NodeRef("vae", "sd.vae", config = mapOf("vae_path" to s(FLUX_VAE))))
             add(NodeRef("model", "sd.model"))
             add(NodeRef("ctx", "sd.context", config = mapOf("diffusion_flash_attn" to b(true), "n_threads" to i(-1))))
-            add(NodeRef("promptEnhance", PROMPT_ENHANCE_NODE_TYPE, config = promptEnhanceConfig))
+            add(NodeRef("promptEnhance", ShortsConstants.PROMPT_ENHANCE_NODE_TYPE, config = promptEnhanceConfig))
             add(NodeRef("sampler", "sd.sampler", config = mapOf(
                 "sample_method" to s("euler"),
                 "scheduler" to s("discrete"),
@@ -72,8 +72,8 @@ private fun imageMotionSceneSubgraphInternal(
             )))
             add(NodeRef("txt2img", "sd.txt2img", config = mapOf(
                 "negative_prompt" to s(""),
-                "width" to i(SHORTS_WIDTH),
-                "height" to i(SHORTS_HEIGHT),
+                "width" to i(ShortsConstants.WIDTH),
+                "height" to i(ShortsConstants.HEIGHT),
                 "seed" to i(-1),
                 "batch_count" to i(1),
             )))
@@ -85,8 +85,8 @@ private fun imageMotionSceneSubgraphInternal(
                 "zoom_end" to d(1.15),
                 "pan_x" to s("center"),
                 "pan_y" to s("center"),
-                "width" to i(SHORTS_WIDTH),
-                "height" to i(SHORTS_HEIGHT),
+                "width" to i(ShortsConstants.WIDTH),
+                "height" to i(ShortsConstants.HEIGHT),
             )))
             add(NodeRef("preview", "preview.view"))
         },

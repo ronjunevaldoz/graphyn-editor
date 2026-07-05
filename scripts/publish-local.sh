@@ -52,6 +52,7 @@ declare -a PUBLISH_GROUPS=(
     ":plugins:media-core"
     ":plugins:media-ai"
     ":plugins:stable-diffusion"
+    ":plugins:shorts"
     ":runtime"
     ":app:shared"
     ":server"

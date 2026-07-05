@@ -16,6 +16,7 @@ import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNoteEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stickynotes.StickyNotePlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesEditorPlugin
 import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesPlugin
+import com.ronjunevaldoz.graphyn.plugins.shorts.ShortsPlugin
 
 /**
  * Demo plugin set = the production [GraphynRuntime] plugins plus sample/demonstration plugins
@@ -23,7 +24,7 @@ import com.ronjunevaldoz.graphyn.plugins.stylenodes.StyleNodesPlugin
  */
 object GraphynDemoPlugins {
     private val demoOnlyRuntime: List<GraphynPlugin> =
-        listOf(SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin, SubgraphRuntimePlugin, DemoSceneRuntimePlugin)
+        listOf(SampleLoggerPlugin, StyleNodesPlugin, StickyNotePlugin, SubgraphRuntimePlugin, ShortsPlugin, DemoSceneRuntimePlugin)
     private val demoOnlyEditor: List<GraphynEditorPlugin> =
         listOf(SampleLoggerEditorPlugin, StyleNodesEditorPlugin, StickyNoteEditorPlugin, SubgraphEditorPlugin, DemoSceneEditorPlugin)
 

@@ -1,11 +1,9 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.shorts
 
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-
-internal const val STORYBOARD_SCENE_COUNT = 3
 
 /**
  * Generates a validated storyboard `{niche, visual_style, narration, scenes: [{prompt, caption}]}`
@@ -14,15 +12,18 @@ internal const val STORYBOARD_SCENE_COUNT = 3
  * JSR-223 IR backend once chained after the other scripts here (a real, reproducible scripting-engine
  * bug, not a logic error). It falls back to a fixed, known-good storyboard if the LLM's JSON doesn't
  * match the expected shape, and force-unloads the Ollama model before returning (see its doc comment).
+ *
+ * Composes only `env.read`, `json.*`, and `io.http_request` nodes plus this plugin's own executors,
+ * so it runs anywhere those node families are registered.
  */
-internal fun storyboardGeneratorSubgraph(topic: String) = WorkflowDefinition(
+public fun storyboardGeneratorSubgraph(topic: String): WorkflowDefinition = WorkflowDefinition(
     id = "storyboard-generator",
     name = "Storyboard Generator",
     nodes = listOf(
         NodeRef("ollama_host", "env.read", config = mapOf("name" to WorkflowValue.StringValue("GRAPHYN_OLLAMA_HOST"))),
         NodeRef("ollama_model", "env.read", config = mapOf("name" to WorkflowValue.StringValue("GRAPHYN_OLLAMA_MODEL"))),
-        NodeRef("ollama_url", OLLAMA_URL_NODE_TYPE),
-        NodeRef("ollama_body", OLLAMA_BODY_NODE_TYPE, config = mapOf("topic" to WorkflowValue.StringValue(topic))),
+        NodeRef("ollama_url", ShortsNodeTypes.OLLAMA_URL),
+        NodeRef("ollama_body", ShortsNodeTypes.OLLAMA_BODY, config = mapOf("topic" to WorkflowValue.StringValue(topic))),
         NodeRef("body_json", "json.stringify"),
         NodeRef("request", "io.http_request", config = mapOf(
             "method" to WorkflowValue.StringValue("POST"),
@@ -31,7 +32,7 @@ internal fun storyboardGeneratorSubgraph(topic: String) = WorkflowDefinition(
         NodeRef("outer", "json.parse"),
         NodeRef("response", "json.path", config = mapOf("path" to WorkflowValue.StringValue("response"))),
         NodeRef("storyboardJson", "json.parse"),
-        NodeRef("validate", STORYBOARD_VALIDATE_NODE_TYPE),
+        NodeRef("validate", ShortsNodeTypes.STORYBOARD_VALIDATE),
     ),
     connections = listOf(
         ConnectionRef("ollama_host", "value", "ollama_url", "input"),

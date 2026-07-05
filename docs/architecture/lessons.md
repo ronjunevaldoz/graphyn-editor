@@ -98,3 +98,25 @@ Reference points for "is this run just slow, or is something actually wrong" —
 
 - Never write from a fallback value that differs from the real initial state.
 - Keep viewport and auto-layout limits aligned so manual zoom and layout behavior feel consistent.
+
+## Extracting the shorts pipeline into a published plugin (step 0.2)
+
+- The reusable storyboard/scene builders had to become a **multiplatform** module, not JVM-only:
+  `WorkflowCatalog` is a `commonMain` enum whose entries (`ImageMotionShort`) call
+  `imageMotionSceneSubgraph`/`stitchBatchSubgraph`, so those builders must resolve on every app
+  target. Only `unloadOllamaModel()` is platform-specific — it's an `expect suspend fun` with real
+  `java.net` actuals on jvm/android and no-op actuals on js/wasm/ios (those never drive Ollama).
+- `graphyn-maven-publish`'s `verifyPublishing` auto-discovers published modules and asserts each
+  appears in three files: `scripts/verify-maven-central.sh`, `.github/workflows/publish.yml`
+  (matched by the `:path` minus leading colon), and `scripts/publish-local.sh`. There is no
+  `publishedModulePaths` set in `build.gradle.kts` to edit despite the CLAUDE.md wording — the task
+  enumerates `subprojects` with the vanniktech plugin applied.
+- Kept the desktop `app/app/bootstrap` wiring thin via an app-side `ShortsBridge.kt` that re-aliases
+  the moved public symbols under their old `internal` bootstrap names, so unrelated bootstrap files
+  (video/image shorts, captioning) compiled unchanged. The app deliberately keeps its **own**
+  `stitchBatchSubgraph` (with canvas `nodePositions`) in `DemoShortsScenes.kt`; the module's copy
+  omits positions since positions are an editor-layout concern, not execution data.
+- The `*RunTest` integration tests (`ImageMotionStoryboardShortRunTest`, `SdTemplateApiRunTest`,
+  `MediaWorkflowExecutionTest`) execute against a live server-sd/Ollama/FFmpeg deployment and fail
+  with "got null" output in any environment without it — not a regression signal. `sd.id_cond`
+  unregistered in `DemoSceneWorkflowTest` is a separate pre-existing failure on `main`.

@@ -68,6 +68,9 @@ jobs:
       - name: Publish graphyn-plugin-stable-diffusion
         run: ./gradlew :plugins:stable-diffusion:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
+      - name: Publish graphyn-plugin-shorts
+        run: ./gradlew :plugins:shorts:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+
       - name: Publish graphyn-runtime
         run: ./gradlew :runtime:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
 

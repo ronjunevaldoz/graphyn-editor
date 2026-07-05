@@ -1,14 +1,11 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
-import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 internal const val SHORTS_SCENE_MS = 4_000
 internal const val SHORTS_SCENE_COUNT = 8
 internal const val SHORTS_FPS = 16
 internal const val SHORTS_FRAME_COUNT = 64
-internal const val SHORTS_WIDTH = 720
-internal const val SHORTS_HEIGHT = 1280
 
 internal val SHORTS_BODY_SCRIPT = """
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
@@ -94,11 +91,3 @@ listOf(
 ).firstOrNull { !it.isNullOrBlank() }.orEmpty()
 """.trimIndent()
 
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
-
-internal fun shortsCaptionStyleNode() = NodeRef(
-    "captionStyle", CAPTION_STYLE_NODE_TYPE,
-    config = CAPTION_STYLE_DEFAULTS,
-)

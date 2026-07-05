@@ -47,6 +47,7 @@ kotlin {
             implementation(projects.plugins.io)
             implementation(projects.plugins.json)
             implementation(projects.plugins.preview)
+            implementation(projects.plugins.shorts)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
         }
