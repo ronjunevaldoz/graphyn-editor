@@ -39,6 +39,7 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerNodeSpec(storyboardFieldSpec)
         registrar.registerNodeSpec(storyboardSceneFieldSpec)
         registrar.registerNodeSpec(storyboardCaptionsSpec)
+        registrar.registerNodeSpec(ollamaGenerateSpec)
 
         registrar.registerExecutor(ShortsNodeTypes.SCENE_SUBGRAPH) { inputs ->
             mapOf("video" to (inputs["value"] ?: WorkflowValue.NullValue))
@@ -56,5 +57,6 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerExecutor(ShortsNodeTypes.STORYBOARD_FIELD, storyboardFieldExecutor)
         registrar.registerExecutor(ShortsNodeTypes.STORYBOARD_SCENE_FIELD, storyboardSceneFieldExecutor)
         registrar.registerExecutor(ShortsNodeTypes.STORYBOARD_CAPTIONS, storyboardCaptionsExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.OLLAMA_GENERATE, ollamaGenerateExecutor)
     }
 }

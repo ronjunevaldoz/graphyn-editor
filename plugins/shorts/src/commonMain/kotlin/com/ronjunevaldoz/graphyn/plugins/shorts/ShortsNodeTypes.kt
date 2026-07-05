@@ -35,6 +35,13 @@ public object ShortsNodeTypes {
 
     /** Standalone Ollama-unload gate for pipelines that don't run [STORYBOARD_VALIDATE]. */
     public const val OLLAMA_UNLOAD: String = "demo.ollama.unload"
+
+    /**
+     * Standalone bare Ollama text-generation call: prompt in, raw model text out. The self-contained
+     * equivalent of Studio's `studio.generate-script`; unlike [STORYBOARD_SUBGRAPH] it does not bundle
+     * URL/body-building or JSON validation — it just calls the LLM and returns its text.
+     */
+    public const val OLLAMA_GENERATE: String = "ollama.generate"
 }
 
 /** Number of scenes the storyboard generator and storyboard-first short are fixed to. */

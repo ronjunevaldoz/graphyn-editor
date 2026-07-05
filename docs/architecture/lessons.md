@@ -120,3 +120,15 @@ Reference points for "is this run just slow, or is something actually wrong" —
   `MediaWorkflowExecutionTest`) execute against a live server-sd/Ollama/FFmpeg deployment and fail
   with "got null" output in any environment without it — not a regression signal. `sd.id_cond`
   unregistered in `DemoSceneWorkflowTest` is a separate pre-existing failure on `main`.
+- The standalone `ollama.generate` node (Studio's `studio.generate-script` shape) is intentionally
+  **additive** — it does the bare LLM call in one executor (`OllamaGenerate.kt`) and shares the
+  storyboard subgraph's defaults (host `http://localhost:11434`, model `llama3.1`, `stream:false`,
+  `keep_alive:0`) but does NOT reuse `storyboardGeneratorSubgraph`, which stays byte-for-byte
+  unchanged so the verified `image-motion-storyboard-short` pipeline is untouched. The HTTP call is
+  an injectable `transport: suspend (url, body) -> String` param on `ollamaGenerateExecutor(...)`,
+  defaulting to the platform `expect suspend fun ollamaHttpPost` — this makes the response-parse and
+  URL/body logic fully `commonTest`-able with a fake, no live server. js/wasm/ios actuals throw
+  (not no-op like `unloadOllamaModel`) since the function must return a String; the executor catches
+  it and degrades to `ok = false`. Needed `implementation(libs.serialization.json)` in shorts'
+  commonMain (it was pulling JSON via `json.*` engine nodes before, so serialization wasn't a dep) —
+  `implementation`, not `api`, so no POM leak / `verifyPublishing` failure.
