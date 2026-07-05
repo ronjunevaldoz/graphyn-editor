@@ -45,6 +45,11 @@ internal val ollamaBodyExecutor = NodeExecutor { inputs ->
             "prompt" to WorkflowValue.StringValue(buildStoryboardPrompt(topic)),
             "stream" to WorkflowValue.BooleanValue(false),
             "format" to WorkflowValue.StringValue("json"),
+            // Belt-and-suspenders with unloadOllamaModel()'s follow-up call: that call is wrapped in
+            // runCatching and silently swallows failures, so if it ever doesn't fire, this makes
+            // Ollama drop the model itself right after answering instead of holding it for the
+            // default 5-minute keep-alive while server-sd's Flux scenes run on the same GPU.
+            "keep_alive" to WorkflowValue.IntValue(0),
         ),
     ))
 }
