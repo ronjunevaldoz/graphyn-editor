@@ -48,6 +48,22 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
   HTTP connection-hijack the intervening network path may not relay correctly. Don't assume `exec`
   works just because other Docker API calls do.
 
+### Known-good performance baselines
+
+Reference points for "is this run just slow, or is something actually wrong" — on the 12GB RTX
+5070 sd host, FLUX.1-schnell (Q4_K_S diffusion, `t5-v1_1-xxl-encoder-Q3_K_S`, 4 steps, 720×1280,
+`cfgScale 1.0`, `distilledGuidance 3.5`, `flowShift 3.0`), a single `sd.txt2img` generation via
+`/api/sd/generate-ex` with no other GPU consumer running:
+
+- **~16-20s** is normal (confirmed repeatedly: 15.9s, 16.0s, 17.8s, 19.5s across separate runs).
+- Isolated back-to-back calls on the same loaded context have shown a real but mild ~2x variance
+  (44s → 88s) that's still GPU-bound the whole time (100% utilization, no CPU-offload signature).
+- Anything in the hundreds of seconds (as seen in some `image-motion-storyboard-short` history
+  entries: 400-560s) is the anomaly under investigation, not expected behavior — see the shorts
+  pipeline scene-timing variance thread; root cause not yet confirmed (Ollama VRAM contention,
+  fixed `sd-wrapper.cpp` compute-graph reuse, and idle VRAM margin were all tested and ruled out
+  as the sole cause under controlled conditions).
+
 ### Known issues (open as of this writing)
 
 - **Qwen-Image-Edit-2511 is disabled/skipped for now** (`DemoQwenImg2ImgDef.kt` carries a
