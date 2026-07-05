@@ -19,18 +19,22 @@ private const val QWEN_EDIT_LORA_4STEP = "$QWEN_EDIT_LORA_DIR/Qwen-Image-Edit-25
 private const val QWEN_EDIT_INIT_IMAGE = "../../app/app/src/commonMain/resources/media/input.png"
 
 /**
- * Qwen-Image-Edit (2511) image-to-image with a 4-step Lightning LoRA.
+ * Qwen-Image-Edit (2511) with a 4-step Lightning LoRA.
  *
  * Node graph:
  *   sd.diffusion (Qwen-Image-Edit) ─┐
- *   sd.encoders (Qwen2.5-VL llm)    ├─→ sd.model → sd.context → sd.img2img → preview
- *   sd.vae (Qwen-Image VAE)        ─┘                  ↑ ↑
- *   sd.lora (Edit Lightning 4-step) ───────→ loras ────┘ │
- *   sd.sampler (4-step euler) ───────────────────────────┘
+ *   sd.encoders (Qwen2.5-VL llm)    ├─→ sd.model → sd.context → sd.txt2img → preview
+ *   sd.vae (Qwen-Image VAE)        ─┘                  ↑  ↑  ↑
+ *   sd.lora (Edit Lightning 4-step) ───────→ loras ────┘  │  │
+ *   sd.sampler (4-step euler) ─────────────────────────────┘  │
+ *   sd.id_cond (ref_images = [source photo]) ──────────────────┘
  *
- * Qwen-Image-Edit takes the source image (init_image) plus an edit-instruction prompt. The
- * 4-step Edit LoRA is wired through the sd.lora node into the img2img `loras` port (resolved
- * under `lora_model_dir` on sd.model): sample_steps = 4, txt_cfg = 1.0, strength = 1.0.
+ * Qwen-Image-Edit conditions on the source image as a **reference image** (`--ref-image` / the
+ * `sd.id_cond` node — its own port doc explicitly names Qwen alongside PhotoMaker/PuLID), not via
+ * `sd.img2img`'s denoising-strength `init_image`. The stable-diffusion.cpp docs' own reference
+ * command for this model uses `-r` (ref-image) and never sets `--init-img`/`--strength` at all —
+ * using `sd.img2img` here silently ignores the source image's content entirely, regardless of
+ * strength, and produces an unrelated image from the prompt alone.
  */
 internal val qwenImg2ImgWorkflow = WorkflowDefinition(
     id = "qwen-img2img",
@@ -38,15 +42,17 @@ internal val qwenImg2ImgWorkflow = WorkflowDefinition(
     nodes = listOf(
         guideNote(
             """
-            Qwen-Image-Edit (2511) Image → Image · 4-step LoRA
+            Qwen-Image-Edit (2511) · 4-step LoRA
 
             Edits an existing image from an instruction prompt using
             Qwen-Image-Edit with the Lightning 4-step Edit LoRA.
 
-            The sd.lora node feeds the img2img `loras` port; the file
+            The sd.lora node feeds the txt2img `loras` port; the file
             ($QWEN_EDIT_LORA_4STEP) is resolved under lora_model_dir on sd.model.
+            The source photo is a reference image (sd.id_cond → txt2img's
+            id_cond port), not an sd.img2img init_image.
 
-            Tip: set init_image on sd.img2img to your source file and write
+            Tip: set ref_images on sd.id_cond to your source file and write
             the edit as the prompt (e.g. "make it winter, add snow").
             """,
         ),
@@ -110,13 +116,18 @@ internal val qwenImg2ImgWorkflow = WorkflowDefinition(
             ),
         ),
         NodeRef(
-            id = "img2img",
-            type = "sd.img2img",
+            id = "idCond",
+            type = "sd.id_cond",
             config = mapOf(
-                "init_image"      to WorkflowValue.StringValue(QWEN_EDIT_INIT_IMAGE),
+                "ref_images" to WorkflowValue.ListValue(listOf(WorkflowValue.StringValue(QWEN_EDIT_INIT_IMAGE))),
+            ),
+        ),
+        NodeRef(
+            id = "txt2img",
+            type = "sd.txt2img",
+            config = mapOf(
                 "prompt"          to WorkflowValue.StringValue("change the season to winter, add falling snow"),
                 "negative_prompt" to WorkflowValue.StringValue(""),
-                "strength"        to WorkflowValue.DoubleValue(1.0),
                 "seed"            to WorkflowValue.IntValue(-1),
                 "batch_count"     to WorkflowValue.IntValue(1),
             ),
@@ -128,9 +139,10 @@ internal val qwenImg2ImgWorkflow = WorkflowDefinition(
         ConnectionRef("encoders",    "encoders",  "sdmodel", "encoders"),
         ConnectionRef("sdvae",       "vae",       "sdmodel", "vae"),
         ConnectionRef("sdmodel",     "model",     "ctx",     "model"),
-        ConnectionRef("ctx",         "context",   "img2img", "context"),
-        ConnectionRef("lora",        "lora",      "img2img", "loras"),
-        ConnectionRef("sampler",     "sampler",   "img2img", "sampler"),
-        ConnectionRef("img2img",     "image",     "preview", "value"),
+        ConnectionRef("ctx",         "context",   "txt2img", "context"),
+        ConnectionRef("lora",        "lora",      "txt2img", "loras"),
+        ConnectionRef("sampler",     "sampler",   "txt2img", "sampler"),
+        ConnectionRef("idCond",      "id_cond",   "txt2img", "id_cond"),
+        ConnectionRef("txt2img",     "image",     "preview", "value"),
     ),
 )

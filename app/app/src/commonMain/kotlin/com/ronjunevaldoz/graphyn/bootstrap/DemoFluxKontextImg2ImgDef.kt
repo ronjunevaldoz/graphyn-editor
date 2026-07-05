@@ -9,24 +9,32 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 // diffusion checkpoint but the same Flux text/vae encoders, per stable-diffusion.cpp's docs/kontext.md.
 private const val FLUX_KONTEXT_DIFFUSION = "/models/flux/diffusion/flux1-kontext-dev-Q4_K_S.gguf"
 private const val FLUX_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
-private const val FLUX_T5XXL = "/models/flux/text_encoder/t5xxl_Q5_K_M.gguf"
+// Q3_K_S instead of Q5_K_M — the larger quant left almost no VRAM headroom for inference on a
+// 12GB card once combined with Kontext's own diffusion weights (confirmed: Kontext + clip_l +
+// t5xxl_Q5_K_M + vae alone used ~11GB, forcing CPU offload and 30+ minute generations).
+private const val FLUX_T5XXL = "/models/flux/text_encoder/t5-v1_1-xxl-encoder-Q3_K_S.gguf"
 private const val FLUX_VAE = "/models/flux/vae/ae.safetensors"
 private const val FLUX_KONTEXT_INIT_IMAGE = "../../app/app/src/commonMain/resources/media/input.png"
 
 /**
- * FLUX.1 Kontext-dev image-to-image — instruction-following edits (e.g. "change 'flux.cpp' to
- * 'kontext.cpp'") on the same Flux diffusion architecture, via a dedicated Kontext checkpoint
- * instead of a LoRA or special mode. Unlike Qwen-Image-Edit, needs no vision-encoder mmproj and
- * runs on 4-6 GB VRAM without CPU offload (see stable-diffusion.cpp's docs/kontext.md) — the base
- * Flux checkpoint has no instruction-following edit capability at all, only this one does.
+ * FLUX.1 Kontext-dev — instruction-following edits (e.g. "change 'flux.cpp' to 'kontext.cpp'") on
+ * the same Flux diffusion architecture, via a dedicated Kontext checkpoint instead of a LoRA or
+ * special mode. Unlike Qwen-Image-Edit, needs no vision-encoder mmproj and runs on 4-6 GB VRAM
+ * without CPU offload (see stable-diffusion.cpp's docs/kontext.md) — the base Flux checkpoint has
+ * no instruction-following edit capability at all, only this one does.
  *
  * Node graph:
  *   sd.diffusion (Kontext) ─┐
- *   sd.encoders (Flux)      ├─→ sd.model → sd.context → sd.img2img → preview
- *   sd.vae (Flux)          ─┘                  ↑
- *   sd.sampler (cfg=1.0 per docs) ─────────────┘
+ *   sd.encoders (Flux)      ├─→ sd.model → sd.context → sd.txt2img → preview
+ *   sd.vae (Flux)          ─┘                  ↑  ↑
+ *   sd.sampler (cfg=1.0 per docs) ──────────────┘  │
+ *   sd.id_cond (ref_images = [source photo]) ───────┘
  *
- * Set init_image on sd.img2img to your source file and write the edit as the prompt.
+ * Kontext conditions on the source image as a **reference image** (`-r` / `--ref-image`), same as
+ * Qwen-Image-Edit — the docs' own reference command never sets `--init-img`/`--strength` at all.
+ * Using `sd.img2img`'s denoising-strength `init_image` here silently ignores the source image's
+ * content entirely and produces an unrelated image from the prompt alone (confirmed the hard way
+ * on the Qwen-Image-Edit template first — same fix applies here).
  */
 internal val fluxKontextImg2ImgWorkflow = WorkflowDefinition(
     id = "flux-kontext-img2img",
@@ -34,13 +42,15 @@ internal val fluxKontextImg2ImgWorkflow = WorkflowDefinition(
     nodes = listOf(
         guideNote(
             """
-            FLUX.1 Kontext-dev Image → Image
+            FLUX.1 Kontext-dev
 
             Edits an existing image from an instruction prompt using the
             Kontext checkpoint — a distinct diffusion model from base Flux,
-            reusing the same clip_l/t5xxl/vae encoders.
+            reusing the same clip_l/t5xxl/vae encoders. The source photo is
+            a reference image (sd.id_cond → txt2img's id_cond port), not an
+            sd.img2img init_image.
 
-            Tip: set init_image on sd.img2img to your source file and write
+            Tip: set ref_images on sd.id_cond to your source file and write
             the edit as the prompt (e.g. "change the season to winter").
             cfg-scale 1.0 is recommended by stable-diffusion.cpp's docs.
             """,
@@ -86,13 +96,18 @@ internal val fluxKontextImg2ImgWorkflow = WorkflowDefinition(
             ),
         ),
         NodeRef(
-            id = "img2img",
-            type = "sd.img2img",
+            id = "idCond",
+            type = "sd.id_cond",
             config = mapOf(
-                "init_image" to WorkflowValue.StringValue(FLUX_KONTEXT_INIT_IMAGE),
+                "ref_images" to WorkflowValue.ListValue(listOf(WorkflowValue.StringValue(FLUX_KONTEXT_INIT_IMAGE))),
+            ),
+        ),
+        NodeRef(
+            id = "txt2img",
+            type = "sd.txt2img",
+            config = mapOf(
                 "prompt" to WorkflowValue.StringValue("change the season to winter, add falling snow"),
                 "negative_prompt" to WorkflowValue.StringValue(""),
-                "strength" to WorkflowValue.DoubleValue(1.0),
                 "seed" to WorkflowValue.IntValue(-1),
                 "batch_count" to WorkflowValue.IntValue(1),
             ),
@@ -104,8 +119,9 @@ internal val fluxKontextImg2ImgWorkflow = WorkflowDefinition(
         ConnectionRef("encoders", "encoders", "sdmodel", "encoders"),
         ConnectionRef("sdvae", "vae", "sdmodel", "vae"),
         ConnectionRef("sdmodel", "model", "ctx", "model"),
-        ConnectionRef("ctx", "context", "img2img", "context"),
-        ConnectionRef("sampler", "sampler", "img2img", "sampler"),
-        ConnectionRef("img2img", "image", "preview", "value"),
+        ConnectionRef("ctx", "context", "txt2img", "context"),
+        ConnectionRef("sampler", "sampler", "txt2img", "sampler"),
+        ConnectionRef("idCond", "id_cond", "txt2img", "id_cond"),
+        ConnectionRef("txt2img", "image", "preview", "value"),
     ),
 )

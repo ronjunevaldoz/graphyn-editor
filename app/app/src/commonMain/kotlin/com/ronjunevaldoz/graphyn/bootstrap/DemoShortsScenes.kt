@@ -7,7 +7,10 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 private const val FLUX_DIFFUSION = "/models/flux/diffusion/flux1-schnell-Q4_K_S.gguf"
 private const val FLUX_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
-private const val FLUX_T5XXL = "/models/flux/text_encoder/t5xxl_Q5_K_M.gguf"
+// Q3_K_S instead of Q5_K_M — the larger quant left almost no VRAM headroom for inference on a
+// 12GB card once combined with a Flux diffusion checkpoint's own weights (confirmed: Kontext +
+// clip_l + t5xxl_Q5_K_M + vae alone used ~11GB, forcing CPU offload and 30+ minute generations).
+private const val FLUX_T5XXL = "/models/flux/text_encoder/t5-v1_1-xxl-encoder-Q3_K_S.gguf"
 private const val FLUX_VAE = "/models/flux/vae/ae.safetensors"
 private const val WAN5B_DIFFUSION = "/models/wan/Wan2.2-TI2V-5B-Q4_K_M.gguf"
 private const val WAN5B_T5 = "/models/wan/umt5-xxl-encoder-Q5_K_M.gguf"

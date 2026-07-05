@@ -111,9 +111,11 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
 
 /**
  * Applies `nodeId.port=value` CLI options as node config overrides on a fixed [WorkflowCatalog]
- * entry — e.g. `img2img.init_image=/path/to.png` — without needing a dedicated CLI mode per
- * workflow. Values are always sent as strings; use the storyboard/recaption/regenerate-scene
- * modes above for typed (int/double/bool) overrides.
+ * entry — e.g. `img2img.init_image=/path/to.png img2img.strength=0.6` — without needing a
+ * dedicated CLI mode per workflow. Each raw string is converted to match the node's *existing*
+ * config value type for that port when one is already set (int/double/bool/string) — sending a
+ * bare string for a double-typed port like `strength` would otherwise fail the executor's type
+ * check silently and fall back to its default instead of applying the override.
  */
 private fun applyNodeOverrides(workflow: WorkflowDefinition, options: Map<String, String>): WorkflowDefinition {
     val overridesByNode = options.entries
@@ -123,7 +125,10 @@ private fun applyNodeOverrides(workflow: WorkflowDefinition, options: Map<String
     return workflow.copy(
         nodes = workflow.nodes.map { node ->
             overridesByNode[node.id]?.let { ports ->
-                node.copy(config = node.config + ports.associate { (port, value) -> port to WorkflowValue.StringValue(value) })
+                node.copy(config = node.config + ports.associate { (port, value) ->
+                    val existing = node.config[port]
+                    port to (existing?.let { toWorkflowValueLike(it, value) } ?: WorkflowValue.StringValue(value))
+                })
             } ?: node
         },
     )
@@ -132,6 +137,7 @@ private fun applyNodeOverrides(workflow: WorkflowDefinition, options: Map<String
 private fun toWorkflowValueLike(default: WorkflowValue, raw: String): WorkflowValue = when (default) {
     is WorkflowValue.IntValue -> WorkflowValue.IntValue(raw.toInt())
     is WorkflowValue.DoubleValue -> WorkflowValue.DoubleValue(raw.toDouble())
+    is WorkflowValue.ListValue -> WorkflowValue.ListValue(raw.split(',').map { WorkflowValue.StringValue(it.trim()) })
     is WorkflowValue.BooleanValue -> WorkflowValue.BooleanValue(raw.toBooleanStrict())
     else -> WorkflowValue.StringValue(raw)
 }

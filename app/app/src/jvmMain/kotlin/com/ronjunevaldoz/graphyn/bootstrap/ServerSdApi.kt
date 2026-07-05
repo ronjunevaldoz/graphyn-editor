@@ -54,6 +54,11 @@ internal class ServerSdApi(
                     maskImage = cn.maskImage?.let { uploadIfLocal(it, conn) },
                 )
             },
+            // Previously unstaged: a local ref-image path (PhotoMaker/PuLID/Qwen-Image-Edit
+            // conditioning) sent straight through to a remote server-sd was never found on its
+            // filesystem — and rather than erroring, generation silently ignored the reference
+            // entirely and produced an unconditioned image from the prompt alone.
+            idCond = request.idCond?.let { ic -> ic.copy(refImages = ic.refImages.map { uploadIfLocal(it, conn) }) },
         )
 
     private suspend fun stageLocalVideoImages(request: SdGenerateVideoRequest, conn: SdConnection): SdGenerateVideoRequest =
