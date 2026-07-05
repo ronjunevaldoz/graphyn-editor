@@ -50,14 +50,21 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
 
 ### Known issues (open as of this writing)
 
-- Qwen-Image-Edit-2511 generation fails fast (~8s) with a `502 Bad Gateway` from a clean VRAM
-  state, unrelated to the recent `sd.id_cond` fix (FLUX Kontext succeeds with the identical code
-  path). Needs the actual server-sd process logs on the host to diagnose further — HTTP status
-  alone doesn't show the real crash reason.
-- Swapping the loaded model between two large checkpoints (e.g. Kontext → Qwen) has repeatedly
-  reset `loadedModel` to `null` and produced a fast 502 on the *next* request, even though the
-  server's `/health`/`/ping` stay green throughout. Possibly a native crash on model swap under
-  VRAM pressure; not yet root-caused.
+- **Qwen-Image-Edit-2511 is disabled/skipped for now** (`DemoQwenImg2ImgDef.kt` carries a
+  `TODO(qwen-edit-crash)`) — generation fails fast (~8s) with a `502 Bad Gateway`. Root-caused via
+  `docker logs` on the sd host (`exec` hangs over the remote TCP connection, `logs` doesn't — see
+  below): a native SIGSEGV inside stable-diffusion.cpp's `ggml_graph_cut` memory planner, while
+  `LLM::LLMRunner::encode_image` (the Qwen2.5-VL vision encoder) processes the `sd.id_cond`
+  reference image (`conditioner.hpp:1715 - QwenImageEditPlusPipeline`). Qwen-Image-Edit-2511's own
+  components (diffusion + Qwen2.5-VL-7B-Instruct encoder + mmproj + LoRA) already exceed this
+  12GB card's VRAM before any reference image is involved, forcing graph-cut to engage just to
+  load — and that specific segment-measurement code path crashes. FLUX Kontext succeeds on the
+  identical `sd.id_cond` code path because its full footprint fits without graph-cut engaging at
+  all. This is vendored, read-only native code (`native/stable-diffusion.cpp`) — not fixable in
+  Kotlin. Two remediation paths, neither pursued yet: (1) file upstream against
+  `leejet/stable-diffusion.cpp` with the stack trace, or (2) retry with smaller Qwen
+  diffusion/LLM quants so graph-cut isn't needed at all (same category as the Kontext t5xxl swap
+  above).
 
 ## Catalog and Layout
 

@@ -21,6 +21,21 @@ private const val QWEN_EDIT_INIT_IMAGE = "../../app/app/src/commonMain/resources
 /**
  * Qwen-Image-Edit (2511) with a 4-step Lightning LoRA.
  *
+ * TODO(qwen-edit-crash): generation currently SIGSEGVs on the server before any output is
+ * produced. Confirmed via `docker logs` on the sd host: a native crash inside
+ * stable-diffusion.cpp's `ggml_graph_cut` memory planner, while `LLM::LLMRunner::encode_image`
+ * (the Qwen2.5-VL vision encoder) processes the `sd.id_cond.ref_images` reference image
+ * (`conditioner.hpp:1715 - QwenImageEditPlusPipeline`). Root cause: Qwen-Image-Edit-2511's own
+ * components (diffusion + Qwen2.5-VL-7B-Instruct text/vision encoder + mmproj + LoRA) already
+ * exceed this 12GB card's VRAM before any reference image is involved, forcing graph-cut to
+ * engage just to load — and that specific segment-measurement code path crashes. This is
+ * vendored, read-only native code (`native/stable-diffusion.cpp`), so it cannot be patched here.
+ * Do not "fix" this workflow by reverting to `sd.img2img`/`init_image` — that only hides the
+ * crash by silently skipping real image conditioning (see `docs/architecture/lessons.md`).
+ * Remediation paths: (1) file upstream against leejet/stable-diffusion.cpp with the stack trace,
+ * or (2) retry with smaller Qwen diffusion/LLM quants so graph-cut isn't needed at all — same
+ * fix category as the Kontext t5xxl swap in [DemoFluxKontextImg2ImgDef.kt].
+ *
  * Node graph:
  *   sd.diffusion (Qwen-Image-Edit) ─┐
  *   sd.encoders (Qwen2.5-VL llm)    ├─→ sd.model → sd.context → sd.txt2img → preview
