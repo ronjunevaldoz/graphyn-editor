@@ -21,6 +21,43 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
 - Stable Diffusion workers should be selected by settings, not hardcoded hostnames.
 - Keep the worker adapter behind one HTTP client and vary only URL plus API key per environment.
 - Readiness, job polling, and cancelation checks should stay aligned with the worker OpenAPI contract.
+- `script.eval`'s JSR-223 engine must be created fresh per call, not cached as a singleton — a
+  shared engine's compiler state corrupts after a few different scripts, crashing later ones
+  (even trivial ones) with an IR backend error unrelated to script complexity.
+- Image-edit models (Qwen-Image-Edit, FLUX Kontext) condition on the source image as a **reference
+  image** (`sd.id_cond.ref_images`), not `sd.img2img`'s denoising-strength `init_image` — confirmed
+  against both models' own stable-diffusion.cpp reference commands, neither of which ever sets
+  `--init-img`/`--strength`. Using img2img here silently ignores the source image's content
+  entirely (at strength 1.0, 0.75, *and* 0.6 — strength wasn't the variable) and generates an
+  unrelated image from the prompt alone. No error, just wrong output — validate any new
+  image-conditioning wiring by eye, not just "did it run."
+- Any client-side image/file path sent to server-sd must be staged (uploaded, then swapped to the
+  server-returned path) before being included in the request JSON *and* in the pre-flight
+  existence check — a local path slipping through either step fails silently (wrong output) rather
+  than loudly (a clear "missing on server" error). `sd.id_cond.ref_images` was missed on both counts
+  even after `init_image`/`control_image`/`mask_image` were handled correctly.
+- A CLI/override mechanism that always serializes overrides as strings will silently fail for any
+  non-string-typed port (a `strength=0.6` override landing on a `Double` field falls back to the
+  port's default instead of applying) — convert to match the existing config value's type instead.
+- Flux's `t5xxl` quant choice is a real VRAM budget line item, not a rounding error: swapping
+  `Q5_K_M` (3.4GB) for `Q3_K_S` (2.1GB) took a Kontext edit from 30+ minutes (CPU-offloaded, <100MB
+  VRAM free) to 63 seconds on the same 12GB card — the "encoder" is often the actual long pole once
+  a diffusion checkpoint is quantized down already.
+- `docker exec` over a remote TCP daemon connection can hang indefinitely (attached *and* detached)
+  even when `docker ps`/`docker version` on the same connection return instantly — `exec` needs an
+  HTTP connection-hijack the intervening network path may not relay correctly. Don't assume `exec`
+  works just because other Docker API calls do.
+
+### Known issues (open as of this writing)
+
+- Qwen-Image-Edit-2511 generation fails fast (~8s) with a `502 Bad Gateway` from a clean VRAM
+  state, unrelated to the recent `sd.id_cond` fix (FLUX Kontext succeeds with the identical code
+  path). Needs the actual server-sd process logs on the host to diagnose further — HTTP status
+  alone doesn't show the real crash reason.
+- Swapping the loaded model between two large checkpoints (e.g. Kontext → Qwen) has repeatedly
+  reset `loadedModel` to `null` and produced a fast 502 on the *next* request, even though the
+  server's `/health`/`/ping` stay green throughout. Possibly a native crash on model swap under
+  VRAM pressure; not yet root-caused.
 
 ## Catalog and Layout
 
