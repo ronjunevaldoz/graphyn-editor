@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.stablesd.http
 
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
@@ -20,8 +20,7 @@ private val requestJson = Json { encodeDefaults = true }
  * subset of [SdGenerateImageRequest]'s fields the server's `/api/sd/generate-ex` contract actually
  * accepts — many `sd.context`/`sd.sampler`/etc ports (rng_type, prediction, custom_sigmas, slg
  * details, chroma_*, circular*, ...) have no server-side counterpart yet and are intentionally left
- * unmapped, same as before this refactor, but now an explicit, visible gap instead of a silently
- * dropped CLI flag.
+ * unmapped, an explicit, visible gap rather than a silently dropped CLI flag.
  */
 @Serializable
 private data class GenerateExRequestBody(

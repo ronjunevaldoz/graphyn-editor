@@ -1,8 +1,6 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.stablesd.http
 
 import com.ronjunevaldoz.graphyn.core.store.SettingsStore
-import com.ronjunevaldoz.graphyn.editor.server.SdServerJobModel
-import com.ronjunevaldoz.graphyn.editor.server.SdServerStatusModel
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 import kotlinx.serialization.builtins.ListSerializer
@@ -10,17 +8,27 @@ import kotlinx.serialization.json.Json
 
 private val serverJson = Json { ignoreUnknownKeys = true }
 
-internal class ServerSdApi(
+/**
+ * Talks HTTP to a running `server-sd` instance: readiness (`ping`/`status`/`jobs`), lifecycle
+ * (`cancel`/`unload`), and generation (`generateImage`/`generateVideo`, byte results — callers
+ * decide how/where to persist them). The server URL + API key are resolved fresh **per call**
+ * from [settingsStore] (then env, then a `127.0.0.1:5000` default), so a credential change
+ * applies on the next call without a restart.
+ */
+class ServerSdClient internal constructor(
     private val settingsStore: SettingsStore,
-    private val transport: ServerSdTransport = HttpServerSdTransport(),
+    private val transport: ServerSdTransport,
 ) {
+    constructor(settingsStore: SettingsStore) : this(settingsStore, HttpServerSdTransport())
+
+
     suspend fun ping(): Boolean = call("/ping") { path, conn -> transport.get(path, conn) }.ok
-    suspend fun status(): SdServerStatusModel? = callModel("/api/sd/status")
-    suspend fun jobs(): List<SdServerJobModel> = callList("/api/sd/jobs")
+    suspend fun status(): SdServerStatus? = callModel("/api/sd/status")
+    suspend fun jobs(): List<SdServerJob> = callList("/api/sd/jobs")
     suspend fun cancel(jobId: String): Boolean = call(if (jobId.isBlank()) "/api/sd/cancel" else "/api/sd/cancel/${jobId.escapePath()}") { path, conn ->
         transport.postJson(path, "{}", conn)
     }.ok
-    suspend fun unload(): SdServerStatusModel? = callModel("/api/sd/unload", post = true)
+    suspend fun unload(): SdServerStatus? = callModel("/api/sd/unload", post = true)
 
     suspend fun generateImage(request: SdGenerateImageRequest): ByteArray {
         val conn = connection()
@@ -54,10 +62,9 @@ internal class ServerSdApi(
                     maskImage = cn.maskImage?.let { uploadIfLocal(it, conn) },
                 )
             },
-            // Previously unstaged: a local ref-image path (PhotoMaker/PuLID/Qwen-Image-Edit
-            // conditioning) sent straight through to a remote server-sd was never found on its
-            // filesystem — and rather than erroring, generation silently ignored the reference
-            // entirely and produced an unconditioned image from the prompt alone.
+            // A local ref-image path (PhotoMaker/PuLID/Qwen-Image-Edit conditioning) sent straight
+            // through to a remote server-sd is never found on its filesystem — rather than erroring,
+            // generation silently ignores the reference and produces an unconditioned image.
             idCond = request.idCond?.let { ic -> ic.copy(refImages = ic.refImages.map { uploadIfLocal(it, conn) }) },
         )
 
@@ -86,17 +93,17 @@ internal class ServerSdApi(
         require(missing.isEmpty()) { "Missing on server:\n" + missing.joinToString("\n") { "  $it" } }
     }
 
-    private suspend fun callModel(path: String, post: Boolean = false): SdServerStatusModel? {
+    private suspend fun callModel(path: String, post: Boolean = false): SdServerStatus? {
         val conn = connection()
         val resp = if (post) transport.postJson(path, "{}", conn) else transport.get(path, conn)
-        return resp.body.text().takeIf { resp.ok }?.let { runCatching { serverJson.decodeFromString(SdServerStatusModel.serializer(), it) }.getOrNull() }
+        return resp.body.text().takeIf { resp.ok }?.let { runCatching { serverJson.decodeFromString(SdServerStatus.serializer(), it) }.getOrNull() }
     }
 
-    private suspend fun callList(path: String): List<SdServerJobModel> {
+    private suspend fun callList(path: String): List<SdServerJob> {
         val conn = connection()
         val resp = transport.get(path, conn)
         return resp.body.text().takeIf { resp.ok }?.let {
-            runCatching { serverJson.decodeFromString(ListSerializer(SdServerJobModel.serializer()), it) }.getOrNull()
+            runCatching { serverJson.decodeFromString(ListSerializer(SdServerJob.serializer()), it) }.getOrNull()
         }.orEmpty()
     }
 

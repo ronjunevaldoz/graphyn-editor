@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.stablesd.http
 
 import com.ronjunevaldoz.graphyn.core.store.GraphynEnvironment
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
@@ -11,7 +11,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ServerSdApiTest {
+class ServerSdClientTest {
     @Test
     fun defaultsToLocalhost() {
         assertEquals("http://127.0.0.1:5000", resolveSdConnection(GraphynSettings()).baseUrl)
@@ -30,12 +30,12 @@ class ServerSdApiTest {
         val settings = InMemorySettingsStore(
             GraphynSettings(environments = listOf(GraphynEnvironment("default", mapOf(GraphynSettings.KEY_SD_URL to "http://worker")))),
         )
-        val api = ServerSdApi(settings, transport)
-        assertEquals("RUNNING", api.jobs().single().state)
-        assertTrue(api.cancel("job-1"))
+        val client = ServerSdClient(settings, transport)
+        assertEquals("RUNNING", client.jobs().single().state)
+        assertTrue(client.cancel("job-1"))
         transport.respond("GET", "/api/sd/jobs", 200, "[]".encodeToByteArray())
         val temp = File.createTempFile("graphyn-test", ".png").apply { writeText("x"); deleteOnExit() }
-        val bytes = api.generateImage(SdGenerateImageRequest(prompt = "hello", initImagePath = temp.absolutePath))
+        val bytes = client.generateImage(SdGenerateImageRequest(prompt = "hello", initImagePath = temp.absolutePath))
         assertContentEquals(byteArrayOf(1, 2, 3), bytes)
         assertTrue(transport.calls.any { it == "GET /ping" })
         assertTrue(transport.calls.any { it == "POST /api/sd/cancel/job-1" })

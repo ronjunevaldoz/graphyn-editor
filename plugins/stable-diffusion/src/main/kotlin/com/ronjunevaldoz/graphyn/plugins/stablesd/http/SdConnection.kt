@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.stablesd.http
 
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
 import io.ktor.client.request.HttpRequestBuilder
@@ -13,7 +13,7 @@ internal fun envValue(vararg names: String): String? =
     names.asSequence().mapNotNull { System.getenv(it)?.ifBlank { null } }.firstOrNull()
 
 /**
- * Resolves the SD server URL and API key, in-app settings first so the credential panel wins over
+ * Resolves the SD server URL and API key, in-app settings first so a credential panel wins over
  * a stale environment. Precedence: [settings] value → env var → built-in default. Blank = unset.
  */
 fun resolveSdConnection(settings: GraphynSettings): SdConnection {

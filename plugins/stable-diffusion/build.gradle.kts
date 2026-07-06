@@ -9,10 +9,14 @@ plugins {
 
 dependencies {
     api(projects.pluginApi)
+    implementation(projects.core.data)
     implementation(libs.serialization.json)
     implementation(libs.kotlinx.coroutinesCore)
+    implementation(libs.ktor.clientCore)
+    implementation(libs.ktor.clientCio)
 
     testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutinesTest)
 }
 
 mavenPublishing {

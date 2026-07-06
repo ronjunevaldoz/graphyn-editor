@@ -1,14 +1,15 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.stablesd.http
 
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 
 /**
  * The distinct server-side file paths an image generation depends on: model/encoder/vae/input
- * paths + LoRAs + reference images. Called *after* [stageLocalImages] so any of these that were
- * local uploads are already server paths — this is a defense-in-depth check (fail loudly here if
- * an upload silently produced a bad path, or if a future image-bearing port is added to the typed
- * request without also being wired into staging) on top of `uploadIfLocal`'s own error handling.
+ * paths + LoRAs + reference images. Called *after* [ServerSdClient]'s local-upload staging so any
+ * of these that were local uploads are already server paths — this is a defense-in-depth check
+ * (fail loudly here if an upload silently produced a bad path, or if a future image-bearing port
+ * is added to the typed request without also being wired into staging) on top of the upload's own
+ * error handling.
  */
 internal fun collectServerPaths(request: SdGenerateImageRequest): List<String> = buildList {
     val ctx = request.context

@@ -1,4 +1,4 @@
-package com.ronjunevaldoz.graphyn.bootstrap
+package com.ronjunevaldoz.graphyn.plugins.stablesd.http
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
