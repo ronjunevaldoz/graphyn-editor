@@ -3,8 +3,26 @@ package com.ronjunevaldoz.graphyn.plugins.stablesd.http
 import com.ronjunevaldoz.graphyn.core.store.SettingsStore
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+
+/** Wire shape for `POST /api/sd/load` — mirrors server-sd's own `LoadModelRequest`. */
+@Serializable
+data class LoadModelRequest(
+    val diffusionModelPath: String,
+    val clipLPath: String = "",
+    val clipGPath: String = "",
+    val t5xxlPath: String = "",
+    val vaePath: String = "",
+    val llmPath: String = "",
+    val llmVisionPath: String = "",
+    val qwenImageZeroCondT: Boolean = false,
+    val backend: String = "",
+    val nThreads: Int = -1,
+    val diffusionFa: Boolean = true,
+    val maxVram: String = "",
+)
 
 private val serverJson = Json { ignoreUnknownKeys = true }
 
@@ -29,6 +47,12 @@ class ServerSdClient internal constructor(
         transport.postJson(path, "{}", conn)
     }.ok
     suspend fun unload(): SdServerStatus? = callModel("/api/sd/unload", post = true)
+
+    suspend fun load(request: LoadModelRequest): SdServerStatus? {
+        val conn = connection()
+        val resp = transport.postJson("/api/sd/load", serverJson.encodeToString(LoadModelRequest.serializer(), request), conn)
+        return resp.body.text().takeIf { resp.ok }?.let { runCatching { serverJson.decodeFromString(SdServerStatus.serializer(), it) }.getOrNull() }
+    }
 
     suspend fun generateImage(request: SdGenerateImageRequest): ByteArray {
         val conn = connection()
