@@ -1,9 +1,9 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
-import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
-import com.ronjunevaldoz.graphyn.core.model.NodeRef
-import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.templates.SdModelPaths
+import com.ronjunevaldoz.graphyn.templates.SdSamplingDefaults
+import com.ronjunevaldoz.graphyn.templates.sdTxt2ImgWorkflow
 
 // Reuses the same clip_l/t5xxl/vae as the base Flux schnell templates — Kontext is a distinct
 // diffusion checkpoint but the same Flux text/vae encoders, per stable-diffusion.cpp's docs/kontext.md.
@@ -23,12 +23,9 @@ private const val FLUX_KONTEXT_INIT_IMAGE = "../../app/app/src/commonMain/resour
  * without CPU offload (see stable-diffusion.cpp's docs/kontext.md) — the base Flux checkpoint has
  * no instruction-following edit capability at all, only this one does.
  *
- * Node graph:
- *   sd.diffusion (Kontext) ─┐
- *   sd.encoders (Flux)      ├─→ sd.model → sd.context → sd.txt2img → preview
- *   sd.vae (Flux)          ─┘                  ↑  ↑
- *   sd.sampler (cfg=1.0 per docs) ──────────────┘  │
- *   sd.id_cond (ref_images = [source photo]) ───────┘
+ * Built on the shared `:templates` `sd.*` graph ([sdTxt2ImgWorkflow]); this file only adds the
+ * demo-gallery guide note + preview node, the `clip_on_cpu` context override (not modeled by
+ * [SdModelPaths] — Kontext-specific), and the [FLUX_KONTEXT_INIT_IMAGE] `ref_images` override.
  *
  * Kontext conditions on the source image as a **reference image** (`-r` / `--ref-image`), same as
  * Qwen-Image-Edit — the docs' own reference command never sets `--init-img`/`--strength` at all.
@@ -36,92 +33,44 @@ private const val FLUX_KONTEXT_INIT_IMAGE = "../../app/app/src/commonMain/resour
  * content entirely and produces an unrelated image from the prompt alone (confirmed the hard way
  * on the Qwen-Image-Edit template first — same fix applies here).
  */
-internal val fluxKontextImg2ImgWorkflow = WorkflowDefinition(
+internal val fluxKontextImg2ImgWorkflow = sdTxt2ImgWorkflow(
     id = "flux-kontext-img2img",
     name = "FLUX Kontext Image Edit (Image to Image)",
-    nodes = listOf(
-        guideNote(
-            """
-            FLUX.1 Kontext-dev
-
-            Edits an existing image from an instruction prompt using the
-            Kontext checkpoint — a distinct diffusion model from base Flux,
-            reusing the same clip_l/t5xxl/vae encoders. The source photo is
-            a reference image (sd.id_cond → txt2img's id_cond port), not an
-            sd.img2img init_image.
-
-            Tip: set ref_images on sd.id_cond to your source file and write
-            the edit as the prompt (e.g. "change the season to winter").
-            cfg-scale 1.0 is recommended by stable-diffusion.cpp's docs.
-            """,
-        ),
-        NodeRef(
-            id = "sddiffusion",
-            type = "sd.diffusion",
-            config = mapOf("diffusion_model_path" to WorkflowValue.StringValue(FLUX_KONTEXT_DIFFUSION)),
-        ),
-        NodeRef(
-            id = "encoders",
-            type = "sd.encoders",
-            config = mapOf(
-                "clip_l_path" to WorkflowValue.StringValue(FLUX_CLIP_L),
-                "t5xxl_path" to WorkflowValue.StringValue(FLUX_T5XXL),
-            ),
-        ),
-        NodeRef(
-            id = "sdvae",
-            type = "sd.vae",
-            config = mapOf("vae_path" to WorkflowValue.StringValue(FLUX_VAE)),
-        ),
-        NodeRef(id = "sdmodel", type = "sd.model"),
-        NodeRef(
-            id = "ctx",
-            type = "sd.context",
-            config = mapOf(
-                "diffusion_flash_attn" to WorkflowValue.BooleanValue(true),
-                "n_threads" to WorkflowValue.IntValue(-1),
-                "clip_on_cpu" to WorkflowValue.BooleanValue(true),
-            ),
-        ),
-        NodeRef(
-            id = "sampler",
-            type = "sd.sampler",
-            config = mapOf(
-                "sample_method" to WorkflowValue.StringValue("euler"),
-                "scheduler" to WorkflowValue.StringValue("discrete"),
-                "sample_steps" to WorkflowValue.IntValue(20),
-                "txt_cfg" to WorkflowValue.DoubleValue(1.0),
-                "distilled_guidance" to WorkflowValue.DoubleValue(3.5),
-                "flow_shift" to WorkflowValue.DoubleValue(3.0),
-            ),
-        ),
-        NodeRef(
-            id = "idCond",
-            type = "sd.id_cond",
-            config = mapOf(
-                "ref_images" to WorkflowValue.ListValue(listOf(WorkflowValue.StringValue(FLUX_KONTEXT_INIT_IMAGE))),
-            ),
-        ),
-        NodeRef(
-            id = "txt2img",
-            type = "sd.txt2img",
-            config = mapOf(
-                "prompt" to WorkflowValue.StringValue("change the season to winter, add falling snow"),
-                "negative_prompt" to WorkflowValue.StringValue(""),
-                "seed" to WorkflowValue.IntValue(-1),
-                "batch_count" to WorkflowValue.IntValue(1),
-            ),
-        ),
-        NodeRef("preview", "preview.view"),
+    paths = SdModelPaths(
+        diffusionModelPath = FLUX_KONTEXT_DIFFUSION,
+        clipLPath = FLUX_CLIP_L,
+        t5xxlPath = FLUX_T5XXL,
+        vaePath = FLUX_VAE,
     ),
-    connections = listOf(
-        ConnectionRef("sddiffusion", "diffusion", "sdmodel", "diffusion"),
-        ConnectionRef("encoders", "encoders", "sdmodel", "encoders"),
-        ConnectionRef("sdvae", "vae", "sdmodel", "vae"),
-        ConnectionRef("sdmodel", "model", "ctx", "model"),
-        ConnectionRef("ctx", "context", "txt2img", "context"),
-        ConnectionRef("sampler", "sampler", "txt2img", "sampler"),
-        ConnectionRef("idCond", "id_cond", "txt2img", "id_cond"),
-        ConnectionRef("txt2img", "image", "preview", "value"),
+    sampling = SdSamplingDefaults(
+        steps = 20,
+        cfgScale = 1.0,
+        distilledGuidance = 3.5,
+        flowShift = 3.0,
+        sampleMethod = "euler",
+        scheduler = "discrete",
     ),
+    prompt = "change the season to winter, add falling snow",
+    negativePrompt = "",
+).withNodeConfig(
+    nodeId = "context",
+    overrides = mapOf("clip_on_cpu" to WorkflowValue.BooleanValue(true)),
+).withNodeConfig(
+    nodeId = "id_cond",
+    overrides = mapOf("ref_images" to WorkflowValue.ListValue(listOf(WorkflowValue.StringValue(FLUX_KONTEXT_INIT_IMAGE)))),
+).withGalleryPreview(
+    outputPort = "image",
+    guideText = """
+        FLUX.1 Kontext-dev
+
+        Edits an existing image from an instruction prompt using the
+        Kontext checkpoint — a distinct diffusion model from base Flux,
+        reusing the same clip_l/t5xxl/vae encoders. The source photo is
+        a reference image (sd.id_cond → generate's id_cond port), not an
+        sd.img2img init_image.
+
+        Tip: set ref_images on sd.id_cond to your source file and write
+        the edit as the prompt (e.g. "change the season to winter").
+        cfg-scale 1.0 is recommended by stable-diffusion.cpp's docs.
+    """,
 )

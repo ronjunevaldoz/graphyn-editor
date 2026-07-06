@@ -66,18 +66,18 @@ class SdLoraWorkflowValidationTest {
     @Test fun wan480pImg2VidIsSound() = assertStructurallySound(wan480pImg2VidWorkflow)
     @Test fun wan14b480pImg2VidIsSound() = assertStructurallySound(wan14b480pImg2VidWorkflow)
     @Test fun qwenTxt2ImgUses2512LightningLora() =
-        assertNodePath(qwenTxt2ImgWorkflow, nodeId = "lora", expected = QWEN_TXT2IMG_LORA)
+        assertNodePath(qwenTxt2ImgWorkflow, nodeId = "lora0", expected = QWEN_TXT2IMG_LORA)
 
     @Test fun qwenImg2ImgUses2511EditLightningLora() =
-        assertNodePath(qwenImg2ImgWorkflow, nodeId = "lora", expected = QWEN_IMG2IMG_LORA)
+        assertNodePath(qwenImg2ImgWorkflow, nodeId = "lora0", expected = QWEN_IMG2IMG_LORA)
 
     @Test fun qwenTxt2ImgUsesQ2DiffusionAndQwenFlowShift() {
-        assertStringConfig(qwenTxt2ImgWorkflow, nodeId = "sddiffusion", key = "diffusion_model_path", expected = QWEN_TXT2IMG_DIFFUSION)
+        assertStringConfig(qwenTxt2ImgWorkflow, nodeId = "diffusion", key = "diffusion_model_path", expected = QWEN_TXT2IMG_DIFFUSION)
         assertDoubleConfig(qwenTxt2ImgWorkflow, nodeId = "sampler", key = "flow_shift", expected = 12.0)
     }
 
     @Test fun qwenImg2ImgUsesQ2DiffusionAndQwenFlowShift() {
-        assertStringConfig(qwenImg2ImgWorkflow, nodeId = "sddiffusion", key = "diffusion_model_path", expected = QWEN_IMG2IMG_DIFFUSION)
+        assertStringConfig(qwenImg2ImgWorkflow, nodeId = "diffusion", key = "diffusion_model_path", expected = QWEN_IMG2IMG_DIFFUSION)
         assertDoubleConfig(qwenImg2ImgWorkflow, nodeId = "sampler", key = "flow_shift", expected = 12.0)
     }
 }

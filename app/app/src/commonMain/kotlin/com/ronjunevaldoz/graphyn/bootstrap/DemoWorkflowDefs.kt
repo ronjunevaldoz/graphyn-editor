@@ -154,6 +154,25 @@ internal fun guideNote(text: String, width: Int = 300, height: Int = 240): NodeR
 )
 
 /**
+ * Appends the demo-gallery-only [guideNote] + `preview.view` node to a `:templates`-built
+ * [WorkflowDefinition], wired from [outputNodeId]'s [outputPort]. These two nodes exist purely so
+ * the workflow reads well on the graphyn-editor canvas — a headless server has no reason to
+ * register them, which is why they live here instead of in `:templates`.
+ */
+internal fun WorkflowDefinition.withGalleryPreview(
+    guideText: String,
+    outputPort: String,
+    outputNodeId: String = "generate",
+): WorkflowDefinition = copy(
+    nodes = nodes + guideNote(guideText) + NodeRef("preview", "preview.view"),
+    connections = connections + ConnectionRef(outputNodeId, outputPort, "preview", "value"),
+)
+
+/** Overrides one existing node's config, e.g. activating `sd.id_cond`'s `ref_images` post-build. */
+internal fun WorkflowDefinition.withNodeConfig(nodeId: String, overrides: Map<String, WorkflowValue>): WorkflowDefinition =
+    copy(nodes = nodes.map { if (it.id == nodeId) it.copy(config = it.config + overrides) else it })
+
+/**
  * Simple text-to-speech workflow.
  *
  * Convert text to audio using the TTS engine, cache the result, and optionally save.

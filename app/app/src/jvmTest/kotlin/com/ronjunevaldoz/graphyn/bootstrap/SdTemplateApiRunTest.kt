@@ -72,19 +72,19 @@ class SdTemplateApiRunTest {
     private fun s(v: String) = WorkflowValue.StringValue(v)
 
     @Test fun fluxTxt2Img() = run(
-        fluxTxt2ImgWorkflow.withOverrides(mapOf("txt2img" to mapOf("prompt" to s("a lighthouse at dusk, cinematic")))),
-        "txt2img", "image",
+        fluxTxt2ImgWorkflow.withOverrides(mapOf("generate" to mapOf("prompt" to s("a lighthouse at dusk, cinematic")))),
+        "generate", "image",
     ).let {}
 
     @Test fun qwenTxt2Img() = run(
-        qwenTxt2ImgWorkflow.withOverrides(mapOf("txt2img" to mapOf("prompt" to s("a bowl of ramen, top-down studio photo")))),
-        "txt2img", "image",
+        qwenTxt2ImgWorkflow.withOverrides(mapOf("generate" to mapOf("prompt" to s("a bowl of ramen, top-down studio photo")))),
+        "generate", "image",
     ).let {}
 
     @Test fun qwenImg2Img() = run(
-        qwenImg2ImgWorkflow.withInit("img2img", initImage)
-            .withOverrides(mapOf("img2img" to mapOf("prompt" to s("turn the scene into a snowy winter version")))),
-        "img2img", "image",
+        qwenImg2ImgWorkflow.withInit("generate", initImage)
+            .withOverrides(mapOf("generate" to mapOf("prompt" to s("turn the scene into a snowy winter version")))),
+        "generate", "image",
     ).let {}
 
     // Video tier: server-sd's Wan i2v VAE decode previously failed with "vae decode compute failed
