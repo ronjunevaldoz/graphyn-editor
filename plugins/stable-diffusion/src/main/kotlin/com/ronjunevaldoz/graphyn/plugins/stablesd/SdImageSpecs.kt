@@ -46,6 +46,8 @@ private val imageGenSharedPorts = listOf(
         description = "Optional sd.cache config for inference-step caching. Null = disabled."),
     PortSpec("vae_tiling", NullableType(OpaqueType), portColor = COLOR_SAMPLER,
         description = "Optional sd.vae_tiling config. Null = disabled."),
+    PortSpec("server", NullableType(OpaqueType), portColor = COLOR_SERVER,
+        description = "Optional sd.server token — pins this generation to a specific server-sd deployment. Null = use the app-wide server."),
 )
 
 private val imageGenOutputs = listOf(

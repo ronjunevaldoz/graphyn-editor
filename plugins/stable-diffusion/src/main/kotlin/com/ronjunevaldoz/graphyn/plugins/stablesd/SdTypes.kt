@@ -59,6 +59,9 @@ internal object SdTokens {
     fun diffusion(inputs: Map<String, WorkflowValue>): WorkflowValue =
         RecordValue(mapOf("_type" to StringValue("sd.diffusion")) + inputs.mapValues { it.value })
 
+    fun server(inputs: Map<String, WorkflowValue>): WorkflowValue =
+        RecordValue(mapOf("_type" to StringValue("sd.server")) + inputs.mapValues { it.value })
+
     fun RecordValue.fields(): Map<String, WorkflowValue> = fields
 
     fun WorkflowValue.asRecord(expectType: String): Map<String, WorkflowValue> {

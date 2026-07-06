@@ -19,6 +19,7 @@ package com.ronjunevaldoz.graphyn.plugins.stablesd
  * | [COLOR_CONTEXT]   | orchid      | `sd.context` output `context`     | generation node input `context` |
  * | [COLOR_CONTROLNET]| deep orange | `sd.controlnet` output `controlnet` | generation node input `controlnet` |
  * | [COLOR_ID_COND]   | pink        | `sd.id_cond` output `id_cond`     | generation node input `id_cond` |
+ * | [COLOR_SERVER]    | amber       | `sd.server` output `server`       | generation node input `server` |
  *
  * Non-OpaqueType ports ([COLOR_SAMPLER], [COLOR_IMAGE], etc.) use colour for visual grouping only;
  * their type matching is handled by [WorkflowTypeCompatibility] without a portColor check.
@@ -30,6 +31,7 @@ internal const val COLOR_MODEL      = 0xFF6B6BF7L // bright purple — assembled
 internal const val COLOR_CONTEXT    = 0xFFAB47BCL // orchid      — initialized context (sd.context → generation)
 internal const val COLOR_CONTROLNET = 0xFFFF7043L // deep orange — ControlNet config token
 internal const val COLOR_ID_COND    = 0xFFEC407AL // pink        — id-conditioning token
+internal const val COLOR_SERVER     = 0xFFFFA000L // amber       — remote server connection token
 internal const val COLOR_SAMPLER    = 0xFF4CAF50L // green  — sampling config
 internal const val COLOR_IMAGE      = 0xFF2196F3L // blue   — image data (path)
 internal const val COLOR_VIDEO      = 0xFF00BCD4L // cyan   — video/frame data

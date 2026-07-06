@@ -61,5 +61,6 @@ private fun buildImageRequest(
         controlNet = extractControlNetConfig(inputs["controlnet"]),
         idCond = extractIdCondConfig(inputs["id_cond"]),
         loras = extractLoras(inputs),
+        server = extractServerConfig(inputs["server"]),
     )
 }

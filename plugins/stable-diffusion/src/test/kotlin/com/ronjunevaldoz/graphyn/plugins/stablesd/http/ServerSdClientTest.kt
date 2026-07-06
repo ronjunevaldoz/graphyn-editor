@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.store.GraphynEnvironment
 import com.ronjunevaldoz.graphyn.core.store.GraphynSettings
 import com.ronjunevaldoz.graphyn.core.store.InMemorySettingsStore
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateImageRequest
+import com.ronjunevaldoz.graphyn.plugins.stablesd.SdServerConfig
 import java.io.File
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -42,20 +43,42 @@ class ServerSdClientTest {
         assertTrue(transport.calls.any { it == "POST /api/sd/upload?ext=png" })
         assertTrue(transport.calls.any { it == "POST /api/sd/generate-ex" })
     }
+
+    @Test
+    fun serverOverrideOnRequestTargetsADifferentConnectionThanSettings() = runTest {
+        val transport = FakeServerSdTransport()
+        transport.respond("GET", "/ping", 200, "pong".encodeToByteArray())
+        transport.respond("GET", "/api/sd/status", 200, """{"busy":false}""".encodeToByteArray())
+        transport.respond("GET", "/api/sd/jobs", 200, "[]".encodeToByteArray())
+        transport.respond("POST", "/api/sd/models/exists", 200, """{"missing":[]}""".encodeToByteArray())
+        transport.respond("POST", "/api/sd/generate-ex", 200, byteArrayOf(9))
+        val settings = InMemorySettingsStore(
+            GraphynSettings(environments = listOf(GraphynEnvironment("default", mapOf(GraphynSettings.KEY_SD_URL to "http://settings-server")))),
+        )
+        val client = ServerSdClient(settings, transport)
+        val request = SdGenerateImageRequest(
+            prompt = "hello",
+            server = SdServerConfig(baseUrl = "https://my-app.modal.run", apiKey = "modal-key"),
+        )
+        assertContentEquals(byteArrayOf(9), client.generateImage(request))
+        assertTrue(transport.connectionsSeen.all { it.baseUrl == "https://my-app.modal.run" && it.apiKey == "modal-key" })
+    }
 }
 
 private class FakeServerSdTransport : ServerSdTransport {
     val calls = mutableListOf<String>()
+    val connectionsSeen = mutableListOf<SdConnection>()
     private val responses = mutableMapOf<String, ServerSdResponse>()
     fun respond(method: String, path: String, status: Int, body: ByteArray) {
         responses["$method $path"] = ServerSdResponse(status, body)
     }
-    override suspend fun get(path: String, conn: SdConnection) = reply("GET", path)
-    override suspend fun postJson(path: String, json: String, conn: SdConnection) = reply("POST", path)
-    override suspend fun postBytes(path: String, bytes: ByteArray, conn: SdConnection) = reply("POST", path)
-    override suspend fun delete(path: String, conn: SdConnection) = reply("DELETE", path)
-    private fun reply(method: String, path: String): ServerSdResponse {
+    override suspend fun get(path: String, conn: SdConnection) = reply("GET", path, conn)
+    override suspend fun postJson(path: String, json: String, conn: SdConnection) = reply("POST", path, conn)
+    override suspend fun postBytes(path: String, bytes: ByteArray, conn: SdConnection) = reply("POST", path, conn)
+    override suspend fun delete(path: String, conn: SdConnection) = reply("DELETE", path, conn)
+    private fun reply(method: String, path: String, conn: SdConnection): ServerSdResponse {
         calls += "$method $path"
+        connectionsSeen += conn
         return responses["$method $path"] ?: ServerSdResponse(500, "missing $method $path".encodeToByteArray())
     }
 }

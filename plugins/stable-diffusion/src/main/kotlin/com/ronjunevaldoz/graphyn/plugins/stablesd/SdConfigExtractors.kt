@@ -169,6 +169,16 @@ internal fun extractIdCondConfig(token: WorkflowValue?): SdIdCondConfig? {
     )
 }
 
+/** Reads a `sd.server` opaque token's fields into [SdServerConfig], or null when absent. */
+internal fun extractServerConfig(token: WorkflowValue?): SdServerConfig? {
+    if (token == null || token is WorkflowValue.NullValue) return null
+    val inputs = token.orEmpty()
+    return SdServerConfig(
+        baseUrl = inputs.str("base_url"),
+        apiKey = inputs.str("api_key"),
+    )
+}
+
 /** Reads the `loras` list input (list of `sd.lora` opaque tokens) into [SdLoraConfig]s. */
 internal fun extractLoras(inputs: Map<String, WorkflowValue>): List<SdLoraConfig> =
     (inputs["loras"] as? WorkflowValue.ListValue)?.items?.mapNotNull { loraToken ->

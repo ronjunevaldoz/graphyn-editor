@@ -133,3 +133,16 @@ Reference points for "is this run just slow, or is something actually wrong" —
   it and degrades to `ok = false`. Needed `implementation(libs.serialization.json)` in shorts'
   commonMain (it was pulling JSON via `json.*` engine nodes before, so serialization wasn't a dep) —
   `implementation`, not `api`, so no POM leak / `verifyPublishing` failure.
+- Converted the SD server URL/API key from an app-wide `GraphynSettings` value into a graph-level
+  `sd.server` config node (multi-server support, e.g. Modal deployments) without touching the
+  `StableDiffusionBackend` interface: the override rides along as a plain nullable field
+  (`SdServerConfig`) on `SdGenerateImageRequest`/`SdGenerateVideoRequest`, and `ServerSdClient`
+  merges it over the settings-resolved `SdConnection` only for that one call. Every other
+  `ServerSdClient` method (`ping`/`status`/`jobs`/`cancel`/`unload`/`load`) keeps its old app-wide
+  behavior via a nullable `conn: SdConnection? = null` param resolved lazily inside the function
+  body — Kotlin rejects a suspend call as a default-parameter *value* (`conn: SdConnection =
+  connection()` fails to compile with "Suspend function call in default parameter value is
+  unsupported"), so the resolution has to happen in the body, not the signature. Also had to thread
+  the override into `ensureReady()`/`ready()` explicitly; they call `ping`/`status`/`jobs`
+  internally, so without passing the resolved `conn` through, readiness would silently check the
+  wrong server while generation hit the right one.

@@ -156,6 +156,16 @@ data class SdIdCondConfig(
 @Serializable
 data class SdLoraConfig(val path: String, val multiplier: Double = 1.0)
 
+/**
+ * Optional per-generation override for which `server-sd` instance to talk to — lets one workflow
+ * mix multiple deployments (e.g. a local box and a Modal-hosted `server-sd`) by wiring an
+ * `sd.server` node into a generation node's `server` port. Only the HTTP backend honors this;
+ * a CLI-based backend shells out locally and ignores it. Null/blank fields fall back to the
+ * app-wide setting → env var → `127.0.0.1:5000` default.
+ */
+@Serializable
+data class SdServerConfig(val baseUrl: String? = null, val apiKey: String? = null)
+
 @Serializable
 data class SdGenerateImageRequest(
     val prompt: String,
@@ -176,6 +186,7 @@ data class SdGenerateImageRequest(
     val controlNet: SdControlNetConfig? = null,
     val idCond: SdIdCondConfig? = null,
     val loras: List<SdLoraConfig> = emptyList(),
+    val server: SdServerConfig? = null,
 )
 
 @Serializable
@@ -202,4 +213,5 @@ data class SdGenerateVideoRequest(
     val cache: SdCacheConfig? = null,
     val vaeTiling: SdTilingConfig? = null,
     val loras: List<SdLoraConfig> = emptyList(),
+    val server: SdServerConfig? = null,
 )

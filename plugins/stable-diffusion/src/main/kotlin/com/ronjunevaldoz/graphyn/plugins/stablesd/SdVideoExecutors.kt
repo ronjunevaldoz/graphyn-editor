@@ -73,5 +73,6 @@ private fun buildVideoRequest(
         cache = extractCacheConfig(inputs["cache"]),
         vaeTiling = extractTilingConfig(inputs["vae_tiling"]),
         loras = extractLoras(inputs),
+        server = extractServerConfig(inputs["server"]),
     )
 }
