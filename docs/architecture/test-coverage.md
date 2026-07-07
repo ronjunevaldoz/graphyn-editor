@@ -33,6 +33,9 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Editor — auto-layout: cyclic graph still lays out without hanging** | ✅ | | | |
 | **Editor — auto-layout: isolated nodes grid-placed below DAG** | ✅ | | | |
 | **Editor — auto-layout: barycenter sweep reduces edge crossings vs BFS order** | ✅ | | | |
+| **Canvas — port colors unique per WorkflowType; nullable/override behavior** | ✅ | | | |
+| **Canvas — connection anchors match card dots (incl. subgraph derived spec)** | ✅ | | | |
+| **Core — subgraph derived spec hides optional free inputs (boundary keeps them)** | ✅ | | | |
 | **Editor — draft connection → workflow connection** | ✅ | | | |
 | **Editor — execution result applied to state** | ✅ | | | |
 | **Editor — delete selected connection** | ✅ | | | |
@@ -111,6 +114,8 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | `app/shared/.../GraphynEditorShellUiTest.kt` | `jvmTest` + `wasmJsTest` | UI |
 | `app/shared/.../GraphynAutoLayoutUiTest.kt` | `jvmTest` | UI + Screenshot |
 | `app/shared/.../GraphynAutoLayoutScreenshotTest.kt` | `jvmTest` | Screenshot |
+| `app/shared/.../GraphynPortTypeColorTest.kt` | `commonTest` | Unit |
+| `app/shared/.../GraphynPortAnchorResolverTest.kt` | `commonTest` | Unit |
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
 | `plugins/sample-logger-ui/.../SampleLoggerEditorPluginTest.kt` | `commonTest` | Unit |

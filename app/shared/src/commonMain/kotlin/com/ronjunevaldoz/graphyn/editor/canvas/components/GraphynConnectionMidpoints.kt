@@ -18,7 +18,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
-import com.ronjunevaldoz.graphyn.editor.canvas.resolveNodeFactory
+import com.ronjunevaldoz.graphyn.editor.canvas.resolvePortAnchor
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynEditorIntent
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 
@@ -41,20 +41,8 @@ internal fun GraphynConnectionMidpoints(
         val fromPos = state.nodePosition(fromNode.id, fromIndex)
         val toPos = state.nodePosition(toNode.id, toIndex)
 
-        val fromSpec = nodeSpecs.resolve(fromNode.type)
-        val fromFactory = resolveNodeFactory(fromNode, canvasCards, nodeSpecs)
-        val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
-        val fromNodeWidth = fromFactory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width
-        val fromAnchorY = fromSpec?.let {
-            fromFactory?.portAnchorY(fromPortIndex, false, it) ?: GraphynCanvasMetrics.portAnchorY(fromPortIndex)
-        } ?: GraphynCanvasMetrics.portAnchorY(fromPortIndex)
-
-        val toSpec = nodeSpecs.resolve(toNode.type)
-        val toFactory = resolveNodeFactory(toNode, canvasCards, nodeSpecs)
-        val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
-        val toAnchorY = toSpec?.let {
-            toFactory?.portAnchorY(toPortIndex, true, it) ?: GraphynCanvasMetrics.portAnchorY(toPortIndex)
-        } ?: GraphynCanvasMetrics.portAnchorY(toPortIndex)
+        val fromAnchor = resolvePortAnchor(fromNode, connection.fromPort, isInput = false, nodeSpecs, canvasCards)
+        val toAnchor = resolvePortAnchor(toNode, connection.toPort, isInput = true, nodeSpecs, canvasCards)
 
         val isSelected = state.selectedConnection == connection
         val dotColor = if (isSelected) selectedColor else connectionColor
@@ -63,9 +51,9 @@ internal fun GraphynConnectionMidpoints(
                 .testTag("connection-midpoint-${connection.fromNodeId}-${connection.fromPort}")
                 .offset {
                     val dotRadiusPx = GraphynCanvasMetrics.PortDotRadius.dp.roundToPx()
-                    val fromX = fromPos.x + fromNodeWidth.dp.roundToPx()
-                    val fromY = fromPos.y + fromAnchorY.dp.roundToPx()
-                    val toY = toPos.y + toAnchorY.dp.roundToPx()
+                    val fromX = fromPos.x + fromAnchor.nodeWidthDp.dp.roundToPx()
+                    val fromY = fromPos.y + fromAnchor.anchorYDp.dp.roundToPx()
+                    val toY = toPos.y + toAnchor.anchorYDp.dp.roundToPx()
                     IntOffset(
                         x = (fromX + toPos.x) / 2 - dotRadiusPx,
                         y = (fromY + toY) / 2 - dotRadiusPx,

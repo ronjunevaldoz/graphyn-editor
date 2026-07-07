@@ -9,7 +9,6 @@ import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.canvas.components.GraphynNodePortDots
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
@@ -41,7 +40,7 @@ internal fun GraphynNodeLayer(
     // Pass 2: regular nodes on top. Every node resolves to a factory — a host-registered card,
     // a subgraph card, or a default FieldCardFactory sized from its spec.
     workflow.nodes.forEachIndexed { index, node ->
-        val spec = resolveSpec(node, nodeSpecs)
+        val spec = resolveRenderSpec(node, nodeSpecs)
         val position = state.nodePosition(node.id, index)
         val factory = resolveNodeFactory(node, canvasCards, nodeSpecs)
             ?: FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
@@ -83,13 +82,3 @@ private fun nodeCanvasContext(
     onEnterSubgraph = node.subgraph?.let { sg -> onEnterSubgraph?.let { cb -> { cb(spec.label, sg) } } },
     executionOutputs = state.outputsFor(node.id),
 )
-
-/**
- * Resolves a node's spec, falling back to a boundary-derived spec for editor-created subgraph
- * nodes (which have no statically-registered spec), and finally to a minimal placeholder spec for
- * an unknown node type so it still renders as an empty titled card. A registered spec always wins.
- */
-private fun resolveSpec(node: NodeRef, nodeSpecs: NodeSpecRegistry): NodeSpec =
-    nodeSpecs.resolve(node.type)
-        ?: deriveSubgraphSpec(node, nodeSpecs)
-        ?: NodeSpec(type = node.type, label = node.type, inputs = emptyList(), outputs = emptyList())

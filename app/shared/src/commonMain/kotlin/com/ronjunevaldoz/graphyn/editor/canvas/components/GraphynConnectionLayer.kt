@@ -9,9 +9,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
-import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasRegistry
-import com.ronjunevaldoz.graphyn.editor.canvas.resolveNodeFactory
+import com.ronjunevaldoz.graphyn.editor.canvas.resolvePortAnchor
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import com.ronjunevaldoz.graphyn.editor.state.GraphynEditorState
 import kotlin.math.absoluteValue
@@ -36,24 +35,12 @@ fun GraphynConnectionLayer(
             val fromPos = state.nodePosition(fromNode.id, fromIndex)
             val toPos = state.nodePosition(toNode.id, toIndex)
 
-            val fromSpec = nodeSpecs.resolve(fromNode.type)
-            val fromFactory = resolveNodeFactory(fromNode, canvasCards, nodeSpecs)
-            val fromPortIndex = fromSpec?.outputs?.indexOfFirst { it.name == connection.fromPort }?.coerceAtLeast(0) ?: 0
-            val fromNodeWidth = fromFactory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width
-            val fromAnchorY = fromSpec?.let {
-                fromFactory?.portAnchorY(fromPortIndex, false, it) ?: GraphynCanvasMetrics.portAnchorY(fromPortIndex)
-            } ?: GraphynCanvasMetrics.portAnchorY(fromPortIndex)
-
-            val toSpec = nodeSpecs.resolve(toNode.type)
-            val toFactory = resolveNodeFactory(toNode, canvasCards, nodeSpecs)
-            val toPortIndex = toSpec?.inputs?.indexOfFirst { it.name == connection.toPort }?.coerceAtLeast(0) ?: 0
-            val toAnchorY = toSpec?.let {
-                toFactory?.portAnchorY(toPortIndex, true, it) ?: GraphynCanvasMetrics.portAnchorY(toPortIndex)
-            } ?: GraphynCanvasMetrics.portAnchorY(toPortIndex)
+            val fromAnchor = resolvePortAnchor(fromNode, connection.fromPort, isInput = false, nodeSpecs, canvasCards)
+            val toAnchor = resolvePortAnchor(toNode, connection.toPort, isInput = true, nodeSpecs, canvasCards)
 
             drawBezier(
-                start = Offset(fromPos.x + fromNodeWidth.dp.toPx(), fromPos.y + fromAnchorY.dp.toPx()),
-                end = Offset(toPos.x.toFloat(), toPos.y + toAnchorY.dp.toPx()),
+                start = Offset(fromPos.x + fromAnchor.nodeWidthDp.dp.toPx(), fromPos.y + fromAnchor.anchorYDp.dp.toPx()),
+                end = Offset(toPos.x.toFloat(), toPos.y + toAnchor.anchorYDp.dp.toPx()),
                 color = color,
                 strokeWidth = 4f,
             )
@@ -63,23 +50,14 @@ fun GraphynConnectionLayer(
         val fromNode = workflow.nodes.firstOrNull { it.id == draftConnection.fromNodeId } ?: return@Canvas
         val fromIndex = workflow.nodes.indexOf(fromNode)
         val fromPos = state.nodePosition(fromNode.id, fromIndex)
-        val fromSpec = nodeSpecs.resolve(fromNode.type)
-        val fromFactory = resolveNodeFactory(fromNode, canvasCards, nodeSpecs)
-        val fromPortIndex = if (draftConnection.isFromInput) {
-            fromSpec?.inputs?.indexOfFirst { it.name == draftConnection.fromPort }?.coerceAtLeast(0) ?: 0
-        } else {
-            fromSpec?.outputs?.indexOfFirst { it.name == draftConnection.fromPort }?.coerceAtLeast(0) ?: 0
-        }
-        val fromNodeWidth = fromFactory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width
-        val fromAnchorY = fromSpec?.let {
-            fromFactory?.portAnchorY(fromPortIndex, draftConnection.isFromInput, it)
-                ?: GraphynCanvasMetrics.portAnchorY(fromPortIndex)
-        } ?: GraphynCanvasMetrics.portAnchorY(fromPortIndex)
+        val fromAnchor = resolvePortAnchor(
+            fromNode, draftConnection.fromPort, isInput = draftConnection.isFromInput, nodeSpecs, canvasCards,
+        )
 
         val start = if (draftConnection.isFromInput) {
-            Offset(fromPos.x.toFloat(), fromPos.y + fromAnchorY.dp.toPx())
+            Offset(fromPos.x.toFloat(), fromPos.y + fromAnchor.anchorYDp.dp.toPx())
         } else {
-            Offset(fromPos.x + fromNodeWidth.dp.toPx(), fromPos.y + fromAnchorY.dp.toPx())
+            Offset(fromPos.x + fromAnchor.nodeWidthDp.dp.toPx(), fromPos.y + fromAnchor.anchorYDp.dp.toPx())
         }
         val end = draftPointer ?: Offset(start.x + 120f, start.y)
         drawBezier(

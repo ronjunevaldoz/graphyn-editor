@@ -14,7 +14,7 @@ fun WorkflowType.portColor(): Color = when (this) {
     is WorkflowType.ListType    -> Color(0xFFF8C555)
     is WorkflowType.RecordType  -> Color(0xFFCE9178)
     is WorkflowType.EnumType      -> Color(0xFFD19A66)
-    is WorkflowType.MultiEnumType -> Color(0xFFD19A66)
+    is WorkflowType.MultiEnumType -> Color(0xFFE06C75)
     is WorkflowType.OpaqueType    -> Color(0xFF9B9BA5)
     is WorkflowType.NullableType -> wrappedType.portColor().copy(alpha = 0.65f)
 }

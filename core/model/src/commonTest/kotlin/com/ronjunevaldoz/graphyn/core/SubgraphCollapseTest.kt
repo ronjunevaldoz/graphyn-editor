@@ -80,6 +80,31 @@ class SubgraphCollapseTest {
     }
 
     @Test
+    fun derivedSpecHidesOptionalFreeInputsButBoundaryKeepsThem() {
+        val optSpecs = DefaultNodeSpecRegistry().apply {
+            register(NodeSpec("op2", "Op2",
+                inputs = listOf(
+                    PortSpec("in", WorkflowType.StringType),
+                    PortSpec("tweak", WorkflowType.StringType, required = false),
+                ),
+                outputs = listOf(PortSpec("out", WorkflowType.StringType))))
+        }
+        val node = NodeRef(
+            id = "sg", type = "graphyn.subgraph",
+            subgraph = WorkflowDefinition("inner", "Inner",
+                nodes = listOf(NodeRef("b", "op2"), NodeRef("c", "op2")),
+                connections = listOf(ConnectionRef("b", "out", "c", "in"))),
+        )
+
+        // The display spec hides the optional free input…
+        val derived = deriveSubgraphSpec(node, optSpecs)!!
+        assertEquals(listOf("in"), derived.inputs.map { it.name })
+        // …but the execution/rewiring boundary still exposes it.
+        val boundary = subgraphBoundary(node.subgraph!!, optSpecs)
+        assertEquals(listOf("in", "tweak"), boundary.inputs.map { it.name })
+    }
+
+    @Test
     fun boundaryDedupesSharedPortNames() {
         val boundary = subgraphBoundary(
             WorkflowDefinition("inner", "Inner",

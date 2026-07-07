@@ -46,6 +46,11 @@ fun subgraphBoundary(inner: WorkflowDefinition, specs: NodeSpecRegistry): Subgra
  * Derives a [NodeSpec] for a subgraph [node] from its embedded workflow's [subgraphBoundary].
  * Returns null when the node has no subgraph. The editor uses this so a collapsed subgraph node
  * renders its boundary ports without a statically-registered spec.
+ *
+ * Only **required** boundary inputs are exposed — optional free inputs are satisfied by their
+ * inner defaults/config, and listing them would bloat the collapsed card with rows nothing needs
+ * to connect to. This is a display contract only: execution and collapse/expand rewiring use the
+ * full [subgraphBoundary].
  */
 fun deriveSubgraphSpec(node: NodeRef, specs: NodeSpecRegistry, label: String? = null): NodeSpec? {
     val inner = node.subgraph ?: return null
@@ -53,7 +58,7 @@ fun deriveSubgraphSpec(node: NodeRef, specs: NodeSpecRegistry, label: String? = 
     return NodeSpec(
         type = node.type,
         label = label ?: inner.name,
-        inputs = boundary.inputs,
+        inputs = boundary.inputs.filter { it.required },
         outputs = boundary.outputs,
         description = "Subgraph: ${inner.nodes.size} nodes",
     )

@@ -213,3 +213,38 @@ Reference points for "is this run just slow, or is something actually wrong" —
 - Kotlin gotcha: adding a new parameter *after* a trailing-lambda parameter silently breaks every
   `f(x, y) { ... }` call site (the lambda binds to the new last param). Keep the lambda param last
   when extending a signature.
+- **2026-07-07 regenerate-scene edit mode fails on Modal, works on Windows — Modal-specific,
+  not a code bug:** `workflow=regenerate-scene index=N edit=true instruction='...'` (the new
+  `imageMotionSceneEditSubgraph` Kontext+`sd.id_cond` path) reproducibly failed against Modal
+  L4 with `server-sd responded 303:` (empty body) on the actual `/api/sd/generate-ex` call,
+  after running the full ~160s generation — twice, including an immediate retry on the likely
+  same warm container (`max_containers=1`). Ruled out: a bug in the new subgraph (compared
+  line-by-line against the proven `useCharacterSheet` Kontext path, no meaningful difference);
+  server-sd's own Ktor routes (grepped for redirect logic — only a 302 for video/Cloudinary,
+  unrelated); Modal function timeout config (`timeout=600`, `startup_timeout=300`, both
+  generous for a 160s call). `modal app logs graphyn-sd` didn't surface a clear HTTP
+  request/response line to pin down further. **Re-ran the identical command against the
+  Windows host (`default` environment) — succeeded cleanly: 258s, all 16 nodes, valid
+  720x1280 h264 + aac output.** This isolates the failure to something Modal-specific (its
+  `web_server` proxy layer, most likely) rather than the new edit-mode code. Root cause still
+  unresolved — using Windows for regenerate-scene edit mode until it is. Also surfaced:
+  `regenerate-scene` doesn't thread `width=`/`height=` through at all (unlike `storyboard`),
+  so an edited scene can come out at a different resolution than the rest of the short if the
+  original run used non-default dimensions — didn't cause a hard failure in this test, but is
+  a real gap worth fixing.
+- Subgraph connection endpoints were misaligned from their port dots because
+  `GraphynConnectionLayer`/`GraphynConnectionMidpoints` resolved specs via `nodeSpecs.resolve(type)`
+  only — null for editor-created subgraph nodes (no registered spec) — falling back to the generic
+  `GraphynCanvasMetrics.portAnchorY` *and* coercing every port index to 0, while the dots in
+  `GraphynNodeLayer` used the boundary-derived spec + `SubgraphNodeCardFactory`. Rule: every
+  consumer of port geometry must go through one shared resolver
+  (`resolveRenderSpec`/`resolvePortAnchor` in `GraphynPortAnchorResolver.kt`) — duplicated
+  spec-resolution chains *will* drift.
+- `EnumType` and `MultiEnumType` silently shared a port color, and color is load-bearing
+  (`PortCompatibility` uses `portColor` as a semantic channel id for opaque ports).
+  `GraphynPortTypeColorTest` now asserts one-color-per-type; extend its `baseTypes` list when
+  adding a `WorkflowType` variant or the test won't guard it.
+- `deriveSubgraphSpec` now filters boundary inputs to `required` ones — display contract only;
+  `subgraphBoundary` (execution injection, expand rewiring) stays unfiltered. Known limitation:
+  an outer connection into an *optional* boundary input (possible when collapsing a selection
+  whose crossing edge fed an optional port) references a hidden port and anchors at row 0.
