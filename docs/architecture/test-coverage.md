@@ -28,6 +28,10 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Editor — plugin registers panel** | ✅ | | | |
 | **Editor — state tracks outputs & downstream impact** | ✅ | | | |
 | **Editor — state tracks node positions + fallback layout** | ✅ | | | |
+| **Editor — auto-layout: diamond dependency does not overlap** | ✅ | | | |
+| **Editor — auto-layout: wide branching tree stays non-overlapping** | ✅ | | | |
+| **Editor — auto-layout: cyclic graph still lays out without hanging** | ✅ | | | |
+| **Editor — auto-layout: isolated nodes grid-placed below DAG** | ✅ | | | |
 | **Editor — draft connection → workflow connection** | ✅ | | | |
 | **Editor — execution result applied to state** | ✅ | | | |
 | **Editor — delete selected connection** | ✅ | | | |
@@ -65,6 +69,8 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Canvas — clicking midpoint dot selects connection** | | ✅ | | |
 | **Canvas — empty nodes hint visible when workflow has no nodes** | | ✅ | | |
 | **Canvas — reconnect via midpoint → input port click** | | ✅ | | |
+| **Shell — clicking Auto Layout button repositions stacked diamond nodes** | | ✅ | | |
+| **Shell — auto-layouted diamond (screenshot baseline)** | | ✅ | | 🖼 |
 | **Canvas — node card renders (screenshot baseline)** | | | | 🖼 |
 | **Canvas — port dots + connection midpoint (screenshot baseline)** | | | | 🖼 |
 | **Canvas — full demo app renders (screenshot baseline)** | | | | 🖼 |
@@ -93,12 +99,14 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | `app/shared/.../SharedCommonTest.kt` | `commonTest` | Placeholder |
 | `app/shared/.../EditorRegistryTest.kt` | `commonTest` | Unit |
 | `app/shared/.../GraphynViewportMathTest.kt` | `commonTest` | Unit |
+| `app/shared/.../GraphynAutoLayoutTest.kt` | `commonTest` | Unit |
 | `app/shared/.../SharedLogicDesktopTest.kt` | `jvmTest` | Placeholder |
 | `app/shared/.../MainKmpTest.kt` | `jvmTest` | Screenshot |
 | `app/shared/.../GraphynNodeCardUiTest.kt` | `jvmTest` | Screenshot |
 | `app/shared/.../GraphynNodeDragUiTest.kt` | `jvmTest` | UI |
 | `app/shared/.../GraphynCanvasSurfaceUiTest.kt` | `jvmTest` | UI + Screenshot |
 | `app/shared/.../GraphynEditorShellUiTest.kt` | `jvmTest` + `wasmJsTest` | UI |
+| `app/shared/.../GraphynAutoLayoutUiTest.kt` | `jvmTest` | UI + Screenshot |
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
 | `plugins/sample-logger-ui/.../SampleLoggerEditorPluginTest.kt` | `commonTest` | Unit |

@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import com.ronjunevaldoz.graphyn.editor.shortcuts.GraphynShortcutState
@@ -52,7 +53,7 @@ internal fun GraphynTopToolbar(
         onToggleSettings?.let { ToolbarPill("⚙", selected = settingsActive, onClick = it) }
         ShortcutsToolbarButton(shortcutState = shortcutState)
         ThemeControls(appearanceState = appearanceState)
-        onAutoLayout?.let { ToolbarPill("Auto Layout", onClick = it) }
+        onAutoLayout?.let { ToolbarPill("Auto Layout", modifier = Modifier.testTag("auto-layout-button"), onClick = it) }
         if (canRun) {
             ToolbarPill("Execute", filled = true, onClick = onRun)
             Spacer(Modifier.width(8.dp))

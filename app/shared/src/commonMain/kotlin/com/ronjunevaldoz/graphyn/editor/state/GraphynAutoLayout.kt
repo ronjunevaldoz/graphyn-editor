@@ -38,23 +38,29 @@ internal object GraphynAutoLayout {
         val isolated = nodes.filter { inEdges[it.id].isNullOrEmpty() && outEdges[it.id].isNullOrEmpty() }
         val connected = nodes.filter { it !in isolated }
 
-        // Kahn BFS: topological order + longest-path depth (= column index)
+        // Kahn BFS: topological order + longest-path depth (= column index). If a cycle blocks
+        // further progress, force-enqueue the unvisited node with the fewest unresolved in-edges
+        // so cyclic graphs still get a stable column/order instead of being dumped unordered.
         val depth = connected.associate { it.id to 0 }.toMutableMap()
         val topoOrder = mutableListOf<String>()
         val visited = mutableSetOf<String>()
         val queue = ArrayDeque<String>()
         connected.filter { inEdges[it.id].isNullOrEmpty() }.forEach { queue.add(it.id) }
 
-        while (queue.isNotEmpty()) {
-            val id = queue.removeFirst()
-            if (!visited.add(id)) continue
-            topoOrder.add(id)
-            outEdges[id]?.forEach { succ ->
-                depth[succ] = maxOf(depth[succ] ?: 0, (depth[id] ?: 0) + 1)
-                if (inEdges[succ]?.all { it in visited } == true) queue.add(succ)
+        while (visited.size < connected.size) {
+            while (queue.isNotEmpty()) {
+                val id = queue.removeFirst()
+                if (!visited.add(id)) continue
+                topoOrder.add(id)
+                outEdges[id]?.forEach { succ ->
+                    depth[succ] = maxOf(depth[succ] ?: 0, (depth[id] ?: 0) + 1)
+                    if (succ !in visited && inEdges[succ]?.all { it in visited } == true) queue.add(succ)
+                }
             }
+            val remaining = connected.filter { it.id !in visited }
+            if (remaining.isEmpty()) break
+            queue.add(remaining.minBy { n -> inEdges[n.id]?.count { it !in visited } ?: 0 }.id)
         }
-        connected.filter { it.id !in visited }.forEach { topoOrder.add(it.id) }
 
         // Column x: each column's x = cumulative (max node width + horizGap) of preceding columns
         val maxWidthPerCol = mutableMapOf<Int, Int>()
@@ -66,32 +72,24 @@ internal object GraphynAutoLayout {
         val colX = IntArray(maxDepth + 1)
         for (d in 1..maxDepth) colX[d] = colX[d - 1] + (maxWidthPerCol[d - 1] ?: 0) + horizGap
 
-        // Band height: leaf = nodeHeight + VERT_GAP; branch = max(own height, sum of children).
-        // The max ensures a tall parent never gets a band smaller than itself, preventing
-        // negative y-offsets when children are shorter than the parent node.
-        val fallbackH = { id: String -> (sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height) + vertGap }
-        val bandH = mutableMapOf<String, Int>()
-        topoOrder.reversed().forEach { id ->
-            val children = outEdges[id] ?: emptyList()
-            bandH[id] = if (children.isEmpty()) fallbackH(id)
-                        else maxOf(fallbackH(id), children.sumOf { bandH[it] ?: fallbackH(it) })
-        }
-
-        // Top-down band assignment; node y = bandStart + (bandH - nodeH) / 2 (top-left)
-        val bandStart = mutableMapOf<String, Int>()
-        var cursor = 0
+        // Vertical placement: each node centers on the average y of its already-placed parents
+        // (barycenter), falling back to the next free slot in its column for roots or nodes whose
+        // parents aren't placed yet (cycle remnants). A per-column cursor guarantees nodes in the
+        // same column never overlap, so a shared child (diamond dependency) no longer has its
+        // vertical slot double-booked by every parent that reaches it.
+        val nextFreeY = mutableMapOf<Int, Int>()
         val positions = mutableMapOf<String, IntOffset>()
         topoOrder.forEach { id ->
-            if (id !in bandStart) { bandStart[id] = cursor; cursor += bandH[id] ?: 1 }
-            val start = bandStart.getValue(id)
+            val d = depth[id] ?: 0
             val nodeH = sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height
-            val x = colX.getOrElse(depth[id] ?: 0) { 0 }
-            val y = start + ((bandH[id] ?: nodeH) - nodeH) / 2
-            positions[id] = IntOffset(x, y)
-            var childCursor = start
-            outEdges[id]?.forEach { cId ->
-                if (cId !in bandStart) { bandStart[cId] = childCursor; childCursor += bandH[cId] ?: 1 }
+            val parentCenters = inEdges[id].orEmpty().mapNotNull { pId ->
+                positions[pId]?.let { p -> p.y + (sizes[pId]?.height ?: GraphynCanvasMetrics.NodeSize.height) / 2 }
             }
+            val floor = nextFreeY.getOrElse(d) { 0 }
+            val y = if (parentCenters.isEmpty()) floor
+                    else (parentCenters.sum() / parentCenters.size - nodeH / 2).coerceAtLeast(floor)
+            positions[id] = IntOffset(colX.getOrElse(d) { 0 }, y)
+            nextFreeY[d] = y + nodeH + vertGap
         }
 
         // Grid-arrange isolated nodes below the DAG block
