@@ -30,8 +30,13 @@ internal fun resolveOuteTtsEngine(): TextToSpeechEngine = CommandTextToSpeechEng
     envVarName = "GRAPHYN_TTS_OUTE_EXECUTABLE",
 )
 
-internal fun resolveOcrEngine(): OcrEngine = when {
-//    EnvironmentResolver.get("GRAPHYN_OCR_EXECUTABLE")?.isNotBlank() == true -> CommandOcrEngine()
-    CommandResolver.isAvailable("tesseract") -> createOcrEngine()
-    else -> error("Tesseract not yet installed")
+// Changed 2026-07-08: was `CommandResolver.isAvailable("tesseract") -> createOcrEngine() else ->
+// error(...)`, evaluated eagerly since it's a MediaAiPlugin constructor default argument — on
+// any machine without tesseract, that threw at plugin *construction*, taking down every other
+// media-ai node (including all TTS nodes) along with OCR. The check now happens per-call inside
+// recognize(), so OCR fails loudly only when actually used, exactly like before, but no longer
+// blocks plugin install.
+internal fun resolveOcrEngine(): OcrEngine = OcrEngine { imagePath, language ->
+    check(CommandResolver.isAvailable("tesseract")) { "Tesseract not yet installed" }
+    createOcrEngine().recognize(imagePath, language)
 }
