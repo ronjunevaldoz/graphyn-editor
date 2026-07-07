@@ -15,6 +15,7 @@ internal object GraphynAutoLayout {
     fun computePositions(
         nodes: List<NodeRef>,
         connections: List<ConnectionRef>,
+        minimizeCrossings: Boolean = true,
         nodeSize: (nodeType: String) -> IntSize = { GraphynCanvasMetrics.NodeSize },
     ): Map<String, IntOffset> {
         if (nodes.isEmpty() || nodes.size > MAX_NODES) return emptyMap()
@@ -38,29 +39,10 @@ internal object GraphynAutoLayout {
         val isolated = nodes.filter { inEdges[it.id].isNullOrEmpty() && outEdges[it.id].isNullOrEmpty() }
         val connected = nodes.filter { it !in isolated }
 
-        // Kahn BFS: topological order + longest-path depth (= column index). If a cycle blocks
-        // further progress, force-enqueue the unvisited node with the fewest unresolved in-edges
-        // so cyclic graphs still get a stable column/order instead of being dumped unordered.
-        val depth = connected.associate { it.id to 0 }.toMutableMap()
-        val topoOrder = mutableListOf<String>()
-        val visited = mutableSetOf<String>()
-        val queue = ArrayDeque<String>()
-        connected.filter { inEdges[it.id].isNullOrEmpty() }.forEach { queue.add(it.id) }
-
-        while (visited.size < connected.size) {
-            while (queue.isNotEmpty()) {
-                val id = queue.removeFirst()
-                if (!visited.add(id)) continue
-                topoOrder.add(id)
-                outEdges[id]?.forEach { succ ->
-                    depth[succ] = maxOf(depth[succ] ?: 0, (depth[id] ?: 0) + 1)
-                    if (succ !in visited && inEdges[succ]?.all { it in visited } == true) queue.add(succ)
-                }
-            }
-            val remaining = connected.filter { it.id !in visited }
-            if (remaining.isEmpty()) break
-            queue.add(remaining.minBy { n -> inEdges[n.id]?.count { it !in visited } ?: 0 }.id)
-        }
+        // Column assignment + within-column row order live in GraphynAutoLayoutOrdering; the
+        // ordering optionally runs barycenter sweeps to reduce edge crossings between columns.
+        val ordering = GraphynAutoLayoutOrdering.compute(connected.map { it.id }, inEdges, outEdges, minimizeCrossings)
+        val depth = ordering.depth
 
         // Column x: each column's x = cumulative (max node width + horizGap) of preceding columns
         val maxWidthPerCol = mutableMapOf<Int, Int>()
@@ -79,17 +61,18 @@ internal object GraphynAutoLayout {
         // vertical slot double-booked by every parent that reaches it.
         val nextFreeY = mutableMapOf<Int, Int>()
         val positions = mutableMapOf<String, IntOffset>()
-        topoOrder.forEach { id ->
-            val d = depth[id] ?: 0
-            val nodeH = sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height
-            val parentCenters = inEdges[id].orEmpty().mapNotNull { pId ->
-                positions[pId]?.let { p -> p.y + (sizes[pId]?.height ?: GraphynCanvasMetrics.NodeSize.height) / 2 }
+        ordering.columns.forEachIndexed { d, column ->
+            column.forEach { id ->
+                val nodeH = sizes[id]?.height ?: GraphynCanvasMetrics.NodeSize.height
+                val parentCenters = inEdges[id].orEmpty().mapNotNull { pId ->
+                    positions[pId]?.let { p -> p.y + (sizes[pId]?.height ?: GraphynCanvasMetrics.NodeSize.height) / 2 }
+                }
+                val floor = nextFreeY.getOrElse(d) { 0 }
+                val y = if (parentCenters.isEmpty()) floor
+                        else (parentCenters.sum() / parentCenters.size - nodeH / 2).coerceAtLeast(floor)
+                positions[id] = IntOffset(colX.getOrElse(d) { 0 }, y)
+                nextFreeY[d] = y + nodeH + vertGap
             }
-            val floor = nextFreeY.getOrElse(d) { 0 }
-            val y = if (parentCenters.isEmpty()) floor
-                    else (parentCenters.sum() / parentCenters.size - nodeH / 2).coerceAtLeast(floor)
-            positions[id] = IntOffset(colX.getOrElse(d) { 0 }, y)
-            nextFreeY[d] = y + nodeH + vertGap
         }
 
         // Grid-arrange isolated nodes below the DAG block

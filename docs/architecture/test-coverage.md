@@ -32,6 +32,7 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Editor — auto-layout: wide branching tree stays non-overlapping** | ✅ | | | |
 | **Editor — auto-layout: cyclic graph still lays out without hanging** | ✅ | | | |
 | **Editor — auto-layout: isolated nodes grid-placed below DAG** | ✅ | | | |
+| **Editor — auto-layout: barycenter sweep reduces edge crossings vs BFS order** | ✅ | | | |
 | **Editor — draft connection → workflow connection** | ✅ | | | |
 | **Editor — execution result applied to state** | ✅ | | | |
 | **Editor — delete selected connection** | ✅ | | | |
@@ -71,6 +72,8 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Canvas — reconnect via midpoint → input port click** | | ✅ | | |
 | **Shell — clicking Auto Layout button repositions stacked diamond nodes** | | ✅ | | |
 | **Shell — auto-layouted diamond (screenshot baseline)** | | ✅ | | 🖼 |
+| **Shell — BFS layout button repositions nodes** | | ✅ | | |
+| **Shell — BFS vs crossing-minimized layout (screenshot baselines)** | | ✅ | | 🖼 |
 | **Canvas — node card renders (screenshot baseline)** | | | | 🖼 |
 | **Canvas — port dots + connection midpoint (screenshot baseline)** | | | | 🖼 |
 | **Canvas — full demo app renders (screenshot baseline)** | | | | 🖼 |
@@ -107,6 +110,7 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | `app/shared/.../GraphynCanvasSurfaceUiTest.kt` | `jvmTest` | UI + Screenshot |
 | `app/shared/.../GraphynEditorShellUiTest.kt` | `jvmTest` + `wasmJsTest` | UI |
 | `app/shared/.../GraphynAutoLayoutUiTest.kt` | `jvmTest` | UI + Screenshot |
+| `app/shared/.../GraphynAutoLayoutScreenshotTest.kt` | `jvmTest` | Screenshot |
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
 | `plugins/sample-logger-ui/.../SampleLoggerEditorPluginTest.kt` | `commonTest` | Unit |

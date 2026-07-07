@@ -31,6 +31,7 @@ internal fun GraphynTopToolbar(
     canRun: Boolean,
     onRun: () -> Unit,
     onAutoLayout: (() -> Unit)? = null,
+    onAutoLayoutBfs: (() -> Unit)? = null,
     onHome: (() -> Unit)? = null,
     workflowName: String? = null,
     onToggleAi: (() -> Unit)? = null,
@@ -54,6 +55,7 @@ internal fun GraphynTopToolbar(
         ShortcutsToolbarButton(shortcutState = shortcutState)
         ThemeControls(appearanceState = appearanceState)
         onAutoLayout?.let { ToolbarPill("Auto Layout", modifier = Modifier.testTag("auto-layout-button"), onClick = it) }
+        onAutoLayoutBfs?.let { ToolbarPill("BFS", modifier = Modifier.testTag("auto-layout-bfs-button"), onClick = it) }
         if (canRun) {
             ToolbarPill("Execute", filled = true, onClick = onRun)
             Spacer(Modifier.width(8.dp))

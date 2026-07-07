@@ -48,6 +48,10 @@ internal fun GraphynEditorState.handleDispatch(intent: GraphynEditorIntent) {
             val result = performAutoLayout() ?: return
             fitToContent(positions = result.positions, sizes = result.sizes)
         }
+        GraphynEditorIntent.AutoLayoutBfs -> {
+            val result = performAutoLayout(minimizeCrossings = false) ?: return
+            fitToContent(positions = result.positions, sizes = result.sizes)
+        }
         is GraphynEditorIntent.UpdateNodeConfig -> withHistory { updateNodeConfig(intent.nodeId, intent.key, intent.value) }
         GraphynEditorIntent.CreateGroupFromSelection -> createGroupFromSelection()
         is GraphynEditorIntent.DeleteGroup -> groups = groups.filterNot { it.id == intent.groupId }

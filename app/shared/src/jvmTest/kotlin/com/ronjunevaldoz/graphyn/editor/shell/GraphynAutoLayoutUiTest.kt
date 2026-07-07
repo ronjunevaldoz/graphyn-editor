@@ -86,6 +86,33 @@ class GraphynAutoLayoutUiTest {
     }
 
     @Test
+    fun bfsLayoutButtonAlsoRepositionsStackedNodes() {
+        val state = GraphynEditorState(diamondWorkflow(), nodeSpecs = nodeSpecs()).apply {
+            setNodePosition("root", IntOffset(0, 0))
+            setNodePosition("b", IntOffset(0, 0))
+            setNodePosition("c", IntOffset(0, 0))
+            setNodePosition("d", IntOffset(0, 0))
+        }
+
+        rule.setContent {
+            GraphynEditorShell(
+                dependencies = GraphynEditorShellDependencies(nodeSpecs = nodeSpecs()),
+                state = state,
+                appearanceState = rememberGraphynAppearanceState(),
+            )
+        }
+
+        rule.onNodeWithTag("auto-layout-bfs-button").performClick()
+        rule.waitUntil(timeoutMillis = 5_000) {
+            state.nodePositionsByNodeId.values.toSet().size == 4
+        }
+
+        val positions = state.nodePositionsByNodeId
+        assertTrue(positions.getValue("d").x > positions.getValue("b").x)
+        assertTrue(positions.getValue("d").x > positions.getValue("c").x)
+    }
+
+    @Test
     fun autoLayoutedDiamondScreenshot() {
         val state = GraphynEditorState(diamondWorkflow(), nodeSpecs = nodeSpecs())
 

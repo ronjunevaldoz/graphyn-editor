@@ -71,6 +71,45 @@ class GraphynAutoLayoutTest {
         assertNoOverlaps(positions)
     }
 
+    private fun countCrossings(positions: Map<String, IntOffset>, edges: List<Pair<String, String>>): Int {
+        var crossings = 0
+        for (i in edges.indices) {
+            for (j in i + 1 until edges.size) {
+                val (a1, b1) = edges[i]
+                val (a2, b2) = edges[j]
+                val sameSpan = positions.getValue(a1).x == positions.getValue(a2).x &&
+                    positions.getValue(b1).x == positions.getValue(b2).x
+                if (sameSpan) {
+                    val fromDelta = positions.getValue(a1).y - positions.getValue(a2).y
+                    val toDelta = positions.getValue(b1).y - positions.getValue(b2).y
+                    if (fromDelta * toDelta < 0) crossings++
+                }
+            }
+        }
+        return crossings
+    }
+
+    @Test
+    fun crossingMinimizationUntanglesEdgesThatBfsOrderCrosses() {
+        // c waits for both parents (a and b), so BFS enqueues d first and c lands below it,
+        // crossing a→c over b→d. Barycenter reordering puts c (parent avg 0.5) above d (1.0).
+        val nodes = listOf("a", "b", "c", "d").map(::node)
+        val edgePairs = listOf("b" to "d", "a" to "c", "b" to "c")
+        val connections = edgePairs.map { (from, to) -> conn(from, to) }
+
+        val bfs = GraphynAutoLayout.computePositions(nodes, connections, minimizeCrossings = false) { size }
+        val minimized = GraphynAutoLayout.computePositions(nodes, connections, minimizeCrossings = true) { size }
+
+        val bfsCrossings = countCrossings(bfs, edgePairs)
+        val minimizedCrossings = countCrossings(minimized, edgePairs)
+        assertTrue(bfsCrossings > 0, "expected the BFS layout of this graph to have crossings")
+        assertTrue(
+            minimizedCrossings < bfsCrossings,
+            "expected fewer crossings after minimization: $minimizedCrossings vs $bfsCrossings",
+        )
+        assertNoOverlaps(minimized)
+    }
+
     @Test
     fun isolatedNodesAreGridPlacedBelowTheConnectedGraph() {
         val nodes = listOf(node("root"), node("child"), node("loner1"), node("loner2"))

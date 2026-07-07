@@ -53,6 +53,8 @@ sealed interface GraphynEditorIntent {
 
     // Layout
     data object AutoLayout : GraphynEditorIntent
+    /** Auto layout keeping BFS visit order within columns — no edge-crossing minimization. */
+    data object AutoLayoutBfs : GraphynEditorIntent
 
     // Groups
     data object CreateGroupFromSelection : GraphynEditorIntent

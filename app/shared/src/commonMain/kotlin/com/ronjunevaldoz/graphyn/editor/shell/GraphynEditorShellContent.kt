@@ -92,6 +92,7 @@ internal fun GraphynEditorShellContent(
                 canRun = executionEngine != null,
                 onRun = { executionEngine?.let { state.execute(it) } },
                 onAutoLayout = { state.dispatch(GraphynEditorIntent.AutoLayout) },
+                onAutoLayoutBfs = { state.dispatch(GraphynEditorIntent.AutoLayoutBfs) },
                 onHome = dependencies.onHome,
                 workflowName = if (dependencies.onHome != null) state.workflow?.name else null,
                 onToggleAi = if (assistant != null) ({ aiOpen = !aiOpen }) else null,
