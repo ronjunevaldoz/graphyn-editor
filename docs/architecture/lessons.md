@@ -192,3 +192,24 @@ Reference points for "is this run just slow, or is something actually wrong" —
   the override into `ensureReady()`/`ready()` explicitly; they call `ping`/`status`/`jobs`
   internally, so without passing the resolved `conn` through, readiness would silently check the
   wrong server while generation hit the right one.
+- Auto-layout "nodes pile up on the canvas edge" had three compounding causes, none in the layering
+  itself: `GraphynNodeLayoutState.clamp()` clamped every node with a fixed 280×180
+  `GraphynCanvasMetrics.NodeSize` (so all overflowing nodes collapsed onto the *same* max-edge
+  coordinate), `GraphynAutoLayout` centered its bounding box on the 8192×6144 logical canvas without
+  checking the box actually fit, and annotation placement (`graphMinX - maxAnnW - gap`) went
+  negative and got clamp-collapsed to 0. Rule: any coordinate producer that feeds
+  `setNodePosition` must stay within canvas bounds itself — the clamp is a last resort that
+  destroys relative layout, not a fitting mechanism. Fix pattern: per-node size resolution lives in
+  one shared `GraphynEditorState.resolveNodeSize(type)` extension (registry → spec-derived
+  FieldCard → default), injected into `GraphynNodeLayoutState` as a `(String) -> IntSize` lambda.
+- Tree-band vertical placement (bandH = sum of children, first parent claims child's bandStart)
+  double-books space for diamond dependencies — a shared child belongs to *every* parent's band.
+  Replaced with per-column barycenter placement: y = average of placed parents' centers, floored by
+  a per-column `nextFreeY` cursor. Simpler (fewer lines) and overlap-free by construction.
+- Writing a test that shows BFS layout *crossing* edges is subtle: with single-parent children, BFS
+  visit order naturally mirrors parent order, so edges don't cross. A crossing needs a multi-parent
+  child whose enqueue is delayed until its last parent is visited (e.g. edges `b→d, a→c, b→c`: `c`
+  waits for both `a` and `b`, so `d` enqueues first and `a→c` must cross `b→d`).
+- Kotlin gotcha: adding a new parameter *after* a trailing-lambda parameter silently breaks every
+  `f(x, y) { ... }` call site (the lambda binds to the new last param). Keep the lambda param last
+  when extending a signature.
