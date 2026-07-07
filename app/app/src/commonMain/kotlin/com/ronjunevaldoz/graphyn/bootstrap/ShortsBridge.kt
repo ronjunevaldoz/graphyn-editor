@@ -67,9 +67,11 @@ internal fun imageMotionSceneEditSubgraph(
     imageCount: Int = 2,
     width: Int = SHORTS_WIDTH,
     height: Int = SHORTS_HEIGHT,
+    imagePathSidecarPath: String? = null,
 ) = com.ronjunevaldoz.graphyn.plugins.shorts.imageMotionSceneEditSubgraph(
     id = id, referenceImagePath = referenceImagePath, editInstruction = editInstruction,
     imageCount = imageCount, width = width, height = height,
+    imagePathSidecarPath = imagePathSidecarPath,
 )
 
 /** @see com.ronjunevaldoz.graphyn.plugins.shorts.characterSheetSubgraphDynamic */

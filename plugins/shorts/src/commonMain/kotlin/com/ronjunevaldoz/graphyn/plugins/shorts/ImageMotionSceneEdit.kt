@@ -28,6 +28,7 @@ public fun imageMotionSceneEditSubgraph(
     imageCount: Int = 2,
     width: Int = ShortsConstants.WIDTH,
     height: Int = ShortsConstants.HEIGHT,
+    imagePathSidecarPath: String? = null,
 ): WorkflowDefinition = WorkflowDefinition(
     id = id,
     name = "Image Motion Scene (Edit)",
@@ -61,6 +62,14 @@ public fun imageMotionSceneEditSubgraph(
             "seed" to i(-1),
             "batch_count" to i(1),
         )))
+        if (imagePathSidecarPath != null) {
+            // Persists the edited image's path so a later edit conditions on THIS result, not
+            // the pre-edit image that was passed in as referenceImagePath — see
+            // imageMotionSceneSubgraphInternal's identical sidecar for the same reasoning.
+            add(NodeRef("imagePathSave", "io.file_write", config = mapOf(
+                "path" to s(imagePathSidecarPath), "append" to WorkflowValue.BooleanValue(false),
+            )))
+        }
         add(NodeRef("import", "media.image_import"))
         add(NodeRef("kenBurns", "media.ken_burns", config = mapOf(
             "duration_ms" to d(imageCount * 1000.0),
@@ -82,6 +91,7 @@ public fun imageMotionSceneEditSubgraph(
         add(ConnectionRef("ctx", "context", "txt2img", "context"))
         add(ConnectionRef("sampler", "sampler", "txt2img", "sampler"))
         add(ConnectionRef("idCond", "id_cond", "txt2img", "id_cond"))
+        if (imagePathSidecarPath != null) add(ConnectionRef("txt2img", "image", "imagePathSave", "content"))
         add(ConnectionRef("txt2img", "image", "import", "path"))
         add(ConnectionRef("import", "image", "kenBurns", "image"))
         add(ConnectionRef("kenBurns", "video", "preview", "value"))

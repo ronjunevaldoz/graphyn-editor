@@ -9,7 +9,7 @@ private fun s(value: String) = WorkflowValue.StringValue(value)
 private fun d(value: Double) = WorkflowValue.DoubleValue(value)
 private fun i(value: Int) = WorkflowValue.IntValue(value)
 
-private const val STORYBOARD_IMAGES_PER_SCENE = 2
+internal const val STORYBOARD_IMAGES_PER_SCENE = 2
 internal const val STORYBOARD_SCENE_DURATION_MS = STORYBOARD_IMAGES_PER_SCENE * 1000.0
 internal const val STORYBOARD_OUTPUT_BASE = "image-motion-storyboard-short"
 

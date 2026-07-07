@@ -8,8 +8,6 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 private fun s(value: String) = WorkflowValue.StringValue(value)
 private fun d(value: Double) = WorkflowValue.DoubleValue(value)
 
-private const val STORYBOARD_IMAGES_PER_SCENE_LOCAL = 2
-
 /**
  * Regenerates a single scene, re-stitches it with the *other* scenes' already-saved clips (see
  * [STORYBOARD_OUTPUT_BASE] in [imageMotionStoryboardShortWorkflow]) instead of redoing every
@@ -41,17 +39,23 @@ internal fun regenerateSceneWorkflow(
     name = "Image Motion Short (Regenerate Scene $sceneIndex)",
     nodes = buildList {
         add(NodeRef("unloadOllama", OLLAMA_UNLOAD_NODE_TYPE))
+        // Both branches persist their result's image path to the same sidecar the storyboard
+        // run writes — otherwise a later edit would condition on whatever image existed *before*
+        // this regeneration/edit instead of the one it just produced.
+        val sidecarPath = "$STORYBOARD_OUTPUT_BASE.scene$sceneIndex.image.txt"
         val regenSceneSubgraph = if (editMode) {
             imageMotionSceneEditSubgraph(
                 id = "regen-scene-edit-$sceneIndex",
                 referenceImagePath = requireNotNull(editReferenceImagePath) { "editMode requires editReferenceImagePath" },
                 editInstruction = requireNotNull(editInstruction) { "editMode requires editInstruction" },
-                imageCount = STORYBOARD_IMAGES_PER_SCENE_LOCAL,
+                imageCount = STORYBOARD_IMAGES_PER_SCENE,
+                imagePathSidecarPath = sidecarPath,
             )
         } else {
             imageMotionSceneSubgraph(
-                prompt = prompt, niche = niche, imageCount = STORYBOARD_IMAGES_PER_SCENE_LOCAL,
+                prompt = prompt, niche = niche, imageCount = STORYBOARD_IMAGES_PER_SCENE,
                 visualStyle = visualStyle, character = character,
+                imagePathSidecarPath = sidecarPath,
             )
         }
         add(NodeRef("regenScene", SHORTS_SCENE_SUBGRAPH_NODE_TYPE, subgraph = regenSceneSubgraph))
