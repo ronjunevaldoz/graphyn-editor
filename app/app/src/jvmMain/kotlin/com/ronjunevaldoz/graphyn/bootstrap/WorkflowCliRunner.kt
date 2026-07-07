@@ -20,6 +20,10 @@ private const val RECAPTION_WORKFLOW_KEY = "recaption"
 private const val REGENERATE_SCENE_WORKFLOW_KEY = "regenerate-scene"
 private const val SCHEMA_MODE_KEY = "schema"
 
+private fun s(value: String) = WorkflowValue.StringValue(value)
+private fun d(value: Double) = WorkflowValue.DoubleValue(value)
+private fun i(value: Int) = WorkflowValue.IntValue(value)
+
 /**
  * Headless runner for any [WorkflowCatalog] entry, plus three storyboard modes that aren't fixed
  * catalog entries since they need CLI args at build time:
@@ -31,10 +35,20 @@ private const val SCHEMA_MODE_KEY = "schema"
  * Usage:
  * ```
  * ./gradlew :app:app:runWorkflowCli --args="workflow=storyboard topic='a cozy coffee shop'"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=storyboard topic='...' width=480 height=848"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=storyboard topic='...' character_sheet=true"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption font_size=60 text_color='#FFDD00'"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption tts_engine=say"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption tts_engine=qwen3 voice=Ryan"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=regenerate-scene index=1 prompt='a new prompt'"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=regenerate-scene index=1 edit=true instruction='change the shirt to red'"
  * ./gradlew :app:app:runWorkflowCli --args="schema workflow=storyboard"
  * ```
+ * `tts_engine=say|qwen3|oute` (optional on `recaption`/`regenerate-scene`) swaps the narration
+ * voice/engine without touching Ollama/Flux — see [resolveTtsEngineChoice] for the per-engine
+ * option keys (`voice_id`/`speed` for say; `voice`/`reference_audio_path`/`temperature` for
+ * qwen3; `language`/`voice`/`instruct`/`temperature`/`seed` for oute).
+ *
  * `workflow` matches a [WorkflowCatalog] entry name (case-insensitive) or one of the modes above.
  */
 fun main(args: Array<String>) = runBlocking {
@@ -69,9 +83,43 @@ fun main(args: Array<String>) = runBlocking {
     Unit
 }
 
+/**
+ * Reads `tts_engine=say|qwen3|oute` plus that engine's own option keys, falling back to
+ * [default] (each workflow's current hardcoded voice/engine) when `tts_engine=` is omitted —
+ * so existing invocations without it are unaffected.
+ */
+private fun resolveTtsEngineChoice(options: Map<String, String>, default: TtsEngineChoice): TtsEngineChoice {
+    val engine = options["tts_engine"] ?: return default
+    val params: Map<String, WorkflowValue> = when (engine) {
+        "say" -> mapOf(
+            "voice_id" to s(options["voice_id"] ?: "Samantha"),
+            "speed" to d(options["speed"]?.toDoubleOrNull() ?: 1.0),
+        )
+        "qwen3" -> mapOf(
+            "voice" to s(options["voice"] ?: "Ryan"),
+            "reference_audio_path" to s(options["reference_audio_path"] ?: ""),
+            "temperature" to d(options["temperature"]?.toDoubleOrNull() ?: 0.1),
+        )
+        "oute" -> mapOf(
+            "language" to s(options["language"] ?: "en"),
+            "voice" to s(options["voice"] ?: "default"),
+            "instruct" to s(options["instruct"] ?: ""),
+            "temperature" to d(options["temperature"]?.toDoubleOrNull() ?: 0.7),
+            "seed" to i(options["seed"]?.toIntOrNull() ?: 42),
+        )
+        else -> error("Unknown tts_engine '$engine'. Use say, qwen3, or oute.")
+    }
+    return TtsEngineChoice(engine, params)
+}
+
 private fun resolveWorkflow(workflowName: String, options: Map<String, String>): WorkflowDefinition = when {
     workflowName.equals(STORYBOARD_WORKFLOW_KEY, ignoreCase = true) ->
-        imageMotionStoryboardShortWorkflow(options["topic"] ?: "a quick weeknight pasta dinner")
+        imageMotionStoryboardShortWorkflow(
+            topic = options["topic"] ?: "a quick weeknight pasta dinner",
+            width = options["width"]?.toInt() ?: SHORTS_WIDTH,
+            height = options["height"]?.toInt() ?: SHORTS_HEIGHT,
+            useCharacterSheet = options["character_sheet"]?.toBooleanStrictOrNull() ?: false,
+        )
 
     workflowName.equals(RECAPTION_WORKFLOW_KEY, ignoreCase = true) -> {
         val styleOverrides = options.filterKeys { it in CAPTION_STYLE_DEFAULTS }
@@ -81,6 +129,7 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
             storyboardJsonPath = options["storyboard"] ?: "$STORYBOARD_OUTPUT_BASE.storyboard.json",
             styleOverrides = styleOverrides,
             outputPath = options["output"] ?: "$STORYBOARD_OUTPUT_BASE.recaptioned.mp4",
+            ttsEngine = resolveTtsEngineChoice(options, TtsEngineChoice("qwen3", mapOf("voice" to s("Ryan")))),
         )
     }
 
@@ -88,6 +137,19 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
         val index = options["index"]?.toIntOrNull()
             ?: error("Missing index=<0..${STORYBOARD_SCENE_COUNT - 1}> for $REGENERATE_SCENE_WORKFLOW_KEY")
         val storyboardPath = options["storyboard"] ?: "$STORYBOARD_OUTPUT_BASE.storyboard.json"
+
+        val editRequested = options["edit"]?.toBooleanStrictOrNull() ?: false
+        val sidecarPath = "$STORYBOARD_OUTPUT_BASE.scene$index.image.txt"
+        val sidecarFile = File(sidecarPath)
+        val editMode = editRequested && sidecarFile.exists()
+        if (editRequested && !sidecarFile.exists()) {
+            println("WARNING: edit=true requested but no saved image path at $sidecarPath — falling back to full regeneration.")
+        }
+        val editInstruction = options["instruction"]
+        require(!editMode || !editInstruction.isNullOrBlank()) {
+            "workflow=regenerate-scene edit=true requires instruction='...' — an edit instruction, not a scene description."
+        }
+
         regenerateSceneWorkflow(
             sceneIndex = index,
             prompt = options["prompt"] ?: readStoryboardScenePrompt(storyboardPath, index),
@@ -96,6 +158,13 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
             character = readStoryboardField(storyboardPath, "character"),
             storyboardJsonPath = storyboardPath,
             outputPath = options["output"] ?: "$STORYBOARD_OUTPUT_BASE.mp4",
+            ttsEngine = resolveTtsEngineChoice(
+                options,
+                TtsEngineChoice("say", mapOf("voice_id" to s("Samantha"), "speed" to d(1.0))),
+            ),
+            editMode = editMode,
+            editReferenceImagePath = if (editMode) sidecarFile.readText().trim() else null,
+            editInstruction = if (editMode) editInstruction else null,
         )
     }
 

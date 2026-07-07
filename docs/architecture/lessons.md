@@ -64,6 +64,52 @@ Reference points for "is this run just slow, or is something actually wrong" —
   pipeline scene-timing variance thread; root cause not yet confirmed (Ollama VRAM contention,
   fixed `sd-wrapper.cpp` compute-graph reuse, and idle VRAM margin were all tested and ruled out
   as the sole cause under controlled conditions).
+- **2026-07-07 update:** re-ran `workflow=regenerate-scene` (one Flux scene regen + stitch +
+  caption + TTS + encode against the same host) after a round of server-sd native fixes made the
+  same day — `te=cpu` text-encoder-offload was dead code before this and is now actually wired,
+  and a VAE-tiling override bug (an env-only block that could silently force tiling with a
+  hardcoded `rel_size` regardless of Kotlin config) was fixed. Result: **89s total** for the whole
+  16-node run, not 400-560s — the anomaly did not reproduce. Not a confirmed root-cause fix (only
+  one re-test, and the fixes targeted different specific bugs, mostly on the Wan video path), but
+  a strong signal worth noting before assuming this is still an open problem.
+- **2026-07-07 Modal L4 480p baseline:** full 3-scene `workflow=storyboard` (Ollama + 3 Flux
+  calls at 480x848 + Ken Burns + stitch + caption + TTS + encode, 25 nodes) against the Modal
+  `serve_image` (L4) deployment instead of the Windows host: **99s total, zero errors.** Fixed a
+  real blocker along the way — `ImageMotionScene.kt`'s hardcoded `FLUX_T5XXL` path
+  (`t5-v1_1-xxl-encoder-Q3_K_S.gguf`) doesn't exist on the Modal volume or in server-sd's model
+  catalog; switched to `t5xxl_Q5_K_M.gguf`, which does. Output verified visually (real food
+  photography, correctly-timed burned-in captions, correct 480x848 dimensions). `width`/`height`
+  are now optional params on `imageMotionSceneSubgraph(Dynamic)`/`imageMotionStoryboardShortWorkflow`
+  (default to `ShortsConstants.WIDTH/HEIGHT`) instead of being hardcoded, and the CLI runner
+  accepts `width=`/`height=` args, so a Modal/low-res test run no longer requires touching the
+  shared constants other consumers rely on.
+- **2026-07-07 character-sheet reference-image consistency, first real test:** added
+  `characterSheetSubgraphDynamic` (`plugins/shorts/.../CharacterSheetScene.kt`) — one Flux
+  portrait of the storyboard's `character` field, generated once before the scene loop — and a new
+  `useCharacterSheet` param on `imageMotionSceneSubgraphDynamic` that swaps each scene's diffusion
+  checkpoint to FLUX Kontext, adds an `sd.id_cond` node wired to the character sheet's image
+  (auto-wrapped into a one-element list by `buildInputMap`'s existing list-port collection logic —
+  no wrapper node needed, verified by reading `WorkflowExecutionScheduling.kt` directly), and bumps
+  sampling from 4 to 20 steps (matching `DemoFluxKontextImg2ImgDef.kt`'s validated config). Full
+  pipeline with this enabled, against Modal L4 at 480x848: **183s total, all 26 nodes succeeded.**
+  Visually verified across all 3 scene clips: same dark hair, same face shape, same skin tone, same
+  general styling in every scene — a real, positive result, not just "no errors." This was
+  genuinely untested before (Kontext's only prior validated use was editing one specific photo, not
+  conditioning multiple different scene compositions off a reusable reference) — it works
+  noticeably better than the text-only baseline. Off by default (`useCharacterSheet = false`) since
+  it costs meaningfully more time per scene; opt in via `character_sheet=true` on the CLI runner.
+- **2026-07-07 multi-reference (3 poses/expressions) + full 720x1280 resolution:** generalized
+  `characterSheetSubgraphDynamic` to take a `poseInstruction`/`expressionDetail` (see
+  `CharacterSheetPoses`: NEUTRAL/SMILING/ACTION) and call it 3x as separate outer nodes, all wired
+  into every scene's `ref_images` list port (multiple connections to one list-typed port collect
+  automatically — confirmed no wrapper/adapter node needed). A single grid image with multiple
+  poses was considered and rejected: Kontext conditions on one reference as a whole and can't be
+  told "use only this panel," so a composite would likely confuse it rather than help — separate
+  images into the same list port is the supported shape. Full pipeline, 3 references, full
+  720x1280 (not the 480p test tier) against Modal L4: **398s total, all 28 nodes succeeded.**
+  Visual result was, if anything, more convincing than the single-reference test — same
+  hair-in-a-bun styling, same face shape, same warm cinematic look recognizable across all 3
+  scenes. Still comfortably a single test iteration (under 7 minutes), not the original 20+.
 
 ### Known issues (open as of this writing)
 

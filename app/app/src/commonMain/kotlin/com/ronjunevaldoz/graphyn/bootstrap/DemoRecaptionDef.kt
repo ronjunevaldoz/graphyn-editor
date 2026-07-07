@@ -9,15 +9,31 @@ private fun s(value: String) = WorkflowValue.StringValue(value)
 private fun d(value: Double) = WorkflowValue.DoubleValue(value)
 
 /**
+ * Which TTS node type (and its own engine-specific config) to use for narration — one of
+ * `media.text_to_speech.say` / `.qwen3` / `.oute` (see `MediaAiSpecs.kt` in `plugins/media-ai`).
+ * [engine] must be one of those three suffixes; [params] are that node's config values.
+ */
+internal data class TtsEngineChoice(
+    val engine: String,
+    val params: Map<String, WorkflowValue>,
+) {
+    init {
+        require(engine in setOf("say", "qwen3", "oute")) { "Unknown tts_engine '$engine'. Use say, qwen3, or oute." }
+    }
+}
+
+/**
  * Restyles captions/narration on an already-stitched clip without redoing the Ollama + Flux
  * generation that produced it — reads back the `.stitched.mp4` and `.storyboard.json` that
- * [imageMotionStoryboardShortWorkflow] persists (see [STORYBOARD_OUTPUT_BASE]).
+ * [imageMotionStoryboardShortWorkflow] persists (see [STORYBOARD_OUTPUT_BASE]). [ttsEngine] lets
+ * a later run swap the narration voice/engine (say/qwen3/oute) without touching Ollama/Flux at all.
  */
 internal fun recaptionWorkflow(
     stitchedVideoPath: String,
     storyboardJsonPath: String,
     styleOverrides: Map<String, WorkflowValue> = CAPTION_STYLE_DEFAULTS,
     outputPath: String = "$STORYBOARD_OUTPUT_BASE.recaptioned.mp4",
+    ttsEngine: TtsEngineChoice = TtsEngineChoice("qwen3", mapOf("voice" to s("Ryan"))),
 ) = WorkflowDefinition(
     id = "image-motion-storyboard-recaption",
     name = "Image Motion Short (Recaption)",
@@ -31,9 +47,7 @@ internal fun recaptionWorkflow(
         )),
         NodeRef("captionStyle", CAPTION_STYLE_NODE_TYPE, config = CAPTION_STYLE_DEFAULTS + styleOverrides),
         NodeRef("captionOverlay", "media.caption_overlay"),
-        NodeRef("narrate", "media.text_to_speech", config = mapOf(
-            "language" to s("en"), "voice_id" to s("Samantha"), "speed" to d(1.0),
-        )),
+        NodeRef("narrate", "media.text_to_speech.${ttsEngine.engine}", config = ttsEngine.params),
         NodeRef("encode", "media.video_encode", config = mapOf(
             "output_path" to s(outputPath), "bitrate" to s("high"), "codec" to s("h264"),
         )),

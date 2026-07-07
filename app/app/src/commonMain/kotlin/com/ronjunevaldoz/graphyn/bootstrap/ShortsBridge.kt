@@ -38,13 +38,52 @@ internal fun imageMotionSceneSubgraph(
     imageCount: Int = 2,
     visualStyle: String = "",
     character: String = "",
+    width: Int = SHORTS_WIDTH,
+    height: Int = SHORTS_HEIGHT,
+    imagePathSidecarPath: String? = null,
 ) = com.ronjunevaldoz.graphyn.plugins.shorts.imageMotionSceneSubgraph(
     prompt = prompt, niche = niche, imageCount = imageCount, visualStyle = visualStyle, character = character,
+    width = width, height = height, imagePathSidecarPath = imagePathSidecarPath,
 )
 
 /** @see com.ronjunevaldoz.graphyn.plugins.shorts.imageMotionSceneSubgraphDynamic */
-internal fun imageMotionSceneSubgraphDynamic(id: String, imageCount: Int = 2) =
-    com.ronjunevaldoz.graphyn.plugins.shorts.imageMotionSceneSubgraphDynamic(id = id, imageCount = imageCount)
+internal fun imageMotionSceneSubgraphDynamic(
+    id: String,
+    imageCount: Int = 2,
+    width: Int = SHORTS_WIDTH,
+    height: Int = SHORTS_HEIGHT,
+    useCharacterSheet: Boolean = false,
+    imagePathSidecarPath: String? = null,
+) = com.ronjunevaldoz.graphyn.plugins.shorts.imageMotionSceneSubgraphDynamic(
+    id = id, imageCount = imageCount, width = width, height = height, useCharacterSheet = useCharacterSheet,
+    imagePathSidecarPath = imagePathSidecarPath,
+)
+
+/** @see com.ronjunevaldoz.graphyn.plugins.shorts.imageMotionSceneEditSubgraph */
+internal fun imageMotionSceneEditSubgraph(
+    id: String,
+    referenceImagePath: String,
+    editInstruction: String,
+    imageCount: Int = 2,
+    width: Int = SHORTS_WIDTH,
+    height: Int = SHORTS_HEIGHT,
+) = com.ronjunevaldoz.graphyn.plugins.shorts.imageMotionSceneEditSubgraph(
+    id = id, referenceImagePath = referenceImagePath, editInstruction = editInstruction,
+    imageCount = imageCount, width = width, height = height,
+)
+
+/** @see com.ronjunevaldoz.graphyn.plugins.shorts.characterSheetSubgraphDynamic */
+internal fun characterSheetSubgraphDynamic(
+    id: String,
+    width: Int = SHORTS_WIDTH,
+    height: Int = SHORTS_HEIGHT,
+    poseInstruction: String = com.ronjunevaldoz.graphyn.plugins.shorts.CharacterSheetPoses.NEUTRAL,
+    expressionDetail: String = "",
+) = com.ronjunevaldoz.graphyn.plugins.shorts.characterSheetSubgraphDynamic(
+    id = id, width = width, height = height, poseInstruction = poseInstruction, expressionDetail = expressionDetail,
+)
+
+internal typealias CharacterSheetPoses = com.ronjunevaldoz.graphyn.plugins.shorts.CharacterSheetPoses
 
 /** @see com.ronjunevaldoz.graphyn.plugins.shorts.storyboardGeneratorSubgraph */
 internal fun storyboardGeneratorSubgraph(topic: String) =
