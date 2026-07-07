@@ -9,10 +9,13 @@ import com.ronjunevaldoz.graphyn.templates.sdTxt2ImgWorkflow
 // diffusion checkpoint but the same Flux text/vae encoders, per stable-diffusion.cpp's docs/kontext.md.
 private const val FLUX_KONTEXT_DIFFUSION = "/models/flux/diffusion/flux1-kontext-dev-Q4_K_S.gguf"
 private const val FLUX_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
-// Q3_K_S instead of Q5_K_M — the larger quant left almost no VRAM headroom for inference on a
-// 12GB card once combined with Kontext's own diffusion weights (confirmed: Kontext + clip_l +
-// t5xxl_Q5_K_M + vae alone used ~11GB, forcing CPU offload and 30+ minute generations).
-private const val FLUX_T5XXL = "/models/flux/text_encoder/t5-v1_1-xxl-encoder-Q3_K_S.gguf"
+// t5xxl_Q5_K_M.gguf — t5-v1_1-xxl-encoder-Q3_K_S.gguf (the previous value here) doesn't exist on
+// the Modal deployment's model volume or in server-sd's own model catalog (confirmed via
+// /api/sd/models/exists), so this path always failed to load. Q5_K_M + Kontext's own diffusion
+// weights left almost no VRAM headroom on a 12GB card (~11GB, forcing CPU offload and 30+ minute
+// generations) — handled below via `clip_on_cpu` on the context node instead of a smaller quant;
+// confirmed working this way against both the Windows host and Modal L4 this session.
+private const val FLUX_T5XXL = "/models/flux/text_encoder/t5xxl_Q5_K_M.gguf"
 private const val FLUX_VAE = "/models/flux/vae/ae.safetensors"
 private const val FLUX_KONTEXT_INIT_IMAGE = "../../app/app/src/commonMain/resources/media/input.png"
 
