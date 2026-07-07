@@ -12,6 +12,18 @@ const val CATEGORY_MEDIA_AI = "graphyn.media.ai"
 
 private val STT_LANGUAGES = listOf("en", "zh", "es", "fr", "de", "ja", "ko")
 
+/**
+ * Single source of truth for the qwen3/oute TTS defaults — referenced by MediaAiSpecs' node
+ * defaultValues, MediaAiPlugin's executor fallbacks, and graphyn2's WorkflowCliRunner, so the
+ * three don't restate the same numbers and risk drifting apart (as the qwen3 voice sentinel
+ * already did once — see resolveQwen3VoiceRoute).
+ */
+object TtsEngineDefaults {
+    const val QWEN3_TEMPERATURE = 0.1
+    const val OUTE_TEMPERATURE = 0.7
+    const val OUTE_SEED = 42
+}
+
 object MediaAiSpecs {
     val ocrBlockType = WorkflowType.RecordType(
         mapOf(
@@ -117,7 +129,7 @@ object MediaAiSpecs {
             // speaker and fails loudly if the loaded model doesn't have it.
             "voice" to WorkflowValue.StringValue(""),
             "reference_audio_path" to WorkflowValue.StringValue(""),
-            "temperature" to WorkflowValue.DoubleValue(0.1),
+            "temperature" to WorkflowValue.DoubleValue(TtsEngineDefaults.QWEN3_TEMPERATURE),
         ),
     )
 
@@ -144,8 +156,8 @@ object MediaAiSpecs {
             "language" to WorkflowValue.StringValue("en"),
             "voice" to WorkflowValue.StringValue("default"),
             "instruct" to WorkflowValue.StringValue(""),
-            "temperature" to WorkflowValue.DoubleValue(0.7),
-            "seed" to WorkflowValue.IntValue(42),
+            "temperature" to WorkflowValue.DoubleValue(TtsEngineDefaults.OUTE_TEMPERATURE),
+            "seed" to WorkflowValue.IntValue(TtsEngineDefaults.OUTE_SEED),
         ),
     )
 

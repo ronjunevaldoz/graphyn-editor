@@ -110,7 +110,7 @@ class MediaAiPlugin(
             speed = 1.0,
             engineId = "qwen3",
             referenceAudioPath = inputs.stringOr("reference_audio_path", ""),
-            temperature = inputs.doubleOr("temperature", 0.1),
+            temperature = inputs.doubleOr("temperature", TtsEngineDefaults.QWEN3_TEMPERATURE),
         )
         val result = ttsCacheEngine.getOrCreate(request, qwen3TextToSpeechEngine)
         mapOf(
@@ -128,8 +128,8 @@ class MediaAiPlugin(
             speed = 1.0,
             engineId = "oute",
             instruct = inputs.stringOr("instruct", ""),
-            temperature = inputs.doubleOr("temperature", 0.7),
-            seed = inputs.intOr("seed", 42),
+            temperature = inputs.doubleOr("temperature", TtsEngineDefaults.OUTE_TEMPERATURE),
+            seed = inputs.intOr("seed", TtsEngineDefaults.OUTE_SEED),
         )
         val result = ttsCacheEngine.getOrCreate(request, outeTextToSpeechEngine)
         mapOf(

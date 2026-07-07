@@ -135,6 +135,117 @@ class MediaAiPluginTest {
     }
 
     @Test
+    fun differentEnginesDoNotShareCache() = runTest {
+        // Regression guard for the cache key: same text/voice on the qwen3 vs oute dedicated
+        // nodes must synthesize twice, not have the second serve the first's cached wav — see
+        // TtsCacheEngineJvm's cacheKey(), which includes engineId for exactly this reason.
+        val directory = Files.createTempDirectory("graphyn-tts-engine-cache-test").toFile()
+        var qwen3Count = 0
+        var outeCount = 0
+        val qwen3Engine = TextToSpeechEngine { _, output -> qwen3Count++; File(output).writeBytes(byteArrayOf(1)) }
+        val outeEngine = TextToSpeechEngine { _, output -> outeCount++; File(output).writeBytes(byteArrayOf(2)) }
+        val cache = JvmTtsCache(
+            directory = directory,
+            metadataReader = AudioMetadataReader { AudioMetadata(it, sampleRate = 24_000, durationMs = 500.0) },
+        )
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaAiPlugin(ttsCacheEngine = cache, qwen3TextToSpeechEngine = qwen3Engine, outeTextToSpeechEngine = outeEngine))
+        }
+        val qwen3Executor = registry.nodeExecutors.resolve(MediaAiSpecs.textToSpeechQwen3.type)!!
+        val outeExecutor = registry.nodeExecutors.resolve(MediaAiSpecs.textToSpeechOute.type)!!
+
+        val sharedInputs = mapOf(
+            "text" to WorkflowValue.StringValue("Hello"),
+            "voice" to WorkflowValue.StringValue("shared"),
+        )
+        qwen3Executor.execute(sharedInputs)
+        outeExecutor.execute(sharedInputs)
+
+        assertEquals(1, qwen3Count)
+        assertEquals(1, outeCount)
+    }
+
+    @Test
+    fun sameEngineDifferentTemperatureDoesNotShareCache() = runTest {
+        val directory = Files.createTempDirectory("graphyn-tts-temperature-cache-test").toFile()
+        var synthesisCount = 0
+        val engine = TextToSpeechEngine { _, output -> synthesisCount++; File(output).writeBytes(byteArrayOf(1)) }
+        val cache = JvmTtsCache(
+            directory = directory,
+            metadataReader = AudioMetadataReader { AudioMetadata(it, sampleRate = 24_000, durationMs = 500.0) },
+        )
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaAiPlugin(ttsCacheEngine = cache, qwen3TextToSpeechEngine = engine))
+        }
+        val executor = registry.nodeExecutors.resolve(MediaAiSpecs.textToSpeechQwen3.type)!!
+
+        executor.execute(mapOf("text" to WorkflowValue.StringValue("Hello"), "temperature" to WorkflowValue.DoubleValue(0.1)))
+        executor.execute(mapOf("text" to WorkflowValue.StringValue("Hello"), "temperature" to WorkflowValue.DoubleValue(0.9)))
+
+        assertEquals(2, synthesisCount)
+    }
+
+    @Test
+    fun qwen3ExecutorMapsInputsToRequestFields() = runTest {
+        var captured: TextToSpeechRequest? = null
+        val engine = TextToSpeechEngine { request, output -> captured = request; File(output).writeBytes(byteArrayOf(1)) }
+        val cache = JvmTtsCache(
+            directory = Files.createTempDirectory("graphyn-tts-qwen3-plumbing-test").toFile(),
+            metadataReader = AudioMetadataReader { AudioMetadata(it, sampleRate = 24_000, durationMs = 500.0) },
+        )
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaAiPlugin(ttsCacheEngine = cache, qwen3TextToSpeechEngine = engine))
+        }
+        val executor = registry.nodeExecutors.resolve(MediaAiSpecs.textToSpeechQwen3.type)!!
+        executor.execute(
+            mapOf(
+                "text" to WorkflowValue.StringValue("Hello"),
+                "voice" to WorkflowValue.StringValue("Ryan"),
+                "reference_audio_path" to WorkflowValue.StringValue("/tmp/ref.wav"),
+                "temperature" to WorkflowValue.DoubleValue(0.3),
+            ),
+        )
+        val request = captured!!
+        assertEquals("Hello", request.text)
+        assertEquals("Ryan", request.voiceId)
+        assertEquals("/tmp/ref.wav", request.referenceAudioPath)
+        assertEquals(0.3, request.temperature)
+        assertEquals("qwen3", request.engineId)
+    }
+
+    @Test
+    fun outeExecutorMapsInputsToRequestFields() = runTest {
+        var captured: TextToSpeechRequest? = null
+        val engine = TextToSpeechEngine { request, output -> captured = request; File(output).writeBytes(byteArrayOf(1)) }
+        val cache = JvmTtsCache(
+            directory = Files.createTempDirectory("graphyn-tts-oute-plumbing-test").toFile(),
+            metadataReader = AudioMetadataReader { AudioMetadata(it, sampleRate = 24_000, durationMs = 500.0) },
+        )
+        val registry = DefaultGraphynPluginRegistry().apply {
+            install(MediaAiPlugin(ttsCacheEngine = cache, outeTextToSpeechEngine = engine))
+        }
+        val executor = registry.nodeExecutors.resolve(MediaAiSpecs.textToSpeechOute.type)!!
+        executor.execute(
+            mapOf(
+                "text" to WorkflowValue.StringValue("Hello"),
+                "language" to WorkflowValue.StringValue("es"),
+                "voice" to WorkflowValue.StringValue("narrator"),
+                "instruct" to WorkflowValue.StringValue("cheerful tone"),
+                "temperature" to WorkflowValue.DoubleValue(0.5),
+                "seed" to WorkflowValue.IntValue(7),
+            ),
+        )
+        val request = captured!!
+        assertEquals("Hello", request.text)
+        assertEquals("es", request.language)
+        assertEquals("narrator", request.voiceId)
+        assertEquals("cheerful tone", request.instruct)
+        assertEquals(0.5, request.temperature)
+        assertEquals(7, request.seed)
+        assertEquals("oute", request.engineId)
+    }
+
+    @Test
     fun captionStyleProducesTypedRecord() = runTest {
         val registry = DefaultGraphynPluginRegistry().apply { install(MediaAiPlugin()) }
         val executor = registry.nodeExecutors.resolve(MediaAiSpecs.captionStyle.type)!!

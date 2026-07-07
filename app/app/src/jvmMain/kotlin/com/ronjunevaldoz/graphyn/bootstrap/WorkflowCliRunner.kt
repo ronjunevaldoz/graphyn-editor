@@ -8,6 +8,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.state.SdArtifactContext
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
+import com.ronjunevaldoz.graphyn.plugins.mediaai.TtsEngineDefaults
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -98,14 +99,14 @@ private fun resolveTtsEngineChoice(options: Map<String, String>, default: TtsEng
         "qwen3" -> mapOf(
             "voice" to s(options["voice"] ?: ""),
             "reference_audio_path" to s(options["reference_audio_path"] ?: ""),
-            "temperature" to d(options["temperature"]?.toDoubleOrNull() ?: 0.1),
+            "temperature" to d(options["temperature"]?.toDoubleOrNull() ?: TtsEngineDefaults.QWEN3_TEMPERATURE),
         )
         "oute" -> mapOf(
             "language" to s(options["language"] ?: "en"),
             "voice" to s(options["voice"] ?: "default"),
             "instruct" to s(options["instruct"] ?: ""),
-            "temperature" to d(options["temperature"]?.toDoubleOrNull() ?: 0.7),
-            "seed" to i(options["seed"]?.toIntOrNull() ?: 42),
+            "temperature" to d(options["temperature"]?.toDoubleOrNull() ?: TtsEngineDefaults.OUTE_TEMPERATURE),
+            "seed" to i(options["seed"]?.toIntOrNull() ?: TtsEngineDefaults.OUTE_SEED),
         )
         else -> error("Unknown tts_engine '$engine'. Use say, qwen3, or oute.")
     }
