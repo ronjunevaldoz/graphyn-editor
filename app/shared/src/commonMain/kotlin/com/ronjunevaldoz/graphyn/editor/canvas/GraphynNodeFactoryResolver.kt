@@ -33,7 +33,7 @@ internal fun resolveNodeFactory(
     if (node.subgraph != null) {
         val connected = workflow?.connectedInputPorts(node.id).orEmpty()
         val derived = deriveSubgraphSpec(node, nodeSpecs, connectedInputs = connected) ?: return null
-        return FieldCardFactory(inputRows = derived.inputs.size, outputRows = derived.outputs.size)
+        return FieldCardFactory(inputRows = derived.inputs.size, outputRows = derived.outputs.size, hasEnterHint = true)
     }
     val spec = nodeSpecs.resolve(node.type) ?: return null
     return FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)

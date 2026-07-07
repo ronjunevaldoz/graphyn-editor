@@ -119,6 +119,7 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | `app/shared/.../GraphynPortTypeColorTest.kt` | `commonTest` | Unit |
 | `app/shared/.../GraphynPortAnchorResolverTest.kt` | `commonTest` | Unit |
 | `app/shared/.../SubgraphNodeCardUiTest.kt` | `jvmTest` | UI |
+| `app/shared/.../SubgraphEnterHintScreenshotTest.kt` | `jvmTest` | Screenshot |
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
 | `plugins/sample-logger-ui/.../SampleLoggerEditorPluginTest.kt` | `commonTest` | Unit |

@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
@@ -64,5 +67,31 @@ class SubgraphNodeCardUiTest {
         }
         onNodeWithTag("node-header-sg").performTouchInput { doubleClick() }
         assertEquals(1, entered, "double-click should invoke onEnterSubgraph once")
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun enterHintIsVisibleOnlyWhenOnEnterSubgraphIsProvided() = runDesktopComposeUiTest {
+        val spec = deriveSubgraphSpec(subgraphNode(), specs)!!
+        val factory = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size, hasEnterHint = true)
+        setContent {
+            Box(Modifier.padding(16.dp)) { with(factory) { NodeCanvas(ctx(onEnter = {})) } }
+        }
+        onNodeWithText("↳ Enter").assertIsDisplayed()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun enterHintIsHiddenWithoutHasEnterHintOrOnEnterSubgraph() = runDesktopComposeUiTest {
+        val spec = deriveSubgraphSpec(subgraphNode(), specs)!!
+        val hintReserved = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size, hasEnterHint = true)
+        val hintNotReserved = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+        setContent {
+            Box(Modifier.padding(16.dp)) {
+                with(hintReserved) { NodeCanvas(ctx(onEnter = null)) } // hasEnterHint but no callback
+                with(hintNotReserved) { NodeCanvas(ctx(onEnter = {})) } // callback but not reserved
+            }
+        }
+        assertEquals(0, onAllNodesWithText("↳ Enter").fetchSemanticsNodes().size)
     }
 }

@@ -266,3 +266,12 @@ Reference points for "is this run just slow, or is something actually wrong" —
   `GraphynCanvasGestures`, `GraphynMinimapDebugger`, `GraphynEditorViewportActions`,
   `GraphynInspectorPanel`) — a reminder that a "just add a parameter" fix to a shared resolver
   fans out to every call site, not just the one you're looking at.
+- The first pass at the "↳ Enter" subgraph hint used an `Alignment.BottomEnd`-aligned `Box`
+  overlaid on the card — it painted directly on top of the last port row's text whenever the card
+  had no output rows to absorb it (screenshot caught it immediately). Floating UI over
+  content-that-can-vary-in-height is a trap; the fix reserves real space instead: `FieldCardFactory`
+  gained a `hasEnterHint: Boolean` constructor param that adds `ENTER_HINT_DP` to `nodeHeight`, and
+  the hint renders as a genuine trailing `Column` child, not an overlay. Port anchors are
+  unaffected since the row is appended *after* the last output — `portAnchorY` never reads
+  `nodeHeight`. Rule: always render a Roborazzi screenshot for a new visual element before calling
+  it done — an overlap like this is invisible in a text-only diff review.

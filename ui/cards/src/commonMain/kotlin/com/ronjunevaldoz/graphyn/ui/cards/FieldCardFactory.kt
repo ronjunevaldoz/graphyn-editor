@@ -1,32 +1,15 @@
 package com.ronjunevaldoz.graphyn.ui.cards
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
-import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
-import com.ronjunevaldoz.graphyn.editor.canvas.NodeStatusBadge
 
 internal const val HEADER_DP = 28
 internal const val ROW_DP = 22
 internal const val FOOTER_DIVIDER_DP = 1
+internal const val ENTER_HINT_DP = 18
 internal const val VALUE_DP = 100
 internal const val CARD_WIDTH_DP = 240
 internal const val RECORD_POPUP_MIN_DP = 140
@@ -68,14 +51,20 @@ internal const val VALUE_MAX_DP = 80
  *     outputRows = 2,
  * )
  * ```
+ *
+ * @param hasEnterHint Reserves a bottom row for the "↳ Enter" hint shown when the node has a
+ *   subgraph to drill into. Set by the resolver that knows a node's [NodeSpec.type] carries a
+ *   subgraph — port anchors are unaffected since the row is appended after the last output.
  */
 class FieldCardFactory(
     val theme: FieldNodeTheme = FieldNodeTheme(),
     val inputRows: Int = 3,
     val outputRows: Int = 3,
+    val hasEnterHint: Boolean = false,
 ) : NodeCanvasFactory {
     override val nodeWidth = CARD_WIDTH_DP
-    override val nodeHeight = HEADER_DP + inputRows * ROW_DP + FOOTER_DIVIDER_DP + outputRows * ROW_DP
+    override val nodeHeight = HEADER_DP + inputRows * ROW_DP + FOOTER_DIVIDER_DP + outputRows * ROW_DP +
+        (if (hasEnterHint) ENTER_HINT_DP else 0)
 
     override fun portAnchorY(portIndex: Int, isInput: Boolean, spec: NodeSpec): Int =
         if (isInput) {
@@ -87,63 +76,8 @@ class FieldCardFactory(
     @Composable
     override fun NodeCanvas(context: NodeCanvasContext) {
         CompositionLocalProvider(LocalFieldNodeTheme provides theme) {
-            FieldCardColorPickerHost { FieldCard(context) }
+            FieldCardColorPickerHost { FieldCard(context, hasEnterHint) }
         }
     }
 }
 
-@Composable
-private fun FieldCard(ctx: NodeCanvasContext) {
-    val theme = LocalFieldNodeTheme.current
-    val bg = theme.background()
-    val borderColor = if (ctx.selected) theme.selectedBorder() else theme.border()
-    val shape = RoundedCornerShape(appTheme.shapes.md)
-    Box(
-        modifier = Modifier
-            .width(CARD_WIDTH_DP.dp)
-            .clip(shape)
-            .background(bg)
-            .border(1.dp, borderColor, shape)
-            // Double-tap enters the node's subgraph when it has one (e.g. a collapsed subgraph
-            // node) — a plain node with no subgraph has ctx.onEnterSubgraph == null, so this is a
-            // no-op double-tap for every other card.
-            .pointerInput(ctx.onEnterSubgraph) {
-                detectTapGestures(
-                    onTap = { ctx.onSelect() },
-                    onDoubleTap = { ctx.onEnterSubgraph?.invoke() },
-                )
-            },
-    ) {
-        Column {
-            FieldHeader(
-                ctx.spec.label,
-                theme,
-                description = ctx.spec.description,
-                onMove = ctx.onMove,
-                nodeId = ctx.node.id
-            )
-            FieldBody(
-                inputs = ctx.spec.inputs,
-                values = ctx.spec.defaultValues + ctx.node.config,
-                onValueChange = { key, value -> ctx.onConfigChange(key, value) },
-                theme = theme,
-                modifier = Modifier.padding(horizontal = 10.dp)
-            )
-
-            if(ctx.spec.outputs.isNotEmpty()) {
-                Spacer(
-                    Modifier.fillMaxWidth()
-                        .height(FOOTER_DIVIDER_DP.dp)
-                        .background(theme.divider())
-                )
-            }
-
-            FieldFooter(
-                outputs = ctx.spec.outputs,
-                theme = theme,
-                modifier = Modifier.padding(horizontal = 10.dp)
-            )
-        }
-        NodeStatusBadge(ctx.executionStatus, Modifier.align(Alignment.TopEnd).padding(appTheme.spacing.xs), bg)
-    }
-}
