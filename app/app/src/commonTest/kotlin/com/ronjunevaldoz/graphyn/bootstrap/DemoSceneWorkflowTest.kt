@@ -91,6 +91,7 @@ class DemoSceneWorkflowTest {
         // stable-diffusion.cpp nodes — JVM-only, installed by the desktop host's media runtime.
         "sd.diffusion", "sd.encoders", "sd.vae", "sd.model", "sd.context", "sd.sampler",
         "sd.seamless", "sd.chroma", "sd.offload", "sd.lora",
+        "sd.hires", "sd.cache", "sd.vae_tiling", "sd.controlnet", "sd.id_cond", "sd.server",
         "sd.txt2img", "sd.img2img", "sd.txt2vid", "sd.img2vid",
         "graphyn.subgraph",
     )

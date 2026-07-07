@@ -20,10 +20,14 @@ class ImageMotionShortRunTest {
 
     @BeforeTest
     fun unloadOllamaModel() {
+        if (System.getenv("GRAPHYN_LIVE_RUN_TESTS").isNullOrBlank()) return
         runBlocking { unloadOllamaModels() }
     }
 
+    // Requires GRAPHYN_LIVE_RUN_TESTS=1 — hits a real Flux/Modal deployment end to end (GPU
+    // time, real cost). Skipped by default like every other integration test in this codebase.
     @Test fun runsImageMotionShort() = runBlocking {
+        if (System.getenv("GRAPHYN_LIVE_RUN_TESTS").isNullOrBlank()) return@runBlocking
         val wf = imageMotionShortWorkflow
         val started = System.currentTimeMillis()
         val result = com.ronjunevaldoz.graphyn.editor.state.SdArtifactContext
