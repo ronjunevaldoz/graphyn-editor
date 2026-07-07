@@ -18,45 +18,53 @@ class JvmTtsCache(
     override suspend fun getOrCreate(
         request: TextToSpeechRequest,
         engine: TextToSpeechEngine,
-    ): CachedSpeech = writeMutex.withLock {
+    ): CachedSpeech {
         require(request.text.isNotBlank()) { "Text to Speech requires non-blank text." }
         require(request.speed in 0.5..2.0) { "Text to Speech speed must be between 0.5 and 2.0." }
-
-        directory.mkdirs()
 
         val key = request.cacheKey()
         val output = File(directory, "$key.wav")
 
-        if (output.isFile && output.length() > 0L) {
-            return CachedSpeech(
+        // Fast path, no lock: a cache hit shouldn't serialize behind another key's in-flight
+        // synthesis (which can take seconds) just to read back an already-written wav.
+        readCacheHit(output)?.let { return it }
+
+        return writeMutex.withLock {
+            // Re-check inside the lock — another caller may have finished synthesizing this
+            // exact key while this one was waiting, in which case this becomes a cache hit too
+            // instead of a redundant synthesis.
+            readCacheHit(output)?.let { return@withLock it }
+
+            directory.mkdirs()
+            val partial = File(directory, "$key.partial.wav")
+            partial.delete()
+
+            try {
+                engine.synthesize(request, partial.absolutePath)
+
+                check(partial.isFile && partial.length() > 0L) {
+                    "TTS engine produced no audio."
+                }
+
+                if (!partial.renameTo(output)) {
+                    partial.copyTo(output, overwrite = true)
+                    partial.delete()
+                }
+            } catch (error: Throwable) {
+                partial.delete()
+                throw error
+            }
+
+            CachedSpeech(
                 metadata = metadataReader.read(output.absolutePath),
-                cacheHit = true,
+                cacheHit = false,
             )
         }
+    }
 
-        val partial = File(directory, "$key.partial.wav")
-        partial.delete()
-
-        try {
-            engine.synthesize(request, partial.absolutePath)
-
-            check(partial.isFile && partial.length() > 0L) {
-                "TTS engine produced no audio."
-            }
-
-            if (!partial.renameTo(output)) {
-                partial.copyTo(output, overwrite = true)
-                partial.delete()
-            }
-        } catch (error: Throwable) {
-            partial.delete()
-            throw error
-        }
-
-        CachedSpeech(
-            metadata = metadataReader.read(output.absolutePath),
-            cacheHit = false,
-        )
+    private suspend fun readCacheHit(output: File): CachedSpeech? {
+        if (!output.isFile || output.length() == 0L) return null
+        return CachedSpeech(metadata = metadataReader.read(output.absolutePath), cacheHit = true)
     }
 }
 
