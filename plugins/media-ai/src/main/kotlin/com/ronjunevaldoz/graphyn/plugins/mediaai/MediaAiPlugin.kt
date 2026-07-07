@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.plugins.mediaai
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutor
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.doubleOr
+import com.ronjunevaldoz.graphyn.core.model.intOr
 import com.ronjunevaldoz.graphyn.core.model.stringOrError
 import com.ronjunevaldoz.graphyn.core.model.stringOr
 import com.ronjunevaldoz.graphyn.pluginapi.GRAPHYN_PLUGIN_API_VERSION
@@ -19,6 +20,8 @@ class MediaAiPlugin(
     private val ttsCacheEngine: TtsCacheEngine = createTtCacheEngine(),
     private val speechToTextEngine: SpeechToTextEngine = createSpeechToTextEngine(),
     private val ocrEngine: OcrEngine = resolveOcrEngine(),
+    private val qwen3TextToSpeechEngine: TextToSpeechEngine = resolveQwen3TtsEngine(),
+    private val outeTextToSpeechEngine: TextToSpeechEngine = resolveOuteTtsEngine(),
 ) : GraphynPlugin {
     override val metadata = GraphynPluginMetadata(
         id = "graphyn.media.ai",
@@ -31,6 +34,9 @@ class MediaAiPlugin(
         MediaAiSpecs.all.forEach(registrar::registerNodeSpec)
         registrar.registerNodeSpec(promptEnhanceSpec)
         registrar.registerExecutor(MediaAiSpecs.textToSpeech.type, textToSpeechExecutor())
+        registrar.registerExecutor(MediaAiSpecs.textToSpeechSay.type, textToSpeechSayExecutor())
+        registrar.registerExecutor(MediaAiSpecs.textToSpeechQwen3.type, textToSpeechQwen3Executor())
+        registrar.registerExecutor(MediaAiSpecs.textToSpeechOute.type, textToSpeechOuteExecutor())
         registrar.registerExecutor(MediaAiSpecs.captionStyle.type, captionStyleExecutor)
         registrar.registerExecutor(MediaAiSpecs.speechToText.type, speechToTextExecutor())
         registrar.registerExecutor(MediaAiSpecs.ocr.type, ocrExecutor())
@@ -72,6 +78,59 @@ class MediaAiPlugin(
             speed = inputs.doubleOr("speed", 1.0),
         )
         val result = ttsCacheEngine.getOrCreate(request, textToSpeechEngine)
+        mapOf(
+            "audio" to MediaTypes.audioValue(result.metadata.path),
+            "duration_ms" to WorkflowValue.DoubleValue(result.metadata.durationMs),
+            "cached" to WorkflowValue.BooleanValue(result.cacheHit),
+        )
+    }
+
+    private fun textToSpeechSayExecutor() = NodeExecutor { inputs ->
+        val request = TextToSpeechRequest(
+            text = inputs.stringOrError("text"),
+            language = "en",
+            voiceId = inputs.stringOr("voice_id", "default"),
+            speed = inputs.doubleOr("speed", 1.0),
+            engineId = "say",
+        )
+        val result = ttsCacheEngine.getOrCreate(request, createSystemTextToSpeechEngine())
+        mapOf(
+            "audio" to MediaTypes.audioValue(result.metadata.path),
+            "duration_ms" to WorkflowValue.DoubleValue(result.metadata.durationMs),
+            "cached" to WorkflowValue.BooleanValue(result.cacheHit),
+        )
+    }
+
+    private fun textToSpeechQwen3Executor() = NodeExecutor { inputs ->
+        val request = TextToSpeechRequest(
+            text = inputs.stringOrError("text"),
+            language = "en",
+            voiceId = inputs.stringOr("voice", "default"),
+            speed = 1.0,
+            engineId = "qwen3",
+            referenceAudioPath = inputs.stringOr("reference_audio_path", ""),
+            temperature = inputs.doubleOr("temperature", 0.1),
+        )
+        val result = ttsCacheEngine.getOrCreate(request, qwen3TextToSpeechEngine)
+        mapOf(
+            "audio" to MediaTypes.audioValue(result.metadata.path),
+            "duration_ms" to WorkflowValue.DoubleValue(result.metadata.durationMs),
+            "cached" to WorkflowValue.BooleanValue(result.cacheHit),
+        )
+    }
+
+    private fun textToSpeechOuteExecutor() = NodeExecutor { inputs ->
+        val request = TextToSpeechRequest(
+            text = inputs.stringOrError("text"),
+            language = inputs.stringOr("language", "en"),
+            voiceId = inputs.stringOr("voice", "default"),
+            speed = 1.0,
+            engineId = "oute",
+            instruct = inputs.stringOr("instruct", ""),
+            temperature = inputs.doubleOr("temperature", 0.7),
+            seed = inputs.intOr("seed", 42),
+        )
+        val result = ttsCacheEngine.getOrCreate(request, outeTextToSpeechEngine)
         mapOf(
             "audio" to MediaTypes.audioValue(result.metadata.path),
             "duration_ms" to WorkflowValue.DoubleValue(result.metadata.durationMs),

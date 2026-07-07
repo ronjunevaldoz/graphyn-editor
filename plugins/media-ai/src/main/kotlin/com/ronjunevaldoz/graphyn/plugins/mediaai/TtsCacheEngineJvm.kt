@@ -67,7 +67,10 @@ private fun defaultCacheDirectory(): File {
 }
 
 private fun TextToSpeechRequest.cacheKey(): String {
-    val input = listOf(text, language, voiceId, speed.toString()).joinToString(separator = "\u0000")
+    val input = listOf(
+        text, language, voiceId, speed.toString(), engineId,
+        referenceAudioPath, instruct, temperature.toString(), seed.toString(),
+    ).joinToString(separator = "\u0000")
     return MessageDigest.getInstance("SHA-256")
         .digest(input.toByteArray(Charsets.UTF_8))
         .joinToString("") { byte -> "%02x".format(byte) }

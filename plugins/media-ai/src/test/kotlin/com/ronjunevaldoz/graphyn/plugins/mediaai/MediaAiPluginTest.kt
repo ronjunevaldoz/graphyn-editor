@@ -18,7 +18,7 @@ class MediaAiPluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaAiPlugin())
 
-        assertEquals(5, registry.nodeSpecs.all().size)
+        assertEquals(8, registry.nodeSpecs.all().size)
         MediaAiSpecs.all.forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))

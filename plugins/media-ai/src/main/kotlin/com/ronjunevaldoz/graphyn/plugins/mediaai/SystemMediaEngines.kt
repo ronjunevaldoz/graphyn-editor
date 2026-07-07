@@ -15,6 +15,21 @@ internal fun resolveTtsEngine(): TextToSpeechEngine = when {
     else -> createTextToSpeechEngine()
 }
 
+/**
+ * Explicit per-engine overrides for the "engine" field on media.text_to_speech nodes.
+ * These are opt-in only — [resolveTtsEngine] (the "auto"/default path, including the `say`
+ * fallback) is untouched by these.
+ */
+internal fun resolveQwen3TtsEngine(): TextToSpeechEngine = CommandTextToSpeechEngine(
+    executable = EnvironmentResolver.get("GRAPHYN_TTS_QWEN3_EXECUTABLE")?.takeIf(String::isNotBlank),
+    envVarName = "GRAPHYN_TTS_QWEN3_EXECUTABLE",
+)
+
+internal fun resolveOuteTtsEngine(): TextToSpeechEngine = CommandTextToSpeechEngine(
+    executable = EnvironmentResolver.get("GRAPHYN_TTS_OUTE_EXECUTABLE")?.takeIf(String::isNotBlank),
+    envVarName = "GRAPHYN_TTS_OUTE_EXECUTABLE",
+)
+
 internal fun resolveOcrEngine(): OcrEngine = when {
 //    EnvironmentResolver.get("GRAPHYN_OCR_EXECUTABLE")?.isNotBlank() == true -> CommandOcrEngine()
     CommandResolver.isAvailable("tesseract") -> createOcrEngine()

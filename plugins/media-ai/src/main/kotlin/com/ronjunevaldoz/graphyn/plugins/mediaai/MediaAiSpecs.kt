@@ -46,7 +46,9 @@ object MediaAiSpecs {
     val textToSpeech = NodeSpec(
         type = "media.text_to_speech",
         label = "Text to Speech",
-        description = "Generates speech using the configured GRAPHYN_TTS_EXECUTABLE adapter.",
+        description = "Generates speech using the configured GRAPHYN_TTS_EXECUTABLE adapter, " +
+            "falling back to macOS `say`. For a specific engine's own parameters, use a " +
+            "dedicated node instead: media.text_to_speech.say / .qwen3 / .oute.",
         category = CATEGORY_MEDIA_AI,
         inputs = listOf(
             PortSpec("text", WorkflowType.StringType),
@@ -67,6 +69,80 @@ object MediaAiSpecs {
             "language" to WorkflowValue.StringValue("en"),
             "voice_id" to WorkflowValue.StringValue("default"),
             "speed" to WorkflowValue.DoubleValue(1.0),
+        ),
+    )
+
+    private val ttsOutputs = listOf(
+        PortSpec("audio", MediaTypes.audioHandle),
+        PortSpec("duration_ms", WorkflowType.DoubleType),
+        PortSpec("cached", WorkflowType.BooleanType),
+    )
+
+    val textToSpeechSay = NodeSpec(
+        type = "media.text_to_speech.say",
+        label = "Text to Speech (say)",
+        description = "Generates speech via macOS `say`. Only text/voice/speed are honoured.",
+        category = CATEGORY_MEDIA_AI,
+        inputs = listOf(
+            PortSpec("text", WorkflowType.StringType),
+            PortSpec("voice_id", WorkflowType.StringType),
+            PortSpec("speed", WorkflowType.DoubleType),
+        ),
+        outputs = ttsOutputs,
+        defaultValues = mapOf(
+            "text" to WorkflowValue.StringValue(""),
+            "voice_id" to WorkflowValue.StringValue("default"),
+            "speed" to WorkflowValue.DoubleValue(1.0),
+        ),
+    )
+
+    val textToSpeechQwen3 = NodeSpec(
+        type = "media.text_to_speech.qwen3",
+        label = "Text to Speech (Qwen3)",
+        description = "Generates speech via native Qwen3 TTS (GRAPHYN_TTS_QWEN3_EXECUTABLE). " +
+            "language/speed are not honoured — the model has no runtime language switch or " +
+            "rate control. reference_audio_path (voice cloning) takes precedence over voice.",
+        category = CATEGORY_MEDIA_AI,
+        inputs = listOf(
+            PortSpec("text", WorkflowType.StringType),
+            PortSpec("voice", WorkflowType.StringType),
+            PortSpec("reference_audio_path", WorkflowType.StringType),
+            PortSpec("temperature", WorkflowType.DoubleType),
+        ),
+        outputs = ttsOutputs,
+        defaultValues = mapOf(
+            "text" to WorkflowValue.StringValue(""),
+            "voice" to WorkflowValue.StringValue("default"),
+            "reference_audio_path" to WorkflowValue.StringValue(""),
+            "temperature" to WorkflowValue.DoubleValue(0.1),
+        ),
+    )
+
+    val textToSpeechOute = NodeSpec(
+        type = "media.text_to_speech.oute",
+        label = "Text to Speech (OuteTTS)",
+        description = "Generates speech via native OuteTTS (GRAPHYN_TTS_OUTE_EXECUTABLE). " +
+            "speed is not honoured — no rate parameter in the native API.",
+        category = CATEGORY_MEDIA_AI,
+        inputs = listOf(
+            PortSpec("text", WorkflowType.StringType),
+            PortSpec(
+                "language",
+                WorkflowType.EnumType(listOf("en", "zh", "es", "fr", "de", "ja", "ko")),
+            ),
+            PortSpec("voice", WorkflowType.StringType),
+            PortSpec("instruct", WorkflowType.StringType),
+            PortSpec("temperature", WorkflowType.DoubleType),
+            PortSpec("seed", WorkflowType.IntType),
+        ),
+        outputs = ttsOutputs,
+        defaultValues = mapOf(
+            "text" to WorkflowValue.StringValue(""),
+            "language" to WorkflowValue.StringValue("en"),
+            "voice" to WorkflowValue.StringValue("default"),
+            "instruct" to WorkflowValue.StringValue(""),
+            "temperature" to WorkflowValue.DoubleValue(0.7),
+            "seed" to WorkflowValue.IntValue(42),
         ),
     )
 
@@ -146,5 +222,8 @@ object MediaAiSpecs {
         defaultValues = mapOf("language" to WorkflowValue.StringValue("en")),
     )
 
-    val all = listOf(textToSpeech, captionStyle, speechToText, ocr)
+    val all = listOf(
+        textToSpeech, textToSpeechSay, textToSpeechQwen3, textToSpeechOute,
+        captionStyle, speechToText, ocr,
+    )
 }

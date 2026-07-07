@@ -28,7 +28,28 @@ read by the adapter from its environment. This contract can wrap the internal Qw
 without adding an unpublished dependency to Graphyn.
 
 Generated files are cached under `${GRAPHYN_HOME:-~/.graphyn}/cache/tts`. The key includes text,
-language, voice, and speed.
+language, voice, speed, engine, and any engine-specific extras (reference audio path, instruct,
+temperature, seed) below.
+
+### Dedicated nodes per engine
+
+Different TTS engines honour different parameters (say has no `instruct`/`temperature`/`seed`;
+Qwen3 has no runtime `language`/`speed` but supports voice cloning; OuteTTS has no `speed` but
+does honour `language`/`instruct`/`temperature`/`seed`). Rather than one node with dead knobs
+for whichever engine is active, there are dedicated node types:
+
+| Node | Engine | Adapter env var | Extra params |
+|---|---|---|---|
+| `media.text_to_speech` | `GRAPHYN_TTS_EXECUTABLE`, falling back to macOS `say` | `GRAPHYN_TTS_EXECUTABLE` | — |
+| `media.text_to_speech.say` | macOS `say` | (built-in, no adapter) | — |
+| `media.text_to_speech.qwen3` | Qwen3 (native JNI) | `GRAPHYN_TTS_QWEN3_EXECUTABLE` | `reference_audio_path` (voice cloning, takes precedence over `voice`), `temperature` |
+| `media.text_to_speech.oute` | OuteTTS (native JNI) | `GRAPHYN_TTS_OUTE_EXECUTABLE` | `instruct`, `temperature`, `seed` |
+
+`GRAPHYN_TTS_QWEN3_EXECUTABLE` / `GRAPHYN_TTS_OUTE_EXECUTABLE` are separate from
+`GRAPHYN_TTS_EXECUTABLE` on purpose — using a dedicated node never changes what
+`media.text_to_speech`/`auto` resolves to elsewhere. See
+`StudioProjects/Graphyn/scripts/adapters/graphyn-tts-qwen3-jni.sh` and
+`graphyn-tts-oute-jni.sh` for native-JNI adapters (no HTTP server required).
 
 ## STT Adapter
 
