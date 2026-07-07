@@ -18,10 +18,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
-import com.ronjunevaldoz.graphyn.editor.canvas.components.SubgraphNodeCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+// A subgraph node renders as the standard FieldCardFactory (see GraphynNodeFactoryResolver) —
+// this test proves the card's generic double-tap-to-enter-subgraph gesture still works for it.
 class SubgraphNodeCardUiTest {
 
     private val specs = DefaultNodeSpecRegistry().apply {
@@ -55,11 +57,12 @@ class SubgraphNodeCardUiTest {
     @Test
     fun doubleClickEntersSubgraph() = runDesktopComposeUiTest {
         var entered = 0
-        val factory = SubgraphNodeCardFactory(inputRows = 1, outputRows = 1)
+        val spec = deriveSubgraphSpec(subgraphNode(), specs)!!
+        val factory = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
         setContent {
             Box(Modifier.padding(16.dp)) { with(factory) { NodeCanvas(ctx(onEnter = { entered++ })) } }
         }
-        onNodeWithTag("subgraph-node-card-sg").performTouchInput { doubleClick() }
+        onNodeWithTag("node-header-sg").performTouchInput { doubleClick() }
         assertEquals(1, entered, "double-click should invoke onEnterSubgraph once")
     }
 }

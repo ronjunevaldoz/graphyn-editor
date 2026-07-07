@@ -111,7 +111,7 @@ internal fun GraphynMinimapDebugger(
             val nodes = workflow?.nodes.orEmpty()
             nodes.forEachIndexed { index, node ->
                 val position = nodePositions.getOrNull(index) ?: return@forEachIndexed
-                val factory = resolveNodeFactory(node, canvasCards, state.nodeSpecs)
+                val factory = resolveNodeFactory(node, canvasCards, state.nodeSpecs, workflow)
                 if (factory?.isAnnotation == true) return@forEachIndexed
                 val nodeW = (factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width).toFloat()
                 val nodeH = (factory?.nodeHeight ?: GraphynCanvasMetrics.NodeSize.height).toFloat()

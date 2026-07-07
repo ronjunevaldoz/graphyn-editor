@@ -2,6 +2,8 @@ package com.ronjunevaldoz.graphyn.editor.canvas
 
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.connectedInputPorts
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
@@ -10,11 +12,16 @@ import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
  * Resolves a node's spec for rendering, falling back to a boundary-derived spec for
  * editor-created subgraph nodes (which have no statically-registered spec), and finally to a
  * minimal placeholder so an unknown node type still renders as an empty titled card.
- * A registered spec always wins.
+ * A registered spec always wins. [workflow] keeps connected-but-optional subgraph boundary
+ * inputs visible; pass the workflow the node lives in whenever it's available.
  */
-internal fun resolveRenderSpec(node: NodeRef, nodeSpecs: NodeSpecRegistry): NodeSpec =
+internal fun resolveRenderSpec(
+    node: NodeRef,
+    nodeSpecs: NodeSpecRegistry,
+    workflow: WorkflowDefinition?,
+): NodeSpec =
     nodeSpecs.resolve(node.type)
-        ?: deriveSubgraphSpec(node, nodeSpecs)
+        ?: deriveSubgraphSpec(node, nodeSpecs, connectedInputs = workflow?.connectedInputPorts(node.id).orEmpty())
         ?: NodeSpec(type = node.type, label = node.type, inputs = emptyList(), outputs = emptyList())
 
 internal data class GraphynPortAnchor(val anchorYDp: Int, val nodeWidthDp: Int)
@@ -31,9 +38,10 @@ internal fun resolvePortAnchor(
     isInput: Boolean,
     nodeSpecs: NodeSpecRegistry,
     canvasCards: NodeCanvasRegistry?,
+    workflow: WorkflowDefinition?,
 ): GraphynPortAnchor {
-    val spec = resolveRenderSpec(node, nodeSpecs)
-    val factory = resolveNodeFactory(node, canvasCards, nodeSpecs)
+    val spec = resolveRenderSpec(node, nodeSpecs, workflow)
+    val factory = resolveNodeFactory(node, canvasCards, nodeSpecs, workflow)
         ?: FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
     val ports = if (isInput) spec.inputs else spec.outputs
     val index = ports.indexOfFirst { it.name == portName }.coerceAtLeast(0)

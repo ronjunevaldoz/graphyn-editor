@@ -47,19 +47,33 @@ fun subgraphBoundary(inner: WorkflowDefinition, specs: NodeSpecRegistry): Subgra
  * Returns null when the node has no subgraph. The editor uses this so a collapsed subgraph node
  * renders its boundary ports without a statically-registered spec.
  *
- * Only **required** boundary inputs are exposed — optional free inputs are satisfied by their
- * inner defaults/config, and listing them would bloat the collapsed card with rows nothing needs
- * to connect to. This is a display contract only: execution and collapse/expand rewiring use the
- * full [subgraphBoundary].
+ * Boundary inputs are exposed only when **required** or listed in [connectedInputs] (ports an
+ * outer connection already targets — see [connectedInputPorts]). Optional unconnected inputs are
+ * satisfied by their inner defaults/config, and listing them would bloat the collapsed card.
+ * This is a display contract only: execution and collapse/expand rewiring use the full
+ * [subgraphBoundary].
  */
-fun deriveSubgraphSpec(node: NodeRef, specs: NodeSpecRegistry, label: String? = null): NodeSpec? {
+fun deriveSubgraphSpec(
+    node: NodeRef,
+    specs: NodeSpecRegistry,
+    label: String? = null,
+    connectedInputs: Set<String> = emptySet(),
+): NodeSpec? {
     val inner = node.subgraph ?: return null
     val boundary = subgraphBoundary(inner, specs)
     return NodeSpec(
         type = node.type,
         label = label ?: inner.name,
-        inputs = boundary.inputs.filter { it.required },
+        inputs = boundary.inputs.filter { it.required || it.name in connectedInputs },
         outputs = boundary.outputs,
         description = "Subgraph: ${inner.nodes.size} nodes",
     )
 }
+
+/**
+ * Input port names on [nodeId] that some connection in this workflow already feeds. Pass this as
+ * [deriveSubgraphSpec]'s `connectedInputs` so connected-but-optional boundary ports stay visible
+ * and connections never reference a hidden port.
+ */
+fun WorkflowDefinition.connectedInputPorts(nodeId: String): Set<String> =
+    connections.filter { it.toNodeId == nodeId }.mapTo(mutableSetOf()) { it.toPort }

@@ -2,7 +2,7 @@ package com.ronjunevaldoz.graphyn.ui.cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +16,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.designsystem.theme.appTheme
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
@@ -103,7 +104,15 @@ private fun FieldCard(ctx: NodeCanvasContext) {
             .clip(shape)
             .background(bg)
             .border(1.dp, borderColor, shape)
-            .clickable { ctx.onSelect() },
+            // Double-tap enters the node's subgraph when it has one (e.g. a collapsed subgraph
+            // node) — a plain node with no subgraph has ctx.onEnterSubgraph == null, so this is a
+            // no-op double-tap for every other card.
+            .pointerInput(ctx.onEnterSubgraph) {
+                detectTapGestures(
+                    onTap = { ctx.onSelect() },
+                    onDoubleTap = { ctx.onEnterSubgraph?.invoke() },
+                )
+            },
     ) {
         Column {
             FieldHeader(

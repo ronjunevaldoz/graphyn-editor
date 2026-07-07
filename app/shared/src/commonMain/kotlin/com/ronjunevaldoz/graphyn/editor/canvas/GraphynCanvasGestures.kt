@@ -72,7 +72,7 @@ internal fun Modifier.graphynPanGesture(
             val startWorld = state.screenToWorld(firstDown.position)
             val overNode = state.workflow?.nodes?.withIndex()?.any { (index, node) ->
                 val pos = state.nodePosition(node.id, index)
-                val factory = resolveNodeFactory(node, canvasCards, state.nodeSpecs)
+                val factory = resolveNodeFactory(node, canvasCards, state.nodeSpecs, state.workflow)
                 val w = (factory?.nodeWidth ?: GraphynCanvasMetrics.NodeSize.width).toFloat()
                 val h = (factory?.nodeHeight ?: GraphynCanvasMetrics.NodeSize.height).toFloat()
                 startWorld.x >= pos.x && startWorld.x <= pos.x + w &&

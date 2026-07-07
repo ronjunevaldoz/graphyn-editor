@@ -36,7 +36,7 @@ fun GraphynEditorState.fitToContent(
     val resolvedPositions = positions ?: layout.nodePositionsByNodeId
     val resolvedSizes = sizes.ifEmpty {
         workflow?.nodes?.associate { node ->
-            node.id to (resolveNodeFactory(node, canvasCards, nodeSpecs)
+            node.id to (resolveNodeFactory(node, canvasCards, nodeSpecs, workflow)
                 ?.let { IntSize(it.nodeWidth, it.nodeHeight) }
                 ?: GraphynCanvasMetrics.NodeSize)
         } ?: emptyMap()

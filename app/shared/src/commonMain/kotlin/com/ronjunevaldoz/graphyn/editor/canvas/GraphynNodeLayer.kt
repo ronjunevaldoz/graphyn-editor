@@ -40,9 +40,9 @@ internal fun GraphynNodeLayer(
     // Pass 2: regular nodes on top. Every node resolves to a factory — a host-registered card,
     // a subgraph card, or a default FieldCardFactory sized from its spec.
     workflow.nodes.forEachIndexed { index, node ->
-        val spec = resolveRenderSpec(node, nodeSpecs)
+        val spec = resolveRenderSpec(node, nodeSpecs, workflow)
         val position = state.nodePosition(node.id, index)
-        val factory = resolveNodeFactory(node, canvasCards, nodeSpecs)
+        val factory = resolveNodeFactory(node, canvasCards, nodeSpecs, workflow)
             ?: FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
         if (factory.isAnnotation) return@forEachIndexed
 

@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ronjunevaldoz.graphyn.core.model.ValidationError
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
+import com.ronjunevaldoz.graphyn.core.model.connectedInputPorts
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
@@ -37,7 +38,10 @@ internal fun GraphynInspectorPanel(
     val type = GraphynDs.type
     val selectedNode = remember(state.workflow, state.selectedNodeId) { state.selectedNode() }
     val selectedNodeSpec = remember(selectedNode, nodeSpecs) {
-        selectedNode?.let { nodeSpecs.resolve(it.type) ?: deriveSubgraphSpec(it, nodeSpecs) }
+        selectedNode?.let {
+            nodeSpecs.resolve(it.type)
+                ?: deriveSubgraphSpec(it, nodeSpecs, connectedInputs = state.workflow?.connectedInputPorts(it.id).orEmpty())
+        }
     }
     val panelFactory = selectedNode?.let { panels.resolve(it.type) }
     val selectedConnection = state.selectedConnection

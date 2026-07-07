@@ -41,8 +41,8 @@ internal fun GraphynConnectionMidpoints(
         val fromPos = state.nodePosition(fromNode.id, fromIndex)
         val toPos = state.nodePosition(toNode.id, toIndex)
 
-        val fromAnchor = resolvePortAnchor(fromNode, connection.fromPort, isInput = false, nodeSpecs, canvasCards)
-        val toAnchor = resolvePortAnchor(toNode, connection.toPort, isInput = true, nodeSpecs, canvasCards)
+        val fromAnchor = resolvePortAnchor(fromNode, connection.fromPort, isInput = false, nodeSpecs, canvasCards, workflow)
+        val toAnchor = resolvePortAnchor(toNode, connection.toPort, isInput = true, nodeSpecs, canvasCards, workflow)
 
         val isSelected = state.selectedConnection == connection
         val dotColor = if (isSelected) selectedColor else connectionColor

@@ -35,7 +35,9 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | **Editor — auto-layout: barycenter sweep reduces edge crossings vs BFS order** | ✅ | | | |
 | **Canvas — port colors unique per WorkflowType; nullable/override behavior** | ✅ | | | |
 | **Canvas — connection anchors match card dots (incl. subgraph derived spec)** | ✅ | | | |
+| **Canvas — connected-but-optional subgraph input stays addressable by connections** | ✅ | | | |
 | **Core — subgraph derived spec hides optional free inputs (boundary keeps them)** | ✅ | | | |
+| **Cards — subgraph node renders as standard FieldCard; double-tap enters subgraph** | | ✅ | | |
 | **Editor — draft connection → workflow connection** | ✅ | | | |
 | **Editor — execution result applied to state** | ✅ | | | |
 | **Editor — delete selected connection** | ✅ | | | |
@@ -116,6 +118,7 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | `app/shared/.../GraphynAutoLayoutScreenshotTest.kt` | `jvmTest` | Screenshot |
 | `app/shared/.../GraphynPortTypeColorTest.kt` | `commonTest` | Unit |
 | `app/shared/.../GraphynPortAnchorResolverTest.kt` | `commonTest` | Unit |
+| `app/shared/.../SubgraphNodeCardUiTest.kt` | `jvmTest` | UI |
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
 | `plugins/sample-logger-ui/.../SampleLoggerEditorPluginTest.kt` | `commonTest` | Unit |

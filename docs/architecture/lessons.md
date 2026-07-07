@@ -248,3 +248,21 @@ Reference points for "is this run just slow, or is something actually wrong" —
   `subgraphBoundary` (execution injection, expand rewiring) stays unfiltered. Known limitation:
   an outer connection into an *optional* boundary input (possible when collapsing a selection
   whose crossing edge fed an optional port) references a hidden port and anchors at row 0.
+- Collapsed subgraph nodes had a second, bespoke card (`SubgraphNodeCard`) with its own
+  HEADER/ROW/DIVIDER/WIDTH constants, separate from `FieldCardFactory`'s. Both computed
+  `portAnchorY` correctly for their own geometry, so it wasn't a bug, just permanent drift risk —
+  and it meant subgraph nodes looked structurally different (width, header height) from every
+  other card. Deleted it; subgraph nodes now render via the same `FieldCardFactory` as any other
+  node, sized from the derived boundary spec. The one thing the bespoke card had that `FieldCard`
+  didn't — double-click-to-enter — became a **generic** `FieldCard` behavior gated on
+  `ctx.onEnterSubgraph != null` (already null for every non-subgraph node), so it needed no
+  subgraph-specific branching in a general-purpose, published card (`graphyn-ui-cards`).
+- `deriveSubgraphSpec`'s required-only filter (previous entry) had a gap: an outer connection into
+  an *optional* boundary input becomes invisible on the card, so the wire has nothing to land on.
+  Fixed by adding `connectedInputs: Set<String>` — a port is shown when `required || connected`.
+  Threading this through required passing the *outer* workflow (not just the node) into every
+  consumer of `deriveSubgraphSpec`/`resolveNodeFactory`/`resolvePortAnchor`
+  (`GraphynNodeLayer`, `GraphynConnectionLayer`, `GraphynConnectionMidpoints`,
+  `GraphynCanvasGestures`, `GraphynMinimapDebugger`, `GraphynEditorViewportActions`,
+  `GraphynInspectorPanel`) — a reminder that a "just add a parameter" fix to a shared resolver
+  fans out to every call site, not just the one you're looking at.

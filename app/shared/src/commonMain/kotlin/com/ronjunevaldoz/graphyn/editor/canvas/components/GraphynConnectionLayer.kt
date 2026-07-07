@@ -35,8 +35,8 @@ fun GraphynConnectionLayer(
             val fromPos = state.nodePosition(fromNode.id, fromIndex)
             val toPos = state.nodePosition(toNode.id, toIndex)
 
-            val fromAnchor = resolvePortAnchor(fromNode, connection.fromPort, isInput = false, nodeSpecs, canvasCards)
-            val toAnchor = resolvePortAnchor(toNode, connection.toPort, isInput = true, nodeSpecs, canvasCards)
+            val fromAnchor = resolvePortAnchor(fromNode, connection.fromPort, isInput = false, nodeSpecs, canvasCards, workflow)
+            val toAnchor = resolvePortAnchor(toNode, connection.toPort, isInput = true, nodeSpecs, canvasCards, workflow)
 
             drawBezier(
                 start = Offset(fromPos.x + fromAnchor.nodeWidthDp.dp.toPx(), fromPos.y + fromAnchor.anchorYDp.dp.toPx()),
@@ -51,7 +51,7 @@ fun GraphynConnectionLayer(
         val fromIndex = workflow.nodes.indexOf(fromNode)
         val fromPos = state.nodePosition(fromNode.id, fromIndex)
         val fromAnchor = resolvePortAnchor(
-            fromNode, draftConnection.fromPort, isInput = draftConnection.isFromInput, nodeSpecs, canvasCards,
+            fromNode, draftConnection.fromPort, isInput = draftConnection.isFromInput, nodeSpecs, canvasCards, workflow,
         )
 
         val start = if (draftConnection.isFromInput) {
