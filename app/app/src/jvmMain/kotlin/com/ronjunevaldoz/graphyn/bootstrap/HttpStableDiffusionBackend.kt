@@ -10,7 +10,6 @@ import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdImageResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdVideoResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionBackend
-import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
@@ -25,17 +24,17 @@ class HttpStableDiffusionBackend(
 ) : StableDiffusionBackend {
     private val delegate = com.ronjunevaldoz.graphyn.plugins.stablesd.http.HttpStableDiffusionBackend(settingsStore, artifactsDir)
 
-    override fun generateImage(request: SdGenerateImageRequest): SdImageResult {
+    override suspend fun generateImage(request: SdGenerateImageRequest): SdImageResult {
         val start = System.currentTimeMillis()
         val result = delegate.generateImage(request)
-        runBlocking { history.record(buildArtifactRecord(File(result.imagePaths.first()), ArtifactKind.Image, request, System.currentTimeMillis() - start, "sd.txt2img")) }
+        history.record(buildArtifactRecord(File(result.imagePaths.first()), ArtifactKind.Image, request, System.currentTimeMillis() - start, "sd.txt2img"))
         return result
     }
 
-    override fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
+    override suspend fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
         val start = System.currentTimeMillis()
         val result = delegate.generateVideo(request)
-        runBlocking { history.record(buildArtifactRecord(File(result.framePaths.first()), ArtifactKind.Video, request, System.currentTimeMillis() - start, "sd.img2vid")) }
+        history.record(buildArtifactRecord(File(result.framePaths.first()), ArtifactKind.Video, request, System.currentTimeMillis() - start, "sd.img2vid"))
         return result
     }
 

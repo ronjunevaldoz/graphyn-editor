@@ -14,11 +14,11 @@ import kotlin.test.assertNull
 class SdServerNodeWiringTest {
     private class RecordingBackend : StableDiffusionBackend {
         var lastRequest: SdGenerateImageRequest? = null
-        override fun generateImage(request: SdGenerateImageRequest): SdImageResult {
+        override suspend fun generateImage(request: SdGenerateImageRequest): SdImageResult {
             lastRequest = request
             return SdImageResult(imagePaths = listOf("/tmp/out.png"))
         }
-        override fun generateVideo(request: SdGenerateVideoRequest) = error("not used")
+        override suspend fun generateVideo(request: SdGenerateVideoRequest) = error("not used")
     }
 
     private val baseInputs = mapOf(

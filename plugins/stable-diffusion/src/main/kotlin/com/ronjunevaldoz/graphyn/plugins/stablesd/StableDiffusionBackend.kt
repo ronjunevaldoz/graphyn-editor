@@ -17,11 +17,15 @@ data class SdVideoResult(
  * The default implementation ([SdCliBackend]) shells out to the `sd-cli` binary, converting
  * [SdGenerateImageRequest]/[SdGenerateVideoRequest] into CLI flags. Swap with a JNI or remote
  * (HTTP) implementation to avoid process-per-generation overhead.
+ *
+ * Changed 2026-07-08: both methods are `suspend` — callers are workflow executors, which are
+ * already suspend (see NodeExecutor), so a plain `fun` here forced HTTP-based implementations
+ * to bridge suspend network calls back to blocking via `runBlocking` for no reason.
  */
 interface StableDiffusionBackend {
     /** Generate images using the `img_gen` mode. */
-    fun generateImage(request: SdGenerateImageRequest): SdImageResult
+    suspend fun generateImage(request: SdGenerateImageRequest): SdImageResult
 
     /** Generate video frames using the `vid_gen` mode. Returns frame paths and an optional audio path. */
-    fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult
+    suspend fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult
 }

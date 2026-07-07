@@ -7,7 +7,6 @@ import com.ronjunevaldoz.graphyn.plugins.stablesd.SdGenerateVideoRequest
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdImageResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.SdVideoResult
 import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionBackend
-import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
@@ -23,13 +22,13 @@ class HttpStableDiffusionBackend(
 ) : StableDiffusionBackend {
     private val client = ServerSdClient(settingsStore)
 
-    override fun generateImage(request: SdGenerateImageRequest): SdImageResult {
-        val file = runBlocking { saveOutput(client.generateImage(request), "png") }
+    override suspend fun generateImage(request: SdGenerateImageRequest): SdImageResult {
+        val file = saveOutput(client.generateImage(request), "png")
         return SdImageResult(imagePaths = listOf(file.absolutePath))
     }
 
-    override fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
-        val file = runBlocking { saveOutput(client.generateVideo(request), "mp4") }
+    override suspend fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
+        val file = saveOutput(client.generateVideo(request), "mp4")
         return SdVideoResult(framePaths = listOf(file.absolutePath))
     }
 

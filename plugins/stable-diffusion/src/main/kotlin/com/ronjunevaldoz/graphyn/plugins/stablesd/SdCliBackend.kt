@@ -16,7 +16,7 @@ class SdCliBackend(
 
     init { File(outputDir).mkdirs() }
 
-    override fun generateImage(request: SdGenerateImageRequest): SdImageResult {
+    override suspend fun generateImage(request: SdGenerateImageRequest): SdImageResult {
         val outPrefix = File(outputDir, "img_${System.currentTimeMillis()}").absolutePath
         val fullArgs = listOf(cliPath, "--mode", "img_gen", "--output", outPrefix) + request.toCliArgs()
         runProcess(fullArgs)
@@ -28,7 +28,7 @@ class SdCliBackend(
         return SdImageResult(images)
     }
 
-    override fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
+    override suspend fun generateVideo(request: SdGenerateVideoRequest): SdVideoResult {
         val outPrefix = File(outputDir, "vid_${System.currentTimeMillis()}").absolutePath
         val fullArgs = listOf(cliPath, "--mode", "vid_gen", "--output", outPrefix) + request.toCliArgs()
         runProcess(fullArgs)
