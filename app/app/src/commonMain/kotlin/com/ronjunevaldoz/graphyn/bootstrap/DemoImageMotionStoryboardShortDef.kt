@@ -103,7 +103,8 @@ internal fun imageMotionStoryboardShortWorkflow(
         )))
         add(shortsCaptionStyleNode())
         add(NodeRef("captionOverlay", "media.caption_overlay"))
-        add(NodeRef("narrate", "media.text_to_speech.qwen3", config = mapOf("voice" to s("Ryan"))))
+        // "", not a named speaker — see DemoRecaptionDef.kt's ttsEngine default for why.
+        add(NodeRef("narrate", "media.text_to_speech.qwen3", config = mapOf("voice" to s(""))))
         add(NodeRef("encode", "media.video_encode", config = mapOf(
             "output_path" to s("$STORYBOARD_OUTPUT_BASE.mp4"), "bitrate" to s("high"), "codec" to s("h264"),
         )))

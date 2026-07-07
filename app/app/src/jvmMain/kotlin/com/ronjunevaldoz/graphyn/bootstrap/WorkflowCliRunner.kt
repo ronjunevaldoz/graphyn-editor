@@ -39,7 +39,7 @@ private fun i(value: Int) = WorkflowValue.IntValue(value)
  * ./gradlew :app:app:runWorkflowCli --args="workflow=storyboard topic='...' character_sheet=true"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption font_size=60 text_color='#FFDD00'"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption tts_engine=say"
- * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption tts_engine=qwen3 voice=Ryan"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption tts_engine=qwen3 reference_audio_path=/path/to/voice.wav"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=regenerate-scene index=1 prompt='a new prompt'"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=regenerate-scene index=1 edit=true instruction='change the shirt to red'"
  * ./gradlew :app:app:runWorkflowCli --args="schema workflow=storyboard"
@@ -96,7 +96,7 @@ private fun resolveTtsEngineChoice(options: Map<String, String>, default: TtsEng
             "speed" to d(options["speed"]?.toDoubleOrNull() ?: 1.0),
         )
         "qwen3" -> mapOf(
-            "voice" to s(options["voice"] ?: "Ryan"),
+            "voice" to s(options["voice"] ?: ""),
             "reference_audio_path" to s(options["reference_audio_path"] ?: ""),
             "temperature" to d(options["temperature"]?.toDoubleOrNull() ?: 0.1),
         )
@@ -129,7 +129,7 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
             storyboardJsonPath = options["storyboard"] ?: "$STORYBOARD_OUTPUT_BASE.storyboard.json",
             styleOverrides = styleOverrides,
             outputPath = options["output"] ?: "$STORYBOARD_OUTPUT_BASE.recaptioned.mp4",
-            ttsEngine = resolveTtsEngineChoice(options, TtsEngineChoice("qwen3", mapOf("voice" to s("Ryan")))),
+            ttsEngine = resolveTtsEngineChoice(options, TtsEngineChoice("qwen3", mapOf("voice" to s("")))),
         )
     }
 

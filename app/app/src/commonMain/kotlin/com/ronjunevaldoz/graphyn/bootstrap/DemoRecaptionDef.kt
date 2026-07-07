@@ -33,7 +33,11 @@ internal fun recaptionWorkflow(
     storyboardJsonPath: String,
     styleOverrides: Map<String, WorkflowValue> = CAPTION_STYLE_DEFAULTS,
     outputPath: String = "$STORYBOARD_OUTPUT_BASE.recaptioned.mp4",
-    ttsEngine: TtsEngineChoice = TtsEngineChoice("qwen3", mapOf("voice" to s("Ryan"))),
+    // "" (not a named speaker like "Ryan") — resolveQwen3VoiceRoute only treats a blank voice
+    // as "use the model's default voice"; the Base/cloning model this project downloads has no
+    // named speakers at all (only the CustomVoice variant does), so any non-blank value here
+    // must be a real Qwen3Speaker name or it fails loudly.
+    ttsEngine: TtsEngineChoice = TtsEngineChoice("qwen3", mapOf("voice" to s(""))),
 ) = WorkflowDefinition(
     id = "image-motion-storyboard-recaption",
     name = "Image Motion Short (Recaption)",

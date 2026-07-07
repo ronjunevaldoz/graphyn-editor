@@ -112,7 +112,10 @@ object MediaAiSpecs {
         outputs = ttsOutputs,
         defaultValues = mapOf(
             "text" to WorkflowValue.StringValue(""),
-            "voice" to WorkflowValue.StringValue("default"),
+            // Empty, not "default" — resolveQwen3VoiceRoute only treats a blank string as
+            // "use the model's default voice"; any non-empty value is looked up as a named
+            // speaker and fails loudly if the loaded model doesn't have it.
+            "voice" to WorkflowValue.StringValue(""),
             "reference_audio_path" to WorkflowValue.StringValue(""),
             "temperature" to WorkflowValue.DoubleValue(0.1),
         ),

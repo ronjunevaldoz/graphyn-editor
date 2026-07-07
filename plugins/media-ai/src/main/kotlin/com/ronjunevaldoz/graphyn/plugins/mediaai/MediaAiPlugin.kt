@@ -105,7 +105,8 @@ class MediaAiPlugin(
         val request = TextToSpeechRequest(
             text = inputs.stringOrError("text"),
             language = "en",
-            voiceId = inputs.stringOr("voice", "default"),
+            // Empty, not "default" — see MediaAiSpecs.kt's textToSpeechQwen3 defaultValues.
+            voiceId = inputs.stringOr("voice", ""),
             speed = 1.0,
             engineId = "qwen3",
             referenceAudioPath = inputs.stringOr("reference_audio_path", ""),
