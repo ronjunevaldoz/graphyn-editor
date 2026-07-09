@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import kotlin.math.roundToInt
@@ -86,11 +87,19 @@ internal fun GraphynNodePickerPopup(
                                     .clip(RoundedCornerShape(3.dp))
                                     .background(suggestion.accentColor),
                             )
-                            BasicText(
-                                text = suggestion.spec.label,
-                                style = GraphynDs.type.body.copy(color = colors.textPrimary),
-                                modifier = Modifier.padding(start = 10.dp),
-                            )
+                            Column(modifier = Modifier.padding(start = 10.dp)) {
+                                BasicText(
+                                    text = suggestion.spec.label,
+                                    style = GraphynDs.type.body.copy(color = colors.textPrimary),
+                                )
+                                BasicText(
+                                    text = "port: ${suggestion.port}",
+                                    style = GraphynDs.type.labelSmall.copy(
+                                        color = colors.textSecondary,
+                                        fontSize = 10.sp,
+                                    ),
+                                )
+                            }
                         }
                     }
                 }
