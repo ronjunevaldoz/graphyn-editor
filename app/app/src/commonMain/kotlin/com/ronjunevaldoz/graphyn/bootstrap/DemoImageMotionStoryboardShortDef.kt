@@ -4,10 +4,9 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.intValue as i
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 internal const val STORYBOARD_IMAGES_PER_SCENE = 2
 internal const val STORYBOARD_SCENE_DURATION_MS = STORYBOARD_IMAGES_PER_SCENE * 1000.0
@@ -103,8 +102,9 @@ internal fun imageMotionStoryboardShortWorkflow(
         )))
         add(shortsCaptionStyleNode())
         add(NodeRef("captionOverlay", "media.caption_overlay"))
-        // "", not a named speaker — see DemoRecaptionDef.kt's ttsEngine default for why.
-        add(NodeRef("narrate", "media.text_to_speech.qwen3", config = mapOf("voice" to s(""))))
+        // Fixed named speaker keeps the whole short on one narrator instead of letting Qwen3
+        // roam across its default expressive voice.
+        add(NodeRef("narrate", "media.text_to_speech.qwen3", config = mapOf("voice" to s("Ryan"))))
         add(NodeRef("encode", "media.video_encode", config = mapOf(
             "output_path" to s("$STORYBOARD_OUTPUT_BASE.mp4"), "bitrate" to s("high"), "codec" to s("h264"),
         )))

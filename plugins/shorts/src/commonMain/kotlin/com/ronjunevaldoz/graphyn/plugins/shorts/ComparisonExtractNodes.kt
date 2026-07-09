@@ -122,12 +122,12 @@ public val comparisonPairDurationSpec: NodeSpec = NodeSpec(
     defaultValues = mapOf("pair_count" to WorkflowValue.IntValue(COMPARISON_PAIR_COUNT)),
 )
 
-/** Executor for [comparisonPairDurationSpec]. Floors at 2000ms so a very short narration still
+/** Executor for [comparisonPairDurationSpec]. Floors at 1500ms so a very short narration still
  * leaves each pair's photos legible on screen, and caps at 8000ms so a TTS duration anomaly can't
  * blow up the short into an unwatchably long clip (see the class doc for the confirmed case). */
 public val comparisonPairDurationExecutor: NodeExecutor = NodeExecutor { inputs ->
     val narrationDurationMs = inputs.doubleOr("narration_duration_ms", 0.0)
     val pairCount = inputs.intOr("pair_count", COMPARISON_PAIR_COUNT).coerceAtLeast(1)
-    val perPairMs = (narrationDurationMs / pairCount).coerceIn(2000.0, 8000.0)
+    val perPairMs = (narrationDurationMs / pairCount).coerceIn(1500.0, 8000.0)
     mapOf("result" to WorkflowValue.DoubleValue(perPairMs))
 }

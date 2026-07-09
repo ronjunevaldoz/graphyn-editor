@@ -4,14 +4,13 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.intValue as i
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 private const val SDXL_DIFFUSION = "/models/sdxl/diffusion/sd_xl_base_1.0.safetensors"
 private const val SDXL_VAE = "/models/sdxl/vae/sdxl_vae.safetensors"
 private const val PHOTOMAKER_V2_WEIGHTS = "/models/sdxl/photomaker/photomaker-v2.safetensors"
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
 
 /**
  * Default sample prompts — same character, varied pose/framing/setting, to visually validate

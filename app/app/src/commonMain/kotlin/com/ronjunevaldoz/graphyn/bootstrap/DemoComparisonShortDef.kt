@@ -4,11 +4,13 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.intValue as i
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
+internal const val COMPARISON_OUTPUT_DIR = "outputs/comparison-short"
 
-internal const val COMPARISON_OUTPUT_BASE = "comparison-short"
+private fun comparisonOutput(fileName: String) = "$COMPARISON_OUTPUT_DIR/$fileName"
 
 /** Cycled by pair index so the mascot's appearance actually changes across the short instead of
  * being one static pose held the whole video. */
@@ -60,7 +62,8 @@ internal fun comparisonShortWorkflow(
         add(NodeRef("visualStyle", COMPARISON_FIELD_NODE_TYPE, config = mapOf("field" to s("visual_style"))))
         add(NodeRef("narration", COMPARISON_FIELD_NODE_TYPE, config = mapOf("field" to s("narration"))))
         add(NodeRef("captionsScript", COMPARISON_CAPTIONS_NODE_TYPE))
-        add(NodeRef("narrate", "media.text_to_speech.qwen3", config = mapOf("voice" to s(""))))
+        // Use the OS voice for a stable rerun while the dedicated Oute adapter env is incomplete.
+        add(NodeRef("narrate", "media.text_to_speech.say", config = mapOf("voice_id" to s("Samantha"), "speed" to d(1.0))))
         add(NodeRef("pairDuration", COMPARISON_PAIR_DURATION_NODE_TYPE))
         // Generated once per pose (not per pair) — each pair references the pose for `index % 3`
         // via its own image_import below.
@@ -103,22 +106,23 @@ internal fun comparisonShortWorkflow(
                 ),
             ))
             add(NodeRef("pair${index}Save", "media.video_encode", config = mapOf(
-                "output_path" to s("$COMPARISON_OUTPUT_BASE.pair$index.mp4"), "bitrate" to s("medium"), "codec" to s("h264"),
+                "output_path" to s(comparisonOutput("comparison-short.pair$index.mp4")), "bitrate" to s("medium"), "codec" to s("h264"),
             )))
         }
         add(NodeRef("stitch", SHORTS_BATCH_SUBGRAPH_NODE_TYPE, subgraph = stitchBatchSubgraph(0)))
         add(NodeRef("stitchSave", "media.video_encode", config = mapOf(
-            "output_path" to s("$COMPARISON_OUTPUT_BASE.stitched.mp4"), "bitrate" to s("medium"), "codec" to s("h264"),
+            "output_path" to s(comparisonOutput("comparison-short.stitched.mp4")), "bitrate" to s("medium"), "codec" to s("h264"),
         )))
         add(shortsCaptionStyleNode())
         add(NodeRef("captionOverlay", "media.caption_overlay"))
         add(NodeRef("encode", "media.video_encode", config = mapOf(
-            "output_path" to s("$COMPARISON_OUTPUT_BASE.mp4"), "bitrate" to s("high"), "codec" to s("h264"),
+            "output_path" to s(comparisonOutput("comparison-short.mp4")), "bitrate" to s("high"), "codec" to s("h264"),
         )))
         add(NodeRef("output", "media.file_output"))
+        add(NodeRef("comparisonMetadata", "demo.comparison.metadata"))
         add(NodeRef("comparisonJson", "json.stringify", config = mapOf("pretty" to WorkflowValue.BooleanValue(true))))
         add(NodeRef("comparisonJsonWrite", "io.file_write", config = mapOf(
-            "path" to s("$COMPARISON_OUTPUT_BASE.comparison.json"), "append" to WorkflowValue.BooleanValue(false),
+            "path" to s(comparisonOutput("comparison-short.comparison.json")), "append" to WorkflowValue.BooleanValue(false),
         )))
     },
     connections = buildList {
@@ -187,7 +191,8 @@ internal fun comparisonShortWorkflow(
         add(ConnectionRef("captionOverlay", "video", "encode", "video"))
         add(ConnectionRef("narrate", "audio", "encode", "audio"))
         add(ConnectionRef("encode", "file_path", "output", "file_path"))
-        add(ConnectionRef("comparison", "value", "comparisonJson", "value"))
+        add(ConnectionRef("comparison", "value", "comparisonMetadata", "input"))
+        add(ConnectionRef("comparisonMetadata", "value", "comparisonJson", "value"))
         add(ConnectionRef("comparisonJson", "text", "comparisonJsonWrite", "content"))
     },
 )

@@ -65,6 +65,9 @@ public object ShortsNodeTypes {
     /** Divides a measured narration duration evenly across the comparison pairs, with a sane floor —
      * see [comparisonPairDurationExecutor] for why this exists instead of a fixed guess. */
     public const val COMPARISON_PAIR_DURATION: String = "demo.comparison.pair_duration"
+
+    /** Appends a generation timestamp to the validated comparison record before serialization. */
+    public const val COMPARISON_METADATA: String = "demo.comparison.metadata"
 }
 
 /** Number of scenes the storyboard generator and storyboard-first short are fixed to. */

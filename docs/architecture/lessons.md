@@ -9,6 +9,7 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
 - AI assistants are more useful when they can see node descriptions and layout state.
 - Shorts prompt shaping belongs in a real node contract, not inline `script.eval` glue.
 - Scene prompt scripts should fall back across caption/title/topic fields so one missing `prompt` key does not break the whole shorts pipeline.
+- Comparison shorts had a hidden minimum length from the per-pair duration floor; if the result feels too long, check the floor and pair count before assuming the narration is the only driver.
 - Reusable subgraphs work best when they expose one clean boundary value.
 - Intra-node progress (e.g. diffusion steps) is reported via a `ProgressReporter` `CoroutineContext.Element` the engine installs around each `executor.execute()` — executors call the opt-in `suspend reportProgress(step, total, phase)`; this keeps `NodeExecutor`'s single-method `fun interface` SAM signature intact so the dozens of `NodeExecutor { }` lambda call sites are untouched. Reports surface as `ExecutionEvent.Progress` on the same `onEvent`/`ExecutionStreamMessage` stream as `Started`/`Succeeded`, so SSE (`GET /executions/{id}/events`) carries them with zero server change. Adding the sealed case only breaks *exhaustive* `when(event)` blocks (one existed: `GraphynEditorExecutionActions`); `.any {}`-style predicate tests are source-compatible.
 - `media.video_stitch` needs video clips, not stills; generate clips first, then stitch.
@@ -275,3 +276,13 @@ Reference points for "is this run just slow, or is something actually wrong" —
   unaffected since the row is appended *after* the last output — `portAnchorY` never reads
   `nodeHeight`. Rule: always render a Roborazzi screenshot for a new visual element before calling
   it done — an overlap like this is invisible in a text-only diff review.
+- Qwen3 TTS voice drift showed up when narration used a blank `voice` and let the model fall back
+  to its default expressive speaker. The fix was to pin a named Qwen3 CustomVoice speaker
+  (`Ryan`) for the default narration path and keep OuteTTS as the explicit alternate engine.
+  Rule: if narration must stay consistent across many clips, do not rely on the model's implicit
+  default voice; pick a speaker or clone a reference voice on purpose.
+- For result metadata on comparison shorts, use `kotlin.time.Clock.System.now()` in a tiny compiled
+  node instead of a scripted timestamp or a new datetime dependency. The first pass reached for the
+  wrong `kotlinx.datetime.Clock` API, which does not expose `System` in this codebase's dependency
+  mix. Rule: match the repo's existing clock API before adding a timestamp helper, and keep the
+  timestamp in a wrapper node so the validated comparison payload stays unchanged.

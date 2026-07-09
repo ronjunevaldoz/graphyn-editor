@@ -3,7 +3,10 @@ package com.ronjunevaldoz.graphyn.plugins.shorts
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.booleanValue as b
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.intValue as i
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 // Same base Flux schnell checkpoint as characterSheetSubgraphDynamic — a mascot illustration is a
 // plain generation, not an edit, so it doesn't need FLUX Kontext's extra sampling steps or
@@ -13,11 +16,6 @@ private const val MASCOT_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
 private const val MASCOT_T5XXL = "/models/flux/text_encoder/t5xxl_Q5_K_M.gguf"
 private const val MASCOT_VAE = "/models/flux/vae/ae.safetensors"
 
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
-private fun b(value: Boolean) = WorkflowValue.BooleanValue(value)
-
 /**
  * Default original mascot design, not tied to any specific existing character — a generic,
  * user-overridable starting point for [comparisonPairSubgraph]'s recurring reactor. Callers should
@@ -25,8 +23,9 @@ private fun b(value: Boolean) = WorkflowValue.BooleanValue(value)
  * only exists so the comparison workflow is runnable out of the box.
  */
 public const val DEFAULT_MASCOT_DESCRIPTION: String =
-    "a simple, friendly round-bodied cartoon mascot character, minimalist flat design, solid " +
-        "single color body, large expressive eyes, no other distinguishing props or clothing"
+    "the same simple, friendly round-bodied cartoon mascot character across every pose, " +
+        "minimalist flat design, solid single-color body, large expressive eyes, no props, no " +
+        "clothing, keep the character identity and proportions consistent"
 
 /**
  * Pose/expression instructions for [mascotSubgraph] — call the subgraph once per variant (each
@@ -34,13 +33,14 @@ public const val DEFAULT_MASCOT_DESCRIPTION: String =
  * generating a small fixed set of reusable poses once per short instead of once per pair.
  */
 public object MascotPoses {
-    public const val NEUTRAL: String = "standing pose, calm neutral expression, facing forward"
-    public const val CONFUSED: String = "one hand near chin, puzzled expression, tilted head, question-mark feel"
-    public const val EXPLAINING: String = "one arm raised pointing outward, confident expression, mid-explanation gesture"
+    public const val NEUTRAL: String = "standing pose, calm neutral expression, centered between pair A and pair B"
+    public const val CONFUSED: String = "one hand near chin, slight head tilt, pointing toward pair A on the left"
+    public const val EXPLAINING: String = "one arm raised, confident expression, pointing toward pair B on the right"
 }
 
 /**
  * Generates ONE mascot pose image, once per short, before the per-pair loop — not per-pair.
+ * [seed] is pinned by default so the mascot stays visually consistent while only the pose changes.
  * Sibling to [characterSheetSubgraphDynamic]; same shape, different subject (an illustrated
  * mascot instead of a photorealistic recurring character), and no `ref_images` conditioning
  * output needed — [comparisonPairSubgraph] uses the raw pose image directly via
@@ -52,6 +52,7 @@ public fun mascotSubgraph(
     poseInstruction: String = MascotPoses.NEUTRAL,
     width: Int = ShortsConstants.WIDTH,
     height: Int = ShortsConstants.HEIGHT,
+    seed: Int = 42,
 ): WorkflowDefinition = WorkflowDefinition(
     id = id,
     name = "Mascot Pose",
@@ -79,7 +80,7 @@ public fun mascotSubgraph(
             "negative_prompt" to s(""),
             "width" to i(width),
             "height" to i(height),
-            "seed" to i(-1),
+            "seed" to i(seed),
             "batch_count" to i(1),
         )))
         add(NodeRef("preview", "preview.view"))

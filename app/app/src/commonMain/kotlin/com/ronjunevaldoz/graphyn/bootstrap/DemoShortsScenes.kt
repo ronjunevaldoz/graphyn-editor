@@ -3,7 +3,10 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.booleanValue as b
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.intValue as i
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 private const val FLUX_DIFFUSION = "/models/flux/diffusion/flux1-schnell-Q4_K_S.gguf"
 private const val FLUX_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
@@ -23,10 +26,7 @@ private const val TALL = SHORTS_HEIGHT
 private const val FRAMES = SHORTS_FRAME_COUNT
 private const val FPS = SHORTS_FPS
 
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
-private fun b(value: Boolean) = WorkflowValue.BooleanValue(value)
+ 
 
 internal fun imageSceneSubgraph(index: Int) = sceneSubgraph(index, useImageMotion = true)
 

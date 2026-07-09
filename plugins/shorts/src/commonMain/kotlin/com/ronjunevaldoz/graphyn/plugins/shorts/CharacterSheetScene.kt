@@ -4,6 +4,10 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.booleanValue as b
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.intValue as i
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 // Same base Flux schnell checkpoint as imageMotionSceneSubgraph — a character portrait is a plain
 // generation, not an edit, so it doesn't need FLUX Kontext's extra sampling steps or ref-image
@@ -12,11 +16,6 @@ private const val CHARACTER_SHEET_DIFFUSION = "/models/flux/diffusion/flux1-schn
 private const val CHARACTER_SHEET_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
 private const val CHARACTER_SHEET_T5XXL = "/models/flux/text_encoder/t5xxl_Q5_K_M.gguf"
 private const val CHARACTER_SHEET_VAE = "/models/flux/vae/ae.safetensors"
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
-private fun b(value: Boolean) = WorkflowValue.BooleanValue(value)
 
 /**
  * Preset pose/expression instructions for [characterSheetSubgraphDynamic] — call the subgraph

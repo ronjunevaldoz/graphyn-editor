@@ -4,9 +4,8 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 /**
  * Regenerates a single scene, re-stitches it with the *other* scenes' already-saved clips (see

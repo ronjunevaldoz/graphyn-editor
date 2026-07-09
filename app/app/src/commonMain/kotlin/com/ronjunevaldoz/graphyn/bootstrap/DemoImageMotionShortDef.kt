@@ -3,10 +3,8 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
-import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 private val IMAGE_MOTION_SCENES = listOf(
     Triple(

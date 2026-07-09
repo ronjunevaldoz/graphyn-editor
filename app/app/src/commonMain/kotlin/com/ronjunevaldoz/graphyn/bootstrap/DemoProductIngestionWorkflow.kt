@@ -5,8 +5,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 private fun p(x: Int, y: Int) = WorkflowNodePosition(x, y)
 
 internal fun productIngestionPositions() = mapOf(

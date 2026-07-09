@@ -46,6 +46,7 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerNodeSpec(comparisonPairFieldSpec)
         registrar.registerNodeSpec(comparisonCaptionsSpec)
         registrar.registerNodeSpec(comparisonPairDurationSpec)
+        registrar.registerNodeSpec(comparisonMetadataSpec)
 
         registrar.registerExecutor(ShortsNodeTypes.SCENE_SUBGRAPH) { inputs ->
             mapOf("video" to (inputs["value"] ?: WorkflowValue.NullValue))
@@ -70,5 +71,6 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_PAIR_FIELD, comparisonPairFieldExecutor)
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_CAPTIONS, comparisonCaptionsExecutor)
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_PAIR_DURATION, comparisonPairDurationExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_METADATA, comparisonMetadataExecutor)
     }
 }

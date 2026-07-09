@@ -4,6 +4,10 @@ import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.core.model.booleanValue as b
+import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
+import com.ronjunevaldoz.graphyn.core.model.intValue as i
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 // Same base Flux schnell checkpoint as imageMotionSceneSubgraph/mascotSubgraph — these are plain
 // generations, not edits.
@@ -11,11 +15,6 @@ private const val COMPARISON_DIFFUSION = "/models/flux/diffusion/flux1-schnell-Q
 private const val COMPARISON_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
 private const val COMPARISON_T5XXL = "/models/flux/text_encoder/t5xxl_Q5_K_M.gguf"
 private const val COMPARISON_VAE = "/models/flux/vae/ae.safetensors"
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
-private fun i(value: Int) = WorkflowValue.IntValue(value)
-private fun d(value: Double) = WorkflowValue.DoubleValue(value)
-private fun b(value: Boolean) = WorkflowValue.BooleanValue(value)
 
 /**
  * Generates ONE image for one side of a comparison pair — deliberately split out from

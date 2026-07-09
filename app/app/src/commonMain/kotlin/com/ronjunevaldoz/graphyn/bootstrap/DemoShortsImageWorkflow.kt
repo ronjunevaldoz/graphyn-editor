@@ -5,8 +5,7 @@ import com.ronjunevaldoz.graphyn.core.model.GRAPHYN_SUBGRAPH_TYPE
 import com.ronjunevaldoz.graphyn.core.model.NodeRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
-
-private fun s(value: String) = WorkflowValue.StringValue(value)
+import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
 internal val imageShortsWorkflow = WorkflowDefinition(
     id = "ai-shorts-image",

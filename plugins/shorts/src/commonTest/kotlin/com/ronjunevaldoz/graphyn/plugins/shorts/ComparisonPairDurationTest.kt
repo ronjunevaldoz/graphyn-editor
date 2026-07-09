@@ -18,7 +18,7 @@ class ComparisonPairDurationTest {
 
     @Test
     fun dividesNarrationEvenlyAcrossPairsWithinBounds() = runTest {
-        // 16000ms narration / 4 pairs = 4000ms, comfortably inside the 2000-8000ms band.
+        // 16000ms narration / 4 pairs = 4000ms, comfortably inside the 1500-8000ms band.
         assertEquals(4000.0, perPairMs(16000.0, pairCount = 4))
     }
 
@@ -34,11 +34,11 @@ class ComparisonPairDurationTest {
     @Test
     fun floorKeepsVeryShortNarrationWatchable() = runTest {
         // A near-silent/very short narration must not collapse pairs to a sub-second flash.
-        assertEquals(2000.0, perPairMs(400.0, pairCount = 4))
+        assertEquals(1500.0, perPairMs(400.0, pairCount = 4))
     }
 
     @Test
     fun missingNarrationDurationFallsBackToFloor() = runTest {
-        assertEquals(2000.0, perPairMs(narrationDurationMs = 0.0))
+        assertEquals(1500.0, perPairMs(narrationDurationMs = 0.0))
     }
 }
