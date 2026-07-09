@@ -6,9 +6,11 @@ import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.components.portColor
 import com.ronjunevaldoz.graphyn.editor.canvas.components.compatiblePickerSpecs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -67,7 +69,7 @@ class GraphynNodePickerTest {
     @Test
     fun typedOutputExcludesOpaqueInputNode() {
         val draft = GraphynConnectionDraft(fromNodeId = "src-str", fromPort = "result", isFromInput = false)
-        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.first.type }
+        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.spec.type }
         assertTrue("text.upper" in types, "StringType output should match StringType input")
         assertFalse("demo.opaque" in types, "StringType output must not match OpaqueType input")
         assertFalse("demo.color-a" in types, "StringType output must not match colored OpaqueType input")
@@ -77,7 +79,7 @@ class GraphynNodePickerTest {
     fun opaqueOutputOnlyMatchesSameColorOpaque() {
         // Uncolored (null) opaque output matches only uncolored opaque inputs.
         val draft = GraphynConnectionDraft(fromNodeId = "src-opq", fromPort = "output", isFromInput = false)
-        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.first.type }
+        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.spec.type }
         assertTrue("demo.opaque" in types, "null-color OpaqueType should match null-color OpaqueType input")
         assertFalse("text.upper" in types, "OpaqueType output must not match StringType input")
         assertFalse("demo.color-a" in types, "null-color OpaqueType must not match COLOR_A input")
@@ -87,7 +89,7 @@ class GraphynNodePickerTest {
     @Test
     fun coloredOpaqueOutputOnlyMatchesSameColor() {
         val draft = GraphynConnectionDraft(fromNodeId = "src-ca", fromPort = "output", isFromInput = false)
-        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.first.type }
+        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.spec.type }
         assertTrue("demo.color-a" in types, "COLOR_A output should match COLOR_A input")
         assertFalse("demo.opaque" in types, "COLOR_A output must not match null-color input")
         assertFalse("demo.color-b" in types, "COLOR_A output must not match COLOR_B input")
@@ -97,9 +99,16 @@ class GraphynNodePickerTest {
     @Test
     fun typedInputExcludesOpaqueOutputNode() {
         val draft = GraphynConnectionDraft(fromNodeId = "src-str", fromPort = "text", isFromInput = true)
-        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.first.type }
+        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.spec.type }
         assertTrue("text.upper" in types, "StringType input should match StringType output")
         assertFalse("demo.opaque" in types, "StringType input must not be fed by OpaqueType output")
         assertFalse("demo.color-a" in types, "StringType input must not be fed by colored OpaqueType output")
+    }
+
+    @Test
+    fun pickerSuggestionAccentMatchesTheCompatiblePortColor() {
+        val draft = GraphynConnectionDraft(fromNodeId = "src-ca", fromPort = "output", isFromInput = false)
+        val suggestion = compatiblePickerSpecs(draft, workflow, registry).first { it.spec.type == "demo.color-a" }
+        assertEquals(opaqueColorA.inputs.first().portColor(), suggestion.accentColor)
     }
 }

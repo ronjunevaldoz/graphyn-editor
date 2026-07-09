@@ -79,8 +79,14 @@ fun GraphynCanvasSurface(
                 GraphynNodePickerPopup(
                     screenPosition = picker.screenPosition,
                     compatibleSpecs = compatiblePickerSpecs(picker.draft, wf, nodeSpecs),
-                    onPick = { spec, port ->
-                        state.dispatch(GraphynEditorIntent.AddNodeAndConnect(spec, port, picker.worldPosition))
+                    onPick = { suggestion ->
+                        state.dispatch(
+                            GraphynEditorIntent.AddNodeAndConnect(
+                                suggestion.spec,
+                                suggestion.port,
+                                picker.worldPosition,
+                            ),
+                        )
                     },
                     onDismiss = { state.dispatch(GraphynEditorIntent.DismissNodePicker) },
                 )

@@ -6,8 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,19 +20,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.editor.design.GraphynDs
 import kotlin.math.roundToInt
 
 @Composable
 internal fun GraphynNodePickerPopup(
     screenPosition: Offset,
-    compatibleSpecs: List<Pair<NodeSpec, String>>,
-    onPick: (spec: NodeSpec, port: String) -> Unit,
+    compatibleSpecs: List<NodePickerSuggestion>,
+    onPick: (spec: NodePickerSuggestion) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val colors = GraphynDs.colors
@@ -65,23 +67,31 @@ internal fun GraphynNodePickerPopup(
                     style = GraphynDs.type.bodySmall.copy(color = colors.textSecondary),
                 )
             } else {
-                compatibleSpecs.forEach { (spec, port) ->
+                compatibleSpecs.forEach { suggestion ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = { onPick(spec, port) },
+                                onClick = { onPick(suggestion) },
                             )
                             .padding(horizontal = 12.dp, vertical = 10.dp)
-                            .testTag("node-picker-item-${spec.type}"),
-                        contentAlignment = Alignment.CenterStart,
+                            .testTag("node-picker-item-${suggestion.spec.type}"),
                     ) {
-                        BasicText(
-                            text = spec.label,
-                            style = GraphynDs.type.body.copy(color = colors.textPrimary),
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(suggestion.accentColor),
+                            )
+                            BasicText(
+                                text = suggestion.spec.label,
+                                style = GraphynDs.type.body.copy(color = colors.textPrimary),
+                                modifier = Modifier.padding(start = 10.dp),
+                            )
+                        }
                     }
                 }
             }
