@@ -30,7 +30,8 @@ internal fun GraphynEditorState.addNodeAndConnect(spec: NodeSpec, toPort: String
     } else {
         ConnectionRef(fromNodeId = draft.fromNodeId, fromPort = draft.fromPort, toNodeId = nodeId, toPort = toPort)
     }
-    workflow = current.copy(nodes = current.nodes + node, connections = current.connections + connection)
+    val nextWorkflow = current.copy(nodes = current.nodes + node)
+    workflow = nextWorkflow.copy(connections = upsertConnection(connection))
     connectionDraft = null
     connectionDraftPosition = null
     nodePickerState = null

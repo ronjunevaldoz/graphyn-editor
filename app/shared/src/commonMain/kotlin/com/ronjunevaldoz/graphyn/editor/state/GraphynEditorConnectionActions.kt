@@ -31,7 +31,7 @@ internal fun GraphynEditorState.completeConnection(toNodeId: String, toPort: Str
     } else {
         ConnectionRef(fromNodeId = draft.fromNodeId, fromPort = draft.fromPort, toNodeId = toNodeId, toPort = toPort)
     }
-    workflow = w.copy(connections = w.connections + connection)
+    workflow = w.copy(connections = upsertConnection(connection))
     connectionDraft = null
     connectionDraftPosition = null
     log.push("Connected ${connection.fromNodeId}:${connection.fromPort} -> ${connection.toNodeId}:${connection.toPort}")
@@ -41,7 +41,7 @@ internal fun GraphynEditorState.reconnectSelectedConnection(toNodeId: String, to
     val conn = selectedConnection ?: return
     val w = workflow ?: return
     val updated = conn.copy(toNodeId = toNodeId, toPort = toPort)
-    workflow = w.copy(connections = w.connections.map { if (it == conn) updated else it })
+    workflow = w.copy(connections = upsertConnection(updated).filterNot { it == conn })
     selectedConnection = updated
     log.push("Reconnected ${conn.fromNodeId}:${conn.fromPort} -> $toNodeId:$toPort")
 }

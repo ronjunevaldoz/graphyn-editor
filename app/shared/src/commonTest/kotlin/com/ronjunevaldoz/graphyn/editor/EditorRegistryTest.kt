@@ -160,6 +160,147 @@ class EditorRegistryTest {
     }
 
     @Test
+    fun scalarInputConnectionIsReplacedInsteadOfDuplicated() {
+        val registry = DefaultNodeSpecRegistry().apply {
+            register(
+                NodeSpec(
+                    type = "source",
+                    label = "Source",
+                    inputs = emptyList(),
+                    outputs = listOf(PortSpec(name = "out", type = WorkflowType.BooleanType)),
+                ),
+            )
+            register(
+                NodeSpec(
+                    type = "sink",
+                    label = "Sink",
+                    inputs = listOf(PortSpec(name = "enabled", type = WorkflowType.BooleanType, required = false)),
+                    outputs = emptyList(),
+                ),
+            )
+        }
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-connect-dup",
+                name = "ConnectDup",
+                nodes = listOf(
+                    NodeRef(id = "source-a", type = "source"),
+                    NodeRef(id = "source-b", type = "source"),
+                    NodeRef(id = "sink", type = "sink"),
+                ),
+                connections = emptyList(),
+            ),
+            nodeSpecs = registry,
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("source-a", "out"))
+        state.dispatch(GraphynEditorIntent.CompleteConnection("sink", "enabled"))
+        state.dispatch(GraphynEditorIntent.BeginConnection("source-b", "out"))
+        state.dispatch(GraphynEditorIntent.CompleteConnection("sink", "enabled"))
+
+        assertEquals(
+            listOf(ConnectionRef("source-b", "out", "sink", "enabled")),
+            state.workflow?.connections,
+        )
+    }
+
+    @Test
+    fun listInputAllowsFanInConnections() {
+        val registry = DefaultNodeSpecRegistry().apply {
+            register(
+                NodeSpec(
+                    type = "source",
+                    label = "Source",
+                    inputs = emptyList(),
+                    outputs = listOf(PortSpec(name = "out", type = WorkflowType.BooleanType)),
+                ),
+            )
+            register(
+                NodeSpec(
+                    type = "collector",
+                    label = "Collector",
+                    inputs = listOf(PortSpec(name = "items", type = WorkflowType.ListType(WorkflowType.BooleanType), required = false)),
+                    outputs = emptyList(),
+                ),
+            )
+        }
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-fanin",
+                name = "FanIn",
+                nodes = listOf(
+                    NodeRef(id = "source-a", type = "source"),
+                    NodeRef(id = "source-b", type = "source"),
+                    NodeRef(id = "collector", type = "collector"),
+                ),
+                connections = emptyList(),
+            ),
+            nodeSpecs = registry,
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("source-a", "out"))
+        state.dispatch(GraphynEditorIntent.CompleteConnection("collector", "items"))
+        state.dispatch(GraphynEditorIntent.BeginConnection("source-b", "out"))
+        state.dispatch(GraphynEditorIntent.CompleteConnection("collector", "items"))
+
+        assertEquals(
+            setOf(
+                ConnectionRef("source-a", "out", "collector", "items"),
+                ConnectionRef("source-b", "out", "collector", "items"),
+            ),
+            state.workflow?.connections?.toSet(),
+        )
+    }
+
+    @Test
+    fun outputPortCanFanOutToMultipleTargets() {
+        val registry = DefaultNodeSpecRegistry().apply {
+            register(
+                NodeSpec(
+                    type = "source",
+                    label = "Source",
+                    inputs = emptyList(),
+                    outputs = listOf(PortSpec(name = "out", type = WorkflowType.BooleanType)),
+                ),
+            )
+            register(
+                NodeSpec(
+                    type = "sink",
+                    label = "Sink",
+                    inputs = listOf(PortSpec(name = "enabled", type = WorkflowType.BooleanType, required = false)),
+                    outputs = emptyList(),
+                ),
+            )
+        }
+        val state = GraphynEditorState(
+            WorkflowDefinition(
+                id = "workflow-fanout",
+                name = "FanOut",
+                nodes = listOf(
+                    NodeRef(id = "source", type = "source"),
+                    NodeRef(id = "sink-a", type = "sink"),
+                    NodeRef(id = "sink-b", type = "sink"),
+                ),
+                connections = emptyList(),
+            ),
+            nodeSpecs = registry,
+        )
+
+        state.dispatch(GraphynEditorIntent.BeginConnection("source", "out"))
+        state.dispatch(GraphynEditorIntent.CompleteConnection("sink-a", "enabled"))
+        state.dispatch(GraphynEditorIntent.BeginConnection("source", "out"))
+        state.dispatch(GraphynEditorIntent.CompleteConnection("sink-b", "enabled"))
+
+        assertEquals(
+            setOf(
+                ConnectionRef("source", "out", "sink-a", "enabled"),
+                ConnectionRef("source", "out", "sink-b", "enabled"),
+            ),
+            state.workflow?.connections?.toSet(),
+        )
+    }
+
+    @Test
     fun editorStateDeletesSelectedConnection() {
         val connection = ConnectionRef(
             fromNodeId = "source",
