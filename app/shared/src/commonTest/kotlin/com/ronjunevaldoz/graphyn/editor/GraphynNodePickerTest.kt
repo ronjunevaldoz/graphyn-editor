@@ -6,6 +6,7 @@ import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
+import com.ronjunevaldoz.graphyn.editor.canvas.components.canvasPortColor
 import com.ronjunevaldoz.graphyn.editor.canvas.components.portColor
 import com.ronjunevaldoz.graphyn.editor.canvas.components.compatiblePickerSpecs
 import com.ronjunevaldoz.graphyn.editor.interaction.GraphynConnectionDraft
@@ -125,7 +126,7 @@ class GraphynNodePickerTest {
     fun pickerSuggestionAccentMatchesTheCompatiblePortColor() {
         val draft = GraphynConnectionDraft(fromNodeId = "src-ca", fromPort = "output", isFromInput = false)
         val suggestion = compatiblePickerSpecs(draft, workflow, registry).first { it.spec.type == "demo.color-a" }
-        assertEquals(opaqueColorA.inputs.first().portColor(), suggestion.accentColor)
+        assertEquals(opaqueColorA.inputs.first().canvasPortColor("demo.color-a"), suggestion.accentColor)
     }
 
     @Test

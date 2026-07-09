@@ -21,12 +21,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
-import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.SubgraphCardFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-// A subgraph node renders as the standard FieldCardFactory (see GraphynNodeFactoryResolver) —
-// this test proves the card's generic double-tap-to-enter-subgraph gesture still works for it.
+// A subgraph node uses its own boundary card; this test proves the card's double-tap-to-enter
+// gesture still works for it.
 class SubgraphNodeCardUiTest {
 
     private val specs = DefaultNodeSpecRegistry().apply {
@@ -61,7 +61,7 @@ class SubgraphNodeCardUiTest {
     fun doubleClickEntersSubgraph() = runDesktopComposeUiTest {
         var entered = 0
         val spec = deriveSubgraphSpec(subgraphNode(), specs)!!
-        val factory = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+        val factory = SubgraphCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
         setContent {
             Box(Modifier.padding(16.dp)) { with(factory) { NodeCanvas(ctx(onEnter = { entered++ })) } }
         }
@@ -73,7 +73,7 @@ class SubgraphNodeCardUiTest {
     @Test
     fun enterHintIsVisibleOnlyWhenOnEnterSubgraphIsProvided() = runDesktopComposeUiTest {
         val spec = deriveSubgraphSpec(subgraphNode(), specs)!!
-        val factory = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size, hasEnterHint = true)
+        val factory = SubgraphCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
         setContent {
             Box(Modifier.padding(16.dp)) { with(factory) { NodeCanvas(ctx(onEnter = {})) } }
         }
@@ -82,14 +82,12 @@ class SubgraphNodeCardUiTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun enterHintIsHiddenWithoutHasEnterHintOrOnEnterSubgraph() = runDesktopComposeUiTest {
+    fun enterHintIsHiddenWithoutOnEnterSubgraph() = runDesktopComposeUiTest {
         val spec = deriveSubgraphSpec(subgraphNode(), specs)!!
-        val hintReserved = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size, hasEnterHint = true)
-        val hintNotReserved = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+        val factory = SubgraphCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
         setContent {
             Box(Modifier.padding(16.dp)) {
-                with(hintReserved) { NodeCanvas(ctx(onEnter = null)) } // hasEnterHint but no callback
-                with(hintNotReserved) { NodeCanvas(ctx(onEnter = {})) } // callback but not reserved
+                with(factory) { NodeCanvas(ctx(onEnter = null)) }
             }
         }
         assertEquals(0, onAllNodesWithText("↳ Enter").fetchSemanticsNodes().size)

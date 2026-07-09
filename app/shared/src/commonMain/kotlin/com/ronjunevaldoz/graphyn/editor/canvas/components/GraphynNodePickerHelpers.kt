@@ -30,12 +30,12 @@ internal fun compatiblePickerSpecs(
             val out = spec.outputs.firstOrNull { p ->
                 PortCompatibility.isCompatible(sourcePort, p) && p.portColor() == sourceColor
             } ?: return@mapNotNull null
-            NodePickerSuggestion(spec, out.name, out.portColor())
+            NodePickerSuggestion(spec, out.name, out.canvasPortColor(spec.type))
         } else {
             val inp = spec.inputs.firstOrNull { p ->
                 PortCompatibility.isCompatible(p, sourcePort) && p.portColor() == sourceColor
             } ?: return@mapNotNull null
-            NodePickerSuggestion(spec, inp.name, inp.portColor())
+            NodePickerSuggestion(spec, inp.name, inp.canvasPortColor(spec.type))
         }
     }
 }

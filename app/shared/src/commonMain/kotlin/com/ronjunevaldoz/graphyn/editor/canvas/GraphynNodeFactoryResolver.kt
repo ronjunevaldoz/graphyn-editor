@@ -6,12 +6,13 @@ import com.ronjunevaldoz.graphyn.core.model.connectedInputPorts
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.NodeSpecRegistry
 import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.SubgraphCardFactory
 
 /**
  * Resolves the [NodeCanvasFactory] for [node], in precedence order:
  *  1. a host-registered card for the node type, if any;
- *  2. an editor-created subgraph node → the standard [FieldCardFactory] sized from its derived
- *     boundary ports (double-tap-to-enter is generic on [FieldCardFactory] via
+ *  2. an editor-created subgraph node → a dedicated subgraph boundary card sized from its
+ *     derived boundary ports (double-tap-to-enter is generic on the boundary card via
  *     [com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext.onEnterSubgraph]);
  *  3. any other node with a resolvable spec → a default [FieldCardFactory] sized from the spec's
  *     port counts.
@@ -33,7 +34,7 @@ internal fun resolveNodeFactory(
     if (node.subgraph != null) {
         val connected = workflow?.connectedInputPorts(node.id).orEmpty()
         val derived = deriveSubgraphSpec(node, nodeSpecs, connectedInputs = connected) ?: return null
-        return FieldCardFactory(inputRows = derived.inputs.size, outputRows = derived.outputs.size, hasEnterHint = true)
+        return SubgraphCardFactory(inputRows = derived.inputs.size, outputRows = derived.outputs.size)
     }
     val spec = nodeSpecs.resolve(node.type) ?: return null
     return FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)

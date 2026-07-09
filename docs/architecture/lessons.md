@@ -11,6 +11,7 @@ Short index of durable lessons discovered while building Graphyn. Keep the canon
 - Scene prompt scripts should fall back across caption/title/topic fields so one missing `prompt` key does not break the whole shorts pipeline.
 - Comparison shorts had a hidden minimum length from the per-pair duration floor; if the result feels too long, check the floor and pair count before assuming the narration is the only driver.
 - Reusable subgraphs work best when they expose one clean boundary value.
+- A host app can silently shadow a shared canvas renderer with a local `registerCanvasCard` override; if a new card is not showing up, check the app/plugin registry before assuming the shared factory is wrong.
 - Editor connection creation should enforce single incoming connections by default and only allow fan-in on list-typed inputs; otherwise the graph becomes valid only after a validator pass.
 - Intra-node progress (e.g. diffusion steps) is reported via a `ProgressReporter` `CoroutineContext.Element` the engine installs around each `executor.execute()` — executors call the opt-in `suspend reportProgress(step, total, phase)`; this keeps `NodeExecutor`'s single-method `fun interface` SAM signature intact so the dozens of `NodeExecutor { }` lambda call sites are untouched. Reports surface as `ExecutionEvent.Progress` on the same `onEvent`/`ExecutionStreamMessage` stream as `Started`/`Succeeded`, so SSE (`GET /executions/{id}/events`) carries them with zero server change. Adding the sealed case only breaks *exhaustive* `when(event)` blocks (one existed: `GraphynEditorExecutionActions`); `.any {}`-style predicate tests are source-compatible.
 - `media.video_stitch` needs video clips, not stills; generate clips first, then stitch.
@@ -135,6 +136,7 @@ Reference points for "is this run just slow, or is something actually wrong" —
 
 - Launcher catalogs need explicit badge priority once recency and status both matter.
 - Layout or zoom heuristics should preserve a consistent inset so graphs do not start on the border.
+- Collapsed subgraph nodes should use a dedicated boundary card/factory instead of borrowing the generic FieldCard; otherwise the UI reads like a fake port list, and any extra section labels must be reflected in the port-anchor math so the canvas dots stay aligned.
 
 ## Publishing and Gradle
 

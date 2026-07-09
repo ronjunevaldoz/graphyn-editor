@@ -1,12 +1,10 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
-import androidx.compose.runtime.Composable
 import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
-import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasFactory
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCategoryMeta
 import com.ronjunevaldoz.graphyn.core.model.NodeGroups
 import com.ronjunevaldoz.graphyn.editor.plugins.GRAPHYN_EDITOR_PLUGIN_API_VERSION
@@ -59,18 +57,6 @@ object SubgraphEditorPlugin : GraphynEditorPlugin {
     )
 
     override fun register(registrar: GraphynEditorPluginRegistrar) {
-        registrar.registerCanvasCard(SUBGRAPH_NODE_TYPE, SubgraphCardFactory)
-        registrar.registerCanvasCard(SHORTS_SCENE_SUBGRAPH_NODE_TYPE, SubgraphCardFactory)
-        registrar.registerCanvasCard(SHORTS_BATCH_SUBGRAPH_NODE_TYPE, SubgraphCardFactory)
-        registrar.registerCanvasCard(STORYBOARD_SUBGRAPH_NODE_TYPE, SubgraphCardFactory)
         registrar.registerCategory(SUBGRAPH_CATEGORY, NodeCategoryMeta("Composition", 0xFF7C3AED, group = NodeGroups.FLOW))
     }
-}
-
-private object SubgraphCardFactory : NodeCanvasFactory {
-    override val nodeWidth = 280
-    override val nodeHeight = 160
-
-    @Composable
-    override fun NodeCanvas(context: NodeCanvasContext) = SubgraphCard(context)
 }

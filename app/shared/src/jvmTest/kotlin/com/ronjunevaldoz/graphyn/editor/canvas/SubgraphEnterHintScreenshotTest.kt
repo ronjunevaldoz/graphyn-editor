@@ -16,12 +16,12 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
-import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.SubgraphCardFactory
 import io.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
 
-// Visual baseline for a subgraph node's standard FieldCard, including the "↳ Enter" hint.
+// Visual baseline for a subgraph node's dedicated boundary card, including the "↳ Enter" hint.
 class SubgraphEnterHintScreenshotTest {
     @get:Rule
     val rule = createComposeRule()
@@ -44,7 +44,7 @@ class SubgraphEnterHintScreenshotTest {
     @Test
     fun subgraphCardWithEnterHintScreenshot() {
         val spec = deriveSubgraphSpec(subgraphNode(), specs)!!
-        val factory = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size, hasEnterHint = true)
+        val factory = SubgraphCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
         val ctx = NodeCanvasContext(
             node = subgraphNode(),
             spec = spec,

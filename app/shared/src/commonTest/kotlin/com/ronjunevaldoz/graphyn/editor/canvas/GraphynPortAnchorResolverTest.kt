@@ -9,6 +9,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.deriveSubgraphSpec
 import com.ronjunevaldoz.graphyn.core.registry.DefaultNodeSpecRegistry
 import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.SubgraphCardFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -35,10 +36,11 @@ class GraphynPortAnchorResolverTest {
     fun subgraphConnectionAnchorsMatchTheStandardFieldCardDots() {
         // Regression: connections used to fall back to GraphynCanvasMetrics.portAnchorY at index 0
         // because the subgraph type has no registered spec, landing ~55dp below the rendered dots.
-        // Subgraph nodes render via the standard FieldCardFactory (same as any other node).
+        // Subgraph nodes now render via a dedicated boundary card, but the anchor math still
+        // needs to match its actual section layout.
         val node = subgraphNode()
         val derived = deriveSubgraphSpec(node, specs)!!
-        val card = FieldCardFactory(inputRows = derived.inputs.size, outputRows = derived.outputs.size)
+        val card = SubgraphCardFactory(inputRows = derived.inputs.size, outputRows = derived.outputs.size)
 
         derived.inputs.forEachIndexed { i, port ->
             val anchor = resolvePortAnchor(node, port.name, isInput = true, specs, canvasCards = null, workflow = null)

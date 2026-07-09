@@ -1,14 +1,20 @@
 package com.ronjunevaldoz.graphyn.editor.state
 
 import androidx.compose.ui.unit.IntSize
+import com.ronjunevaldoz.graphyn.core.model.GRAPHYN_SUBGRAPH_TYPE
 import com.ronjunevaldoz.graphyn.editor.canvas.GraphynCanvasMetrics
 import com.ronjunevaldoz.graphyn.ui.cards.FieldCardFactory
+import com.ronjunevaldoz.graphyn.ui.cards.SubgraphCardFactory
 
 /** Resolves a node type's real rendered size from the canvas card registry, falling back to the field-card shape. */
 internal fun GraphynEditorState.resolveNodeSize(type: String): IntSize =
     canvasCards?.resolve(type)?.let { IntSize(it.nodeWidth, it.nodeHeight) }
         ?: nodeSpecs?.resolve(type)?.let { spec ->
-            val factory = FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+            val factory = if (type == GRAPHYN_SUBGRAPH_TYPE) {
+                SubgraphCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+            } else {
+                FieldCardFactory(inputRows = spec.inputs.size, outputRows = spec.outputs.size)
+            }
             IntSize(factory.nodeWidth, factory.nodeHeight)
         }
         ?: GraphynCanvasMetrics.NodeSize

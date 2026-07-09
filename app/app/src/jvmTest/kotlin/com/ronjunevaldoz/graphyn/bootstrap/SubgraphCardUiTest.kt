@@ -10,6 +10,7 @@ import com.ronjunevaldoz.graphyn.core.model.NodeSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.editor.canvas.NodeCanvasContext
 import com.ronjunevaldoz.graphyn.editor.theme.GraphynTheme
+import com.ronjunevaldoz.graphyn.ui.cards.SubgraphCardFactory
 import org.junit.Rule
 import org.junit.Test
 
@@ -29,6 +30,7 @@ class SubgraphCardUiTest {
         nodes = emptyList(), connections = emptyList(),
     )
     private val node = NodeRef(id = "sg1", type = "demo.subgraph", subgraph = innerWorkflow)
+    private val factory = SubgraphCardFactory(inputRows = 0, outputRows = 0)
 
     private fun ctx(status: NodeExecutionStatus) = NodeCanvasContext(
         node = node,
@@ -41,7 +43,7 @@ class SubgraphCardUiTest {
 
     @Test
     fun noBadgeWhenIdle() {
-        rule.setContent { GraphynTheme { SubgraphCard(ctx(NodeExecutionStatus.Idle)) } }
+        rule.setContent { GraphynTheme { with(factory) { NodeCanvas(ctx(NodeExecutionStatus.Idle)) } } }
         rule.onNodeWithText("+").assertDoesNotExist()
         rule.onNodeWithText("v").assertDoesNotExist()
         rule.onNodeWithText("x").assertDoesNotExist()
@@ -49,38 +51,38 @@ class SubgraphCardUiTest {
 
     @Test
     fun runningBadgeAppearsWhenRunning() {
-        rule.setContent { GraphynTheme { SubgraphCard(ctx(NodeExecutionStatus.Running)) } }
+        rule.setContent { GraphynTheme { with(factory) { NodeCanvas(ctx(NodeExecutionStatus.Running)) } } }
         rule.onNodeWithText("+").assertExists()
     }
 
     @Test
     fun successBadgeAppearsWhenSuccess() {
-        rule.setContent { GraphynTheme { SubgraphCard(ctx(NodeExecutionStatus.Success)) } }
+        rule.setContent { GraphynTheme { with(factory) { NodeCanvas(ctx(NodeExecutionStatus.Success)) } } }
         rule.onNodeWithText("v").assertExists()
     }
 
     @Test
     fun errorBadgeAppearsWhenError() {
-        rule.setContent { GraphynTheme { SubgraphCard(ctx(NodeExecutionStatus.Error)) } }
+        rule.setContent { GraphynTheme { with(factory) { NodeCanvas(ctx(NodeExecutionStatus.Error)) } } }
         rule.onNodeWithText("x").assertExists()
     }
 
     @Test
     fun subgraphNameRendersInHeader() {
-        rule.setContent { GraphynTheme { SubgraphCard(ctx(NodeExecutionStatus.Idle)) } }
-        rule.onNodeWithText("Transform Pipeline").assertExists()
+        rule.setContent { GraphynTheme { with(factory) { NodeCanvas(ctx(NodeExecutionStatus.Idle)) } } }
+        rule.onNodeWithText("Pipeline").assertExists()
     }
 
     @Test
     fun enterFooterAbsentWithoutCallback() {
-        rule.setContent { GraphynTheme { SubgraphCard(ctx(NodeExecutionStatus.Idle)) } }
+        rule.setContent { GraphynTheme { with(factory) { NodeCanvas(ctx(NodeExecutionStatus.Idle)) } } }
         rule.onNodeWithText("↳ Enter").assertDoesNotExist()
     }
 
     @Test
     fun enterFooterPresentWithCallback() {
         val ctxWithEnter = ctx(NodeExecutionStatus.Idle).copy(onEnterSubgraph = {})
-        rule.setContent { GraphynTheme { SubgraphCard(ctxWithEnter) } }
+        rule.setContent { GraphynTheme { with(factory) { NodeCanvas(ctxWithEnter) } } }
         rule.onNodeWithText("↳ Enter").assertExists()
     }
 }
