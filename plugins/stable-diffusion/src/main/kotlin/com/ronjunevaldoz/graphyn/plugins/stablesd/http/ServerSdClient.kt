@@ -76,8 +76,15 @@ class ServerSdClient internal constructor(
             },
             // A local ref-image path (PhotoMaker/PuLID/Qwen-Image-Edit conditioning) sent straight
             // through to a remote server-sd is never found on its filesystem — rather than erroring,
-            // generation silently ignores the reference and produces an unconditioned image.
-            idCond = request.idCond?.let { ic -> ic.copy(refImages = ic.refImages.map { uploadIfLocal(it, conn) }) },
+            // generation silently ignores the reference and produces an unconditioned image. Same
+            // reasoning applies to pmIdEmbedPath: it's a per-character id_embeds.bin produced locally
+            // by face_detect.py, not a server-side model weight file.
+            idCond = request.idCond?.let { ic ->
+                ic.copy(
+                    refImages = ic.refImages.map { uploadIfLocal(it, conn) },
+                    pmIdEmbedPath = ic.pmIdEmbedPath?.let { uploadIfLocal(it, conn) },
+                )
+            },
         )
 
     private suspend fun stageLocalVideoImages(request: SdGenerateVideoRequest, conn: SdConnection): SdGenerateVideoRequest =

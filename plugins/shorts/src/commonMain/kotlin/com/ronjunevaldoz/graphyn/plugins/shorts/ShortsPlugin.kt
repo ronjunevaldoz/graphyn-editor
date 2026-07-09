@@ -40,6 +40,12 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerNodeSpec(storyboardSceneFieldSpec)
         registrar.registerNodeSpec(storyboardCaptionsSpec)
         registrar.registerNodeSpec(ollamaGenerateSpec)
+        registrar.registerNodeSpec(comparisonOllamaBodySpec)
+        registrar.registerNodeSpec(comparisonValidateSpec)
+        registrar.registerNodeSpec(comparisonFieldSpec)
+        registrar.registerNodeSpec(comparisonPairFieldSpec)
+        registrar.registerNodeSpec(comparisonCaptionsSpec)
+        registrar.registerNodeSpec(comparisonPairDurationSpec)
 
         registrar.registerExecutor(ShortsNodeTypes.SCENE_SUBGRAPH) { inputs ->
             mapOf("video" to (inputs["value"] ?: WorkflowValue.NullValue))
@@ -58,5 +64,11 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerExecutor(ShortsNodeTypes.STORYBOARD_SCENE_FIELD, storyboardSceneFieldExecutor)
         registrar.registerExecutor(ShortsNodeTypes.STORYBOARD_CAPTIONS, storyboardCaptionsExecutor)
         registrar.registerExecutor(ShortsNodeTypes.OLLAMA_GENERATE, ollamaGenerateExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_OLLAMA_BODY, comparisonOllamaBodyExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_VALIDATE, comparisonValidateExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_FIELD, comparisonFieldExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_PAIR_FIELD, comparisonPairFieldExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_CAPTIONS, comparisonCaptionsExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_PAIR_DURATION, comparisonPairDurationExecutor)
     }
 }

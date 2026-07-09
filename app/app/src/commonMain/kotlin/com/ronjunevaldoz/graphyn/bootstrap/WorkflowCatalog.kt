@@ -66,6 +66,8 @@ enum class WorkflowCatalog(
         "Edit an image with Qwen-Image-Edit (2511) + 4-step Lightning LoRA.", badges = listOf("AI")),
     FluxKontextImg2Img("FLUX Kontext Image Edit", fluxKontextImg2ImgWorkflow, Media,
         "Edit an image from an instruction prompt with FLUX.1 Kontext-dev — 4-6GB VRAM, no offload.", badges = listOf("AI")),
+    PhotoMakerSdxl("SDXL PhotoMaker v2 (Identity)", photoMakerSdxlWorkflow, Media,
+        "Identity-preserving generation from a character's precomputed id_embeds.bin.", badges = listOf("AI")),
     WanImg2Vid("Wan Image to Video (720p)", wanImg2VidWorkflow, Media,
         "Animate a still into video with Wan2.2 A14B (MoE) — 720P quality tier, needs >12GB VRAM.", badges = listOf("AI", "Stable")),
     Wan480pImg2Vid("Wan Image to Video (480p)", wan480pImg2VidWorkflow, Media,

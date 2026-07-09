@@ -42,7 +42,33 @@ public object ShortsNodeTypes {
      * URL/body-building or JSON validation — it just calls the LLM and returns its text.
      */
     public const val OLLAMA_GENERATE: String = "ollama.generate"
+
+    /** Ollama `/api/generate` request-body builder for the comparison-arc prompt. Sibling to
+     * [OLLAMA_BODY], not a shared node — the JSON schema requested is entirely different. */
+    public const val COMPARISON_OLLAMA_BODY: String = "demo.comparison.ollama_body"
+
+    /** Validates the Ollama comparison-arc JSON and unloads the Ollama model. Sibling to
+     * [STORYBOARD_VALIDATE] with the same salvage/fallback discipline, different shape. */
+    public const val COMPARISON_VALIDATE: String = "demo.comparison.validate"
+
+    /** Extracts one top-level string field (niche/visual_style/narration) from a validated
+     * comparison-arc record. */
+    public const val COMPARISON_FIELD: String = "demo.comparison.field"
+
+    /** Extracts one field of one pair (by index) from a validated comparison-arc record. */
+    public const val COMPARISON_PAIR_FIELD: String = "demo.comparison.pair_field"
+
+    /** Builds caption records (text/start_ms/end_ms) from a validated comparison-arc's pairs —
+     * each pair contributes a question beat then an answer beat. */
+    public const val COMPARISON_CAPTIONS: String = "demo.comparison.captions"
+
+    /** Divides a measured narration duration evenly across the comparison pairs, with a sane floor —
+     * see [comparisonPairDurationExecutor] for why this exists instead of a fixed guess. */
+    public const val COMPARISON_PAIR_DURATION: String = "demo.comparison.pair_duration"
 }
 
 /** Number of scenes the storyboard generator and storyboard-first short are fixed to. */
 public const val STORYBOARD_SCENE_COUNT: Int = 3
+
+/** Number of "X vs Y" pairs the comparison generator and comparison short are fixed to. */
+public const val COMPARISON_PAIR_COUNT: Int = 4

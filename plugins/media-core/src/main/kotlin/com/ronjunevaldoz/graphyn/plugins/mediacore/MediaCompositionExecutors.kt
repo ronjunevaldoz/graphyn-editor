@@ -4,12 +4,14 @@ import com.ronjunevaldoz.graphyn.core.execution.NodeExecutor
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.listOrEmpty
 import com.ronjunevaldoz.graphyn.core.model.listOrError
+import com.ronjunevaldoz.graphyn.core.model.intOrError
 import com.ronjunevaldoz.graphyn.core.model.numberOrError
 import com.ronjunevaldoz.graphyn.core.model.record
 import com.ronjunevaldoz.graphyn.core.model.recordOrError
 import com.ronjunevaldoz.graphyn.core.model.stringOr
 import com.ronjunevaldoz.graphyn.core.model.stringOrError
 import com.ronjunevaldoz.graphyn.plugins.mediacore.mapper.toCaptionStyle
+import com.ronjunevaldoz.graphyn.plugins.mediacore.mapper.toComparisonLayoutStyle
 import com.ronjunevaldoz.graphyn.plugins.mediacore.model.Caption
 
 /** Executor factories for the Phase 2 image/composition nodes, registered by [MediaCorePlugin]. */
@@ -44,6 +46,23 @@ internal fun videoComposeExecutor(backend: MediaCoreBackend) = NodeExecutor { in
     mapOf(
         "video" to MediaTypes.videoValue(metadata.path),
         "duration_ms" to WorkflowValue.DoubleValue(metadata.durationMs),
+    )
+}
+
+internal fun comparisonLayoutExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
+    val metadata = backend.compositeComparisonLayout(
+        imageAPath = MediaTypes.path(inputs["image_a"], "image"),
+        imageBPath = MediaTypes.path(inputs["image_b"], "image"),
+        labelA = inputs.stringOrError("label_a"),
+        labelB = inputs.stringOrError("label_b"),
+        caption = inputs.stringOr("caption", ""),
+        mascotPath = MediaTypes.path(inputs["mascot"], "image"),
+        style = inputs.recordOrError("style_config").toComparisonLayoutStyle(),
+        width = inputs.intOrError("width"),
+        height = inputs.intOrError("height"),
+    )
+    mapOf(
+        "image" to MediaTypes.imageValue(metadata.path),
     )
 }
 

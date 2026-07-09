@@ -84,6 +84,75 @@ internal suspend fun FfmpegMediaCoreBackend.imageSequenceToVideoImpl(
 private fun String.escapeConcat(): String = replace("'", "'\\''")
 
 /**
+ * A single still frame, not animated — unlike [kenBurnsImpl] there's no per-frame expression math,
+ * so panel/label/caption/mascot positions are precomputed once in Kotlin as plain pixel values.
+ * Panels are proportional to [width]/[height] (not hardcoded absolute pixels) so this stays sane
+ * at resolutions other than the 720x1280 default.
+ */
+internal suspend fun FfmpegMediaCoreBackend.compositeComparisonLayoutImpl(
+    imageAPath: String,
+    imageBPath: String,
+    labelA: String,
+    labelB: String,
+    caption: String,
+    mascotPath: String,
+    style: ComparisonLayoutStyle,
+    width: Int,
+    height: Int,
+): ImageMetadata {
+    require(width > 0 && height > 0) { "Comparison Layout dimensions must be positive." }
+    val sourceA = requireFile(imageAPath, "Image A")
+    val sourceB = requireFile(imageBPath, "Image B")
+    val mascot = requireFile(mascotPath, "Mascot image")
+
+    val margin = (width * 0.06).toInt()
+    val panelGap = style.panelGap
+    val panelW = (width - 2 * margin - panelGap) / 2
+    val panelH = (height * 0.30).toInt()
+    val panelY = (height * 0.09).toInt()
+    val labelY = (height * 0.03).toInt()
+    val panelAX = margin
+    val panelBX = margin + panelW + panelGap
+    val captionY = panelY + panelH + (height * 0.04).toInt()
+    val mascotSize = (width * 0.65).toInt()
+    val mascotY = height - mascotSize - (height * 0.05).toInt()
+
+    val filter = buildString {
+        append("color=c='${style.backgroundColor}':s=${width}x${height}[bg];")
+        append("[0:v]scale=$panelW:$panelH:force_original_aspect_ratio=decrease,pad=$panelW:$panelH:(ow-iw)/2:(oh-ih)/2:color=white@0.0[a];")
+        append("[1:v]scale=$panelW:$panelH:force_original_aspect_ratio=decrease,pad=$panelW:$panelH:(ow-iw)/2:(oh-ih)/2:color=white@0.0[b];")
+        append("[2:v]scale=$mascotSize:$mascotSize:force_original_aspect_ratio=decrease[m];")
+        append("[bg][a]overlay=x=$panelAX:y=$panelY[s1];")
+        append("[s1][b]overlay=x=$panelBX:y=$panelY[s2];")
+        append("[s2][m]overlay=x=(W-w)/2:y=$mascotY[s3];")
+        append("[s3]drawtext=text='${labelA.escapeDrawtext()}':font='${style.labelFontFamily}':fontsize=${style.labelFontSize}:fontcolor=${style.labelColor}:x=$panelAX+($panelW-text_w)/2:y=$labelY,")
+        append("drawtext=text='${labelB.escapeDrawtext()}':font='${style.labelFontFamily}':fontsize=${style.labelFontSize}:fontcolor=${style.labelColor}:x=$panelBX+($panelW-text_w)/2:y=$labelY,")
+        append("drawtext=text='${caption.escapeDrawtext()}':font='${style.captionFontFamily}':fontsize=${style.captionFontSize}:fontcolor=${style.captionColor}:x=(w-text_w)/2:y=$captionY[out]")
+    }
+
+    val output = tempFile("comparison-layout", "png")
+    run(
+        ffmpeg, "-v", "error", "-y",
+        "-i", sourceA.absolutePath,
+        "-i", sourceB.absolutePath,
+        "-i", mascot.absolutePath,
+        "-filter_complex", filter,
+        "-map", "[out]",
+        "-frames:v", "1",
+        output.absolutePath,
+    )
+    return inspectImage(output.absolutePath)
+}
+
+/** Escapes drawtext's `text=` value. Apostrophes become a curly quote rather than fighting
+ * ffmpeg's nested single-quote escaping — same pragmatic spirit as [String.escapeAssField]. */
+private fun String.escapeDrawtext(): String =
+    replace("\\", "\\\\")
+        .replace(":", "\\:")
+        .replace("'", "’")
+        .replace("%", "\\%")
+
+/**
  * `-loop 1` feeds the single still image as an infinite source; `zoompan`'s `d` (frame count)
  * bounds it to exactly [fps] * duration frames, and `-t` trims the encode to that same duration —
  * without `-t`, the loop-1 input would otherwise let ffmpeg run past the zoompan window.

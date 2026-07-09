@@ -22,6 +22,10 @@ internal val specHttpRequest = NodeSpec(
         PortSpec("body", WorkflowType.StringType, description = "Response body as text"),
         PortSpec("statusCode", WorkflowType.IntType, description = "HTTP status code"),
         PortSpec("ok", WorkflowType.BooleanType, description = "True if status is 2xx"),
+        PortSpec(
+            "error", WorkflowType.NullableType(WorkflowType.StringType),
+            description = "Exception message if the request could not be sent at all (e.g. host unreachable), otherwise null. A non-2xx response is not an error here — check 'ok'/'statusCode'.",
+        ),
     ),
     defaultValues = mapOf("method" to WorkflowValue.StringValue("GET"), "url" to WorkflowValue.StringValue("https://")),
 )

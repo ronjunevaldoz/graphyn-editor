@@ -45,13 +45,39 @@ public val storyboardSubgraphSpec: NodeSpec = NodeSpec(
     outputs = listOf(PortSpec("value", WorkflowType.OpaqueType, description = "Validated storyboard record")),
 )
 
+/**
+ * Optional diagnostic input ports shared by [storyboardValidateSpec] and [comparisonValidateSpec].
+ * Each pair mirrors one stage of the Ollama request -> parse -> path -> parse chain built by
+ * [storyboardGeneratorSubgraph]/[comparisonGeneratorSubgraph] (`request`/`outer`/`response`/the
+ * final `json.parse`). None are required — a caller that doesn't wire them still validates
+ * normally, it just loses the chain breakdown in the failure message. See [ollamaChainDiagnostics].
+ */
+private val ollamaChainDiagnosticInputs = listOf(
+    PortSpec("httpOk", WorkflowType.NullableType(WorkflowType.BooleanType), required = false, description = "io.http_request 'ok'"),
+    PortSpec("httpError", WorkflowType.NullableType(WorkflowType.StringType), required = false, description = "io.http_request 'error'"),
+    PortSpec("outerParseOk", WorkflowType.NullableType(WorkflowType.BooleanType), required = false, description = "Envelope json.parse 'ok'"),
+    PortSpec("outerParseError", WorkflowType.NullableType(WorkflowType.StringType), required = false, description = "Envelope json.parse 'error'"),
+    PortSpec("responseFound", WorkflowType.NullableType(WorkflowType.BooleanType), required = false, description = "json.path 'found' for the 'response' field"),
+    PortSpec("innerParseOk", WorkflowType.NullableType(WorkflowType.BooleanType), required = false, description = "Model-JSON json.parse 'ok'"),
+    PortSpec("innerParseError", WorkflowType.NullableType(WorkflowType.StringType), required = false, description = "Model-JSON json.parse 'error'"),
+)
+
 public val storyboardValidateSpec: NodeSpec = NodeSpec(
     type = ShortsNodeTypes.STORYBOARD_VALIDATE,
     label = "Storyboard Validate",
     description = "Validates the Ollama storyboard JSON and unloads the Ollama model (compiled, not scripted)",
     category = ShortsConstants.CATEGORY,
-    inputs = listOf(PortSpec("input", WorkflowType.OpaqueType, required = false)),
+    inputs = listOf(PortSpec("input", WorkflowType.OpaqueType, required = false)) + ollamaChainDiagnosticInputs,
     outputs = listOf(PortSpec("value", WorkflowType.OpaqueType, description = "Validated storyboard record")),
+)
+
+public val comparisonValidateSpec: NodeSpec = NodeSpec(
+    type = ShortsNodeTypes.COMPARISON_VALIDATE,
+    label = "Comparison Validate",
+    description = "Validates the Ollama comparison-arc JSON and unloads the Ollama model (compiled, not scripted)",
+    category = ShortsConstants.CATEGORY,
+    inputs = listOf(PortSpec("input", WorkflowType.OpaqueType, required = false)) + ollamaChainDiagnosticInputs,
+    outputs = listOf(PortSpec("value", WorkflowType.OpaqueType, description = "Validated comparison-arc record")),
 )
 
 public val ollamaUnloadSpec: NodeSpec = NodeSpec(

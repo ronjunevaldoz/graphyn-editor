@@ -90,3 +90,40 @@ internal typealias CharacterSheetPoses = com.ronjunevaldoz.graphyn.plugins.short
 /** @see com.ronjunevaldoz.graphyn.plugins.shorts.storyboardGeneratorSubgraph */
 internal fun storyboardGeneratorSubgraph(topic: String) =
     com.ronjunevaldoz.graphyn.plugins.shorts.storyboardGeneratorSubgraph(topic)
+
+internal const val COMPARISON_PAIR_COUNT = com.ronjunevaldoz.graphyn.plugins.shorts.COMPARISON_PAIR_COUNT
+internal const val COMPARISON_FIELD_NODE_TYPE = ShortsNodeTypes.COMPARISON_FIELD
+internal const val COMPARISON_PAIR_FIELD_NODE_TYPE = ShortsNodeTypes.COMPARISON_PAIR_FIELD
+internal const val COMPARISON_CAPTIONS_NODE_TYPE = ShortsNodeTypes.COMPARISON_CAPTIONS
+internal const val COMPARISON_PAIR_DURATION_NODE_TYPE = ShortsNodeTypes.COMPARISON_PAIR_DURATION
+
+/** @see com.ronjunevaldoz.graphyn.plugins.shorts.comparisonGeneratorSubgraph */
+internal fun comparisonGeneratorSubgraph(topic: String) =
+    com.ronjunevaldoz.graphyn.plugins.shorts.comparisonGeneratorSubgraph(topic)
+
+/** @see com.ronjunevaldoz.graphyn.plugins.shorts.mascotSubgraph */
+internal fun mascotSubgraph(
+    id: String,
+    mascotDescription: String = com.ronjunevaldoz.graphyn.plugins.shorts.DEFAULT_MASCOT_DESCRIPTION,
+    poseInstruction: String = com.ronjunevaldoz.graphyn.plugins.shorts.MascotPoses.NEUTRAL,
+    width: Int = SHORTS_WIDTH,
+    height: Int = SHORTS_HEIGHT,
+) = com.ronjunevaldoz.graphyn.plugins.shorts.mascotSubgraph(
+    id = id, mascotDescription = mascotDescription, poseInstruction = poseInstruction, width = width, height = height,
+)
+
+internal typealias MascotPoses = com.ronjunevaldoz.graphyn.plugins.shorts.MascotPoses
+
+/** @see com.ronjunevaldoz.graphyn.plugins.shorts.comparisonImageSubgraph */
+internal fun comparisonImageSubgraph(id: String, width: Int = SHORTS_WIDTH, height: Int = SHORTS_HEIGHT) =
+    com.ronjunevaldoz.graphyn.plugins.shorts.comparisonImageSubgraph(id = id, width = width, height = height)
+
+/** @see com.ronjunevaldoz.graphyn.plugins.shorts.comparisonLayoutMotionSubgraph */
+internal fun comparisonLayoutMotionSubgraph(
+    id: String,
+    width: Int = SHORTS_WIDTH,
+    height: Int = SHORTS_HEIGHT,
+    useKenBurns: Boolean = true,
+) = com.ronjunevaldoz.graphyn.plugins.shorts.comparisonLayoutMotionSubgraph(
+    id = id, width = width, height = height, useKenBurns = useKenBurns,
+)

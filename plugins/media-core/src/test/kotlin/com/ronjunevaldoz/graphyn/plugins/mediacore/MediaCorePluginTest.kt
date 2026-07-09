@@ -20,7 +20,7 @@ class MediaCorePluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(20, registry.nodeSpecs.all().size)
+        assertEquals(22, registry.nodeSpecs.all().size)
         (MediaCoreSpecs.all + MediaCompositionSpecs.all + MediaBuilderSpecs.all + MediaImageSpecs.all).forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
@@ -157,6 +157,86 @@ class MediaCorePluginTest {
             mapOf("images" to collected.getValue("images"), "fps" to WorkflowValue.DoubleValue(2.0)),
         )
         assertEquals(2.0, backend.lastSequenceFps)
+    }
+
+    @Test
+    fun comparisonLayoutMapsTypedInputsToBackendAndReturnsImageHandle() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        val result = registry.nodeExecutors.resolve(MediaCompositionSpecs.comparisonLayout.type)!!.execute(
+            mapOf(
+                "image_a" to MediaTypes.imageValue("/media/a.png"),
+                "image_b" to MediaTypes.imageValue("/media/b.png"),
+                "label_a" to WorkflowValue.StringValue("Coffee"),
+                "label_b" to WorkflowValue.StringValue("Tea"),
+                "caption" to WorkflowValue.StringValue("Which wakes you up faster?"),
+                "mascot" to MediaTypes.imageValue("/media/mascot.png"),
+                "style_config" to WorkflowValue.RecordValue(
+                    mapOf(
+                        "background_color" to WorkflowValue.StringValue("#FFFFFF"),
+                        "label_font_family" to WorkflowValue.StringValue("Arial"),
+                        "label_font_size" to WorkflowValue.IntValue(36),
+                        "label_color" to WorkflowValue.StringValue("#000000"),
+                        "caption_font_family" to WorkflowValue.StringValue("Arial"),
+                        "caption_font_size" to WorkflowValue.IntValue(44),
+                        "caption_color" to WorkflowValue.StringValue("#000000"),
+                        "panel_gap" to WorkflowValue.IntValue(24),
+                    ),
+                ),
+                "width" to WorkflowValue.IntValue(720),
+                "height" to WorkflowValue.IntValue(1280),
+            ),
+        )
+
+        val call = backend.lastComparisonLayout
+        assertNotNull(call)
+        assertEquals("/media/a.png", call.imageAPath)
+        assertEquals("/media/b.png", call.imageBPath)
+        assertEquals("Coffee", call.labelA)
+        assertEquals("Tea", call.labelB)
+        assertEquals("Which wakes you up faster?", call.caption)
+        assertEquals("/media/mascot.png", call.mascotPath)
+        assertEquals(ComparisonLayoutStyle(), call.style)
+        assertEquals(720, call.width)
+        assertEquals(1280, call.height)
+        assertEquals("/media/comparison-layout.png", MediaTypes.path(result["image"], "image"))
+    }
+
+    @Test
+    fun comparisonLayoutToleratesOmittedCaption() = runTest {
+        // Regression test: "caption" is declared required=false with a blank default (real callers,
+        // e.g. comparisonLayoutMotionSubgraph, never set it — the outer media.caption_overlay step
+        // delivers timed text instead). The executor must not require a non-blank value here.
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        registry.nodeExecutors.resolve(MediaCompositionSpecs.comparisonLayout.type)!!.execute(
+            mapOf(
+                "image_a" to MediaTypes.imageValue("/media/a.png"),
+                "image_b" to MediaTypes.imageValue("/media/b.png"),
+                "label_a" to WorkflowValue.StringValue("Coffee"),
+                "label_b" to WorkflowValue.StringValue("Tea"),
+                "caption" to WorkflowValue.StringValue(""),
+                "mascot" to MediaTypes.imageValue("/media/mascot.png"),
+                "style_config" to WorkflowValue.RecordValue(
+                    mapOf(
+                        "background_color" to WorkflowValue.StringValue("#FFFFFF"),
+                        "label_font_family" to WorkflowValue.StringValue("Arial"),
+                        "label_font_size" to WorkflowValue.IntValue(36),
+                        "label_color" to WorkflowValue.StringValue("#000000"),
+                        "caption_font_family" to WorkflowValue.StringValue("Arial"),
+                        "caption_font_size" to WorkflowValue.IntValue(44),
+                        "caption_color" to WorkflowValue.StringValue("#000000"),
+                        "panel_gap" to WorkflowValue.IntValue(24),
+                    ),
+                ),
+                "width" to WorkflowValue.IntValue(720),
+                "height" to WorkflowValue.IntValue(1280),
+            ),
+        )
+
+        assertEquals("", backend.lastComparisonLayout?.caption)
     }
 
     @Test
@@ -351,4 +431,50 @@ private class FakeMediaCoreBackend : MediaCoreBackend {
         lastSequenceFps = fps
         return VideoMetadata("/media/slideshow.mp4", 1280, 720, imagePaths.size / fps * 1000.0, fps, imagePaths.size)
     }
+
+    var lastKenBurnsPan: Pair<String, String>? = null
+
+    override suspend fun kenBurns(
+        imagePath: String,
+        durationMs: Double,
+        fps: Double,
+        zoomStart: Double,
+        zoomEnd: Double,
+        panX: String,
+        panY: String,
+        width: Int,
+        height: Int,
+    ): VideoMetadata {
+        lastKenBurnsPan = panX to panY
+        return VideoMetadata("/media/ken-burns.mp4", width, height, durationMs, fps, (fps * durationMs / 1000.0).toInt())
+    }
+
+    var lastComparisonLayout: ComparisonLayoutCall? = null
+
+    override suspend fun compositeComparisonLayout(
+        imageAPath: String,
+        imageBPath: String,
+        labelA: String,
+        labelB: String,
+        caption: String,
+        mascotPath: String,
+        style: ComparisonLayoutStyle,
+        width: Int,
+        height: Int,
+    ): ImageMetadata {
+        lastComparisonLayout = ComparisonLayoutCall(imageAPath, imageBPath, labelA, labelB, caption, mascotPath, style, width, height)
+        return ImageMetadata("/media/comparison-layout.png", width, height)
+    }
 }
+
+data class ComparisonLayoutCall(
+    val imageAPath: String,
+    val imageBPath: String,
+    val labelA: String,
+    val labelB: String,
+    val caption: String,
+    val mascotPath: String,
+    val style: ComparisonLayoutStyle,
+    val width: Int,
+    val height: Int,
+)

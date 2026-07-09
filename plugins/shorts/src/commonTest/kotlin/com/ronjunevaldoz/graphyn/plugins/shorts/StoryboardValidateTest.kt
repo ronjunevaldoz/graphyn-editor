@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class StoryboardValidateTest {
@@ -16,11 +17,34 @@ class StoryboardValidateTest {
     )
 
     @Test
-    fun malformedTopLevelFallsBackToKnownGoodStoryboard() = runTest {
-        val out = storyboardValidateExecutor.execute(mapOf("input" to WorkflowValue.RecordValue(emptyMap())))
-        val record = out["value"] as WorkflowValue.RecordValue
-        assertEquals(WorkflowValue.StringValue("cooking"), record.fields["niche"])
-        assertEquals(STORYBOARD_SCENE_COUNT, (record.fields["scenes"] as WorkflowValue.ListValue).items.size)
+    fun malformedTopLevelThrowsInsteadOfSubstitutingUnrelatedContent() = runTest {
+        // Changed 2026-07-08: used to silently fall back to a hardcoded "cooking" storyboard —
+        // confirmed harmful in practice (an unreachable Ollama host produced fully-generated,
+        // completely off-topic shorts with no visible error). Throwing here is strictly cheaper
+        // than continuing, since it fails before any GPU spend.
+        val error = assertFailsWith<IllegalStateException> {
+            storyboardValidateExecutor.execute(mapOf("input" to WorkflowValue.RecordValue(emptyMap())))
+        }
+        assertTrue(error.message!!.contains("niche"))
+        assertTrue(error.message!!.contains("scenes"))
+    }
+
+    @Test
+    fun malformedTopLevelWithChainDiagnosticsSurfacesRootCause() = runTest {
+        // Reproduces the real incident: an unreachable Ollama host means the top-level fields are
+        // missing, but previously the only diagnostic was "Raw response: null" — the actual HTTP
+        // failure was lost three layers upstream. Wiring the chain ports (as
+        // storyboardGeneratorSubgraph now does) must put the root cause in the thrown message.
+        val error = assertFailsWith<IllegalStateException> {
+            storyboardValidateExecutor.execute(
+                mapOf(
+                    "input" to WorkflowValue.RecordValue(emptyMap()),
+                    "httpOk" to WorkflowValue.BooleanValue(false),
+                    "httpError" to WorkflowValue.StringValue("Connection refused"),
+                ),
+            )
+        }
+        assertTrue(error.message!!.contains("Connection refused"), "message was: ${error.message}")
     }
 
     @Test

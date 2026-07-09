@@ -97,6 +97,51 @@ object MediaCompositionSpecs {
         ),
     )
 
+    val comparisonLayoutStyleType = WorkflowType.RecordType(
+        mapOf(
+            "background_color" to WorkflowType.StringType,
+            "label_font_family" to WorkflowType.StringType,
+            "label_font_size" to WorkflowType.IntType,
+            "label_color" to WorkflowType.StringType,
+            "caption_font_family" to WorkflowType.StringType,
+            "caption_font_size" to WorkflowType.IntType,
+            "caption_color" to WorkflowType.StringType,
+            "panel_gap" to WorkflowType.IntType,
+        ),
+    )
+
+    val comparisonLayout = NodeSpec(
+        type = "media.comparison_layout",
+        label = "Comparison Layout",
+        description = "Composites two labeled images, a caption, and a mascot image into one " +
+            "still frame — the \"X vs Y\" comparison-explainer layout.",
+        category = CATEGORY_MEDIA_VIDEO,
+        inputs = listOf(
+            PortSpec("image_a", MediaTypes.imageHandle),
+            PortSpec("image_b", MediaTypes.imageHandle),
+            PortSpec("label_a", WorkflowType.StringType),
+            PortSpec("label_b", WorkflowType.StringType),
+            PortSpec(
+                "caption", WorkflowType.StringType, required = false,
+                description = "Optional text baked into the still frame itself. The comparison " +
+                    "short's question/answer beats are timed subtitle-style overlays applied " +
+                    "later by media.caption_overlay on the stitched video (same convention every " +
+                    "other short in this pipeline uses) — leave this blank unless extra baked-in " +
+                    "text is wanted on top of that.",
+            ),
+            PortSpec("mascot", MediaTypes.imageHandle),
+            PortSpec("style_config", comparisonLayoutStyleType),
+            PortSpec("width", WorkflowType.IntType),
+            PortSpec("height", WorkflowType.IntType),
+        ),
+        outputs = listOf(PortSpec("image", MediaTypes.imageHandle)),
+        defaultValues = mapOf(
+            "caption" to WorkflowValue.StringValue(""),
+            "width" to WorkflowValue.IntValue(720),
+            "height" to WorkflowValue.IntValue(1280),
+        ),
+    )
+
     val timingController = NodeSpec(
         type = "media.timing_controller",
         label = "Timing Controller",
@@ -110,5 +155,5 @@ object MediaCompositionSpecs {
         outputs = listOf(PortSpec("config", MediaCompositionTypes.timingConfig)),
     )
 
-    val all = listOf(audioEncode, imageImport, captionOverlay, videoCompose, timingController)
+    val all = listOf(audioEncode, imageImport, captionOverlay, videoCompose, comparisonLayout, timingController)
 }

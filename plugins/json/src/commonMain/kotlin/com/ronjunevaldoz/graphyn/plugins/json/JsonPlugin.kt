@@ -24,6 +24,10 @@ internal val specJsonParse = NodeSpec(
     outputs = listOf(
         PortSpec("value", WorkflowType.OpaqueType, description = "Parsed value tree"),
         PortSpec("ok", WorkflowType.BooleanType, description = "True if parsing succeeded"),
+        PortSpec(
+            "error", WorkflowType.NullableType(WorkflowType.StringType),
+            description = "Parse exception message plus a snippet of the offending text if parsing failed, otherwise null",
+        ),
     ),
     defaultValues = mapOf("text" to WorkflowValue.StringValue("")),
 )
@@ -72,9 +76,14 @@ object JsonPlugin : GraphynPlugin {
             val text = (inputs["text"] as? WorkflowValue.StringValue)?.value.orEmpty()
             try {
                 val value = json.parseToJsonElement(text).toWorkflowValue()
-                mapOf("value" to value, "ok" to WorkflowValue.BooleanValue(true))
+                mapOf("value" to value, "ok" to WorkflowValue.BooleanValue(true), "error" to WorkflowValue.NullValue)
             } catch (e: Exception) {
-                mapOf("value" to WorkflowValue.NullValue, "ok" to WorkflowValue.BooleanValue(false))
+                val snippet = text.take(200).ifBlank { "<empty>" }
+                val reason = e.message ?: e::class.simpleName ?: "JSON parse failed"
+                mapOf(
+                    "value" to WorkflowValue.NullValue, "ok" to WorkflowValue.BooleanValue(false),
+                    "error" to WorkflowValue.StringValue("$reason; input: $snippet"),
+                )
             }
         }
 

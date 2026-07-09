@@ -31,15 +31,24 @@ public object ShortsConstants {
      */
     public const val CAPTION_STYLE_NODE_TYPE: String = "media.caption_style"
 
-    /** Default caption styling for the shorts pipeline. Keep in sync with `MediaAiSpecs.captionStyle`. */
+    /**
+     * Default caption styling for the shorts pipeline. Keep in sync with `MediaAiSpecs.captionStyle`.
+     *
+     * "Arial" is not actually installed on most desktop targets (macOS ships Arial Hebrew/Arial
+     * Narrow variants, not the plain family) — libass's font matching then silently substitutes a
+     * mismatched fallback for the burned-in captions, which renders visibly worse than the
+     * drawtext-based comparison-layout labels (different font-matching pipeline, confirmed fine with
+     * the same nominal name). "Helvetica Neue" is a real installed family on macOS, renders cleanly
+     * bold, and needs no substitution.
+     */
     public val CAPTION_STYLE_DEFAULTS: Map<String, WorkflowValue> = mapOf(
-        "font_family" to WorkflowValue.StringValue("Arial"),
-        "font_size" to WorkflowValue.IntValue(42),
+        "font_family" to WorkflowValue.StringValue("Helvetica Neue"),
+        "font_size" to WorkflowValue.IntValue(46),
         "text_color" to WorkflowValue.StringValue("#FFFFFF"),
         "background_color" to WorkflowValue.NullValue,
         "outline_color" to WorkflowValue.StringValue("#000000"),
-        "outline_width" to WorkflowValue.IntValue(2),
-        "shadow" to WorkflowValue.IntValue(0),
+        "outline_width" to WorkflowValue.IntValue(3),
+        "shadow" to WorkflowValue.IntValue(1),
         "bold" to WorkflowValue.BooleanValue(true),
         "italic" to WorkflowValue.BooleanValue(false),
         "alignment" to WorkflowValue.StringValue("BottomCenter"),

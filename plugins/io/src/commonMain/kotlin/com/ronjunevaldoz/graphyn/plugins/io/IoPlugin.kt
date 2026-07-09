@@ -30,7 +30,10 @@ object IoPlugin : GraphynPlugin {
 
         registrar.registerExecutor(specHttpRequest.type) { inputs ->
             val url = (inputs["url"] as? WorkflowValue.StringValue)?.value?.takeIf { it.isNotBlank() }
-                ?: return@registerExecutor mapOf("body" to WorkflowValue.StringValue(""), "statusCode" to WorkflowValue.IntValue(0), "ok" to WorkflowValue.BooleanValue(false))
+                ?: return@registerExecutor mapOf(
+                    "body" to WorkflowValue.StringValue(""), "statusCode" to WorkflowValue.IntValue(0), "ok" to WorkflowValue.BooleanValue(false),
+                    "error" to WorkflowValue.StringValue("Missing or blank 'url' input"),
+                )
             val method = (inputs["method"] as? WorkflowValue.StringValue)?.value ?: "GET"
             val body = (inputs["body"] as? WorkflowValue.StringValue)?.value
             try {
@@ -38,9 +41,19 @@ object IoPlugin : GraphynPlugin {
                     this.method = HttpMethod.parse(method)
                     if (body != null) setBody(body)
                 }
-                mapOf("body" to WorkflowValue.StringValue(response.bodyAsText()), "statusCode" to WorkflowValue.IntValue(response.status.value), "ok" to WorkflowValue.BooleanValue(response.status.isSuccess()))
+                mapOf(
+                    "body" to WorkflowValue.StringValue(response.bodyAsText()), "statusCode" to WorkflowValue.IntValue(response.status.value),
+                    "ok" to WorkflowValue.BooleanValue(response.status.isSuccess()), "error" to WorkflowValue.NullValue,
+                )
             } catch (e: Exception) {
-                mapOf("body" to WorkflowValue.StringValue("Error: ${e.message}"), "statusCode" to WorkflowValue.IntValue(0), "ok" to WorkflowValue.BooleanValue(false))
+                // Changed: 'body' used to carry "Error: ${e.message}" as if it were response text, which then got
+                // fed straight into json.parse as malformed JSON — masking the real (HTTP-layer) failure behind a
+                // downstream parse error. The exception now goes only on the dedicated 'error' port; 'body' stays
+                // empty like the blank-url path above so callers can't mistake it for real response content.
+                mapOf(
+                    "body" to WorkflowValue.StringValue(""), "statusCode" to WorkflowValue.IntValue(0), "ok" to WorkflowValue.BooleanValue(false),
+                    "error" to WorkflowValue.StringValue(e.message ?: e::class.simpleName ?: "HTTP request failed"),
+                )
             }
         }
 

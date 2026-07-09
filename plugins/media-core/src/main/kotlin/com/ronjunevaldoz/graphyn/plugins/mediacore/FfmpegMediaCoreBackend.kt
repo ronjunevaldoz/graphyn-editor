@@ -80,6 +80,18 @@ class FfmpegMediaCoreBackend(
         height: Int,
     ) = kenBurnsImpl(imagePath, durationMs, fps, zoomStart, zoomEnd, panX, panY, width, height)
 
+    override suspend fun compositeComparisonLayout(
+        imageAPath: String,
+        imageBPath: String,
+        labelA: String,
+        labelB: String,
+        caption: String,
+        mascotPath: String,
+        style: ComparisonLayoutStyle,
+        width: Int,
+        height: Int,
+    ) = compositeComparisonLayoutImpl(imageAPath, imageBPath, labelA, labelB, caption, mascotPath, style, width, height)
+
     /** Public: reused by the TTS cache to read generated audio metadata. */
     suspend fun inspectAudio(path: String) = inspectAudioImpl(path)
 

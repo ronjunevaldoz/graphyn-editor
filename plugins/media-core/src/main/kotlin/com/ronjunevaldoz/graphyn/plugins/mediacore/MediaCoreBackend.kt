@@ -46,6 +46,18 @@ data class VideoOverlay(
     val opacity: Double,
 )
 
+/** Appearance for [MediaCoreBackend.compositeComparisonLayout] — colors are hex strings ("#RRGGBB"). */
+data class ComparisonLayoutStyle(
+    val backgroundColor: String = "#FFFFFF",
+    val labelFontFamily: String = "Arial",
+    val labelFontSize: Int = 36,
+    val labelColor: String = "#000000",
+    val captionFontFamily: String = "Arial",
+    val captionFontSize: Int = 44,
+    val captionColor: String = "#000000",
+    val panelGap: Int = 24,
+)
+
 interface MediaCoreBackend {
     suspend fun inspectVideo(path: String): VideoMetadata
     suspend fun inspectImage(path: String): ImageMetadata
@@ -95,5 +107,22 @@ interface MediaCoreBackend {
         width: Int,
         height: Int,
     ): VideoMetadata
+
+    /**
+     * Composites two labeled images side-by-side, a caption, and a mascot image into one still
+     * frame — the "X vs Y" comparison-explainer layout. Pure layout/rendering, no AI model
+     * involved; [imageAPath]/[imageBPath]/[mascotPath] are caller-supplied (AI-generated or not).
+     */
+    suspend fun compositeComparisonLayout(
+        imageAPath: String,
+        imageBPath: String,
+        labelA: String,
+        labelB: String,
+        caption: String,
+        mascotPath: String,
+        style: ComparisonLayoutStyle,
+        width: Int,
+        height: Int,
+    ): ImageMetadata
 }
 

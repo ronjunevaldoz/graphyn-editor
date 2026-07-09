@@ -52,6 +52,10 @@ class MediaCorePlugin(
             videoComposeExecutor(backend)
         )
         registrar.registerExecutor(
+            MediaCompositionSpecs.comparisonLayout.type,
+            comparisonLayoutExecutor(backend)
+        )
+        registrar.registerExecutor(
             MediaCompositionSpecs.audioEncode.type,
             audioEncodeExecutor(backend)
         )

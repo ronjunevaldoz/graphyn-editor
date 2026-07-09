@@ -47,6 +47,19 @@ class IoPluginTest {
     }
 
     @Test
+    fun httpRequestReportsErrorDetailForBlankUrl() = runTest {
+        // Deterministic, network-free path: exercises the same 'error' port that the exception
+        // catch block populates, without needing a fake HttpClient engine.
+        val registry = DefaultGraphynPluginRegistry()
+        registry.install(IoPlugin)
+        val executor = registry.nodeExecutors.resolve("io.http_request")!!
+        val result = executor.execute(mapOf("url" to WorkflowValue.StringValue("")))
+        assertEquals(WorkflowValue.StringValue(""), result["body"])
+        assertEquals(WorkflowValue.BooleanValue(false), result["ok"])
+        assertEquals(WorkflowValue.StringValue("Missing or blank 'url' input"), result["error"])
+    }
+
+    @Test
     fun envReadReturnsNullForUnknownVar() = runTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(IoPlugin)

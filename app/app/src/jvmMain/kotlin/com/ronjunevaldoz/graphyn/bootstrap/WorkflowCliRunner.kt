@@ -19,6 +19,8 @@ import java.io.File
 private const val STORYBOARD_WORKFLOW_KEY = "storyboard"
 private const val RECAPTION_WORKFLOW_KEY = "recaption"
 private const val REGENERATE_SCENE_WORKFLOW_KEY = "regenerate-scene"
+private const val CHARACTER_SAMPLES_WORKFLOW_KEY = "character-samples"
+private const val COMPARISON_WORKFLOW_KEY = "comparison"
 private const val SCHEMA_MODE_KEY = "schema"
 
 private fun s(value: String) = WorkflowValue.StringValue(value)
@@ -26,12 +28,14 @@ private fun d(value: Double) = WorkflowValue.DoubleValue(value)
 private fun i(value: Int) = WorkflowValue.IntValue(value)
 
 /**
- * Headless runner for any [WorkflowCatalog] entry, plus three storyboard modes that aren't fixed
- * catalog entries since they need CLI args at build time:
+ * Headless runner for any [WorkflowCatalog] entry, plus four modes that aren't fixed catalog
+ * entries since they need CLI args at build time:
  * - `storyboard` — full run from a `topic` (Ollama + Flux + captions + narration).
  * - `recaption` — restyle captions/narration on an already-`storyboard`-run's saved clip, skipping
  *   the expensive Ollama/Flux steps entirely.
  * - `regenerate-scene` — redo one scene's image and re-stitch with the other saved clips.
+ * - `character-samples` — generate N SDXL+PhotoMaker-v2 samples from a character's precomputed
+ *   `id_embeds.bin`, to visually validate identity consistency (see [characterReferenceSamplesWorkflow]).
  *
  * Usage:
  * ```
@@ -43,8 +47,26 @@ private fun i(value: Int) = WorkflowValue.IntValue(value)
  * ./gradlew :app:app:runWorkflowCli --args="workflow=recaption tts_engine=qwen3 reference_audio_path=/path/to/voice.wav"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=regenerate-scene index=1 prompt='a new prompt'"
  * ./gradlew :app:app:runWorkflowCli --args="workflow=regenerate-scene index=1 edit=true instruction='change the shirt to red'"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=character-samples id_embed_path=/path/to/character/id_embeds.bin"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=character-samples id_embed_path=/path/to/id_embeds.bin prompts='a woman img, portrait|a woman img, running on a beach'"
+ * ./gradlew :app:app:runWorkflowCli --args="workflow=Wan480pImg2Vid img2vid.init_image=/path/to.png img2vid.prompt='slow dolly-in, cinematic'"
  * ./gradlew :app:app:runWorkflowCli --args="schema workflow=storyboard"
  * ```
+ * "Wan-Turbo" quick render — animate a still image with the already-registered 4-step
+ * lightx2v-distilled Wan2.2 A14B 480p preset ([WorkflowCatalog.Wan480pImg2Vid]), overriding
+ * `init_image`/`prompt`/`video_frames`/`fps` etc. via the generic `nodeId.port=value` mechanism
+ * (see [applyNodeOverrides]) — no dedicated CLI mode needed, since it's a fixed-size graph.
+ * "Turbo" here means 4 sampling steps instead of 20+, not necessarily fast wall-clock time: A14B
+ * is a 14B-parameter MoE model (low+high noise, ~28B total) that needs heavy CPU/GPU offload on
+ * a 12 GB card — confirmed empirically, a single high-noise sampling pass took ~10 min on this
+ * hardware even at 4 steps (full run exceeded 30 min). Prefer [wan5bImg2VidWorkflow]
+ * (`Wan5bImg2Vid`, TI2V-5B, no MoE) for faster iteration if A14B's quality isn't specifically
+ * needed. Also confirmed: `ServerSdClient`'s HTTP request timeout on `/api/sd/generate-video` is
+ * shorter than an A14B run can take on this hardware — a real client-side timeout hit at 1803s
+ * even though the server kept computing successfully in the background. Not fixed here (separate
+ * scope); if you hit this, either raise the client timeout or use the async
+ * `/api/sd/video/jobs` + poll pattern `SdVideoRoutes.kt` already exposes instead of the
+ * synchronous `generate-video` route this workflow currently calls.
  * `tts_engine=say|qwen3|oute` (optional on `recaption`/`regenerate-scene`) swaps the narration
  * voice/engine without touching Ollama/Flux — see [resolveTtsEngineChoice] for the per-engine
  * option keys (`voice_id`/`speed` for say; `voice`/`reference_audio_path`/`temperature` for
@@ -122,6 +144,19 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
             useCharacterSheet = options["character_sheet"]?.toBooleanStrictOrNull() ?: false,
         )
 
+    workflowName.equals(COMPARISON_WORKFLOW_KEY, ignoreCase = true) ->
+        comparisonShortWorkflow(
+            topic = options["topic"] ?: "commonly confused everyday concepts",
+            width = options["width"]?.toInt() ?: SHORTS_WIDTH,
+            height = options["height"]?.toInt() ?: SHORTS_HEIGHT,
+            mascotDescription = options["mascot"]
+                ?: com.ronjunevaldoz.graphyn.plugins.shorts.DEFAULT_MASCOT_DESCRIPTION,
+            // A comparison-explainer's viewer attention is on reading the labels/captions, not
+            // camera movement, so unlike a photo-scene short the subtle zoom isn't load-bearing —
+            // ken_burns=false renders every pair as a fully static hold instead.
+            useKenBurns = options["ken_burns"]?.toBooleanStrictOrNull() ?: true,
+        )
+
     workflowName.equals(RECAPTION_WORKFLOW_KEY, ignoreCase = true) -> {
         val styleOverrides = options.filterKeys { it in CAPTION_STYLE_DEFAULTS }
             .mapValues { (key, raw) -> toWorkflowValueLike(CAPTION_STYLE_DEFAULTS.getValue(key), raw) }
@@ -169,11 +204,24 @@ private fun resolveWorkflow(workflowName: String, options: Map<String, String>):
         )
     }
 
+    workflowName.equals(CHARACTER_SAMPLES_WORKFLOW_KEY, ignoreCase = true) ->
+        characterReferenceSamplesWorkflow(
+            idEmbedPath = options["id_embed_path"]
+                ?: error("Missing id_embed_path=<path to id_embeds.bin>. $faceDetectInstructions"),
+            prompts = options["prompts"]?.split("|")?.map { it.trim() } ?: CharacterSamplePrompts.DEFAULT,
+            styleStrength = options["style_strength"]?.toDoubleOrNull() ?: 20.0,
+            steps = options["steps"]?.toIntOrNull() ?: 30,
+            cfgScale = options["cfg_scale"]?.toDoubleOrNull() ?: 5.0,
+            width = options["width"]?.toIntOrNull() ?: 1024,
+            height = options["height"]?.toIntOrNull() ?: 1024,
+        )
+
     else -> {
         val base = WorkflowCatalog.entries.firstOrNull { it.name.equals(workflowName, ignoreCase = true) }?.workflow
             ?: error(
                 "Unknown workflow '$workflowName'. Available: $STORYBOARD_WORKFLOW_KEY, $RECAPTION_WORKFLOW_KEY, " +
-                    "$REGENERATE_SCENE_WORKFLOW_KEY, ${WorkflowCatalog.entries.joinToString { it.name }}",
+                    "$REGENERATE_SCENE_WORKFLOW_KEY, $CHARACTER_SAMPLES_WORKFLOW_KEY, " +
+                    "${WorkflowCatalog.entries.joinToString { it.name }}",
             )
         applyNodeOverrides(base, options)
     }

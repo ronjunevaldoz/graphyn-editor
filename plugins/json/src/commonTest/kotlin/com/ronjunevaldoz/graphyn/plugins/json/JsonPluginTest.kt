@@ -52,6 +52,18 @@ class JsonPluginTest {
         )
         assertEquals(WorkflowValue.BooleanValue(false), parsed["ok"])
         assertEquals(WorkflowValue.NullValue, parsed["value"])
+        // The 'error' port carries the parse exception detail + input snippet so a failure isn't
+        // just a silent null by the time it reaches a downstream validator.
+        val error = (parsed["error"] as WorkflowValue.StringValue).value
+        assertTrue(error.contains("not json"))
+    }
+
+    @Test
+    fun parseValidJsonReportsNullError() = runTest {
+        val parsed = executors().resolve("json.parse")!!.execute(
+            mapOf("text" to WorkflowValue.StringValue("""{"a":1}""")),
+        )
+        assertEquals(WorkflowValue.NullValue, parsed["error"])
     }
 
     @Test
