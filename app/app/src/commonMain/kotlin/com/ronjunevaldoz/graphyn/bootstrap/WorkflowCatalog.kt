@@ -76,6 +76,16 @@ enum class WorkflowCatalog(
         "Animate a still with Wan2.2-TI2V-5B — fits a 12GB card. Fast tier.", badges = listOf("AI")),
     Wan14b480pImg2Vid("Wan Image to Video (14B 480p, single-model)", wan14b480pImg2VidWorkflow, Media,
         "Animate a still with Wan2.1-I2V-14B-480P + 4-step lightx2v LoRA — single-model, no MoE pass.", badges = listOf("AI")),
+    ImageComparisonShort(
+        label = "AI Image Comparison (Image Motion)",
+        workflow = comparisonShortWorkflow(
+            topic = "commonly confused everyday concepts",
+            mascotDescription = "Stickman"
+        ),
+        category = Media,
+        description = "",
+        badges = listOf("AI", "Media")
+    ),
     ImageShorts("AI Shorts (Image Motion)", imageShortsWorkflow, Media,
         "Generate FLUX keyframes, repeat them into scene clips, stitch, caption, and encode.", badges = listOf("AI", "Stable")),
     ImageMotionShort("Image Motion Short (Simple)", imageMotionShortWorkflow, Media,

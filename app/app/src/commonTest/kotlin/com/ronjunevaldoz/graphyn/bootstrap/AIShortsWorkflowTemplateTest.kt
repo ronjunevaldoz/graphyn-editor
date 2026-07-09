@@ -66,7 +66,14 @@ class AIShortsWorkflowTemplateTest {
         val workflow = comparisonShortWorkflow(topic = "coffee")
 
         assertTrue(workflow.nodes.any { it.id == "comparisonMetadata" && it.type == "demo.comparison.metadata" })
+        assertTrue(workflow.nodes.any {
+            it.id == "pair0" && it.type == SHORTS_SCENE_SUBGRAPH_NODE_TYPE &&
+                it.subgraph?.nodes?.any { node -> node.id == "layout" } == true
+        })
+        assertTrue(workflow.nodes.none { it.id.startsWith("pair0Label") || it.id.startsWith("pair0Prompt") || it.id.startsWith("pair0Image") })
         assertTrue(ConnectionRef("comparison", "value", "comparisonMetadata", "input") in workflow.connections)
+        assertTrue(ConnectionRef("comparison", "value", "pair0", "input") in workflow.connections)
+        assertTrue(ConnectionRef("pair0", "video", "pair0Save", "video") in workflow.connections)
         assertTrue(ConnectionRef("comparisonMetadata", "value", "comparisonJson", "value") in workflow.connections)
         assertTrue(ConnectionRef("comparisonJson", "text", "comparisonJsonWrite", "content") in workflow.connections)
     }

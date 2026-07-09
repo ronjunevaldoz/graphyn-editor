@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 fun main(args: Array<String>) {
     runBlocking {
         val options = parseWorkflowCliOptions(args)
-        val workflowName = options["workflow"] ?: error("Missing workflow=<name>. Use 'storyboard' or a WorkflowCatalog entry: ${WorkflowCatalog.entries.joinToString { it.name }}")
+        val workflowName = options["workflow"] ?: error("Missing workflow=<name>. Use one of: ${workflowCliTemplates.joinToString { it.key }}, ${WorkflowCatalog.entries.joinToString { it.name }}")
         val workflow = resolveWorkflow(workflowName, options)
         val plugins = DefaultGraphynPluginRegistry().apply { GraphynBootstrap.runtimePlugins(GraphynBootstrapJvm.mediaRuntimePlugins).forEach { install(it) } }
         if (isSchemaMode(args)) return@runBlocking printSchema(workflow, plugins.nodeSpecs)

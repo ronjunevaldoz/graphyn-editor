@@ -127,3 +127,14 @@ internal fun comparisonLayoutMotionSubgraph(
 ) = com.ronjunevaldoz.graphyn.plugins.shorts.comparisonLayoutMotionSubgraph(
     id = id, width = width, height = height, useKenBurns = useKenBurns,
 )
+
+/** @see com.ronjunevaldoz.graphyn.plugins.shorts.comparisonPairSubgraph */
+internal fun comparisonPairSubgraph(
+    id: String,
+    pairIndex: Int,
+    width: Int = SHORTS_WIDTH,
+    height: Int = SHORTS_HEIGHT,
+    useKenBurns: Boolean = true,
+) = com.ronjunevaldoz.graphyn.plugins.shorts.comparisonPairSubgraph(
+    id = id, pairIndex = pairIndex, width = width, height = height, useKenBurns = useKenBurns,
+)
