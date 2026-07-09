@@ -287,3 +287,7 @@ Reference points for "is this run just slow, or is something actually wrong" —
   wrong `kotlinx.datetime.Clock` API, which does not expose `System` in this codebase's dependency
   mix. Rule: match the repo's existing clock API before adding a timestamp helper, and keep the
   timestamp in a wrapper node so the validated comparison payload stays unchanged.
+- Canvas port colors should not be the same thing as semantic `PortSpec.portColor` overrides. A
+  type-only fallback makes same-type workflow values look duplicated across the canvas, even when
+  the model is correct. Rule: keep explicit port colors for compatibility channels, but derive the
+  visual dot color from the node instance when a port does not opt into a fixed semantic color.

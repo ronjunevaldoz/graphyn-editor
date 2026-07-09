@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.editor.canvas
 
 import com.ronjunevaldoz.graphyn.core.model.PortSpec
 import com.ronjunevaldoz.graphyn.core.model.WorkflowType
+import com.ronjunevaldoz.graphyn.editor.canvas.components.canvasPortColor
 import com.ronjunevaldoz.graphyn.editor.canvas.components.portColor
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -49,5 +50,14 @@ class GraphynPortTypeColorTest {
     fun portSpecColorOverrideWinsOverTypeColor() {
         val spec = PortSpec(name = "latent", type = WorkflowType.OpaqueType, portColor = 0xFF123456)
         assertEquals(androidx.compose.ui.graphics.Color(0xFF123456), spec.portColor())
+    }
+
+    @Test
+    fun canvasPortColorStaysStableButVariesAcrossPorts() {
+        val ownerKey = "media.caption_style"
+        val text = PortSpec(name = "text_color", type = WorkflowType.StringType)
+        val outline = PortSpec(name = "outline_color", type = WorkflowType.StringType)
+        assertEquals(text.canvasPortColor(ownerKey), text.canvasPortColor(ownerKey))
+        assertNotEquals(text.canvasPortColor(ownerKey), outline.canvasPortColor(ownerKey))
     }
 }
