@@ -25,6 +25,18 @@ class GraphynNodePickerTest {
         inputs = listOf(PortSpec("text", WorkflowType.StringType)),
         outputs = listOf(PortSpec("result", WorkflowType.StringType)),
     )
+    private val stringColorA = NodeSpec(
+        type = "text.color-a",
+        label = "String A",
+        inputs = listOf(PortSpec("input", WorkflowType.StringType, portColor = COLOR_A)),
+        outputs = listOf(PortSpec("output", WorkflowType.StringType, portColor = COLOR_A)),
+    )
+    private val stringColorB = NodeSpec(
+        type = "text.color-b",
+        label = "String B",
+        inputs = listOf(PortSpec("input", WorkflowType.StringType, portColor = COLOR_B)),
+        outputs = listOf(PortSpec("output", WorkflowType.StringType, portColor = COLOR_B)),
+    )
     // Generic opaque (no portColor) — like Branch/Map/Filter
     private val opaqueSpec = NodeSpec(
         type = "demo.opaque",
@@ -49,6 +61,8 @@ class GraphynNodePickerTest {
 
     private val registry = DefaultNodeSpecRegistry().apply {
         register(stringSpec)
+        register(stringColorA)
+        register(stringColorB)
         register(opaqueSpec)
         register(opaqueColorA)
         register(opaqueColorB)
@@ -59,6 +73,8 @@ class GraphynNodePickerTest {
         name = "W",
         nodes = listOf(
             NodeRef("src-str",  "text.upper"),
+            NodeRef("src-sa",   "text.color-a"),
+            NodeRef("src-sb",   "text.color-b"),
             NodeRef("src-opq",  "demo.opaque"),
             NodeRef("src-ca",   "demo.color-a"),
             NodeRef("src-cb",   "demo.color-b"),
@@ -110,5 +126,14 @@ class GraphynNodePickerTest {
         val draft = GraphynConnectionDraft(fromNodeId = "src-ca", fromPort = "output", isFromInput = false)
         val suggestion = compatiblePickerSpecs(draft, workflow, registry).first { it.spec.type == "demo.color-a" }
         assertEquals(opaqueColorA.inputs.first().portColor(), suggestion.accentColor)
+    }
+
+    @Test
+    fun pickerSuggestionsAreFilteredByColor() {
+        val draft = GraphynConnectionDraft(fromNodeId = "src-sa", fromPort = "output", isFromInput = false)
+        val types = compatiblePickerSpecs(draft, workflow, registry).map { it.spec.type }
+        assertTrue("text.color-a" in types, "Matching color should stay visible")
+        assertFalse("text.color-b" in types, "Mismatched color should be filtered out")
+        assertFalse("text.upper" in types, "Default string color should be filtered out when source color is explicit")
     }
 }
