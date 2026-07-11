@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
+import com.ronjunevaldoz.graphyn.workflows.*
 import com.ronjunevaldoz.graphyn.core.model.ConnectionRef
 import com.ronjunevaldoz.graphyn.core.model.WorkflowNodePosition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue

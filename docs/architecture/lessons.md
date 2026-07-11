@@ -132,6 +132,22 @@ Reference points for "is this run just slow, or is something actually wrong" —
   diffusion/LLM quants so graph-cut isn't needed at all (same category as the Kontext t5xxl swap
   above).
 
+- **No engine-level concurrency-limit primitive for GPU-bound node types.** Every shorts workflow
+  that runs multiple `sd.*` generations against the same GPU-bound server (comparison-short's
+  mascot + 8 photo generations, storyboard's N scenes, etc.) serializes them by manually wiring
+  one node's data *output* into an unrelated downstream node's `gate` *input* purely so the
+  scheduler treats it as a dependency — the `gate` port doesn't use the value, only the fact that
+  the connection exists. This works, but it means every workflow author has to hand-thread these
+  fake edges through an otherwise-unrelated part of the graph, and it visibly clutters the graph
+  (confirmed: real user feedback on the comparison-short workflow's rendered graph called this out
+  specifically, independent of auto-layout quality). Compare to ComfyUI, which solves the identical
+  single-GPU-serialization problem for free via its own sequential execution model — no manual
+  gate-wiring needed at all. The clean fix is a first-class primitive in `WorkflowExecutionEngine`
+  (e.g. a node-type or resource-tag-based concurrency cap declared once, not threaded through every
+  workflow's own connections) — that's a `core/execution` change, not something fixable by
+  rearranging Kotlin workflow-builder code in this repo. Not pursued yet; flagging so it doesn't
+  get silently re-solved with more gate-wiring in the next workflow that needs GPU serialization.
+
 ## Catalog and Layout
 
 - Launcher catalogs need explicit badge priority once recency and status both matter.

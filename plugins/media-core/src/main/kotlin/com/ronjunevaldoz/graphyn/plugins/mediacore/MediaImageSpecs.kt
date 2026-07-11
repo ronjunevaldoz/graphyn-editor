@@ -50,6 +50,19 @@ object MediaImageSpecs {
         ),
     )
 
+    val imageFlip = NodeSpec(
+        type = "media.image_flip",
+        label = "Image Flip",
+        description = "Mirrors an image horizontally — e.g. a left-pointing character becomes right-pointing without a second AI generation.",
+        category = CATEGORY_MEDIA_VIDEO,
+        inputs = listOf(PortSpec("image", MediaTypes.imageHandle)),
+        outputs = listOf(
+            PortSpec("image", MediaTypes.imageHandle),
+            PortSpec("width", WorkflowType.IntType),
+            PortSpec("height", WorkflowType.IntType),
+        ),
+    )
+
     val imagesList = NodeSpec(
         type = "media.images_list",
         label = "Images List",
@@ -113,5 +126,5 @@ object MediaImageSpecs {
         ),
     )
 
-    val all = listOf(imageResize, imageCrop, imagesList, imageSequenceToVideo, kenBurns)
+    val all = listOf(imageResize, imageCrop, imageFlip, imagesList, imageSequenceToVideo, kenBurns)
 }

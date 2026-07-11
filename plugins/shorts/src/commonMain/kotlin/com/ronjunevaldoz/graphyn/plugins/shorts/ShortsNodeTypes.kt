@@ -68,6 +68,11 @@ public object ShortsNodeTypes {
 
     /** Appends a generation timestamp to the validated comparison record before serialization. */
     public const val COMPARISON_METADATA: String = "demo.comparison.metadata"
+
+    /** LLM-based prompt enhancer (Ollama) — expands a rough description into a detailed generation
+     * prompt, falling back to the raw prompt unchanged on any failure. Opt-in alternative to the
+     * deterministic `media.prompt_enhance` (plain string-joining, no LLM call). */
+    public const val PROMPT_ENHANCE_LLM: String = "demo.prompt_enhance_llm"
 }
 
 /** Number of scenes the storyboard generator and storyboard-first short are fixed to. */

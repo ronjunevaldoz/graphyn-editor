@@ -28,6 +28,11 @@ internal fun imageCropExecutor(backend: MediaCoreBackend) = NodeExecutor { input
     metadata.toOutputs()
 }
 
+internal fun imageFlipExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
+    val metadata = backend.flipImage(imagePath = MediaTypes.path(inputs["image"], "image"))
+    metadata.toOutputs()
+}
+
 internal fun imageSequenceToVideoExecutor(backend: MediaCoreBackend) = NodeExecutor { inputs ->
     val paths = inputs.listOrError("images").map { MediaTypes.path(it, "image") }
     val metadata = backend.imageSequenceToVideo(paths, inputs.numberOr("fps", 1.0))

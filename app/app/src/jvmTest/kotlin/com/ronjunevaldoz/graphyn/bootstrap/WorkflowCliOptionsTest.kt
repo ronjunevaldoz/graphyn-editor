@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
+import com.ronjunevaldoz.graphyn.workflows.*
 import com.ronjunevaldoz.graphyn.core.model.doubleValue
 import com.ronjunevaldoz.graphyn.core.model.intValue
 import com.ronjunevaldoz.graphyn.core.model.stringValue

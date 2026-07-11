@@ -2,6 +2,7 @@
 
 package com.ronjunevaldoz.graphyn.bootstrap
 
+import com.ronjunevaldoz.graphyn.workflows.*
 import com.ronjunevaldoz.graphyn.core.execution.DefaultNodeExecutorRegistry
 import com.ronjunevaldoz.graphyn.core.execution.NodeExecutionStatus
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine

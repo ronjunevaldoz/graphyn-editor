@@ -52,6 +52,25 @@ internal suspend fun FfmpegMediaCoreBackend.cropImageImpl(
     return inspectImage(output.absolutePath)
 }
 
+internal suspend fun FfmpegMediaCoreBackend.flipImageImpl(imagePath: String): ImageMetadata {
+    val source = requireFile(imagePath, "Image")
+    val output = tempFile("image-flip", "png")
+    run(
+        ffmpeg,
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        source.absolutePath,
+        "-vf",
+        "hflip",
+        "-frames:v",
+        "1",
+        output.absolutePath
+    )
+    return inspectImage(output.absolutePath)
+}
+
 internal suspend fun FfmpegMediaCoreBackend.imageSequenceToVideoImpl(
     imagePaths: List<String>,
     fps: Double

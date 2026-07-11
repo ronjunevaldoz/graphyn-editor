@@ -65,6 +65,8 @@ class FfmpegMediaCoreBackend(
     override suspend fun cropImage(imagePath: String, x: Int, y: Int, width: Int, height: Int) =
         cropImageImpl(imagePath, x, y, width, height)
 
+    override suspend fun flipImage(imagePath: String) = flipImageImpl(imagePath)
+
     override suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double) =
         imageSequenceToVideoImpl(imagePaths, fps)
 

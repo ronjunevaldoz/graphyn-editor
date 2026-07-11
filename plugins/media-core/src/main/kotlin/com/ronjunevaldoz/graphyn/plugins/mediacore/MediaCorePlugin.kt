@@ -75,6 +75,7 @@ class MediaCorePlugin(
         )
         registrar.registerExecutor(MediaImageSpecs.imageResize.type, imageResizeExecutor(backend))
         registrar.registerExecutor(MediaImageSpecs.imageCrop.type, imageCropExecutor(backend))
+        registrar.registerExecutor(MediaImageSpecs.imageFlip.type, imageFlipExecutor(backend))
         registrar.registerExecutor(
             MediaImageSpecs.imagesList.type,
             mediaListExecutor("image", "images")

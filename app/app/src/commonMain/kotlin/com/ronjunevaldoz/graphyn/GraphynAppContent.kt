@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import com.ronjunevaldoz.graphyn.ai.OllamaConfig
 import com.ronjunevaldoz.graphyn.ai.OllamaWorkflowGenerator
 import com.ronjunevaldoz.graphyn.ai.WorkflowGenerator
-import com.ronjunevaldoz.graphyn.bootstrap.catalogTemplatesFor
+import com.ronjunevaldoz.graphyn.workflows.catalogTemplatesFor
 import com.ronjunevaldoz.graphyn.core.execution.WorkflowExecutionEngine
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.store.ArtifactHistory

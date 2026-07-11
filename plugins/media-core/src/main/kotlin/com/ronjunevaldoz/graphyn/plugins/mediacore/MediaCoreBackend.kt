@@ -93,6 +93,10 @@ interface MediaCoreBackend {
 
     suspend fun cropImage(imagePath: String, x: Int, y: Int, width: Int, height: Int): ImageMetadata
 
+    /** Mirrors an image horizontally — e.g. turning a left-pointing character into a right-pointing
+     * one without a second AI generation call. */
+    suspend fun flipImage(imagePath: String): ImageMetadata
+
     suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double): VideoMetadata
 
     /** Renders a still image into a video with a slow pan/zoom (Ken Burns effect) instead of a static repeat. */

@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.bootstrap
 
+import com.ronjunevaldoz.graphyn.workflows.*
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import com.ronjunevaldoz.graphyn.plugins.script.ScriptPlugin

@@ -20,7 +20,7 @@ class MediaCorePluginTest {
         val registry = DefaultGraphynPluginRegistry()
         registry.install(MediaCorePlugin(FakeMediaCoreBackend()))
 
-        assertEquals(22, registry.nodeSpecs.all().size)
+        assertEquals(23, registry.nodeSpecs.all().size)
         (MediaCoreSpecs.all + MediaCompositionSpecs.all + MediaBuilderSpecs.all + MediaImageSpecs.all).forEach {
             assertNotNull(registry.nodeSpecs.resolve(it.type))
             assertNotNull(registry.nodeExecutors.resolve(it.type))
@@ -157,6 +157,19 @@ class MediaCorePluginTest {
             mapOf("images" to collected.getValue("images"), "fps" to WorkflowValue.DoubleValue(2.0)),
         )
         assertEquals(2.0, backend.lastSequenceFps)
+    }
+
+    @Test
+    fun imageFlipMirrorsHorizontallyAndReturnsImageHandle() = runTest {
+        val backend = FakeMediaCoreBackend()
+        val registry = DefaultGraphynPluginRegistry().apply { install(MediaCorePlugin(backend)) }
+
+        val result = registry.nodeExecutors.resolve(MediaImageSpecs.imageFlip.type)!!.execute(
+            mapOf("image" to MediaTypes.imageValue("/media/point-left.png")),
+        )
+
+        assertEquals("/media/point-left.png", backend.lastFlippedPath)
+        assertEquals(MediaTypes.imageValue("/media/flipped.png"), result.getValue("image"))
     }
 
     @Test
@@ -426,6 +439,13 @@ private class FakeMediaCoreBackend : MediaCoreBackend {
 
     override suspend fun cropImage(imagePath: String, x: Int, y: Int, width: Int, height: Int): ImageMetadata =
         ImageMetadata("/media/cropped.png", width, height)
+
+    var lastFlippedPath: String? = null
+
+    override suspend fun flipImage(imagePath: String): ImageMetadata {
+        lastFlippedPath = imagePath
+        return ImageMetadata("/media/flipped.png", width = 640, height = 480)
+    }
 
     override suspend fun imageSequenceToVideo(imagePaths: List<String>, fps: Double): VideoMetadata {
         lastSequenceFps = fps

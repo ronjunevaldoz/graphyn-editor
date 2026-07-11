@@ -18,6 +18,17 @@ public val shortsSceneSubgraphSpec: NodeSpec = NodeSpec(
     inputs = listOf(
         PortSpec("input", WorkflowType.OpaqueType, description = "Scene list from the outline"),
         PortSpec("gate", WorkflowType.OpaqueType, description = "Dependency token used to serialize scene generation"),
+        // Declared list-typed so a single incoming connection gets auto-wrapped into a one-element
+        // list by buildInputMap (WorkflowExecutionScheduling.kt) at THIS wrapper hop. Without this,
+        // a raw scalar image handle passes through as a plain StringValue into the inner subgraph's
+        // externalInputs, which splices straight through unwrapped — the inner sd.id_cond node's own
+        // list-auto-wrap never runs a second time (it only triggers for internal connections, and
+        // ref_images is deliberately left unconnected there), so extractIdCondConfig's strict
+        // `as? WorkflowValue.ListValue` cast fails and Kontext silently gets zero reference images.
+        // Confirmed via a real end-to-end run: the mascot rendered as an unrelated photorealistic
+        // human with no relation to the base cartoon reference, and mascotLeft/mascotRight didn't
+        // even resemble each other, both symptoms of Kontext falling back to pure text-to-image.
+        PortSpec("ref_images", WorkflowType.NullableType(WorkflowType.ListType(WorkflowType.StringType)), required = false, description = "FLUX Kontext reference image(s), passed through to the wrapped subgraph's own ref_images boundary port"),
     ),
     outputs = listOf(PortSpec("video", WorkflowType.OpaqueType, description = "Rendered scene video")),
 )

@@ -2,6 +2,7 @@
 
 package com.ronjunevaldoz.graphyn.bootstrap
 
+import com.ronjunevaldoz.graphyn.workflows.*
 import com.ronjunevaldoz.graphyn.core.validation.WorkflowGraphValidator
 import com.ronjunevaldoz.graphyn.pluginapi.DefaultGraphynPluginRegistry
 import kotlin.test.Test

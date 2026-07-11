@@ -27,11 +27,14 @@ private const val COMPARISON_VAE = "/models/flux/vae/ae.safetensors"
  * level — once per side, each its own `NodeRef` — sidesteps the collision entirely: each instance's
  * `prompt`/`niche`/`visual_style` boundary ports are wired independently via outer `ConnectionRef`s.
  *
- * Ends with `preview.view` (not Ken Burns) so the free output is the raw `value` (image handle) —
- * wrap with [ShortsNodeTypes.STORYBOARD_SUBGRAPH] at the call site, whose generic wrapper executor
- * passes `value` straight through unrenamed (unlike [ShortsNodeTypes.SCENE_SUBGRAPH]'s wrapper,
- * which relabels it "video" — this is an image, Ken Burns happens once on the *composited* frame
- * in [comparisonLayoutMotionSubgraph], not per source photo).
+ * Ends with `preview.view` fed by an internal `media.image_import` (not the raw `sd.txt2img` path
+ * directly) — every caller needs a real image handle, not a bare path, so the import step is done
+ * once in here instead of being duplicated as a separate node at every call site (the same
+ * consolidation applied to [mascotPointEditSubgraph], see its doc comment). Wrap with
+ * [ShortsNodeTypes.SCENE_SUBGRAPH] at the call site — its wrapper executor relabels the free
+ * `value` output to `video`, matching every other scene in this pipeline (despite this being an
+ * image, not a video — Ken Burns happens once on the *composited* frame in
+ * [comparisonLayoutMotionSubgraph], not per source photo, but the wrapper naming is uniform).
  */
 public fun comparisonImageSubgraph(
     id: String,
@@ -54,6 +57,7 @@ public fun comparisonImageSubgraph(
         add(NodeRef("txt2img", "sd.txt2img", config = mapOf(
             "negative_prompt" to s(""), "width" to i(width), "height" to i(height), "seed" to i(-1), "batch_count" to i(1),
         )))
+        add(NodeRef("import", "media.image_import"))
         add(NodeRef("preview", "preview.view"))
     },
     connections = buildList {
@@ -65,7 +69,8 @@ public fun comparisonImageSubgraph(
         add(ConnectionRef("promptEnhance", "negative_prompt", "txt2img", "negative_prompt"))
         add(ConnectionRef("ctx", "context", "txt2img", "context"))
         add(ConnectionRef("sampler", "sampler", "txt2img", "sampler"))
-        add(ConnectionRef("txt2img", "image", "preview", "value"))
+        add(ConnectionRef("txt2img", "image", "import", "path"))
+        add(ConnectionRef("import", "image", "preview", "value"))
     },
 )
 

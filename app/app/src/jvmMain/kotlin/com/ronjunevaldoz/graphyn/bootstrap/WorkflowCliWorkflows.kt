@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.bootstrap
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
 import com.ronjunevaldoz.graphyn.core.model.stringValue as s
+import com.ronjunevaldoz.graphyn.workflows.*
 
 internal data class WorkflowCliTemplate(
     val key: String,
@@ -13,18 +14,54 @@ internal val workflowCliTemplates: List<WorkflowCliTemplate> = listOf(
     WorkflowCliTemplate(STORYBOARD_WORKFLOW_KEY) { options ->
         imageMotionStoryboardShortWorkflow(
             topic = options["topic"] ?: "a quick weeknight pasta dinner",
-            width = options["width"]?.toInt() ?: SHORTS_WIDTH,
-            height = options["height"]?.toInt() ?: SHORTS_HEIGHT,
-            useCharacterSheet = options["character_sheet"]?.toBooleanStrictOrNull() ?: false,
+            width = options["width"]?.toInt(),
+            height = options["height"]?.toInt(),
+            useCharacterSheet = options["character_sheet"]?.toBooleanStrictOrNull(),
         )
     },
     WorkflowCliTemplate(COMPARISON_WORKFLOW_KEY) { options ->
         comparisonShortWorkflow(
             topic = options["topic"] ?: "commonly confused everyday concepts",
-            width = options["width"]?.toInt() ?: SHORTS_WIDTH,
-            height = options["height"]?.toInt() ?: SHORTS_HEIGHT,
-            mascotDescription = options["mascot"] ?: com.ronjunevaldoz.graphyn.plugins.shorts.DEFAULT_MASCOT_DESCRIPTION,
-            useKenBurns = options["ken_burns"]?.toBooleanStrictOrNull() ?: true,
+            width = options["width"]?.toInt(),
+            height = options["height"]?.toInt(),
+            mascotDescription = options["mascot"],
+            useKenBurns = options["ken_burns"]?.toBooleanStrictOrNull(),
+        )
+    },
+    WorkflowCliTemplate(MASCOT_PREVIEW_WORKFLOW_KEY) { options ->
+        mascotPreviewWorkflow(
+            mascotDescription = options["mascot"],
+            width = options["width"]?.toInt(),
+            height = options["height"]?.toInt(),
+        )
+    },
+    WorkflowCliTemplate(MASCOT_PREVIEW_QWEN_WORKFLOW_KEY) { options ->
+        mascotPreviewQwenWorkflow(
+            mascotDescription = options["mascot"],
+            width = options["width"]?.toInt(),
+            height = options["height"]?.toInt(),
+        )
+    },
+    WorkflowCliTemplate(IMAGE_EDIT_WORKFLOW_KEY) { options ->
+        referenceImageEditWorkflow(
+            imagePath = options["image"] ?: error("Missing image=<path to reference image>"),
+            instruction = options["instruction"] ?: error("Missing instruction=<edit description>"),
+            model = options["model"] ?: "flux-kontext",
+            width = options["width"]?.toInt(),
+            height = options["height"]?.toInt(),
+            steps = options["steps"]?.toInt(),
+            cfgScale = options["cfg"]?.toDouble(),
+            useLightningLora = options["lightning"]?.toBooleanStrictOrNull(),
+            seed = options["seed"]?.toInt(),
+            negativePrompt = options["negative"],
+        )
+    },
+    WorkflowCliTemplate(CHARACTER_BASE_WORKFLOW_KEY) { options ->
+        characterBaseWorkflow(
+            description = options["description"] ?: "a character, plain white background, front view facing directly toward the camera, neutral standing pose, arms relaxed at sides, no text, whole body",
+            width = options["width"]?.toInt(),
+            height = options["height"]?.toInt(),
+            useLlmPromptEnhance = options["enhance"]?.toBooleanStrictOrNull(),
         )
     },
     WorkflowCliTemplate(RECAPTION_WORKFLOW_KEY) { options ->
@@ -34,8 +71,10 @@ internal val workflowCliTemplates: List<WorkflowCliTemplate> = listOf(
             stitchedVideoPath = options["video"] ?: "$STORYBOARD_OUTPUT_BASE.stitched.mp4",
             storyboardJsonPath = options["storyboard"] ?: "$STORYBOARD_OUTPUT_BASE.storyboard.json",
             styleOverrides = styleOverrides,
-            outputPath = options["output"] ?: "$STORYBOARD_OUTPUT_BASE.recaptioned.mp4",
-            ttsEngine = resolveTtsEngineChoice(options, TtsEngineChoice("qwen3", mapOf("voice" to s("")))),
+            outputPath = options["output"],
+            // Matches recaptionWorkflow's own default voice ("Ryan") — this used to fall back to
+            // an empty voice string here, silently diverging from the function's real default.
+            ttsEngine = resolveTtsEngineChoice(options, TtsEngineChoice("qwen3", mapOf("voice" to s("Ryan")))),
         )
     },
     WorkflowCliTemplate(REGENERATE_SCENE_WORKFLOW_KEY) { options ->
@@ -58,7 +97,7 @@ internal val workflowCliTemplates: List<WorkflowCliTemplate> = listOf(
             visualStyle = readStoryboardField(storyboardPath, "visual_style"),
             character = readStoryboardField(storyboardPath, "character"),
             storyboardJsonPath = storyboardPath,
-            outputPath = options["output"] ?: "$STORYBOARD_OUTPUT_BASE.mp4",
+            outputPath = options["output"],
             ttsEngine = resolveTtsEngineChoice(options, TtsEngineChoice("say", mapOf("voice_id" to s("Samantha"), "speed" to d(1.0)))),
             editMode = editMode,
             editReferenceImagePath = if (editMode) sidecarFile.readText().trim() else null,
@@ -69,11 +108,11 @@ internal val workflowCliTemplates: List<WorkflowCliTemplate> = listOf(
         characterReferenceSamplesWorkflow(
             idEmbedPath = options["id_embed_path"] ?: error("Missing id_embed_path=<path to id_embeds.bin>. $faceDetectInstructions"),
             prompts = options["prompts"]?.split("|")?.map { it.trim() } ?: CharacterSamplePrompts.DEFAULT,
-            styleStrength = options["style_strength"]?.toDoubleOrNull() ?: 20.0,
-            steps = options["steps"]?.toIntOrNull() ?: 30,
-            cfgScale = options["cfg_scale"]?.toDoubleOrNull() ?: 5.0,
-            width = options["width"]?.toIntOrNull() ?: 1024,
-            height = options["height"]?.toIntOrNull() ?: 1024,
+            styleStrength = options["style_strength"]?.toDoubleOrNull(),
+            steps = options["steps"]?.toIntOrNull(),
+            cfgScale = options["cfg_scale"]?.toDoubleOrNull(),
+            width = options["width"]?.toIntOrNull(),
+            height = options["height"]?.toIntOrNull(),
         )
     },
 )

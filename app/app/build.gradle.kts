@@ -59,6 +59,7 @@ kotlin {
             implementation(projects.plugins.stableDiffusion)
             implementation(projects.plugins.mediaCore)
             implementation(projects.plugins.mediaAi)
+            implementation(projects.core.serialization)
             implementation(libs.ktor.clientCore)
             implementation(libs.ktor.clientCio)
             implementation(libs.serialization.json)

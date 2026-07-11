@@ -2,13 +2,19 @@ package com.ronjunevaldoz.graphyn.bootstrap
 
 import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
+import com.ronjunevaldoz.graphyn.workflows.TtsEngineChoice
 
 internal const val STORYBOARD_WORKFLOW_KEY = "storyboard"
 internal const val RECAPTION_WORKFLOW_KEY = "recaption"
 internal const val REGENERATE_SCENE_WORKFLOW_KEY = "regenerate-scene"
 internal const val CHARACTER_SAMPLES_WORKFLOW_KEY = "character-samples"
 internal const val COMPARISON_WORKFLOW_KEY = "comparison"
+internal const val MASCOT_PREVIEW_WORKFLOW_KEY = "mascot-preview"
+internal const val MASCOT_PREVIEW_QWEN_WORKFLOW_KEY = "mascot-preview-qwen"
+internal const val IMAGE_EDIT_WORKFLOW_KEY = "image-edit"
+internal const val CHARACTER_BASE_WORKFLOW_KEY = "character-base"
 internal const val SCHEMA_MODE_KEY = "schema"
+internal const val PUBLISH_MODE_KEY = "publish"
 
 internal fun resolveTtsEngineChoice(options: Map<String, String>, default: TtsEngineChoice): TtsEngineChoice {
     val engine = options["tts_engine"] ?: return default

@@ -15,6 +15,7 @@ import com.ronjunevaldoz.graphyn.pluginapi.GRAPHYN_PLUGIN_API_VERSION
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginMetadata
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginRegistrar
+import com.ronjunevaldoz.graphyn.workflows.SUBGRAPH_CATEGORY
 
 const val SUBGRAPH_NODE_TYPE = "demo.subgraph"
 
