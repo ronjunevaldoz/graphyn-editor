@@ -326,8 +326,8 @@ Add it to your MCP client config, e.g. a project's `.mcp.json`:
 |---|---|
 | `workflow_list` | List all stored workflows |
 | `workflow_get` | Fetch a workflow's full definition by id |
-| `workflow_publish` | Save/update a workflow from raw JSON (validates first) |
-| `workflow_delete` | Delete a workflow and its history |
+| `workflow_publish` | Save/update a workflow from raw JSON (validates first, id must start with `mcp-`) |
+| `workflow_delete` | Delete a workflow and its history (id must start with `mcp-`) |
 | `workflow_execute` | Run a stored workflow by id, with optional `overrides` and `async` |
 | `workflow_execution_status` | Poll progress for an `async` run |
 | `workflow_list_node_types` | List registered node types, for authoring `workflow_publish` payloads |
@@ -338,7 +338,7 @@ By default `:mcp` installs the Shorts, MediaCore, MediaAi, and StableDiffusion p
 "env": { "GRAPHYN_MCP_PLUGINS": "shorts,media-core" }
 ```
 
-`workflow_publish`/`workflow_execute` run against the real engine — nodes like `script.eval` and `io.file_write`/`io.http_request` execute unsandboxed. Tool annotations (`destructiveHint`/`openWorldHint`) flag which ones.
+`workflow_publish`/`workflow_delete` are scoped to ids starting with `mcp-` — they share `:mcp`'s own store with the desktop editor, and this stops an agent from overwriting or deleting your real workflows by reusing an id. `workflow_publish`/`workflow_execute` run against the real engine — nodes like `script.eval` and `io.file_write`/`io.http_request` execute unsandboxed. Tool annotations (`destructiveHint`/`openWorldHint`) flag which ones.
 
 ---
 

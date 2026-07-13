@@ -2,6 +2,7 @@ package com.ronjunevaldoz.graphyn.mcp
 
 import com.ronjunevaldoz.graphyn.GraphynRunRegistry
 import com.ronjunevaldoz.graphyn.createGraphynServerRuntime
+import com.ronjunevaldoz.graphyn.core.model.WorkflowDefinition
 import com.ronjunevaldoz.graphyn.core.store.InMemoryWorkflowStore
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
@@ -45,8 +46,8 @@ class WorkflowToolsTest {
         val store = InMemoryWorkflowStore()
         assertEquals("[]", listWorkflows(store, testJson).text())
 
-        publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("wf-1")) })
-        assertTrue(listWorkflows(store, testJson).text().contains("wf-1"))
+        publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("mcp-wf-1")) })
+        assertTrue(listWorkflows(store, testJson).text().contains("mcp-wf-1"))
     }
 
     @Test
@@ -62,10 +63,10 @@ class WorkflowToolsTest {
     @Test
     fun getWorkflowRoundTripsPublished() = runTest {
         val store = InMemoryWorkflowStore()
-        publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("wf-2")) })
-        val result = getWorkflow(store, buildJsonObject { put("id", "wf-2") })
+        publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("mcp-wf-2")) })
+        val result = getWorkflow(store, buildJsonObject { put("id", "mcp-wf-2") })
         assertFalse(result.isError == true)
-        assertTrue(result.text().contains("\"id\": \"wf-2\""))
+        assertTrue(result.text().contains("\"id\": \"mcp-wf-2\""))
     }
 
     @Test
@@ -78,18 +79,26 @@ class WorkflowToolsTest {
     fun publishFailsValidationOnUnmetRequiredInput() = runTest {
         val result = publishWorkflow(
             InMemoryWorkflowStore(), createGraphynServerRuntime(), testJson,
-            buildJsonObject { put("workflow", invalidWorkflowJson("wf-3")) },
+            buildJsonObject { put("workflow", invalidWorkflowJson("mcp-wf-3")) },
         )
         assertTrue(result.isError == true)
         assertTrue(result.text().contains("missing_required_input"))
     }
 
     @Test
+    fun publishRejectsIdOutsideMcpNamespace() = runTest {
+        val store = InMemoryWorkflowStore()
+        val result = publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("comparison-short")) })
+        assertTrue(result.isError == true)
+        assertFalse(store.list().any { it.id == "comparison-short" })
+    }
+
+    @Test
     fun publishValidWorkflowSucceeds() = runTest {
         val store = InMemoryWorkflowStore()
-        val result = publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("wf-4")) })
+        val result = publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("mcp-wf-4")) })
         assertFalse(result.isError == true)
-        assertTrue(store.list().any { it.id == "wf-4" })
+        assertTrue(store.list().any { it.id == "mcp-wf-4" })
     }
 
     @Test
@@ -100,9 +109,20 @@ class WorkflowToolsTest {
     @Test
     fun deleteWorkflowRemovesFromStore() = runTest {
         val store = InMemoryWorkflowStore()
-        publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("wf-5")) })
-        deleteWorkflow(store, buildJsonObject { put("id", "wf-5") })
-        assertFalse(store.list().any { it.id == "wf-5" })
+        publishWorkflow(store, createGraphynServerRuntime(), testJson, buildJsonObject { put("workflow", greetWorkflowJson("mcp-wf-5")) })
+        deleteWorkflow(store, buildJsonObject { put("id", "mcp-wf-5") })
+        assertFalse(store.list().any { it.id == "mcp-wf-5" })
+    }
+
+    @Test
+    fun deleteRejectsIdOutsideMcpNamespace() = runTest {
+        val store = InMemoryWorkflowStore()
+        // Seed directly (bypassing publishWorkflow's own guard) to simulate a workflow the
+        // desktop editor created, which workflow_delete must never be able to touch.
+        store.save(WorkflowDefinition(id = "comparison-short", name = "Comparison Short", nodes = emptyList(), connections = emptyList()))
+        val result = deleteWorkflow(store, buildJsonObject { put("id", "comparison-short") })
+        assertTrue(result.isError == true)
+        assertTrue(store.list().any { it.id == "comparison-short" })
     }
 
     @Test
@@ -116,8 +136,8 @@ class WorkflowToolsTest {
     fun executeSyncRunsWorkflow() = runTest {
         val store = InMemoryWorkflowStore()
         val runtime = createGraphynServerRuntime()
-        publishWorkflow(store, runtime, testJson, buildJsonObject { put("workflow", greetWorkflowJson("wf-6")) })
-        val result = executeWorkflow(store, runtime, GraphynRunRegistry(runtime.executionEngine), testJson, buildJsonObject { put("id", "wf-6") })
+        publishWorkflow(store, runtime, testJson, buildJsonObject { put("workflow", greetWorkflowJson("mcp-wf-6")) })
+        val result = executeWorkflow(store, runtime, GraphynRunRegistry(runtime.executionEngine), testJson, buildJsonObject { put("id", "mcp-wf-6") })
         assertFalse(result.isError == true)
         assertTrue(result.text().contains("Hello, World!"))
     }
@@ -130,9 +150,9 @@ class WorkflowToolsTest {
         val store = InMemoryWorkflowStore()
         val runtime = createGraphynServerRuntime()
         val registry = GraphynRunRegistry(runtime.executionEngine)
-        publishWorkflow(store, runtime, testJson, buildJsonObject { put("workflow", greetWorkflowJson("wf-7")) })
+        publishWorkflow(store, runtime, testJson, buildJsonObject { put("workflow", greetWorkflowJson("mcp-wf-7")) })
 
-        val started = executeWorkflow(store, runtime, registry, testJson, buildJsonObject { put("id", "wf-7"); put("async", true) })
+        val started = executeWorkflow(store, runtime, registry, testJson, buildJsonObject { put("id", "mcp-wf-7"); put("async", true) })
         assertFalse(started.isError == true)
         val runId = testJson.parseToJsonElement(started.text()).jsonObject.getValue("runId").jsonPrimitive.content
         assertTrue(runId.isNotBlank())

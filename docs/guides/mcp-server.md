@@ -35,8 +35,8 @@ For Claude Desktop, add the equivalent entry to its own config with an absolute 
 |---|---|
 | `workflow_list` | List all stored workflows (id, name, timestamps, version count) |
 | `workflow_get` | Fetch a workflow's full definition by id |
-| `workflow_publish` | Save/update a workflow from raw `WorkflowDefinition` JSON — validates before saving |
-| `workflow_delete` | Delete a workflow and its version history |
+| `workflow_publish` | Save/update a workflow from raw `WorkflowDefinition` JSON — validates before saving, id must start with `mcp-` |
+| `workflow_delete` | Delete a workflow and its version history — id must start with `mcp-` |
 | `workflow_execute` | Run a stored workflow by id, with optional `overrides` (per-node config) and `async` |
 | `workflow_execution_status` | Poll buffered progress/result frames for an `async` run |
 | `workflow_list_node_types` | List every registered node type — for authoring `workflow_publish` payloads |
@@ -83,9 +83,22 @@ An unknown plugin name fails fast at startup with the available list rather than
 
 ---
 
+## Namespace scoping
+
+`workflow_publish` and `workflow_delete` share the same store as the desktop editor (`~/.graphyn/workflows`). Without a boundary, an agent could silently overwrite or delete one of your real hand-built workflows just by reusing its id — so both tools refuse any id that doesn't start with `mcp-`:
+
+```
+workflow_publish({"workflow": "...\"id\":\"comparison-short\"..."})
+→ "Refusing to publish 'comparison-short': id must start with 'mcp-'."
+```
+
+This is enforced by construction (an id-prefix check before every write), not a per-call confirmation flag — there's nothing to forget to pass. `workflow_get`, `workflow_list`, and `workflow_execute` are unscoped and can read/run any stored workflow, including your own; only writes (`publish`/`delete`) are restricted.
+
+---
+
 ## Unsandboxed execution
 
-`workflow_publish` and `workflow_execute` run against the same production node executors as `:server` and the editor — including `script.eval` (arbitrary Kotlin) and `io.file_write`/`io.http_request` (filesystem/network access). There is no sandbox and no per-call confirmation gate; this is the same trust boundary as running the `:mcp` process itself. If you need to restrict what an agent can publish or run, that would need an allow-list built on top — not something `:mcp` enforces today.
+`workflow_publish` and `workflow_execute` run against the same production node executors as `:server` and the editor — including `script.eval` (arbitrary Kotlin) and `io.file_write`/`io.http_request` (filesystem/network access). There is no sandbox and no per-call confirmation gate for *which node types* a workflow may contain; this is the same trust boundary as running the `:mcp` process itself. Namespace scoping (above) protects *your existing workflows* from being touched — it does not restrict what a new `mcp-`-prefixed workflow is allowed to do. A node-type allow-list would need to be built on top if you need that.
 
 ---
 

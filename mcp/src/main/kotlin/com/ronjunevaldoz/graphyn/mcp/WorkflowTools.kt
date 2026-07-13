@@ -24,6 +24,17 @@ import kotlinx.serialization.json.putJsonObject
 
 private const val MAX_RESPONSE_CHARS = 20_000
 
+/**
+ * workflow_publish/workflow_delete share the same store as the desktop editor
+ * (~/.graphyn/workflows) — without a namespace boundary, an agent could silently overwrite or
+ * delete a user's real hand-built workflow just by reusing its id. Requiring this prefix makes
+ * that impossible by construction rather than relying on a per-call confirmation flag.
+ */
+private const val MCP_ID_PREFIX = "mcp-"
+private const val SCOPE_NOTE =
+    "Scoped to ids starting with \"$MCP_ID_PREFIX\" — cannot create, overwrite, or delete " +
+        "workflows outside this namespace, to avoid touching the desktop editor's own workflows."
+
 private const val KIND_DISCRIMINATOR_NOTE =
     "WorkflowValue fields use a \"kind\" discriminator, e.g. {\"kind\":\"string\",\"value\":\"...\"}."
 private const val TYPE_DISCRIMINATOR_NOTE =
@@ -65,7 +76,7 @@ fun registerWorkflowTools(
     server.addTool(
         name = "workflow_publish",
         description = "Save (create or update) a workflow from its raw WorkflowDefinition JSON. " +
-            "Validates before saving. $KIND_DISCRIMINATOR_NOTE $UNSANDBOXED_NOTE",
+            "Validates before saving. $SCOPE_NOTE $KIND_DISCRIMINATOR_NOTE $UNSANDBOXED_NOTE",
         inputSchema = ToolSchema(
             properties = buildJsonObject { putJsonObject("workflow") { put("type", "string") } },
             required = listOf("workflow"),
@@ -75,7 +86,7 @@ fun registerWorkflowTools(
 
     server.addTool(
         name = "workflow_delete",
-        description = "Delete a stored workflow and all its version history by id.",
+        description = "Delete a stored workflow and all its version history by id. $SCOPE_NOTE",
         inputSchema = ToolSchema(
             properties = buildJsonObject { putJsonObject("id") { put("type", "string") } },
             required = listOf("id"),
@@ -142,6 +153,9 @@ internal suspend fun publishWorkflow(
         ?: return errorResult("Missing required argument 'workflow' (WorkflowDefinition JSON).")
     val workflow = runCatching { DefaultWorkflowJsonCodec.decodeFromString(raw) }
         .getOrElse { return errorResult("Invalid workflow JSON: ${it.message}") }
+    if (!workflow.id.startsWith(MCP_ID_PREFIX)) {
+        return errorResult("Refusing to publish '${workflow.id}': id must start with '$MCP_ID_PREFIX'.")
+    }
     val errors = runtime.validator.validate(workflow)
     if (errors.isNotEmpty()) return errorResult("Validation failed: ${json.encodeToString(errors)}")
     val meta = store.save(workflow)
@@ -150,6 +164,9 @@ internal suspend fun publishWorkflow(
 
 internal suspend fun deleteWorkflow(store: WorkflowStore, arguments: JsonObject?): CallToolResult {
     val id = arguments.stringArg("id") ?: return errorResult("Missing required argument 'id'.")
+    if (!id.startsWith(MCP_ID_PREFIX)) {
+        return errorResult("Refusing to delete '$id': id must start with '$MCP_ID_PREFIX'.")
+    }
     store.delete(id)
     return ok("Deleted workflow '$id'.")
 }
