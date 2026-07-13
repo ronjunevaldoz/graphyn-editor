@@ -59,16 +59,20 @@ private val AVAILABLE_PLUGINS: Map<String, () -> GraphynPlugin> = mapOf(
     "stable-diffusion" to { StableDiffusionPlugin() },
 )
 
-/** GRAPHYN_MCP_PLUGINS="shorts,media-core" to trim the set; unset/empty installs all of them. */
+/**
+ * GRAPHYN_MCP_PLUGINS="shorts,media-core" to trim the set. Unset, empty, or "all" installs
+ * every plugin in [AVAILABLE_PLUGINS] — "all" is an explicit spelling for configs (like
+ * .mcp.json's env block) that always set the key rather than relying on its absence.
+ */
 private fun resolveExtraPlugins(): List<GraphynPlugin> {
-    val names = System.getenv("GRAPHYN_MCP_PLUGINS")
-        ?.split(",")
-        ?.map { it.trim() }
-        ?.filter { it.isNotEmpty() }
-        ?.takeIf { it.isNotEmpty() }
-        ?: AVAILABLE_PLUGINS.keys.toList()
+    val raw = System.getenv("GRAPHYN_MCP_PLUGINS")?.trim()
+    val names = if (raw.isNullOrEmpty() || raw == "all") {
+        AVAILABLE_PLUGINS.keys.toList()
+    } else {
+        raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+    }
     return names.map { name ->
         AVAILABLE_PLUGINS[name]?.invoke()
-            ?: error("Unknown plugin '$name' in GRAPHYN_MCP_PLUGINS. Available: ${AVAILABLE_PLUGINS.keys.joinToString()}")
+            ?: error("Unknown plugin '$name' in GRAPHYN_MCP_PLUGINS. Available: all, ${AVAILABLE_PLUGINS.keys.joinToString()}")
     }
 }
