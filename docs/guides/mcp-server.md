@@ -2,7 +2,7 @@
 
 The `mcp` module is a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio — it exposes generic workflow CRUD + execute tools to an agent (Claude Desktop, Claude Code, etc.), with no template- or node-type-specific shortcuts. Every tool operates on an arbitrary `WorkflowDefinition` by id or raw JSON.
 
-It embeds the engine directly (`createGraphynServerRuntime()` + `FileWorkflowStore`, the same `~/.graphyn/workflows` store the desktop editor uses) — no running `:server` process required.
+It embeds the engine directly (`createGraphynServerRuntime()` + `FileWorkflowStore`) — no running `:server` process required.
 
 ---
 
@@ -80,6 +80,20 @@ By default `:mcp` installs Shorts, MediaCore, MediaAi, and StableDiffusion on to
 ```
 
 An unknown plugin name fails fast at startup with the available list rather than silently being ignored. `StableDiffusionPlugin()`'s default backend shells out to a local `sd-cli` binary (`SD_CLI_PATH` env var) — swap in `com.ronjunevaldoz.graphyn.plugins.stablesd.http.HttpStableDiffusionBackend` in `Main.kt` if your SD generation runs on a remote server instead.
+
+---
+
+## Where workflows are stored
+
+`FileWorkflowStore` defaults to `<project-root>/.graphyn/workflows`, using the process's working directory as the root — reliable here since `.mcp.json` launches the binary via a relative command path, so the client has already `cd`'d to the project root. This keeps different projects' MCP-published workflows from colliding in one shared folder, unlike the desktop editor's own default of `~/.graphyn/workflows` (global, one folder for every project).
+
+Override with `GRAPHYN_MCP_WORKFLOWS_DIR` — including pointing it back at the global `~/.graphyn/workflows` if you want MCP and the desktop editor to share state for a specific project:
+
+```json
+"env": { "GRAPHYN_MCP_WORKFLOWS_DIR": "/Users/you/.graphyn/workflows" }
+```
+
+Add `.graphyn/` to the project's `.gitignore` — it's local, ephemeral run state, not something to commit.
 
 ---
 

@@ -33,3 +33,6 @@ node_modules/
 /app/app/image-motion-*.json
 /app/app/image-motion-*.image.txt
 /app/app/outputs/
+
+# :mcp's default project-scoped workflow store (see GRAPHYN_MCP_WORKFLOWS_DIR)
+/.graphyn/

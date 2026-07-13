@@ -303,7 +303,7 @@ Set `GRAPHYN_API_KEY=<secret>` in the environment to enable Bearer-token auth. A
 
 ## MCP Server
 
-`:mcp` is a stdio [MCP](https://modelcontextprotocol.io) server for agents (Claude Desktop, Claude Code, etc.) — generic CRUD + execute over workflows, no template-specific tools. It embeds the engine in-process (same `FileWorkflowStore`, `~/.graphyn/workflows`), no running `:server` needed.
+`:mcp` is a stdio [MCP](https://modelcontextprotocol.io) server for agents (Claude Desktop, Claude Code, etc.) — generic CRUD + execute over workflows, no template-specific tools. It embeds the engine in-process (`FileWorkflowStore`, defaults to `<project-root>/.graphyn/workflows` — override with `GRAPHYN_MCP_WORKFLOWS_DIR`), no running `:server` needed.
 
 ```bash
 ./gradlew :mcp:installDist

@@ -4,6 +4,7 @@ import com.ronjunevaldoz.graphyn.GraphynRunRegistry
 import com.ronjunevaldoz.graphyn.createGraphynServerRuntime
 import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
 import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
+import java.io.File
 import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiPlugin
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCorePlugin
 import com.ronjunevaldoz.graphyn.plugins.shorts.ShortsPlugin
@@ -28,7 +29,7 @@ fun main() {
     val protocolOut = System.out
     System.setOut(System.err)
 
-    val store = FileWorkflowStore()
+    val store = FileWorkflowStore(root = resolveWorkflowsDir())
     val runtime = createGraphynServerRuntime(extraPlugins = resolveExtraPlugins())
     val registry = GraphynRunRegistry(runtime.executionEngine)
     val json = Json { encodeDefaults = false; ignoreUnknownKeys = true }
@@ -50,6 +51,19 @@ fun main() {
         session.onClose { done.complete() }
         done.join()
     }
+}
+
+/**
+ * Defaults to <project-root>/.graphyn/workflows (the process's cwd — reliable here since
+ * .mcp.json launches this binary via a relative command path, so the client already cwds to
+ * the project root). Keeps different projects' MCP-published workflows from colliding in one
+ * global ~/.graphyn/workflows folder — the desktop editor's own default. Override with
+ * GRAPHYN_MCP_WORKFLOWS_DIR to point elsewhere, including back at the global default.
+ */
+private fun resolveWorkflowsDir(): File {
+    val override = System.getenv("GRAPHYN_MCP_WORKFLOWS_DIR")?.trim()
+    if (!override.isNullOrEmpty()) return File(override)
+    return File(System.getProperty("user.dir"), ".graphyn/workflows")
 }
 
 private val AVAILABLE_PLUGINS: Map<String, () -> GraphynPlugin> = mapOf(
