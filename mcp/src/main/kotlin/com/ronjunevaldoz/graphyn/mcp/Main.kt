@@ -3,6 +3,7 @@ package com.ronjunevaldoz.graphyn.mcp
 import com.ronjunevaldoz.graphyn.GraphynRunRegistry
 import com.ronjunevaldoz.graphyn.createGraphynServerRuntime
 import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
+import com.ronjunevaldoz.graphyn.pluginapi.GraphynPlugin
 import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiPlugin
 import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCorePlugin
 import com.ronjunevaldoz.graphyn.plugins.shorts.ShortsPlugin
@@ -28,9 +29,7 @@ fun main() {
     System.setOut(System.err)
 
     val store = FileWorkflowStore()
-    val runtime = createGraphynServerRuntime(
-        extraPlugins = listOf(ShortsPlugin, MediaCorePlugin(), MediaAiPlugin(), StableDiffusionPlugin()),
-    )
+    val runtime = createGraphynServerRuntime(extraPlugins = resolveExtraPlugins())
     val registry = GraphynRunRegistry(runtime.executionEngine)
     val json = Json { encodeDefaults = false; ignoreUnknownKeys = true }
 
@@ -50,5 +49,26 @@ fun main() {
         val done = Job()
         session.onClose { done.complete() }
         done.join()
+    }
+}
+
+private val AVAILABLE_PLUGINS: Map<String, () -> GraphynPlugin> = mapOf(
+    "shorts" to { ShortsPlugin },
+    "media-core" to { MediaCorePlugin() },
+    "media-ai" to { MediaAiPlugin() },
+    "stable-diffusion" to { StableDiffusionPlugin() },
+)
+
+/** GRAPHYN_MCP_PLUGINS="shorts,media-core" to trim the set; unset/empty installs all of them. */
+private fun resolveExtraPlugins(): List<GraphynPlugin> {
+    val names = System.getenv("GRAPHYN_MCP_PLUGINS")
+        ?.split(",")
+        ?.map { it.trim() }
+        ?.filter { it.isNotEmpty() }
+        ?.takeIf { it.isNotEmpty() }
+        ?: AVAILABLE_PLUGINS.keys.toList()
+    return names.map { name ->
+        AVAILABLE_PLUGINS[name]?.invoke()
+            ?: error("Unknown plugin '$name' in GRAPHYN_MCP_PLUGINS. Available: ${AVAILABLE_PLUGINS.keys.joinToString()}")
     }
 }
