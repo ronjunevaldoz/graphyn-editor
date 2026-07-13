@@ -34,7 +34,7 @@ data class RunRequest(
 private data class AsyncRunStarted(val runId: String)
 
 /** Returns a copy of [workflow] with [overrides] merged onto matching nodes' config (override wins). */
-internal fun applyOverrides(
+fun applyOverrides(
     workflow: WorkflowDefinition,
     overrides: Map<String, Map<String, WorkflowValue>>,
 ): WorkflowDefinition {

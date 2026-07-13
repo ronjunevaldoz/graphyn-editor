@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "graphyn-workflows": {
+      "command": "./mcp/build/install/mcp/bin/mcp",
+      "args": []
+    }
+  }
+}
