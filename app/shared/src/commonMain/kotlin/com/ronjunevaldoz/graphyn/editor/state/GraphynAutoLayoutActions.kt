@@ -30,7 +30,12 @@ internal fun GraphynEditorState.performAutoLayout(minimizeCrossings: Boolean = t
         val annX = graphMinX - maxAnnW - gap
         if (annX < 0) {
             val shift = -annX
-            positions.replaceAll { _, p -> IntOffset(p.x + shift, p.y) }
+            // MutableMap.replaceAll is JVM-only (java.util.Map default method) — not in the
+            // common/WasmJS stdlib, so this loop replaces it portably.
+            for (key in positions.keys) {
+                val p = positions.getValue(key)
+                positions[key] = IntOffset(p.x + shift, p.y)
+            }
         }
         var annY = graphMinY
         annotationNodes.forEach { ann ->
