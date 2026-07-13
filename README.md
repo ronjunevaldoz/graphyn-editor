@@ -90,6 +90,7 @@ plugins/* (node definitions + executors)
 | `ai` | `graphyn-ai` | LLM workflow generation (Ollama) |
 | `runtime` | `graphyn-runtime` | Convenience bundle of all first-party plugins |
 | `server` | `graphyn-ktor-plugin` | Ktor execution API + `install(Graphyn)` |
+| `mcp` | — (application) | Stdio MCP server — generic workflow CRUD + execute for agents |
 | `plugins/control` | `graphyn-plugin-control` | Branch, loop, merge |
 | `plugins/list-ops` | `graphyn-plugin-list-ops` | Map, filter, reduce, sort |
 | `plugins/types` | `graphyn-plugin-types` | Type conversion and casting |
@@ -148,15 +149,11 @@ commonMain.dependencies {
 
 ## Quick Start
 
-### Step 1 — Runtime plugin (node specs + executors)
+A runtime plugin defines a node's spec (ports, defaults) and executor (the actual logic):
 
 ```kotlin
 object MyPlugin : GraphynPlugin {
-    override val metadata = GraphynPluginMetadata(
-        id = "com.example.my",
-        displayName = "My Plugin",
-        version = "1.0.0",
-    )
+    override val metadata = GraphynPluginMetadata(id = "com.example.my", displayName = "My Plugin", version = "1.0.0")
 
     override fun register(registrar: GraphynPluginRegistrar) {
         registrar.registerNodeSpec(
@@ -177,125 +174,24 @@ object MyPlugin : GraphynPlugin {
 }
 ```
 
-### Step 2 — Editor plugin (canvas card + inspector panel)
-
-```kotlin
-object MyEditorPlugin : GraphynEditorPlugin {
-    override val metadata = GraphynEditorPluginMetadata(
-        id = "com.example.my.editor",
-        displayName = "My Editor Plugin",
-        version = "1.0.0",
-    )
-
-    override fun register(registrar: GraphynEditorPluginRegistrar) {
-        // Custom canvas card using ShapeCardFactory from graphyn-ui-cards
-        // (circle, rounded square, or any Compose Shape)
-        registrar.registerCanvasCard(
-            "my.transform",
-            ShapeCardFactory(
-                shape = CircleShape,
-                theme = ShapeNodeTheme(
-                    background     = { Color(0xFF6366F1) },
-                    selectedBorder = { Color(0xFF8B5CF6) },
-                ),
-                // Optional: replace initials with a custom avatar composable
-                avatar = { node, spec ->
-                    AsyncImage(
-                        url = (node.config["avatar_url"] as? WorkflowValue.StringValue)?.value,
-                    )
-                }
-            )
-        )
-
-        // Custom inspector panel with editable node config
-        registrar.registerPanel("my.transform", EditorPanelFactory { ctx ->
-            val input = (ctx.selectedNode?.config?.get("input") as? WorkflowValue.StringValue)?.value ?: ""
-            BasicTextField(
-                value = input,
-                onValueChange = { ctx.onConfigChange("input", WorkflowValue.StringValue(it)) },
-            )
-        })
-
-        // Node category (groups nodes in the palette)
-        registrar.registerCategory(
-            "com.example.text",
-            NodeCategoryMeta(label = "Text", color = 0xFF6366F1L),
-        )
-    }
-}
-```
-
-`ShapeCardFactory` accepts any Compose `Shape` — `CircleShape`, `RoundedCornerShape(12.dp)`, etc. Theme colors use `@Composable` lambdas so they can read from any `CompositionLocal` at render time. If no `avatar` is provided, the card shows the first letter of the node label.
-
-#### FieldCard — supported input types
-
-`FieldCardFactory` renders each input port as an inline editable row. The widget depends on the port's `WorkflowType`:
-
-| `WorkflowType` | Widget | Interaction |
-|---|---|---|
-| `IntType` | Stepper | `−` / `+` buttons step by 1; click value to type; only digits and `−` accepted |
-| `DoubleType` | Stepper | `−` / `+` buttons step by 0.1; click value to type; digits, `.`, `−` accepted |
-| `StringType` | Text field | Click to edit inline; any text accepted |
-| `BooleanType` | Text field | Click to type `true` or `false` |
-| `EnumType(values)` | Single-select dropdown | Click chip → popup list; one option selected |
-| `MultiEnumType(values)` | Multi-select dropdown | Click chip → popup with checkboxes; multiple options |
-
-Non-editable port types (`OpaqueType`, `RecordType`, etc.) show the port label only — no input widget is rendered.
-
-```kotlin
-val myNode = NodeSpec(
-    type = "com.example.sampler",
-    label = "Sampler",
-    inputs = listOf(
-        PortSpec("steps",    WorkflowType.IntType),
-        PortSpec("cfg",      WorkflowType.DoubleType),
-        PortSpec("prompt",   WorkflowType.StringType),
-        PortSpec("mode",     WorkflowType.EnumType(listOf("fast", "quality", "balanced"))),
-        PortSpec("outputs",  WorkflowType.MultiEnumType(listOf("image", "latent", "preview"))),
-    ),
-    defaultValues = mapOf(
-        "steps"   to WorkflowValue.IntValue(20),
-        "cfg"     to WorkflowValue.DoubleValue(7.0),
-        "prompt"  to WorkflowValue.StringValue(""),
-        "mode"    to WorkflowValue.StringValue("quality"),
-        "outputs" to WorkflowValue.ListValue(listOf(WorkflowValue.StringValue("image"))),
-    ),
-)
-```
-
-### Step 3 — Wire into the editor shell
+Wire it into the editor shell:
 
 ```kotlin
 @OptIn(GraphynExperimentalApi::class)
 @Composable
 fun App() {
-    val runtimeRegistry = remember {
-        DefaultGraphynPluginRegistry().apply { install(MyPlugin) }
-    }
-    val editorRegistry = remember {
-        DefaultGraphynEditorPluginRegistry().apply { install(MyEditorPlugin) }
-    }
+    val runtimeRegistry = remember { DefaultGraphynPluginRegistry().apply { install(MyPlugin) } }
     val state = rememberGraphynEditorState()
-
-    // Observe workflow changes outside Compose (e.g. save to database)
-    LaunchedEffect(state) {
-        state.workflowFlow.collect { workflow ->
-            database.save(workflow)
-        }
-    }
 
     GraphynEditorShell(
         state = state,
-        dependencies = GraphynEditorShellDependencies(
-            nodeSpecs      = runtimeRegistry.nodeSpecs,
-            canvasCards    = editorRegistry.canvasCards,
-            panels         = editorRegistry.panels,
-            categoryRegistry = editorRegistry.categories,
-        ),
+        dependencies = GraphynEditorShellDependencies(nodeSpecs = runtimeRegistry.nodeSpecs),
         branding = GraphynBranding(appName = "My Studio"),
     )
 }
 ```
+
+For a custom canvas card, inspector panel, `FieldCard`'s per-`WorkflowType` input widgets, auto-discovery via `ServiceLoader`, subgraphs, AI workflow generation, and keyboard shortcuts — see the [docs site](https://ronjunevaldoz.github.io/graphyn-editor) and [Plugin API](./docs/architecture/plugins.md).
 
 ---
 
@@ -402,6 +298,47 @@ The server exposes:
 | `DELETE /workflows/{id}` | Delete workflow and its version history |
 
 Set `GRAPHYN_API_KEY=<secret>` in the environment to enable Bearer-token auth. All endpoints except `GET /` require the token when the env var is present.
+
+---
+
+## MCP Server
+
+`:mcp` is a stdio [MCP](https://modelcontextprotocol.io) server for agents (Claude Desktop, Claude Code, etc.) — generic CRUD + execute over workflows, no template-specific tools. It embeds the engine in-process (same `FileWorkflowStore`, `~/.graphyn/workflows`), no running `:server` needed.
+
+```bash
+./gradlew :mcp:installDist
+```
+
+Add it to your MCP client config, e.g. a project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "graphyn-workflows": {
+      "command": "./mcp/build/install/mcp/bin/mcp",
+      "args": []
+    }
+  }
+}
+```
+
+| Tool | Description |
+|---|---|
+| `workflow_list` | List all stored workflows |
+| `workflow_get` | Fetch a workflow's full definition by id |
+| `workflow_publish` | Save/update a workflow from raw JSON (validates first) |
+| `workflow_delete` | Delete a workflow and its history |
+| `workflow_execute` | Run a stored workflow by id, with optional `overrides` and `async` |
+| `workflow_execution_status` | Poll progress for an `async` run |
+| `workflow_list_node_types` | List registered node types, for authoring `workflow_publish` payloads |
+
+By default `:mcp` installs the Shorts, MediaCore, MediaAi, and StableDiffusion plugins on top of the base runtime set. Trim or reorder with `GRAPHYN_MCP_PLUGINS` (comma-separated, or `all`):
+
+```json
+"env": { "GRAPHYN_MCP_PLUGINS": "shorts,media-core" }
+```
+
+`workflow_publish`/`workflow_execute` run against the real engine — nodes like `script.eval` and `io.file_write`/`io.http_request` execute unsandboxed. Tool annotations (`destructiveHint`/`openWorldHint`) flag which ones.
 
 ---
 
