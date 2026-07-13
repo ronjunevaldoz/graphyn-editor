@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Compose-Multiplatform-3DDC84?logo=jetpackcompose&logoColor=white" alt="Compose Multiplatform"/>
   <img src="https://img.shields.io/badge/platforms-Android%20·%20Desktop%20·%20Web%20·%20iOS-0095D5" alt="Platforms"/>
-  <img src="https://img.shields.io/badge/release-0.7.4-blue" alt="Release"/>
+  <img src="https://img.shields.io/badge/release-0.9.0-blue" alt="Release"/>
 </p>
 
 ---
@@ -112,7 +112,7 @@ plugins/* (node definitions + executors)
 ```kotlin
 // gradle/libs.versions.toml
 [versions]
-graphyn = "0.7.4"
+graphyn = "0.9.0"
 
 [libraries]
 graphyn-editor        = { module = "io.github.ronjunevaldoz:graphyn-editor",              version.ref = "graphyn" }
