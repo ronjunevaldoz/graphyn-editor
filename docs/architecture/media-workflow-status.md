@@ -122,15 +122,15 @@ first load (see Editor Behavior).
 Run the focused media checks:
 
 ```bash
-./gradlew :app:app:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowTemplateTest
-./gradlew :app:app:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowExecutionTest
+./gradlew :app:demo:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowTemplateTest
+./gradlew :app:demo:jvmTest --tests com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowExecutionTest
 ./gradlew :plugins:media-core:test :plugins:media-ai:test
 ```
 
 Run the full demo JVM suite:
 
 ```bash
-./gradlew :app:app:jvmTest
+./gradlew :app:demo:jvmTest
 ```
 
 ## Known Gaps / Missing
@@ -160,7 +160,7 @@ Run the full demo JVM suite:
 - **Working directory sensitivity.** `media.video_encode`'s `output_path` and resolved input paths
   are interpreted relative to the process working directory. The desktop app runs from
   `app/desktopApp/`, which is why templates resolve inputs via `io.resolve_path` against
-  `../../app/app/src/commonMain/resources/media`. Generated outputs (`*.mp4`, `*.wav`) land in the
+  `../../app/demo/src/commonMain/resources/media`. Generated outputs (`*.mp4`, `*.wav`) land in the
   desktop app dir and are git-ignored.
 - **Script string escaping.** Kotlin Script (`script.eval`) code embedded in a triple-quoted
   workflow definition must escape template variables as `$$name` so the host compiler does not

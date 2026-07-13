@@ -4,7 +4,7 @@ package com.ronjunevaldoz.graphyn.plugins.stablesd
  * Converts a typed [SdGenerateImageRequest]/[SdGenerateVideoRequest] into `--flag value` CLI
  * tokens for [SdCliBackend] — the one place in this plugin that genuinely needs real CLI strings,
  * since it shells out to the actual `sd-cli` binary. Every other consumer (e.g.
- * `HttpStableDiffusionBackend` in app/app) works with the typed request directly.
+ * `HttpStableDiffusionBackend` in app/demo) works with the typed request directly.
  */
 private fun MutableList<String>.addContextArgs(ctx: SdContextConfig) {
     ctx.modelPath?.let { add("--model"); add(it) }

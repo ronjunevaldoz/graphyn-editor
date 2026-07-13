@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  * no intermediate string representation, no flag-name matching, no silent-drop parsing bugs.
  * Comprehensive (mirrors the full sd-cli flag surface, matching every `sd.*` NodeSpec field) so
  * [SdCliBackend] — a real CLI-process backend used by other consumers of this published plugin —
- * keeps full fidelity. [com.ronjunevaldoz.graphyn.bootstrap.HttpStableDiffusionBackend] (app/app)
+ * keeps full fidelity. [com.ronjunevaldoz.graphyn.bootstrap.HttpStableDiffusionBackend] (app/demo)
  * only extracts the narrower subset server-sd's `/api/sd/generate-ex` JSON contract accepts.
  */
 

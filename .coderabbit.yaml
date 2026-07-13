@@ -51,10 +51,10 @@ reviews:
       instructions: |
         Plugin modules are library modules, not demo galleries. Flag any WorkflowDefinition
         sample data, placeholder NodeSpec, or test fixture defined inside a plugin module —
-        these belong in app/app instead. Each plugin module should contain only its
+        these belong in app/demo instead. Each plugin module should contain only its
         production runtime and editor implementation. Check that no file exceeds 150 lines.
 
-    - path: "app/app/**"
+    - path: "app/demo/**"
       instructions: |
         Demo-only module. No Material3 imports — use GraphynDs tokens and BasicText.
         This is the correct place for sample WorkflowDefinition data and illustrative

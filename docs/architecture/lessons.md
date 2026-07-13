@@ -178,7 +178,7 @@ Reference points for "is this run just slow, or is something actually wrong" —
   (matched by the `:path` minus leading colon), and `scripts/publish-local.sh`. There is no
   `publishedModulePaths` set in `build.gradle.kts` to edit despite the CLAUDE.md wording — the task
   enumerates `subprojects` with the vanniktech plugin applied.
-- Kept the desktop `app/app/bootstrap` wiring thin via an app-side `ShortsBridge.kt` that re-aliases
+- Kept the desktop `app/demo/bootstrap` wiring thin via an app-side `ShortsBridge.kt` that re-aliases
   the moved public symbols under their old `internal` bootstrap names, so unrelated bootstrap files
   (video/image shorts, captioning) compiled unchanged. The app deliberately keeps its **own**
   `stitchBatchSubgraph` (with canvas `nodePositions`) in `DemoShortsScenes.kt`; the module's copy

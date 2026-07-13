@@ -123,5 +123,5 @@ All tests are green as of the port-positioning / Phase 4 / port z-order commits.
 | `app/shared/.../GraphynMinimapUiTest.kt` | `jvmTest` + `wasmJsTest` | UI + Screenshot |
 | `plugins/sample-logger/.../SampleLoggerPluginTest.kt` | `commonTest` | Unit |
 | `plugins/sample-logger-ui/.../SampleLoggerEditorPluginTest.kt` | `commonTest` | Unit |
-| `app/app/.../MediaWorkflowTemplateTest.kt` | `commonTest` | Unit |
-| `app/app/.../MediaWorkflowExecutionTest.kt` | `jvmTest` | Unit |
+| `app/demo/.../MediaWorkflowTemplateTest.kt` | `commonTest` | Unit |
+| `app/demo/.../MediaWorkflowExecutionTest.kt` | `jvmTest` | Unit |

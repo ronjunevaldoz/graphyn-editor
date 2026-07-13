@@ -7,7 +7,7 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.app.app)
+    implementation(projects.app.demo)
     implementation(projects.plugins.io)
     implementation(projects.plugins.script)
     implementation(projects.plugins.gmail)
