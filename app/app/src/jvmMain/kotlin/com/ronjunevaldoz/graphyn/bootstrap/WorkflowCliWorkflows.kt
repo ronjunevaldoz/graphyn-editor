@@ -24,7 +24,8 @@ internal val workflowCliTemplates: List<WorkflowCliTemplate> = listOf(
             topic = options["topic"] ?: "commonly confused everyday concepts",
             width = options["width"]?.toInt(),
             height = options["height"]?.toInt(),
-            mascotDescription = options["mascot"],
+            mascotLeftImagePath = options["mascot_left"] ?: error("Missing mascot_left=<path to left-pointing mascot image>"),
+            mascotRightImagePath = options["mascot_right"] ?: error("Missing mascot_right=<path to right-pointing mascot image>"),
             useKenBurns = options["ken_burns"]?.toBooleanStrictOrNull(),
         )
     },

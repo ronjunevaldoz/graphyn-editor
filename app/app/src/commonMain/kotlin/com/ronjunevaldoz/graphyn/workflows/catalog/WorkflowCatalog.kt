@@ -94,10 +94,9 @@ enum class WorkflowCatalog(
         "Animate a still with Wan2.1-I2V-14B-480P + 4-step lightx2v LoRA — single-model, no MoE pass.", badges = listOf("AI")),
     ImageComparisonShort(
         label = "AI Image Comparison (Image Motion)",
-        // mascotDescription left at its default (T-pose, see MascotScene.kt's
-        // DEFAULT_MASCOT_DESCRIPTION) instead of the stale hardcoded "Stickman" override this
-        // entry previously had — that override predated the mascot's Kontext-edit redesign and no
-        // longer reflects what the pipeline actually generates.
+        // Mascot images are bring-your-own (see comparisonShortWorkflow's doc comment) — this demo
+        // entry has no default paths, so mascotLeft/mascotRight need editing in-canvas before running,
+        // same pattern as ReferenceImageEdit's own catalog entry.
         workflow = comparisonShortWorkflow(topic = "commonly confused everyday concepts"),
         category = Media,
         description = "",
