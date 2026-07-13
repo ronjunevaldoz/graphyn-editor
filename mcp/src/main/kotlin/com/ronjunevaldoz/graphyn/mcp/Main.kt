@@ -3,6 +3,10 @@ package com.ronjunevaldoz.graphyn.mcp
 import com.ronjunevaldoz.graphyn.GraphynRunRegistry
 import com.ronjunevaldoz.graphyn.createGraphynServerRuntime
 import com.ronjunevaldoz.graphyn.core.store.FileWorkflowStore
+import com.ronjunevaldoz.graphyn.plugins.mediaai.MediaAiPlugin
+import com.ronjunevaldoz.graphyn.plugins.mediacore.MediaCorePlugin
+import com.ronjunevaldoz.graphyn.plugins.shorts.ShortsPlugin
+import com.ronjunevaldoz.graphyn.plugins.stablesd.StableDiffusionPlugin
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
@@ -24,7 +28,9 @@ fun main() {
     System.setOut(System.err)
 
     val store = FileWorkflowStore()
-    val runtime = createGraphynServerRuntime()
+    val runtime = createGraphynServerRuntime(
+        extraPlugins = listOf(ShortsPlugin, MediaCorePlugin(), MediaAiPlugin(), StableDiffusionPlugin()),
+    )
     val registry = GraphynRunRegistry(runtime.executionEngine)
     val json = Json { encodeDefaults = false; ignoreUnknownKeys = true }
 
