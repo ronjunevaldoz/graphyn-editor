@@ -4,13 +4,15 @@ description: >
   End-to-end KMP library and app release pipeline. Covers versioning strategy
   (gradle.properties as source of truth), Maven Central publishing via the
   vanniktech plugin, GPG signing, Sonatype Central Portal, changelog generation
-  with git-cliff and Conventional Commits, GitHub Release creation, and secrets
-  management patterns. Distinct from the CI skill (which owns workflow YAML)
-  and the xcframework-spm skill (which owns SPM binary distribution).
+  with git-cliff and Conventional Commits, GitHub Release creation, secrets
+  management patterns, and — for app targets — deriving platform-native version
+  fields (Android versionCode, iOS CFBundleVersion) from a single semver source.
+  Distinct from the CI skill (which owns workflow YAML) and the xcframework-spm
+  skill (which owns SPM binary distribution).
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-27'
+  last-updated: '2026-07-04'
   keywords:
     - Maven Central
     - publish
@@ -28,6 +30,13 @@ metadata:
     - Doppler
     - secrets
     - version bump
+    - versionCode
+    - versionName
+    - CFBundleVersion
+    - CFBundleShortVersionString
+    - Play Store release
+    - Play Console upload rejected
+    - App Store build number
 ---
 
 ## When to Use This Skill
@@ -175,6 +184,64 @@ VERSION=1.2.0          → publish to Maven Central
 ```
 
 Each stage is its own commit + tag (`v1.2.0-alpha01`, `v1.2.0-beta01`, etc.) so git-cliff produces a pre-release CHANGELOG section automatically.
+
+### App targets: deriving platform-native version fields from one semver source
+
+Everything above covers **library publishing**, where the single source of truth
+(`gradle.properties` `VERSION`, or a project's `libs.versions.toml` app entry) maps to a
+single Maven coordinate version. An **app** with an Android and/or iOS target has a second
+problem: each platform store has its own **platform-native version field**, separate from
+semver, that must be derived — never hand-maintained — from that one source.
+
+**Rule: one semver source of truth. N platform-native version fields, all derived from it,
+none hardcoded, none edited independently.**
+
+| Platform | Semver field | Platform-native field | Store requirement |
+|---|---|---|---|
+| Android | `versionName` (any string) | `versionCode` (strictly increasing `Int`) | Play Console rejects an upload whose `versionCode` isn't higher than the last **accepted** upload |
+| iOS | `CFBundleShortVersionString` (semver-like) | `CFBundleVersion` (build number, must increase per build submitted for the same short version) | App Store Connect rejects a build with a `CFBundleVersion` ≤ an existing build for that version |
+| Desktop (packaging) | app semver | package version (MSI/DMG/deb use their own version schemes, some reject non-numeric suffixes) | Varies by packager; MSI in particular requires a strict `major.minor.build.revision` |
+
+**Android — derive `versionCode` from semver, never hardcode it:**
+
+```kotlin
+// androidApp/build.gradle.kts (or androidApp/build.gradle.kts convention plugin)
+val appVersion = libs.versions.app.get()   // single source of truth, e.g. "1.19.1"
+val (major, minor, patch) = appVersion.split(".").map { it.toIntOrNull() ?: 0 }
+    .let { Triple(it.getOrElse(0) { 0 }, it.getOrElse(1) { 0 }, it.getOrElse(2) { 0 }) }
+
+android {
+    defaultConfig {
+        versionName = appVersion
+        versionCode = major * 1_000_000 + minor * 1_000 + patch   // strictly increasing, derived
+    }
+}
+```
+
+The `major * 1_000_000 + minor * 1_000 + patch` formula assumes minor/patch never exceed
+999 — pick wider multipliers if your project bumps minor/patch past that. What matters is
+that `versionCode` is **computed**, not a literal you remember to bump.
+
+**iOS — same pattern for `CFBundleVersion`:**
+
+```kotlin
+// iosApp Info.plist generation, or via a Gradle/Fastlane step
+val appVersion = libs.versions.app.get()          // "1.19.1" → CFBundleShortVersionString
+val buildNumber = System.getenv("CI_BUILD_NUMBER") ?: appVersion.replace(".", "")
+    // CFBundleVersion just needs to increase per submitted build — CI build number is a
+    // safe monotonic source; deriving it from semver alone breaks if you re-submit a patch
+```
+
+Unlike Android's `versionCode`, `CFBundleVersion` only needs to be monotonic **per
+`CFBundleShortVersionString`**, so a CI build number (which is already monotonic) is often
+the more robust source than deriving it purely from semver.
+
+**The silent-trap pattern to always check for:** a hardcoded `versionCode = 1` (or any
+literal platform version field) compiles, runs, and passes local testing identically to a
+correctly-derived one. The bug only surfaces as a hard store rejection on the **second**
+release — by which point several versions may have shipped without anyone noticing the
+field never moved. Grep for `versionCode\s*=\s*\d` with a literal integer as part of any
+pre-release review.
 
 ---
 
@@ -442,6 +509,11 @@ After tagging:
 - [ ] Artifact visible on [central.sonatype.com](https://central.sonatype.com) (allow ~10 min propagation)
 - [ ] XCFramework zip attached to the release and `Package.swift` checksum updated (if shipping SPM)
 
+**App target with an Android/iOS/store target** (in addition to the checks above):
+- [ ] `versionCode` (Android) is derived from the semver source, not a literal integer — grep for `versionCode\s*=\s*\d`
+- [ ] `versionCode` for this build is strictly higher than the last **accepted** Play Console upload
+- [ ] `CFBundleVersion` (iOS) is monotonic for this `CFBundleShortVersionString` — not reused from a prior submission
+
 ---
 
 ## Common Anti-Patterns
@@ -454,6 +526,8 @@ After tagging:
 | Version bump in CI | Version is a publisher decision; bump in `gradle.properties` before the CI publish job |
 | Committing credentials to `gradle.properties` or `.env` | Always gitignore `.env`; store credentials in GitHub Secrets or a secrets manager |
 | Skipping `--no-configuration-cache` | vanniktech plugin is incompatible with configuration cache; omitting this flag causes silent failures |
+| Hardcoding Android `versionCode` (or any platform-native version field) as a static literal | Derive it from the single semver source (`major * 1_000_000 + minor * 1_000 + patch`) — a static value builds and runs fine locally but causes a hard Play Console rejection on the *second* upload |
+| Deriving iOS `CFBundleVersion` purely from semver | Use a monotonic CI build number instead — `CFBundleVersion` must increase per build submitted for the same `CFBundleShortVersionString`, which pure semver derivation breaks on a re-submitted patch |
 
 ---
 
@@ -502,6 +576,7 @@ Never generate credentials or keys. If GPG setup is needed, give the commands th
 
 | Date | Change |
 |---|---|
+| 2026-07-04 | Added "App targets: deriving platform-native version fields from one semver source" — Android versionCode, iOS CFBundleVersion, desktop package versions, all derived (never hardcoded) from the single semver source. New checklist items and anti-patterns for the hardcoded-versionCode silent trap (filed as GitHub issue #2). |
 | 2026-06-27 | Replaced id("...") with alias(libs.plugins.*) in both the convention plugin and consuming modules. Added convention plugin alias to libs.versions.toml. |
 | 2026-06-26 | Bumped vanniktech maven-publish plugin base version to 0.37.0. |
 | 2026-06-24 | Added explicit `release project` / `cut release` / `ship version` trigger keywords so project release requests route here instead of the consumer changelog agent. |

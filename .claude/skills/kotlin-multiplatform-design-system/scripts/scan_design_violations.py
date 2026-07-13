@@ -100,7 +100,18 @@ _SKIP_NAME_SUFFIXES = (
     "Colors.kt", "Typography.kt", "Spacing.kt", "Shapes.kt",
     "ScreenshotTest.kt",
 )
-_SKIP_DIR_FRAGMENTS = {"designsystem", "design_system", "theme"}
+_SKIP_DIR_FRAGMENTS = {
+    "designsystem", "design_system", "theme",
+    # Build artifacts, VCS internals, and vendored code — never the consumer's own source.
+    "build", ".gradle", ".git", "vendor", "third_party", "node_modules",
+    ".idea", ".kotlin", "kotlin-js-store",
+    # Deployed agent skills bundles — this collection's own reference/template/test
+    # code (e.g. detekt-rules/src/test/kotlin/.../HardcodedColorRuleTest.kt legitimately
+    # contains a Color(0x...) literal to test the rule against), not the consumer's
+    # real app code. Matches the same set kotlin-multiplatform-audit's audit_project.py
+    # excludes for the identical reason.
+    ".claude", ".codex", ".cursor", ".continue", "copilot",
+}
 
 
 def _should_skip(path: Path) -> bool:
@@ -313,6 +324,27 @@ def scan_file(path: Path) -> list[dict]:
     return _scan_patterns(path, lines) + _scan_nested_containers(path, lines)
 
 
+# Maps the majority layout pattern found in a ui/ dir to a shadcn-compose component
+# that would give every screen the same pattern out of the box. Suggested as an option
+# alongside the "consolidate to one pattern yourself" fix — never a silent recommendation
+# to add the dependency; the risk note is always attached.
+_SHADCN_LAYOUT_SUGGESTION = {
+    "tabbed": "ShadcnTabsList",
+    "card": "ShadcnCard",
+    "flat": "ShadcnItem/ShadcnItemGroup",
+}
+
+
+def _shadcn_pattern_note(majority: str) -> str:
+    component = _SHADCN_LAYOUT_SUGGESTION.get(majority, "ShadcnCard")
+    return (
+        f" Alternatively, {component} (shadcn-compose) gives every screen in this dir "
+        f"the same pattern out of the box — see kotlin-multiplatform-shadcn-compose "
+        f"before adding it; it's a real dependency with an experimental-API risk, not a "
+        f"free consolidation."
+    )
+
+
 def _classify_layout(content: str) -> str:
     """Return the dominant layout pattern for a *Content.kt file."""
     if _TABBED_RE.search(content):
@@ -361,6 +393,7 @@ def scan_layout_consistency(project_root: Path) -> list[dict]:
                         f"{ui_dir.name}/ (majority: '{majority}'). "
                         "All *Content.kt files in the same feature ui/ dir should use "
                         "the same top-level pattern (flat / card / tabbed)."
+                        + _shadcn_pattern_note(majority)
                     ),
                 })
 

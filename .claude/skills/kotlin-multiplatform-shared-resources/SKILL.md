@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-25'
+  last-updated: '2026-07-08'
   keywords:
     - Compose Resources
     - KMP resources
@@ -21,6 +21,16 @@ metadata:
     - Kotlin Multiplatform
     - Compose Multiplatform
     - plurals
+    - px to dp
+    - dp to px
+    - density bucket
+    - mdpi
+    - hdpi
+    - xhdpi
+    - xxhdpi
+    - xxxhdpi
+    - density scale factor
+    - density-independent pixels
 ---
 
 ## Overview
@@ -176,10 +186,12 @@ Create `src/commonMain/composeResources/values/strings.xml`:
 
 Place images in `src/commonMain/composeResources/drawable/`:
 
-- Use **SVG** for icons (scales perfectly, smallest size)
+- Use **SVG** for icons (scales perfectly, smallest size) — see
+  `kotlin-multiplatform-imagevector-generator` to compile SVGs into `ImageVector` code
+  instead of shipping them as raster/vector resource files
 - Use **PNG/WebP** for photos or complex rasters
 - Dark variants: `drawable-dark/` folder with same filenames
-- Density rasters: `drawable-mdpi/`, `drawable-hdpi/`, `drawable-xhdpi/`, `drawable-xxhdpi/`
+- Density rasters: `drawable-mdpi/`, `drawable-hdpi/`, `drawable-xhdpi/`, `drawable-xxhdpi/`, `drawable-xxxhdpi/`
 
 ```
 composeResources/
@@ -189,6 +201,35 @@ composeResources/
   drawable-dark/
     ic_logo.svg    ← dark variant, same name
 ```
+
+### Density buckets and px/dp conversion
+
+**dp (density-independent pixels) is the design source of truth, not raw pixels.**
+Design specs, spacing tokens, and Compose `.dp` values are always defined in dp; a
+device's density scale factor determines how many physical pixels render 1dp.
+
+| Bucket | Scale factor | `24.dp` icon exported at |
+|---|---|---|
+| ldpi | 0.75x | 18px |
+| mdpi (baseline) | 1.0x | 24px |
+| hdpi | 1.5x | 36px |
+| xhdpi | 2.0x | 48px |
+| xxhdpi | 3.0x | 72px |
+| xxxhdpi | 4.0x | 96px |
+
+**Primary direction — exporting a density raster (`px = dp × scale factor`):** when a
+design tool hands you a fixed-size PNG/WebP per bucket for `drawable-<density>/`, use
+this to verify the asset is the right size for its folder (a `24dp` icon needs a 96px
+file in `drawable-xxxhdpi/`, not 24px).
+
+**Reverse direction — a fixed raw pixel count shrinks in dp terms as density increases
+(`dp = px / scale factor`):** this is why a **hardcoded 1px hairline border** is a real
+bug, not a style nitpick — the same 1 raw pixel is 1.0dp on mdpi but only 0.25dp on
+xxxhdpi, and sub-pixel dp values render inconsistently (sometimes invisible, sometimes
+anti-aliased differently per device). Always specify strokes/borders in `.dp` (e.g.
+`Modifier.border(1.dp, ...)`), never as a raw pixel count — Compose handles the
+scale-factor math for you; hand-computing it per bucket is both unnecessary and the
+source of this exact class of bug.
 
 ---
 
@@ -426,6 +467,8 @@ sourceSets {
 - using platform-specific string files (`strings.xml` on Android only) for shared strings
 - importing `Res` from a non-Compose module — resource accessors require a Compose-enabled source set
 - forgetting to add new locales to `gradle/libs.versions.toml` locale list — localized strings are silently ignored
+- hardcoding a raw pixel count for a border/stroke/divider instead of `.dp` — the same raw pixel is 1.0dp on mdpi but only 0.25dp on xxxhdpi, rendering inconsistently (sometimes invisible) across densities; always specify strokes in `.dp` and let Compose apply the density scale factor
+- exporting a density raster (`drawable-<bucket>/`) at the wrong pixel size for its folder — verify with `px = dp × scale factor` (e.g. a 24dp icon needs 96px in `drawable-xxxhdpi/`, not 24px)
 
 If `Res.string.xxx` is unresolved, run `./gradlew generateCommonMainResourceAccessors` to regenerate accessors.
 
@@ -457,4 +500,5 @@ Keep the snippet to one resource type. Map to the user's actual resource names w
 
 | Date | Change |
 |---|---|
+| 2026-07-08 | Added a "Density buckets and px/dp conversion" reference: the scale-factor table (ldpi 0.75x through xxxhdpi 4.0x), the primary `px = dp × scale factor` direction for exporting correctly-sized density rasters, and the reverse `dp = px / scale factor` direction explaining why a hardcoded raw-pixel border/hairline renders inconsistently across densities. Also fixed the density raster list, which omitted `drawable-xxxhdpi/`. 2 new anti-patterns. |
 | 2026-06-06 | Initial release. |

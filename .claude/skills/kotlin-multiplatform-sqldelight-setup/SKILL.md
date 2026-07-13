@@ -9,7 +9,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-06'
+  last-updated: '2026-07-09'
   keywords:
     - SQLDelight 2
     - KMP database
@@ -529,7 +529,7 @@ dependencies {
 
 - Never call database queries on the main thread — always use `Dispatchers.IO` (Android) or `Dispatchers.Default` (common)
 - Prefer `asFlow()` + `mapToList/mapToOneOrNull` over one-shot `executeAsList()` for reactive UI
-- Keep `.sq` files focused — one file per table
+- Keep `.sq` files focused — one file per table; caught by the audit's `combined sqldelight table file [MEDIUM]` if a file defines more than one `CREATE TABLE`
 - Name all queries explicitly (avoids relying on generated `selectAll`, `insert`, etc.) for clarity
 - Use `INTEGER` for booleans (0/1) and epoch millis for timestamps — SQLite has no native bool/datetime
 - WasmJs: SQLDelight has no WasmJs driver; use in-memory state or `localStorage` via `kotlin-browser`
@@ -624,4 +624,5 @@ Keep the snippet to one table and one query. Map to the user's actual entity nam
 
 | Date | Change |
 |---|---|
+| 2026-07-09 | The "one file per table" guideline had no enforcement anywhere. New `kotlin-multiplatform-audit` detector `combined sqldelight table file [MEDIUM]` flags any `.sq` file defining more than one `CREATE TABLE`. |
 | 2026-06-06 | Initial release. |

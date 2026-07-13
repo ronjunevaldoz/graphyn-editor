@@ -10,7 +10,7 @@ description: >-
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-26'
+  last-updated: '2026-07-07'
   keywords:
     - adaptive layout
     - WindowSizeClass
@@ -48,7 +48,10 @@ different layout phone tablet, different layout phone desktop, responsive compos
 multi-pane layout, master detail KMP, pane layout, screen size breakpoint,
 layout per screen size, detect all screen layouts, all screen sizes,
 page layout, layout consistency, consistent layout, screen consistency,
-redesign page, layout redesign, page consistency, uniform layout, layout patterns.
+redesign page, layout redesign, page consistency, uniform layout, layout patterns,
+FlexBox, flexbox, CSS flexbox, flex container, flex item, flex wrap, flex grow,
+flex shrink, flex basis, justifyContent, alignItems, alignContent, Modifier.flex,
+wrapping row, wrapping layout, chip wrap layout.
 
 **Freshness rule:** `material3-adaptive` is still evolving — recheck the API when upgrading
 `androidx.compose.material3.adaptive`. `calculateWindowSizeClass()` moved packages between
@@ -60,9 +63,81 @@ CMP releases; verify the import against the current version in `libs.versions.to
 - https://developer.android.com/develop/ui/compose/layouts/adaptive/get-started-with-adaptive-apps — official adaptive-app entry point for phones, tablets, foldables, and other form factors
 - https://developer.android.com/develop/ui/compose/layouts/adaptive/canonical-layouts — canonical adaptive layout patterns for list-detail, supporting pane, and related responsive structures
 - https://developer.android.com/develop/ui/compose/layouts/adaptive/build-adaptive-navigation — adaptive navigation patterns for bottom bar, rail, drawer, and multi-pane navigation shells
+- https://developer.android.com/develop/adaptive-apps/guides/flexbox — FlexBox overview: an experimental CSS-flexbox-equivalent container for responsive, wrapping, single-axis layouts
+- https://developer.android.com/develop/adaptive-apps/guides/flexbox/get-started — FlexBox setup (`foundation-layout` dependency) and first layouts
+- https://developer.android.com/develop/adaptive-apps/guides/flexbox/container-behavior — `FlexBoxConfig` properties: `direction`, `wrap`, `justifyContent`, `alignItems`, `alignContent`, `gap`
+- https://developer.android.com/develop/adaptive-apps/guides/flexbox/item-behavior — `Modifier.flex` properties: `basis`, `grow`, `shrink`, `alignSelf`, `order`
 - https://developer.android.com/develop/ui/compose/layouts/custom — official custom-layout guide; use when built-in containers are not enough
 - `Layout fundamentals` in the Compose docs covers the base mental model for `Box`, `Row`, `Column`, `Spacer`, modifiers, and constraints
 - `Layout containers` and `Advanced and custom layouts` in the same doc tree cover lazy lists/grids, flow layouts, custom layouts, alignment lines, and intrinsic measurement
+
+---
+
+## FlexBox — experimental CSS-flexbox-equivalent container
+
+`FlexBox` (`androidx.compose.foundation.layout`, `@ExperimentalFlexBoxApi`) is a single-axis
+container that wraps, grows, and shrinks items to fill available space — modeled directly on
+the [CSS Flexible Box spec](https://www.w3.org/TR/css-flexbox-1/). It is a **layout primitive**,
+not a `WindowSizeClass` replacement: use it *inside* a breakpoint branch (or any composable) when
+a row/column of items needs to reflow, not to decide the breakpoint itself.
+
+**When to reach for it:**
+- A small-to-medium set of items (chips, tags, action buttons, badges) that should wrap onto
+  new lines when space runs out
+- Items with different grow/shrink weights on the same axis — cheaper than a manual
+  `Row` + `weight()` + conditional wrap logic
+- **Not for:** large/lazy datasets (use `LazyRow`/`LazyColumn`/`LazyGrid`) or overall screen
+  structure (use the `WindowSizeClass` patterns above, or Grid)
+
+### Setup
+
+```toml
+# libs.versions.toml
+[versions]
+compose = "1.12.0-beta02"
+[libraries]
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "compose" }
+```
+
+### Container config (`FlexBoxConfig`)
+
+```kotlin
+@ExperimentalFlexBoxApi
+FlexBox(
+    config = {
+        direction(FlexDirection.Row)              // Row / RowReverse / Column / ColumnReverse
+        wrap(FlexWrap.Wrap)                        // NoWrap (default) / Wrap / WrapReverse
+        justifyContent(FlexJustifyContent.Center)   // main-axis distribution
+        alignItems(FlexAlignItems.Center)           // cross-axis alignment (single line)
+        alignContent(FlexAlignContent.SpaceAround)  // cross-axis alignment (multiple lines, wrap only)
+        gap(8.dp)                                   // shorthand for rowGap + columnGap
+    }
+) {
+    // items
+}
+```
+
+### Item config (`Modifier.flex`)
+
+```kotlin
+GreenRoundedBox(
+    modifier = Modifier.flex {
+        basis(FlexBasis.Auto)            // Auto | fixed dp | 0f–1f percentage of container
+        grow(1.0f)                       // share of extra main-axis space
+        shrink(1f)                       // share of space deficit; 0f = never shrink
+        alignSelf(FlexAlignSelf.Center)  // overrides container's alignItems for this item
+        order(-1)                        // visual order only; declaration order unchanged
+    }
+)
+```
+
+- `grow`/`shrink` are proportional, like CSS: an item with `grow(2f)` takes twice the extra
+  space of a sibling with `grow(1f)`.
+- `basis` sets the pre-distribution size; if it's smaller than the item's intrinsic minimum,
+  the intrinsic minimum wins.
+- Still experimental — annotate call sites with `@OptIn(ExperimentalFlexBoxApi::class)` and
+  recheck the API shape when bumping the Compose Foundation version, same as any other
+  `@Experimental*` surface in this repo.
 
 ---
 
@@ -365,6 +440,7 @@ When implementing adaptive layout, respond in this order:
 
 | Date | Change |
 |---|---|
+| 2026-07-07 | Added the FlexBox reference section (`@ExperimentalFlexBoxApi`, `FlexBoxConfig`, `Modifier.flex`) with setup, container/item property tables, and links to the four official adaptive-apps FlexBox guides — for wrapping/growing item layouts used inside a breakpoint branch, not as a WindowSizeClass replacement. |
 | 2026-06-21 | Initial release. |
 | 2026-06-26 | Added official Compose layouts overview to the skill’s reference layer and called out the layout fundamentals / layout containers / custom layouts doc family for base container and constraint guidance. |
 | 2026-06-26 | Added the official adaptive apps getting-started page and the Compose custom layouts guide as direct reference links for adaptive and custom layout work. |

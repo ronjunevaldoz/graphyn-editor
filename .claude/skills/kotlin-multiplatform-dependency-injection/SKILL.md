@@ -9,7 +9,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-13'
+  last-updated: '2026-07-09'
   keywords:
     - dependency injection
     - DI
@@ -47,6 +47,10 @@ Koin setup, IoC, inversion of control, Hilt alternative, service locator.
 
 **Freshness rule:** Koin 4 annotation processing and compiler-plugin conventions change —
 recheck the Koin docs and changelog when upgrading past a minor version.
+
+**Compatibility rule:** keep `koin-compose-viewmodel` and `androidx.lifecycle.viewmodelCompose`
+on a known-good pair. A mismatch can stay hidden on JVM/Android/iOS and only fail on Kotlin/Wasm
+as an `IrLinkageError`, so Wasm must be part of verification whenever either version changes.
 
 ---
 
@@ -372,6 +376,7 @@ Prefer replacing:
 - mixing manual and annotated bindings without a project rule
 - hiding bad boundaries behind DI
 - putting ephemeral screen state in Koin
+- upgrading `koin-compose-viewmodel` without checking the matching `androidx.lifecycle.viewmodelCompose` version — the pair must stay aligned, and Wasm verification must be part of the release gate
 
 If the DI graph feels too complicated, audit the architecture first.
 
@@ -397,4 +402,5 @@ bindings to the actual module names in the repo.
 |---|---|
 | 2026-06-28 | Add session scope pattern: named Koin scope created on login, closed on logout; rules for auth-gated objects. One new anti-pattern.
 | 2026-06-28 | Add SavedStateHandle + Koin wiring section: viewModelOf preferred form, automatic CreationExtras injection, getStateFlow for back-stack results. Two new anti-patterns. |
+| 2026-07-09 | Added Koin Compose ViewModel ↔ AndroidX lifecycle compatibility warning: keep the pair aligned, and verify on Wasm because mismatches can surface only as runtime IR linkage errors there. |
 | 2026-06-13 | Initial release. |

@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-06'
+  last-updated: '2026-07-10'
   keywords:
     - Ktor 3
     - KMP networking
@@ -100,10 +100,47 @@ migration cost outweighs the consistency benefit.
 
 ---
 
+## Step 0 — Detect an existing network layer before scaffolding or writing raw HTTP
+
+**Never assume `:core:network` is the module name.** Real projects name it differently
+(`:core:api`, `:shared:networking`, `:data:remote`, a project-specific name from before
+this skill was applied). Checking only for a module literally named `:core:network` and
+falling through to a hand-written `HttpClient`/raw platform HTTP call when that exact
+path doesn't exist is a real bug this skill has caused — a new feature or server module
+with a different name should still reuse the project's existing Ktor client, not bypass
+it.
+
+Before scaffolding anything or writing a network call, grep the whole project for an
+existing Ktor client **by content, not by path**:
+
+```bash
+grep -rl "HttpClient(\|io\.ktor\.client\.\|safeRequest\|NetworkResult<" \
+  <project_root>/*/src --include="*.kt"
+```
+
+- **Matches found** → an established client already exists. Read that module's actual
+  path and package, reuse its `HttpClient`/`safeRequest`/`NetworkResult<T>` for the new
+  server module or feature, and do not scaffold a second client. A new server with a
+  different module name is still the same transport concern — extend the existing setup
+  (new base URL / new service interface), never a parallel raw `java.net.HttpURLConnection`,
+  `NSURLSession`, platform `fetch()`, or a second unrelated `HttpClient(...)` instance.
+- **No matches** → this is genuinely a fresh project; proceed with Step 1 below using
+  `:core:network` as the default name, or the project's own established core-module
+  naming convention if one is already visible in `settings.gradle.kts`.
+
+This mirrors `kotlin-multiplatform-adaptive-layout`'s cross-session pattern-consistency
+check — grep for the real signal before assuming a fixed path.
+
+---
+
 ## Prerequisites
 
 - Project scaffolded with `kotlin-multiplatform-feature-scaffold`
-- `:core:network` module exists and applies `GROUP_ID.core` convention plugin
+- Step 0 above found no existing client — if one exists under a different name, extend
+  it instead of following the rest of this skill
+- `:core:network` module exists and applies `GROUP_ID.core` convention plugin (or
+  whatever name Step 0's detection confirmed, or the project's own naming convention for
+  a brand-new module)
 - `libs.versions.toml` contains Ktor entries (see version reference below)
 
 ---
@@ -590,4 +627,5 @@ Keep the snippet to one endpoint. Map to the user's actual base URL and response
 
 | Date | Change |
 |---|---|
+| 2026-07-10 | **Fixed a real bug**: this skill only checked for a module literally named `:core:network` — a new server module or feature with a different name found no match, and an agent defaulted to a raw platform HTTP call instead of reusing the project's actual (differently-named) Ktor client. Added Step 0: detect an existing client by content (`HttpClient(`/`safeRequest`/`NetworkResult<`), not by path, before scaffolding or writing any network call. New `kotlin-multiplatform-audit` detector `raw http bypasses established ktor client [HIGH]` catches the resulting anti-pattern. |
 | 2026-06-06 | Initial release. |

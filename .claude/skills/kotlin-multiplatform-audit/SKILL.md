@@ -11,7 +11,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-25'
+  last-updated: '2026-07-11'
   keywords:
     - KMP audit
     - project audit
@@ -145,6 +145,17 @@ the user and the other skills what to do next.
   algorithms (route to `kotlin-multiplatform-jni-pro` Phase 0 discovery).
 - Complex headers (templates, `std::function`, overloads, exceptions) are wrapped via a
   flat `extern "C"` C-shim, not mapped directly. Full gate: `kotlin-multiplatform-jni-pro`.
+
+### 8) Agent & consumer setup
+- **`CLAUDE.md` missing** → HIGH — no `--system-prompt-file` configured; skills context never loads
+- **`.claude/AGENTS.md` missing** → HIGH — agent has no skill routing, feature table, or module map; run `/kmm-setup-agents`
+- **`.claude/commands/` missing or empty** → MEDIUM — consumer commands (`/kmm-run-audit`, `/kmm-implement-feature`, `/kmm-verify`) not installed
+- **`.claude/skills/` missing or empty** → MEDIUM — skills not deployed; trigger keywords won't activate skill content
+- **`AGENTS.md` covers only one surface of a multi-surface project** → MEDIUM — e.g., engine-only AGENTS.md in a project that also has Studio/UI modules; the active development surface has no routing
+- **`MviViewModel` base class defined in a feature module** → MEDIUM — should live in `:shared:core` or `:core:mvi` so future features can extend it without cross-feature imports
+- **Theme composable wraps `MaterialTheme`** → MEDIUM — blocks custom token ownership and `StyleScope` integration; use `CompositionLocalProvider` with `AppTheme` instead
+- **`darkTheme = false` hardcoded in theme composable** → MEDIUM — system dark mode never applied; replace with `isSystemInDarkTheme()` default
+- **Multiple parallel token files** (`*Tokens.kt`, `*ColorTokens.kt`) with different types (e.g., `ULong` constants vs `Color` values) → LOW — two token systems with no shared access pattern; consolidate under a single `AppColors` data class
 
 ### 7) Skills repo hygiene
 - Ensure every skill has `name`, `description`, and `metadata.last-updated`
@@ -302,8 +313,13 @@ python3 ../kmm-agent-skills/skills/kotlin-multiplatform-audit/scripts/governance
   `.kmm-skills` for version pinning, fails on missing or mutable pins, and exits non-zero
   on findings at or above the threshold.
   Used by the reusable workflow at `.github/workflows/kmm-audit.yml`.
-- `scripts/audit_project.py` — runs a lightweight scan for a few common KMP architecture
+- `scripts/audit_project.py` — runs a lightweight scan for common KMP architecture
   smells such as effect replay bugs, state copy races, and obvious UI/data boundary leaks.
+  Supports three modes:
+  - default — prints `FINDINGS:` list, exits 1 if any found
+  - `--roadmap` — prints a prioritized adoption plan
+  - `--harvest` — prints JSON `{ findings, lessons }` where `lessons` are positive patterns
+    the consumer does right that could be upstreamed to skills (run `/kmm-harvest-lessons`)
 - `scripts/validate_module_graph.py` — checks an existing project’s feature module layout and
   requires a preview stub for each `*Content.kt` in `:feature:*:ui`.
 - `scripts/audit_skills_repo.py` — checks the skills repo for metadata, freshness, scripts,
@@ -322,6 +338,7 @@ python3 ../kmm-agent-skills/skills/kotlin-multiplatform-audit/scripts/governance
 - `kotlin-multiplatform-roborazzi` — replacement for `manual screen capture` findings
 - `kotlin-multiplatform-design-system` — replacement for `magic color literal` and `hardcoded spacing` findings
 - `kotlin-multiplatform-jni-pro` — owns every native/JNI finding (3rd-party C++ immutability, opaque-handle cleanup, C-shim wrapping); hand off section 6 findings here
+- `kotlin-multiplatform-code-quality` — owns the comment/KDoc convention `what-comment in control flow` findings are checked against; `/kmm-clean-comments` applies the fix
 
 ---
 
@@ -343,6 +360,11 @@ Ask before converting findings to issue drafts. Keep implementation advice minim
 
 | Date | Change |
 |---|---|
+| 2026-07-11 | Added `_detect_module_layer_violation` — parses every module's `build.gradle.kts` for `projects.*` references and flags a wrong-direction dependency (e.g. `:ui` directly on `:data`, skipping `:presenter`) or a cross-feature module dependency, checked against `kotlin-multiplatform-clean-architecture`'s 6-layer contract. Closes a real gap: a literal cycle can't happen silently (Gradle refuses to build one), but a one-way wrong-direction dependency can exist at the Gradle level before any file imports the forbidden package — earlier than the existing file-level Detekt import rules can react. 5 new regression tests (3 violation types, a valid full graph, a core-module dependency correctly ignored). |
+| 2026-07-11 | Added `_detect_extensible_abstract_class_in_common` — flags a public `abstract class` in `commonMain` with only abstract members (Detekt's real `UnnecessaryAbstractClass` shape, scoped here specifically to `commonMain` since that's where the anti-pattern costs KMM's sharing advantage). Backstop for projects without Detekt's rule configured yet. Cross-referenced to `kotlin-multiplatform-clean-architecture`'s new "Composition Over Inheritance" section, which explains the full rationale. 4 new regression tests, including a scope-boundary test confirming the same shape in `androidMain` is correctly ignored. |
+| 2026-07-11 | Fixed a real false-positive bug found in a consumer project: `_EXCLUDED_DIRS` had no entry for deployed agent skills bundle directories (`.claude/`, `.codex/`, `.cursor/`, `.continue/`, `.github/copilot/`), so `audit_project.py` scanned this collection's own reference templates as if they were the consumer's real source — flagging `kotlin-multiplatform-feature-scaffold`'s own `templates/androidApp/build.gradle.kts` placeholder `versionCode = 1` as a real app's hardcoded version code. Added `.claude`, `.codex`, `.cursor`, `.continue`, `copilot` to `_EXCLUDED_DIRS`. A full self-audit stress test (running `audit_project.py` against this repo, and systematically checking every detector for a missing exclusion check) surfaced two more gaps in the same family: `_detect_mvi_placement` and `_detect_design_system_wiring` used raw `rglob` with no exclusion at all, and the shared `_read_all`/`_has`/`_count_files` helpers (used by `_detect_state_mgmt`, `_detect_di`, `_detect_detekt`, `_detect_version_catalog`, `_detect_tests`, `_detect_positive_patterns`) had the same gap — fixed once at the shared-helper level. Also found a much more severe, unrelated pre-existing bug while fixing this: `_has()` tested `any(root.rglob(g) for g in globs)`, where each item `any()` saw was a whole generator object from the nested generator expression — generator objects are always truthy regardless of whether they yield anything, so `_has()` returned `True` for every project unconditionally, silently disabling `_detect_detekt`'s HIGH-priority "no Detekt gates" adoption-plan trigger (and the version-catalog/tests detectors) for every project ever audited. No prior test caught it because none exercised the genuinely-missing case. Fixed by iterating actual matched paths instead of testing the generator's own truthiness. 13 new regression tests, verified against synthetic reproductions of both bug classes before fixing. |
+| 2026-07-10 | Added `_detect_what_comment_in_control_flow` — a regex heuristic flagging `//` comments that narrate WHAT a loop/conditional does (action-verb opener, no WHY-marker) instead of WHY, per `kotlin-multiplatform-code-quality`'s "By architectural level" rule. LOW severity (heuristic, human review). New `/kmm-clean-comments` command applies the fix across all four documentation levels (class/function/extension/inline), not just this detector's inline-block slice. |
+| 2026-06-29 | Added section 8 (Agent & Consumer Setup) to audit checklist. Added three new detectors to `audit_project.py`: `_detect_agent_setup` (missing AGENTS.md, commands, skills, CLAUDE.md, single-surface AGENTS.md in multi-surface project), `_detect_mvi_placement` (MviViewModel in feature module instead of shared/core), `_detect_design_system_wiring` (MaterialTheme wrapping, hardcoded darkTheme=false, parallel ULong token files). |
 | 2026-06-24 | Added a skills-version pin guard to governance: `.kmm-skills` must exist and must point at a release tag, not `main` or another mutable ref. |
 | 2026-06-23 | Added "Governance & CI Enforcement" section: governance_check.py, reusable workflow, .kmm-skills version file, threshold guide. |
 | 2026-06-22 | Added "Native / JNI boundary" inspection section (#6): 3rd-party C++ immutability, opaque-handle cleanup, acquire/release pairing, C-shim wrapping — closes the cross-skill enforcement gap for the immutability rule. Hands off to kotlin-multiplatform-jni-pro. |

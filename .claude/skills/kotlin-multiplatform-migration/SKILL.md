@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-28'
+  last-updated: '2026-07-11'
   keywords:
     - migration
     - incremental adoption
@@ -145,7 +145,7 @@ Adopt skills in this order. Each builds on the previous.
 | Skill | When to apply |
 |---|---|
 | `kotlin-multiplatform-network-layer` | When migrating from Retrofit/Volley to Ktor |
-| `kotlin-multiplatform-repository-pattern` | When splitting data access from ViewModels |
+| `kotlin-multiplatform-repository-pattern` | When splitting data access from ViewModels. If a feature being migrated has no real backend yet (a common mid-migration state — old screen ripped out, new one not API-ready), wire an `InMemory<Feature>Repository` behind the same interface first ("In-memory repository (no backend yet)" section) rather than blocking the migration on backend work. |
 | `kotlin-multiplatform-dependency-injection` | When migrating from Hilt/manual DI to Koin 4 |
 | `kotlin-multiplatform-sqldelight-setup` | When migrating from Room to SQLDelight |
 
@@ -154,6 +154,7 @@ Adopt skills in this order. Each builds on the previous.
 | Skill | When to apply |
 |---|---|
 | `kotlin-multiplatform-design-system` | When consolidating hardcoded colors/spacing |
+| `/kmm-migrate-to-shadcn` | When switching an existing owned design-system project fully to the published shadcn-compose library |
 | `kotlin-multiplatform-navigation` | When migrating from Fragments to Compose Navigation |
 | `kotlin-multiplatform-preview-driven-development` | After Screen/Content split is in place |
 
@@ -378,4 +379,5 @@ is too large to finish in a single session.
 
 | Date | Change |
 |---|---|
+| 2026-07-11 | Added `/kmm-migrate-to-shadcn` to Tier 4 — full design-system-to-shadcn-compose library swap, distinct from the existing "consolidating hardcoded colors/spacing" design-system row. |
 | 2026-06-28 | Initial release — assessment phase, adoption order, migration paths A/B/C. |

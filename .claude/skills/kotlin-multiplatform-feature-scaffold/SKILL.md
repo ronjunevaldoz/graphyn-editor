@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-21'
+  last-updated: '2026-07-09'
   keywords:
     - Kotlin Multiplatform
     - KMP
@@ -1140,6 +1140,25 @@ After scaffolding, verify in order:
 - Keep `:api` modules minimal — no DI framework dependencies, no platform deps
 - Namespace format: `GROUP_ID.module.path` (e.g. `com.example.app.feature.auth.api`)
 
+## Bootstrap / CLI Refactor Guardrails
+
+Treat project bootstrap and command entrypoints as orchestration only.
+
+- `main()` / `App.kt` / CLI runner files should parse input, set up the pipeline, and dispatch
+  to helpers; they should not accumulate mode-specific business logic
+- when a bootstrap file starts growing multiple workflow branches, split each mode into its
+  own helper module or file instead of adding more inline branching
+- keep helper names file-local unless the helper is genuinely shared across commands or bootstraps
+- move long operational notes, design rationale, and refactor history into repo docs or skill docs,
+  not into bootstrap code comments
+- during structural refactors, compile after each extraction so the next move starts from a working tree
+
+**Anti-patterns:**
+- turning the bootstrap into a dispatcher-plus-helper-monolith
+- sharing one-letter helper names across multiple modes in the same package
+- deferring compilation until the end of a large structural extraction
+- leaving bootstrap comments as the only source of architectural intent
+
 ---
 
 ## Related Skills
@@ -1165,6 +1184,9 @@ After scaffolding, verify in order:
 - using string project references (`:feature:auth:api`) instead of typesafe accessors — breaks refactoring
 - **scaffolding by hand instead of cloning kmp-wizard** — always use `git clone Kotlin/kmp-wizard` as the base; writing build-logic, convention plugins, or settings.gradle.kts from scratch causes broken Gradle included builds, missing platform targets, and cascading precompiled script plugin failures that are very hard to debug
 - using precompiled `.gradle.kts` script plugins for convention plugins in included builds — Gradle 9 does not generate version catalog type-safe accessors for included builds; always use class-based `Plugin<Project>` instead
+- pre-creating empty `src/androidMain/kotlin/`, `src/iosMain/kotlin/`, `src/jvmMain/kotlin/`, etc. directories "just in case" a module might need platform code later — Gradle compiles a target fine with zero files in its source set; an empty platform directory (or one containing only a package-declaration stub) is pure clutter and signals unclear architecture intent. Declare the compile targets in the convention plugin (`androidLibrary {}`, `iosArm64()`, ...) as usual — that's required for per-platform artifacts — but only create the physical source directory and write into it when there is real `expect`/`actual` code to place there
+- letting `main()` / bootstrap files accumulate mode-specific logic instead of dispatching to helpers — keep entrypoints thin and orchestration-only, and extract a new helper file when a branch becomes a workflow
+- waiting until the end of a refactor to compile — compile after each structural extraction so failures point to the move you just made
 
 If a module is failing to compile on one target, check whether the convention plugin was applied and the source sets declared correctly.
 
@@ -1187,6 +1209,8 @@ Ask for GROUP_ID and feature name before generating files. Map all paths to the 
 
 | Date | Change |
 |---|---|
+| 2026-07-05 | Added anti-pattern against pre-creating empty platform source directories (`androidMain`, `iosMain`, `jvmMain`, ...) "just in case" — a real recurring smell reported from field experience. New audit detector `empty platform source set [LOW]` in `kotlin-multiplatform-audit` catches directories with zero `.kt` files or files containing only package/import/comments. Declaring the compile target is still required and correct; only the physical directory should be created on-demand, when there's real expect/actual code to write. |
+| 2026-07-09 | Added bootstrap / CLI refactor guardrails: keep entrypoints orchestration-only, split workflow modes into dedicated helpers, prefer file-local helper names, move long notes out of bootstrap code, and compile after each extraction. |
 | 2026-06-21 | **Improved** — App versioning pattern defined: `VERSION_NAME`/`VERSION_CODE` in `gradle.properties` as the single source of truth; `androidApp` convention plugin reads from properties; `BuildKonfig` exposes `APP_VERSION` to `commonMain`; CI bump pattern documented. |
 | 2026-06-21 | **Breaking** — Step 3 rewritten: `git clone Kotlin/kmp-wizard` is now mandatory. Hand-scaffolding `build-logic`, convention plugins, or `settings.gradle.kts` from scratch is no longer supported. |
 | 2026-06-21 | **Breaking** — Step 4 rewritten: convention plugins must be class-based `Plugin<Project>`. Precompiled `.gradle.kts` script plugins in included builds do not generate version catalog accessors in Gradle 9. |

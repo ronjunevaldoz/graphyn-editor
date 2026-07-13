@@ -11,7 +11,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-06'
+  last-updated: '2026-07-13'
   keywords:
     - repository pattern
     - data layer
@@ -28,6 +28,9 @@ metadata:
     - clean architecture
     - data source
     - local cache
+    - in-memory repository
+    - no backend yet
+    - backend not ready
 ---
 
 ## When to Use This Skill
@@ -44,7 +47,8 @@ Use when you need to:
 **Trigger keywords:** repository pattern, data layer, offline-first, cache-first, network-first,
 single source of truth, local cache, domain mapping, repository implementation, data source,
 optimistic update, sync strategy, data redundancy, content management, data handling,
-cache strategy, data consistency, data sync, fetch strategy, content duplication.
+cache strategy, data consistency, data sync, fetch strategy, content duplication,
+in-memory repository, no backend yet, backend not ready, mock repository.
 
 **Freshness rule:** Ktor and SQLDelight APIs change — recheck both before using this skill
 with a version upgrade, and verify the fetch-strategy examples against the current driver APIs.
@@ -230,9 +234,76 @@ class BookingRpcClient(
 }
 ```
 
-### Mock-vs-real DI wiring
+### In-memory repository (no backend yet)
 
-Use one data module and branch there, instead of branching in the ViewModel or UI:
+Use when scaffolding a new feature — or a whole new project — before the real API exists:
+implement the repository interface with an in-memory store instead of `AuthRepositoryImpl`'s
+remote+local wiring. Same public contract, so the ViewModel and UI never know the difference,
+and swapping in the real implementation later touches only the Koin module, not any caller.
+
+```kotlin
+// :feature:auth:data/src/commonMain/kotlin/GROUP_ID/feature/auth/data/InMemoryAuthRepository.kt
+package GROUP_ID.feature.auth.data
+
+import GROUP_ID.feature.auth.api.AuthRepository
+import GROUP_ID.feature.auth.api.model.User
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * Stands in for [AuthRepositoryImpl] until the real backend exists. Same interface, no
+ * network/database dependency — the app runs and demos end to end before the API does.
+ * Swap-in point: flip the `single<AuthRepository>` binding in AuthDataModule to
+ * AuthRepositoryImpl once the backend is ready; no caller changes needed.
+ */
+class InMemoryAuthRepository : AuthRepository {
+    private val currentUser = MutableStateFlow<User?>(null)
+
+    override fun observeCurrentUser(): Flow<User?> = currentUser.asStateFlow()
+
+    override suspend fun login(email: String, password: String): Result<User> {
+        val user = User(id = "local-1", email = email, displayName = email.substringBefore("@"), avatarUrl = null)
+        currentUser.value = user
+        return Result.success(user)
+    }
+
+    override suspend fun logout() {
+        currentUser.value = null
+    }
+
+    override suspend fun refreshSession(): Result<User> =
+        currentUser.value?.let { Result.success(it) } ?: Result.failure(Exception("Not authenticated"))
+}
+```
+
+```kotlin
+// Swap point — one line, no caller touches this
+val authDataModule = module {
+    single { AuthRemoteDataSource(get()) }
+    single { AuthLocalDataSource(get()) }
+    single<AuthRepository> {
+        if (BuildConfig.BACKEND_READY) AuthRepositoryImpl(get(), get())
+        else InMemoryAuthRepository()
+    }
+}
+```
+
+**Naming**: `InMemory<Feature>Repository`, not `Mock*`/`Fake*` — those names are reserved for
+test doubles (see `kotlin-multiplatform-unit-testing`'s fake-over-mock rule and the `Testing`
+section below). An in-memory repository runs the real app for real users during bring-up; a
+fake only ever runs inside a test. Same shape, different purpose — keep the names distinct so
+a real in-memory implementation never gets deleted by someone cleaning up "test-only" code.
+
+**Swap-out discipline**: gate the swap behind a single flag or build config value (not a
+scattered `if` in each repository), and track it as an open item — an in-memory repository
+left wired past the point the backend exists is a silent data-loss bug (nothing persists,
+nothing syncs), not a cosmetic one.
+
+### Mock-vs-real DI wiring (tests/previews)
+
+The same branch-in-the-module technique also applies to test/preview-only mocks — keep the
+branch in the DI module, not the ViewModel or UI:
 
 ```kotlin
 val bookingDataModule = module {
@@ -524,6 +595,8 @@ class FakeUserRepository : UserRepository {
 - implementing fetch logic in a ViewModel instead of a repository — ViewModels coordinate, repositories fetch
 - returning `null` from a repository method when a typed error sealed class is clearer
 - skipping the mapper layer and mapping inside route handlers or composables
+- naming a bring-up-phase in-memory repository `Mock*`/`Fake*` — those names signal "test-only, safe to delete," but an in-memory repository runs the real app; use `InMemory*` instead
+- leaving an in-memory repository wired past the point the real backend exists — nothing persists or syncs, a silent data-loss bug once real users hit it
 
 If domain or UI code is importing `:data` types directly, the mapper boundary is missing.
 
@@ -555,4 +628,5 @@ Keep the snippet to one repository method. Map to the user's actual entity and d
 
 | Date | Change |
 |---|---|
+| 2026-07-13 | Real gap closed: no rule existed for starting a feature/project before the real backend exists — only a generic test/preview "mock DI wiring" example, and `/kmm-new-project`'s data-layer step assumed a real backend from day one. Added "In-memory repository (no backend yet)" with a full `InMemoryAuthRepository` example, a swap-in DI pattern, and a naming rule (`InMemory*`, never `Mock*`/`Fake*` — those names mean test-only). Wired into `/kmm-new-project`'s sprint implementation step and `kotlin-multiplatform-migration`'s Tier 3 row for existing projects mid-migration. 2 new anti-patterns (wrong naming, leaving it wired past backend-ready). |
 | 2026-06-06 | Initial release. |

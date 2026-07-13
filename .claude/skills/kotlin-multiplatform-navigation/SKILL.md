@@ -10,7 +10,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-24'
+  last-updated: '2026-06-29'
   keywords:
     - Navigation Compose
     - KMP navigation
@@ -224,6 +224,31 @@ Then wire it in `AppNavHost`:
 NavHost(navController = navController, startDestination = AuthGraph) {
     authGraph(onLoginSuccess = { navController.navigate(HomeRoute) })
     // other graphs...
+}
+```
+
+#### One NavHost + nested graphs vs. multiple NavHosts
+
+Default to **one root NavHost with one nested graph per feature**. Reach for a second
+NavHost only when two back stacks must be live *at the same time*.
+
+| Situation | Use | Why |
+|---|---|---|
+| Hub → feature → back; sequential flows (e.g. a dashboard that launches feature screens) | **One NavHost + nested graph per feature** | Single unified back stack; deep links and `popUpTo` behave predictably; features stay modular |
+| A feature owns several screens | **Nested graph** (`navigation<FeatureGraph>{…}`) | Encapsulates the feature; one entry route exposed to the parent |
+| Bottom-navigation tabs that each keep their own history | **Multiple NavHosts** (one per tab) | Each tab needs an independent, concurrent back stack |
+| List-detail / two-pane on large screens | **Multiple NavHosts** (one per pane) | Panes navigate independently and simultaneously |
+
+**Anti-pattern: one independent NavHost per feature for sequential navigation.** It
+fragments the back stack — the system back button, deep linking, and shared-element
+transitions break or need manual cross-host coordination. If navigation is sequential
+(open a screen, do work, go back), it belongs in **one** NavHost as a nested graph.
+
+```kotlin
+// ✓ One NavHost, a nested graph per feature, each screen owns its own ViewModel
+NavHost(navController, startDestination = DashboardRoute) {
+    composable<DashboardRoute> { DashboardScreen(onOpen = { navController.navigate(it) }) }
+    featureGraph()   // navigation<FeatureGraph> { composable<EditorRoute>{ EditorScreen() } … }
 }
 ```
 
@@ -796,6 +821,7 @@ Keep each snippet to one route and one composable destination. Map to the user's
 
 | Date | Change |
 |---|---|
+| 2026-06-29 | Added "One NavHost + nested graphs vs. multiple NavHosts" decision table — default to one root NavHost with a nested graph per feature; reserve multiple NavHosts for concurrent back stacks (bottom nav, two-pane). New anti-pattern: one independent NavHost per feature for sequential navigation. |
 | 2026-06-28 | Fixed AppNavigator Step 7: use NavControllerHolder singleton so Koin can construct AppNavigatorImpl at startup; AppNavHost sets holder.current via DisposableEffect. Added end-to-end MVI + NavHost + Clean Architecture wiring section, auth gate, result passing, innerPadding rule. Four new anti-patterns. |
 | 2026-06-28 | Added `bindToBrowserNavigation` pattern with full WasmJs hash-routing example and `@SerialName` route convention. |
 | 2026-06-24 | Added web/WasmJs browser fragment routing guidance and hash-navigation keywords. |

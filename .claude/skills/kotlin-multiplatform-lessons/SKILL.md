@@ -12,7 +12,7 @@ description: >-
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-26'
+  last-updated: '2026-07-12'
   keywords:
     - lessons learned
     - skill feedback
@@ -23,6 +23,9 @@ metadata:
     - pattern discovery
     - correction
     - skill gap
+    - auto file github issue
+    - proactive issue draft
+    - report skill bug automatically
 ---
 
 ## When to Use This Skill
@@ -39,13 +42,40 @@ skill was wrong, skill gap, better pattern, correction, docs/lessons,
 what we should have done, upstream this, feed back to skills.
 
 **Trigger automatically (no user prompt needed):** after any fix where you
-deviated from skill guidance, or where the skill gave you no guidance at all.
+deviated from skill guidance, or where the skill gave you no guidance at all. For a
+`high`-severity `correction` (a genuine skill bug), also proactively draft a GitHub
+issue alongside the lesson — see "Proactively Offering to File a GitHub Issue" below.
+
+---
+
+## Creating a Lesson — one file per finding
+
+**Always create lessons with the script** — it writes exactly ONE file per finding to
+`docs/lessons/YYYY-MM-DD-<slug>.md` and never appends to or overwrites an existing file:
+
+```bash
+python3 ~/.claude/skills/kotlin-multiplatform-lessons/scripts/create_lesson.py \
+  --skill kotlin-multiplatform-mvi \
+  --type correction --severity high \
+  --title "Effect replayed on nav back" \
+  --followed "…" --broke "…" --correct "…" --evidence "file:line" --proposed "…"
+```
+
+(From inside kmm-agent-skills, use `skills/kotlin-multiplatform-lessons/scripts/create_lesson.py`.)
+
+**One finding = one invocation = one file.** If you have three findings, run the script
+three times — never hand-write a single file containing multiple lessons, and never append
+a second lesson to an existing file. The harvester reads `docs/lessons/*.md` as one Lesson
+per file; combining them breaks grouping and per-lesson review.
+
+Body fields are optional — omit them and the script inserts a `_TODO_` placeholder to fill in.
+A repeated title gets a numeric suffix so an existing lesson is never overwritten.
 
 ---
 
 ## Lesson File Format
 
-Save lessons to `docs/lessons/YYYY-MM-DD-short-slug.md` in the consumer project.
+Each lesson is its own file at `docs/lessons/YYYY-MM-DD-short-slug.md` in the consumer project.
 
 ```markdown
 ---
@@ -212,6 +242,30 @@ a cross-skill note in kotlin-multiplatform-offline-first under "Known Gaps".
 
 ---
 
+## Proactively Offering to File a GitHub Issue
+
+Writing the lesson file is not the end of the workflow for a genuine bug. **When the
+lesson is `severity: high` and `type: correction`** — the skill's guidance was wrong and
+it actually broke something — don't just write the file and stop. In the same turn,
+also draft a GitHub issue for `ronjunevaldoz/kmm-agent-skills` using
+`/report-skill-issue`'s Step 4 template (populated from the same `followed`/`broke`/
+`correct`/`evidence` content you just used for the lesson), show the user the full
+draft, and ask whether to submit it — the same confirmation gate that command already
+uses. Don't wait for the user to separately remember to run `/report-skill-issue`
+themselves; the lesson and the issue draft come from the same discovery, so drafting
+both is barely more work than drafting one.
+
+**Filing the issue itself still requires the user's explicit "yes."** This only makes
+the *suggestion and draft* proactive — creating a GitHub issue is a real, visible action
+on someone else's repo, not something to submit silently even when the bug is obvious.
+
+For `gap`, `better-pattern`, `deprecation`, or `confirmation` lessons, or `correction`
+lessons below `high` severity, the local lesson file is enough — those are fine to batch
+into a later harvest via `kotlin-multiplatform-skill-harvester` rather than filing
+immediately.
+
+---
+
 ## Directory Convention
 
 ```
@@ -247,19 +301,32 @@ If you are unsure whether a finding warrants a lesson: if it took more than one 
 - Using vague titles like `fix` or `update` — the title is the primary search key; make it specific enough to find without reading the body
 - Filing a lesson for a one-off project quirk rather than a repeatable pattern — lessons are only useful if the finding could recur in another project
 - Skipping `evidence` — without a file path or line reference, the lesson cannot be verified or acted on by the harvester
+- Combining multiple findings into one file, or appending a new lesson to an existing file — the harvester reads one Lesson per file, so this breaks grouping and review. Run `create_lesson.py` once per finding instead — caught by the audit's `combined lesson file [HIGH]` if it happens anyway (e.g. a hand-written or merged file)
+- Writing a `high`/`correction` lesson and stopping there — waiting for the user to remember `/report-skill-issue` themselves means a real bug sits unreported indefinitely; draft the issue in the same turn and offer to submit it
+- Actually filing the GitHub issue without the user's explicit "yes" — the draft can be proactive, the submission cannot be
 
 ---
 
 ## Testing
 
-Lessons are structured YAML-like markdown files, not code. Validation is structural:
+Lessons are structured markdown files, not code. Validation is structural:
 
-- Required fields present: `title`, `skill`, `what_we_followed`, `what_broke`, `correct_pattern`, `evidence`
-- `skill` value matches a directory name under `skills/` in the skills repo
-- `evidence` contains at least one file path or code excerpt
-- File name follows `YYYY-MM-DD-kebab-case-title.md` convention in `docs/lessons/`
+- Frontmatter has `skill`, `date`, `severity` (high/medium/low), `type`
+  (correction/gap/better-pattern/deprecation/confirmation)
+- Body has the sections: `What we followed`, `What broke / what we discovered`,
+  `Correct pattern`, `Evidence`, `Proposed skill change`
+- `skill` value matches a directory name under `skills/` in the skills repo (or `unknown`)
+- `Evidence` contains at least one file path or code excerpt
+- **Exactly one lesson per file**, named `YYYY-MM-DD-kebab-case-title.md` in `docs/lessons/`
 
-Run `python3 skills/kotlin-multiplatform-audit/scripts/audit_skills_repo.py .` to catch naming violations.
+Using `create_lesson.py` guarantees the frontmatter, section skeleton, naming, and the
+one-file-per-lesson rule. Run the harvester to confirm a batch parses:
+`python3 ~/.claude/skills/kotlin-multiplatform-skill-harvester/scripts/harvest_lessons.py .`
+
+`kotlin-multiplatform-audit`'s `combined lesson file [HIGH]` detector is the backstop
+for a lesson file that bypassed the script (hand-written, merged, or copy-pasted) —
+it flags any `docs/lessons/*.md` file containing more than one `## What we followed`
+section. Run `/kmm-run-audit` to catch this on an existing project.
 
 ---
 
@@ -275,6 +342,7 @@ When writing a lesson, respond with the complete lesson file content — no surr
   across projects) and proposes amendments to the source skills
 - `kotlin-multiplatform-audit` — runs after lessons accumulate to check whether
   the proposed amendments have been applied upstream
+- `/kmm-report-skill-issue` — the draft template and submission flow this skill reuses when a `high`/`correction` lesson warrants filing immediately instead of waiting for a harvest
 
 ---
 
@@ -282,4 +350,7 @@ When writing a lesson, respond with the complete lesson file content — no surr
 
 | Date | Change |
 |---|---|
+| 2026-07-12 | Added "Proactively Offering to File a GitHub Issue" — previously, filing a GitHub issue for a skill bug required the user to separately remember `/report-skill-issue`, even after this skill had just proactively written a lesson describing the exact same bug. Now a `severity: high`, `type: correction` lesson also drafts the issue in the same turn, reusing `/report-skill-issue`'s Step 4 template — actually submitting it still requires the user's explicit confirmation, unchanged. Cross-referenced both ways with `/kmm-report-skill-issue`. 2 new anti-patterns. |
+| 2026-07-09 | The one-lesson-per-file rule was documented but had no enforcement beyond `create_lesson.py` refusing to overwrite — a hand-written or merged file could still violate it silently. New `kotlin-multiplatform-audit` detector `combined lesson file [HIGH]` flags any `docs/lessons/*.md` file with more than one `## What we followed` section. |
+| 2026-06-30 | Added create_lesson.py — deterministic one-file-per-finding creator (auto date/slug, never appends or overwrites) + lesson-template.md. Hardened the one-lesson-per-file rule, fixed the Testing section to match the real frontmatter schema, new anti-pattern against combined/appended lesson files. |
 | 2026-06-26 | Initial release — lesson format, field reference, examples, directory convention. |

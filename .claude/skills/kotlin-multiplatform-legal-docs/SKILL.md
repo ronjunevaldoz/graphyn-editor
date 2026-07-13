@@ -698,7 +698,7 @@ location, biometric) that is not yet disclosed in the policy causes the build to
 **Workflow when CI fails on gaps:**
 
 1. CI reports `⚠️ GAPS — detected in code but NOT disclosed in policy`
-2. Developer runs `/release-notes` to draft the policy update
+2. Developer runs `/kmm-release-notes` to draft the policy update
 3. Developer updates `docs/privacy_policy.md` and bumps `POLICY_VERSION` in `gradle.properties`
 4. CI passes on next push
 

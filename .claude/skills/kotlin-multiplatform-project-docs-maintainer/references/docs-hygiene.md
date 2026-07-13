@@ -27,6 +27,21 @@ Both hold reference docs — the distinction is scope:
 
 Rule of thumb: if you'd link to it from README, it belongs in `docs/` root. If you'd link to it from `architecture.md` or `deployment.md`, it belongs in `docs/reference/`.
 
+### Active work lanes
+
+Use these lanes when the project keeps planning or bug history in nested folders:
+
+| Lane | Purpose | Example location |
+|---|---|---|
+| Tasks index | current work, cross-links, state summary | `docs/tasks.md` |
+| MVP lane | structured MVP plan, phases, task notes | `docs/mvp/0-mvp/0-mvp.md` |
+| Phase lane | one active phase under the MVP | `docs/mvp/0-mvp/0-phase/0-phase.md` |
+| Task lane | individual task notes under a phase | `docs/mvp/0-mvp/0-phase/tasks/0-task.md` |
+| Bug lane | active bug thread, one bug per file | `docs/bugs/0-bug.md` |
+
+Keep these lanes short-lived and promote stable guidance out of them into
+`docs/architecture.md`, `docs/deployment.md`, or `docs/reference/`.
+
 ### Classification examples
 
 | File | Kind | Action |
@@ -36,9 +51,11 @@ Rule of thumb: if you'd link to it from README, it belongs in `docs/` root. If y
 | `stable-feature-rules.md` | Reference (root) | Keep — stable registry, updated in place |
 | `auth-flow-internals.md` | Reference (reference/) | Move to `docs/reference/` — subsystem deep-dive |
 | `reference/*.md` | Reference (reference/) | Keep in `docs/reference/` |
-| `known-blockers.md` | Task | Rename to `YYYY-MM-DD-known-blockers.md`, move to `docs/tasks/`; archive when resolved |
-| `milestone-tracker.md` | Task | Rename + move to `docs/tasks/`; archive when milestone ships |
-| `q3-gap-plan.md` | Task | Rename + move to `docs/tasks/`; archive when plan completes |
+| `known-blockers.md` | Task | Rename to `YYYY-MM-DD-known-blockers.md`, move to `docs/tasks/` or `docs/bugs/`; archive when resolved |
+| `milestone-tracker.md` | Task | Rename + move to `docs/tasks/` or `docs/mvp/`; archive when milestone ships |
+| `q3-gap-plan.md` | Task | Rename + move to `docs/tasks/` or `docs/mvp/`; archive when plan completes |
+| `0-bug.md` | Task lane | Keep active bug thread here; add a folder only if multiple bug files are needed |
+| `0-mvp/` | Task lane | Keep active MVP plan here; archive or promote when stable |
 | `tasks.md` | Task (entrypoint) | Keep at `docs/tasks.md` |
 | `fixtures/*.json` | Non-doc | Move to `tests/fixtures/` or `src/test/resources/` |
 | `openapi.json` | Non-doc | Move to `api/` or `spec/` at project root |
@@ -79,6 +96,9 @@ If a task-kind file (blockers, gap plan, milestone tracker) exists at the `docs/
 4. Leave a backlink in `docs/tasks.md` pointing to the dated archive entry.
 
 Never delete — archive. The history is evidence.
+
+If the project uses `docs/mvp/` or `docs/bugs/`, keep those lanes as the active
+working surface and use `docs/tasks.md` as the index that links into them.
 
 ---
 

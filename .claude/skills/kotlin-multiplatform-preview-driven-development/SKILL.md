@@ -7,7 +7,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-18'
+  last-updated: '2026-07-08'
   keywords:
     - PDD
     - preview-driven development
@@ -242,6 +242,15 @@ Conceptual link:
 - hardcoding preview data inline — use `PreviewData` object so all previews stay in sync
 - shipping a `Content` composable without a matching preview stub — that leaves the
   preview workflow optional and is exactly how drift sneaks in
+- two preview states that render identically (e.g. a separate "Initial" preview next to
+  "Default" when both pass the same field values) — before adding a new named state, check
+  whether it's visually distinct from an existing one; a preview that duplicates another
+  pixel-for-pixel is noise, not coverage. One preview per genuinely distinct visual state
+- a horizontally-scrolling container (`LazyRow`, carousel) in a preview with no
+  `Modifier.fillMaxWidth()` or explicit width on the container — an unbounded-width
+  scrolling row can collapse to its first item's intrinsic width or render nothing
+  useful in the preview panel; wrap it in a fixed-width `Box` or set `fillMaxWidth()`
+  so the preview reflects the real on-screen proportions
 
 If the Desktop preview doesn't render, check that the `:ui` convention plugin declares `jvm()` and
 that the Compose plugin is applied.
@@ -263,4 +272,5 @@ When asked about UI iteration, previews, or fast Compose development, respond in
 
 | Date | Change |
 |---|---|
+| 2026-07-08 | Added 2 anti-patterns from real shadcn-compose bug reports: duplicate preview states that render identically (e.g. "Initial" vs "Default"), and horizontally-scrolling containers previewed with no explicit/fillMaxWidth container width. |
 | 2026-06-18 | Initial release. |

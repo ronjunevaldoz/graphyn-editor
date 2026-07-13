@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """
 validate_keyword_routing.py — verify every skill directory has at least one row
-in the expert SKILL.md Skill Invocation Map.
+in the expert SKILL.md Skill Invocation Map, and that no two skills documented as
+mutually-exclusive alternatives (one skill's description says "alternative to
+<other-skill>") share a trigger keyword — that collision made both skills match
+the same prompt despite only one being appropriate at a time (real case: a bare
+`shadcn` keyword in kotlin-multiplatform-design-system collided with
+kotlin-multiplatform-shadcn-compose's own trigger keywords).
 
 Exit codes:
-  0 — all skills covered
-  1 — one or more skills missing from the invocation map
+  0 — all skills covered, no alternative-pair keyword collisions
+  1 — one or more skills missing from the invocation map, or a collision found
 """
 from __future__ import annotations
 
@@ -14,6 +19,8 @@ import sys
 from pathlib import Path
 
 SKILL_MAP_SECTION = "## Skill Invocation Map"
+ALTERNATIVE_RE = re.compile(r"(?:[Aa]lternative to|instead of)\s+`?([a-z][a-z0-9-]+)", re.IGNORECASE)
+TRIGGER_KEYWORDS_RE = re.compile(r"\*\*Trigger keywords:\*\*(.+?)(?:\n\s*\n|\Z)", re.DOTALL)
 
 # Skills that intentionally have no invocation-map row because they are
 # meta-tools loaded by commands, not by keyword matching.
@@ -34,6 +41,24 @@ def extract_invocation_map_text(expert_text: str) -> str:
         return ""
     end = expert_text.find("\n---", start)
     return expert_text[start:end] if end != -1 else expert_text[start:]
+
+
+def _trigger_keywords(skill_text: str) -> set[str]:
+    m = TRIGGER_KEYWORDS_RE.search(skill_text)
+    if not m:
+        return set()
+    raw = m.group(1).replace("\n", " ")
+    return {kw.strip().rstrip(".").lower() for kw in raw.split(",") if kw.strip()}
+
+
+def _alternative_targets(skill_text: str, all_names: set[str]) -> set[str]:
+    """Skill names this skill's description names as an alternative to."""
+    targets: set[str] = set()
+    for match in ALTERNATIVE_RE.finditer(skill_text):
+        candidate = match.group(1).rstrip("'s").rstrip("-")
+        if candidate in all_names:
+            targets.add(candidate)
+    return targets
 
 
 def validate_keyword_routing(repo_root: Path) -> list[str]:
@@ -59,6 +84,24 @@ def validate_keyword_routing(repo_root: Path) -> list[str]:
         # `kotlin-multiplatform-roborazzi` or bare names like `jni-kotlin-pro`.
         if name not in map_text:
             errors.append(f"missing from Skill Invocation Map: {name}")
+
+    # ── Alternative-pair keyword collisions ─────────────────────────────────
+    skill_texts = {p.name: read_text(p / "SKILL.md") for p in skill_dirs}
+    seen_pairs: set[tuple[str, str]] = set()
+    for name, text in skill_texts.items():
+        for target in _alternative_targets(text, skill_names):
+            if target == name or target not in skill_texts:
+                continue
+            pair = tuple(sorted((name, target)))
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            shared = _trigger_keywords(text) & _trigger_keywords(skill_texts[target])
+            if shared:
+                errors.append(
+                    f"keyword collision between documented alternatives "
+                    f"{pair[0]} / {pair[1]}: {sorted(shared)}"
+                )
 
     return errors
 

@@ -13,7 +13,7 @@ description: >
 license: Apache-2.0
 metadata:
   author: kmm-agent-skills
-  last-updated: '2026-06-25'
+  last-updated: '2026-07-11'
   keywords:
     - KMP expert
     - orchestrator
@@ -95,6 +95,32 @@ When more than one skill could apply, rank them instead of enabling everything.
 
 Load the earliest tier that answers the request, then add lower tiers only when the task genuinely needs them.
 
+## Model Routing
+
+Route subagents by work type, not by habit.
+
+Use the strongest available reasoning model for:
+- ambiguous planning
+- complex architecture decisions
+- performance investigations
+- benchmark-topping work
+- root-cause analysis on hard failures
+- final review of claims, numbers, and tradeoffs
+
+Use a cheaper or faster model for:
+- mechanical implementation after the plan is clear
+- repetitive file generation
+- straightforward wiring
+- bulk edits with no design decision
+
+Use a precision-focused strong model for:
+- validation
+- review
+- anything where an incorrect conclusion would be expensive to unwind
+
+If a task is both complex and high-impact, escalate the planning and review stages first;
+keep the implementation stage on the smallest model that can still follow the plan cleanly.
+
 ---
 
 ## Required vs Optional Skills
@@ -140,7 +166,7 @@ Pull in only when a feature explicitly needs it.
 - `offline-first` — only when the user names "offline-first", "background sync", or "conflict resolution". For plain caching or a local source of truth, use `repository-pattern` + `sqldelight-setup` instead. Offline-first layers `SyncManager` + `WorkManager`/`BGTaskScheduler` on top, which is overkill unless explicitly wanted.
 
 ### Meta (tooling, not app code)
-`expert` (routing), `audit` (review), `kotlin-multiplatform-jni-pro` (native bridge), `docs-maintainer`, `changelog`
+`expert` (routing), `audit` (review), `kotlin-multiplatform-jni-pro` (native bridge), `docs-maintainer`, `changelog`, `benchmark` (invoked on-demand for a specific performance claim — never scaffolded speculatively), `docs-site` (public developer guide — library-only, gated on real surface area, never scaffolded for an app or a trivial library)
 
 ---
 
@@ -176,7 +202,7 @@ versions when the local repo can be checked directly.
 
 ---
 
-## The 54 Skills and What They Own
+## The 63 Skills and What They Own
 
 ### Layer 0 — Architecture Contract
 | Skill | Owns |
@@ -199,6 +225,9 @@ versions when the local repo can be checked directly.
 | `kotlin-multiplatform-lessons` | Structured lesson files capturing pattern mismatches and fixes; feeds the skill-harvester |
 | `kotlin-multiplatform-skill-harvester` | Reads accumulated lesson files and proposes amendments to source skills; produces a harvest report |
 | `kotlin-multiplatform-legal-docs` | Privacy Policy, Terms & Conditions, Google Play Data Safety, App Store privacy labels, GDPR/CCPA, in-app `LegalDocsScreen`, consent gate |
+| `kotlin-multiplatform-proguard-r8` | R8 minification for KMP Android release builds: keep rules per library (Koin, Ktor, SQLDelight, serialization), release crash diagnosis, mapping.txt management |
+| `kotlin-multiplatform-in-app-purchases` | IAP and subscriptions: shared `PurchaseState` domain model, Play Billing (Android) and StoreKit 2 (iOS) implementations, MVI ViewModel integration, server-side validation |
+| `kotlin-multiplatform-desktop-app` | Desktop-specific: window management, system tray, file picker, native menu bar, keyboard shortcuts, drag-and-drop, JPackage packaging (dmg/msi/deb) |
 
 ### Layer 2 — Core Infrastructure
 | Skill | Owns |
@@ -210,6 +239,8 @@ versions when the local repo can be checked directly.
 | `kotlin-multiplatform-sqldelight-setup` | SQLDelight 2, platform drivers, schema files, migrations, Flow queries |
 | `kotlin-multiplatform-datastore` | Preferences DataStore + Proto DataStore, expect/actual factory, Koin wiring, SharedPreferences migration |
 | `kotlin-multiplatform-xcframework-spm` | XCFramework build, SPM binary target, Xcode integration |
+| `kotlin-multiplatform-library-publishing` | Maven Central publishing (vanniktech plugin), GitHub Packages, BOM, binary-compatibility-validator, SNAPSHOT vs stable channels, GPG signing, release checklist |
+| `kotlin-multiplatform-docs-site` | GitHub Pages developer guide for a published library — MkDocs Material, Dokka HTML API reference, compiler-verified snippet extraction, release-tag-triggered CI deploy |
 | `kotlin-multiplatform-logging` | logger wrapper, kotlin-logging or Kermit, log levels, logger factory, crash breadcrumb bridge, Koin wiring |
 
 ### Layer 3 — Platform Patterns
@@ -243,12 +274,14 @@ versions when the local repo can be checked directly.
 |---|---|
 | `kotlin-multiplatform-design-system` | Tokens (colors, typography, shapes, spacing), dark mode, 6 core components, no Material dependency |
 | `kotlin-multiplatform-design-system-extended` | 27 additional components: Dialog, Sheet, Toast, Tabs, TopAppBar, Checkbox, etc. |
+| `kotlin-multiplatform-shadcn-compose` | Published-library alternative to `design-system` — Maven Central setup, `ShadcnTheme`, 70+ components. Gated to explicit user choice (`/kmm-new-project` Step 6a); never suggested unprompted — carries a real experimental-API dependency risk |
 | `kotlin-multiplatform-adaptive-layout` | WindowSizeClass, Compact/Medium/Expanded breakpoints, list-detail split, adaptive navigation, cross-session pattern consistency |
 | `kotlin-multiplatform-compose-slot-api` | `@Composable () -> Unit` slots, scoped slots, CompositionLocal, component API shape |
 | `kotlin-multiplatform-compose-state-hoisting` | Hoist-until-shared rule, controlled components, stateless vs stateful composables |
 | `kotlin-multiplatform-compose-state-container` | `remember` vs `rememberSaveable` vs `ViewModel` survival matrix, custom Saver |
 | `kotlin-multiplatform-graphics-modifiers` | `graphicsLayer`, Canvas, drawBehind, drawWithCache, workflow node shells, custom drawing performance |
 | `kotlin-multiplatform-preview-driven-development` | Desktop-first `@Preview` workflow, `@PreviewParameterProvider`, PDD cycle, `./gradlew :desktopApp:run` |
+| `kotlin-multiplatform-imagevector-generator` | Raster/SVG → compiled ImageVector toolchain (quantize/trace/normalize/codegen), semantic vs literal tinting, node budget, no hand-written path data |
 
 ### Layer 6 — Testing & Quality
 | Skill | Owns |
@@ -258,6 +291,7 @@ versions when the local repo can be checked directly.
 | `kotlin-multiplatform-code-quality` | Ktlint (formatting) + Detekt (architecture rules), CI gates |
 | `kotlin-multiplatform-accessibility` | Semantic roles, `contentDescription`, `mergeDescendants`, touch targets, traversal order, Roborazzi a11y snapshots |
 | `kotlin-multiplatform-compose-animation` | `AnimatedVisibility`, `animateContentSize`, `Crossfade`, `AnimatedContent`, `animateXAsState`, shared elements, reduced motion |
+| `kotlin-multiplatform-benchmark` | `kotlinx-benchmark` setup, `@State`/`@Benchmark` conventions, per-target registration, `docs/reference/benchmark-matrix.md` result placement |
 
 ---
 
@@ -428,6 +462,20 @@ Full survival matrix: see `kotlin-multiplatform-compose-state-container`.
 
 ### "Which transport for a backend call?"
 
+Before following the tree below, check by **content**, not by module name, whether a
+Ktor client already exists anywhere in the project — a new server module or feature
+with a different name is still the same transport concern. Real bug this fixed: an
+agent found no module literally named `:core:network` and defaulted to a raw HTTP call
+instead of the project's actual (differently-named) client:
+
+```bash
+grep -rl "HttpClient(\|safeRequest\|NetworkResult<" */src --include="*.kt"
+```
+
+If that finds matches, reuse whatever module they're in — never scaffold a second client
+or write a raw platform HTTP call because the path didn't match an assumed name. See
+`kotlin-multiplatform-network-layer`'s Step 0 for the full detection procedure.
+
 ```
 grep -r "RemoteService\|@Rpc\|withRpc\|KtorRPCClient\|rpcClient\|\.rpc(" */src --include="*.kt" -l
 
@@ -478,6 +526,42 @@ Composable screen                → lives in :feature:x:ui/
 The rule: data flows **inward** through mappers. DTOs and entities never cross the `:data`
 boundary. Domain types (in `:model`) are the lingua franca across `:api`, `:domain`, and `:presenter`.
 
+### "Improve the performance of X" — where do I even look?
+
+There is no single performance skill — routing depends entirely on what X names.
+Never guess at a target; if X is unnamed or app-wide ("the app feels slow"), ask the
+user to narrow it to one of the branches below before picking a skill.
+
+```
+What is X?
+├── A specific composable re-rendering too often / UI feels janky?
+│   → kotlin-multiplatform-compose-state-container (wrong container, e.g. ViewModel
+│     for ephemeral state) or kotlin-multiplatform-compose-state-hoisting (state
+│     buried too deep, forcing a wide recomposition scope)
+├── Custom drawing (Canvas, graphicsLayer, drawBehind) is slow?
+│   → kotlin-multiplatform-graphics-modifiers
+├── A JNI/native bridge call?
+│   → kotlin-multiplatform-jni-pro (minimize boundary crossings, batch marshalling,
+│     GPU sync tips already in the skill)
+├── Database queries?
+│   → kotlin-multiplatform-sqldelight-setup (indices, Flow query batching)
+├── Network calls / sync?
+│   → kotlin-multiplatform-network-layer or kotlin-multiplatform-offline-first
+│     (cache-first, avoid redundant refresh)
+├── App startup time or binary/APK size?
+│   → kotlin-multiplatform-proguard-r8
+├── A specific function/class flagged as complex (long, many params, deep nesting)?
+│   → kotlin-multiplatform-code-quality (Detekt `complexity:` rules — LongMethod,
+│     CyclomaticComplexMethod, LongParameterList)
+├── Need a real number, not a guess (comparing two implementations, confirming a fix)?
+│   → kotlin-multiplatform-benchmark
+└── Unnamed / whole-app / "it feels slow"?
+    → STOP — do not pick a skill on a guess. Ask which of the above the user means,
+      or profile first (Android Studio Profiler / Instruments, or
+      kotlin-multiplatform-benchmark for a specific function/class) to get a concrete
+      target, then re-route through this tree.
+```
+
 ### "How do I handle audit findings?"
 
 ```
@@ -518,6 +602,7 @@ When the user asks about one of these topics, invoke the corresponding skill:
 | User asks about | Invoke skill |
 |---|---|
 | "layer contract", "clean architecture", "which layer", ":model vs :api", "internal visibility" | `kotlin-multiplatform-clean-architecture` |
+| "composition over inheritance", "abstract class in commonMain", "extensible base class", "agent over-abstracting", "requires consumer to extend", "UnnecessaryAbstractClass" | `kotlin-multiplatform-clean-architecture` |
 | "set up a new KMP project", "create feature module", "6-layer scaffold" | `kotlin-multiplatform-feature-scaffold` |
 | "presenter module", "ViewModel no Compose", "MVI ViewModel", "UiState UiIntent" | `kotlin-multiplatform-presenter-module` |
 | "Koin", "dependency injection", "manual modules", "annotated mode" | `kotlin-multiplatform-dependency-injection` |
@@ -531,6 +616,7 @@ When the user asks about one of these topics, invoke the corresponding skill:
 | "wireframes", "screen flows", "layout specs", "design handoff", "component API", "visual direction" | `designer` |
 | "release notes", "consumer release notes", "per-skill changelog", "CHANGELOG.md" | `changelog` |
 | "logging", "logger wrapper", "logger facade", "kotlin-logging", "KotlinLogging", "Kermit", "log level", "crash reporting", "Crashlytics logging" | `kotlin-multiplatform-logging` |
+| "token saver", "token-saver", "token saving", "token reduction", "prompt compression", "context compression", "context headroom", "verbose output", "too much output", "caveman", "ponytail", "headroom", "rtk" | `kotlin-multiplatform-token-saver` |
 | "string.format", "decimalformat", "simpledateformat", "locale formatting", "number formatting", "date formatting", "shared formatter", "kmp formatter" | `kotlin-multiplatform-expect-actual` |
 | "auth", "authentication", "authorization", "JWT", "sessions", "Ktor RPC" | `kotlin-multiplatform-ktor-auth-service` |
 | "MongoDB", "database", "collection", "Flow", "change stream", "server-side Kotlin" | `kotlin-multiplatform-mongodb-database` |
@@ -541,6 +627,9 @@ When the user asks about one of these topics, invoke the corresponding skill:
 | "publish to Maven Central", "Maven publish", "release library", "release project", "cut release", "ship version", "versioning", "semantic versioning", "bump version", "vanniktech", "Sonatype", "git-cliff", "changelog", "GitHub Release", "release pipeline", "GPG signing" | `kotlin-multiplatform-release` |
 | "dev/staging/prod", "BuildKonfig", "environment config" | `kotlin-multiplatform-flavor-environment` |
 | "XCFramework", "Swift Package Manager", "SPM", "iOS binary" | `kotlin-multiplatform-xcframework-spm` |
+| "ImageVector", "vector icon", "vectorize", "SVG to Compose", "PNG to vector", "trace image", "icon from image", "logo vector", "raster to vector", "vtracer", "potrace", "convert image to icon", "compile icon", "app icon vector", "no PNG icons", "icon pipeline", "extract logo", "extract icon" | `kotlin-multiplatform-imagevector-generator` |
+| "publish KMP library", "Maven Central library", "KMP library publishing", "vanniktech maven publish", "mavenPublishing", "OSSRH", "Sonatype staging", "GitHub Packages library", "binary compatibility", "apiCheck", "apiDump", "api dump", "BOM library", "bill of materials", "distribute KMP library", "library consumers", "artifactId", "groupId", "POM metadata", "GPG signing library", "SNAPSHOT library", "library release checklist" | `kotlin-multiplatform-library-publishing` |
+| "GitHub Pages", "developer guide", "docs site", "MkDocs", "MkDocs Material", "Dokka HTML", "API reference site", "documentation website", "gh-deploy", "publish developer docs", "library documentation site" | `kotlin-multiplatform-docs-site` |
 | "expect actual", "platform-specific", "@ObjCName", "iOS interop" | `kotlin-multiplatform-expect-actual` |
 | "repository", "data layer", "offline-first", "cache", "single source of truth" | `kotlin-multiplatform-repository-pattern` |
 | "navigation", "screen routing", "NavHost", "deep links", "web routing", "browser fragment", "hash navigation" | `kotlin-multiplatform-navigation` |
@@ -548,12 +637,13 @@ When the user asks about one of these topics, invoke the corresponding skill:
 | "shared strings", "strings.xml", "stringresource", "hardcoded strings", "localization", "image assets", "fonts" | `kotlin-multiplatform-shared-resources` |
 | "MVI", "ViewModel state", "one-shot effects", "Screen/Content split" | `kotlin-multiplatform-mvi` |
 | "design system", "AppTheme", "design tokens", "dark mode", "spacing tokens", "layout consistency", "AppScaffold", "AppTopAppBar", "page title", "top bar", "action button placement" | `kotlin-multiplatform-design-system` |
-| "update design system", "sync design system", "update components", "sync components", "update AppButton", "design system out of date", "new version of design system", "design system changed", "refresh design system" | `/update-design-system` |
-| "fix design", "fix colors", "fix spacing", "fix typography", "hardcoded color", "hardcoded dp", "design inconsistencies", "wrong colors", "MaterialTheme instead of AppTheme", "nested cards", "redundant surface", "design violations", "design audit project", "fix design system usage", "detekt design rules", "component reimplementation", "token import boundary" | `/fix-design` |
-| "record baselines", "record golden screenshots", "update golden images", "Roborazzi baseline", "screenshot baseline", "update screenshots", "record design screenshots" | `/record-design-baselines` |
-| "visual audit", "audit screenshots", "check visual consistency", "design visual check", "cross-screen consistency", "spacing rhythm", "color contrast audit", "vision audit design" | `/audit-design-visual` |
+| "update design system", "sync design system", "update components", "sync components", "update AppButton", "design system out of date", "new version of design system", "design system changed", "refresh design system" | `/kmm-update-design-system` |
+| "fix design", "fix colors", "fix spacing", "fix typography", "hardcoded color", "hardcoded dp", "design inconsistencies", "wrong colors", "MaterialTheme instead of AppTheme", "nested cards", "redundant surface", "design violations", "design audit project", "fix design system usage", "detekt design rules", "component reimplementation", "token import boundary" | `/kmm-fix-design` |
+| "record baselines", "record golden screenshots", "update golden images", "Roborazzi baseline", "screenshot baseline", "update screenshots", "record design screenshots" | `/kmm-record-design-baselines` |
+| "visual audit", "audit screenshots", "check visual consistency", "design visual check", "cross-screen consistency", "spacing rhythm", "color contrast audit", "vision audit design" | `/kmm-audit-design-visual` |
 | "adaptive layout", "WindowSizeClass", "tablet layout", "desktop layout", "mobile layout", "phone layout", "list detail", "detail split", "split screen", "navigation rail", "Compact Medium Expanded", "responsive UI", "master detail", "multi-pane", "different layout phone tablet", "different layout phone desktop", "screen size breakpoint", "pane layout", "layout per screen size", "layout phone desktop" | `kotlin-multiplatform-adaptive-layout` |
 | "dialog", "bottom sheet", "toast", "tabs", "TopAppBar", "Checkbox" | `kotlin-multiplatform-design-system-extended` |
+| "shadcn-compose", "ShadcnButton", "ShadcnTheme", "ShadcnCard", "shadcn ui kotlin", "shadcn compose multiplatform", "ExperimentalFoundationStyleApi", "shadcn kmp" | `kotlin-multiplatform-shadcn-compose` |
 | "slot API", "content lambda", "composable parameter", "scoped slot" | `kotlin-multiplatform-compose-slot-api` |
 | "state hoisting", "hoist state", "controlled component", "where does state go" | `kotlin-multiplatform-compose-state-hoisting` |
 | "remember vs ViewModel", "rememberSaveable", "state survival", "config change" | `kotlin-multiplatform-compose-state-container` |
@@ -563,6 +653,7 @@ When the user asks about one of these topics, invoke the corresponding skill:
 | "screenshot test", "Roborazzi", "golden image", "visual regression", "CI diff" | `kotlin-multiplatform-roborazzi` |
 | "test canvas layout", "canvas screenshot", "layout regression test", "visual accuracy", "pixel-perfect test", "arrangement test", "test node placement", "UI layout verification", "100% accuracy test" | `kotlin-multiplatform-roborazzi` |
 | "Ktlint", "Detekt", "code quality", "formatting", "architecture rules", "CI gate" | `kotlin-multiplatform-code-quality` |
+| "benchmark", "microbenchmark", "kotlinx-benchmark", "performance number", "measure performance", "profile this", "@Benchmark", "JMH", "is this faster", "compare performance", "performance regression" | `kotlin-multiplatform-benchmark` |
 | "analytics", "event tracking", "track event", "Firebase Analytics", "screen tracking", "AnalyticsTracker", "event schema", "amplitude KMP", "mixpanel KMP" | `kotlin-multiplatform-analytics` |
 | "form validation", "field validation", "required field", "email validation", "inline error", "submit disabled", "async validation", "FieldState", "ValidationResult" | `kotlin-multiplatform-form-validation` |
 | "image loading", "Coil", "Coil 3", "AsyncImage", "network image", "image placeholder", "circular image", "avatar image", "image cache", "disk cache" | `kotlin-multiplatform-image-loading` |
@@ -580,6 +671,9 @@ When the user asks about one of these topics, invoke the corresponding skill:
 | "JNI", "JNI bridge", "native bridge", "JNIEnv", "Java_*", "GetStringUTFChars", "jbyteArray", "wrapper.cpp", "vendor C++", "3rd-party C++", "CMake JNI", "NDK", "call C++ from Kotlin/JVM", "native memory leak", "symbol conflict", "C-shim", "header compatibility" | `kotlin-multiplatform-jni-pro` |
 | Disambiguation — "platform-specific code", "iOS implementation", "CPointer", "cinterop", ".def file", "Kotlin/Native" → `kotlin-multiplatform-expect-actual` (NOT `kotlin-multiplatform-jni-pro`; JNI is JVM-only) | — |
 | "privacy policy", "terms and conditions", "terms of service", "GDPR", "CCPA", "data safety", "App Store privacy", "legal docs", "user data disclosure", "consent screen", "privacy screen", "play store legal", "app store compliance" | `kotlin-multiplatform-legal-docs` |
+| "ProGuard", "R8", "obfuscation", "minification", "keep rules", "proguard-rules.pro", "release build crash", "ClassNotFoundException release", "NoSuchMethodException release", "APK size", "minifyEnabled", "shrinkResources", "Koin keep", "Ktor keep", "SQLDelight keep", "kotlinx.serialization keep" | `kotlin-multiplatform-proguard-r8` |
+| "in-app purchases", "IAP", "subscriptions", "Play Billing", "StoreKit", "StoreKit 2", "paywall", "premium feature", "purchase flow", "restore purchases", "entitlement", "billing", "unlock premium", "one-time purchase", "auto-renewing subscription" | `kotlin-multiplatform-in-app-purchases` |
+| "Desktop target", "Compose Desktop", "CMP Desktop", "window management", "system tray", "file picker", "native menu bar", "keyboard shortcut Desktop", "drag and drop Desktop", "packaging Desktop", "distributable", "macOS app", "Windows app", "Linux app", "rememberWindowState", "jpackage", "dmg", "msi" | `kotlin-multiplatform-desktop-app` |
 
 ---
 
@@ -685,6 +779,9 @@ Keep the response concise — this skill routes to other skills, not implements.
 
 | Date | Change |
 |---|---|
+| 2026-07-11 | Added an invocation-map row routing "composition over inheritance"/"abstract class in commonMain"/"agent over-abstracting" to `kotlin-multiplatform-clean-architecture`'s new Composition Over Inheritance section — a real, recurring anti-pattern where an agent creates a public abstract class in commonMain requiring consumer inheritance. |
+| 2026-07-11 | Added `kotlin-multiplatform-docs-site` (62nd skill) — public GitHub Pages developer guide for a published library (MkDocs Material + Dokka HTML + compiler-verified snippet extraction), explicitly gated to library projects with real surface area, never apps or trivial libraries. Added to the Meta list and Skill Invocation Map. |
+| 2026-07-10 | Two real gaps closed: (1) added a "Improve the performance of X" decision tree — there was no routing path for performance requests at all (only a model-routing hint, not a skill-routing rule); routes by naming what X is and explicitly stops rather than guessing when X is unnamed or whole-app; added `kotlin-multiplatform-benchmark` (61st skill) as its "get a real number" branch. (2) Broadened "Which transport for a backend call?" to check for an existing Ktor client by content (`HttpClient(`/`safeRequest`/`NetworkResult<`) before the kRPC-specific grep — the prior version only checked kRPC symbols, so a project with a plain (differently-named) Ktor client and no kRPC could still fall through to a raw HTTP call; cross-referenced to `kotlin-multiplatform-network-layer`'s new Step 0. |
 | 2026-06-24 | Refined routing precedence for repo docs, downstream docs, changelogs, and navigation/deep-link collisions. |
 | 2026-06-24 | Added architecture-diagram / library-docs / app-docs routing keywords for `kotlin-multiplatform-project-docs-maintainer`. |
 | 2026-06-24 | Added explicit release routing keywords (`release project`, `cut release`, `ship version`) so project release requests route to `kotlin-multiplatform-release`. |
