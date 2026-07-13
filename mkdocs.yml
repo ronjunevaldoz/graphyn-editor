@@ -39,6 +39,8 @@ nav:
       - Remote Execution: guides/remote-execution.md
       - Embedding on Android: guides/embedding-android.md
       - Embedding on Web: guides/embedding-web.md
+      - Server Embedding: guides/server-embedding.md
+      - MCP Server: guides/mcp-server.md
   - Extending:
       - Plugin Authoring: guides/plugin-authoring.md
       - Custom Cards: guides/custom-cards.md
