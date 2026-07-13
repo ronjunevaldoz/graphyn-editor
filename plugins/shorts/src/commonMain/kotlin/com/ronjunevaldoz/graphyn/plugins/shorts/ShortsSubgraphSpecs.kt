@@ -57,11 +57,11 @@ public val storyboardSubgraphSpec: NodeSpec = NodeSpec(
 )
 
 /**
- * Optional diagnostic input ports shared by [storyboardValidateSpec] and [comparisonValidateSpec].
- * Each pair mirrors one stage of the Ollama request -> parse -> path -> parse chain built by
- * [storyboardGeneratorSubgraph]/[comparisonGeneratorSubgraph] (`request`/`outer`/`response`/the
- * final `json.parse`). None are required — a caller that doesn't wire them still validates
- * normally, it just loses the chain breakdown in the failure message. See [ollamaChainDiagnostics].
+ * Optional diagnostic input ports for [ollamaChainDiagnosticsSpec] — the sole consumer. Each pair
+ * mirrors one stage of the Ollama request -> parse -> path -> parse chain built by
+ * [ollamaFetchSubgraph] (`request`/`outer`/`response`/the final `json.parse`). None are required —
+ * a caller that doesn't wire them still gets a diagnostics string, it just loses that stage's
+ * breakdown. See [ollamaChainDiagnostics].
  */
 private val ollamaChainDiagnosticInputs = listOf(
     PortSpec("httpOk", WorkflowType.NullableType(WorkflowType.BooleanType), required = false, description = "io.http_request 'ok'"),
@@ -73,12 +73,41 @@ private val ollamaChainDiagnosticInputs = listOf(
     PortSpec("innerParseError", WorkflowType.NullableType(WorkflowType.StringType), required = false, description = "Model-JSON json.parse 'error'"),
 )
 
+/**
+ * Bundles [ollamaChainDiagnosticInputs] into one `diagnostics` string via [ollamaChainDiagnostics].
+ * Lives inside [ollamaFetchSubgraph] so a caller's validate node wires one string instead of one
+ * connection per pipeline stage.
+ */
+public val ollamaChainDiagnosticsSpec: NodeSpec = NodeSpec(
+    type = ShortsNodeTypes.OLLAMA_CHAIN_DIAGNOSTICS,
+    label = "Ollama Chain Diagnostics",
+    description = "Bundles the Ollama request/parse chain's per-stage ok/error signals into one summary string",
+    category = ShortsConstants.CATEGORY,
+    inputs = ollamaChainDiagnosticInputs,
+    outputs = listOf(PortSpec("diagnostics", WorkflowType.StringType, description = "One line per wired stage: 'Stage: ok' or 'Stage: FAILED (reason)'")),
+)
+
+public val ollamaFetchSubgraphSpec: NodeSpec = NodeSpec(
+    type = ShortsNodeTypes.OLLAMA_FETCH_SUBGRAPH,
+    label = "Ollama Fetch",
+    description = "Runs the Ollama request/parse chain and exposes the parsed value plus a bundled diagnostics summary",
+    category = ShortsConstants.CATEGORY,
+    inputs = emptyList(),
+    outputs = listOf(
+        PortSpec("value", WorkflowType.OpaqueType, description = "Parsed model JSON"),
+        PortSpec("diagnostics", WorkflowType.StringType, description = "Bundled per-stage diagnostics summary"),
+    ),
+)
+
 public val storyboardValidateSpec: NodeSpec = NodeSpec(
     type = ShortsNodeTypes.STORYBOARD_VALIDATE,
     label = "Storyboard Validate",
     description = "Validates the Ollama storyboard JSON and unloads the Ollama model (compiled, not scripted)",
     category = ShortsConstants.CATEGORY,
-    inputs = listOf(PortSpec("input", WorkflowType.OpaqueType, required = false)) + ollamaChainDiagnosticInputs,
+    inputs = listOf(
+        PortSpec("input", WorkflowType.OpaqueType, required = false),
+        PortSpec("diagnostics", WorkflowType.NullableType(WorkflowType.StringType), required = false, description = "Bundled Ollama chain diagnostics from ollamaFetchSubgraph"),
+    ),
     outputs = listOf(PortSpec("value", WorkflowType.OpaqueType, description = "Validated storyboard record")),
 )
 
@@ -87,7 +116,10 @@ public val comparisonValidateSpec: NodeSpec = NodeSpec(
     label = "Comparison Validate",
     description = "Validates the Ollama comparison-arc JSON and unloads the Ollama model (compiled, not scripted)",
     category = ShortsConstants.CATEGORY,
-    inputs = listOf(PortSpec("input", WorkflowType.OpaqueType, required = false)) + ollamaChainDiagnosticInputs,
+    inputs = listOf(
+        PortSpec("input", WorkflowType.OpaqueType, required = false),
+        PortSpec("diagnostics", WorkflowType.NullableType(WorkflowType.StringType), required = false, description = "Bundled Ollama chain diagnostics from ollamaFetchSubgraph"),
+    ),
     outputs = listOf(PortSpec("value", WorkflowType.OpaqueType, description = "Validated comparison-arc record")),
 )
 

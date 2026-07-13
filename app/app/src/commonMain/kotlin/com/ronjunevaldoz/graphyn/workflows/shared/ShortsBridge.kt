@@ -92,8 +92,7 @@ internal fun storyboardGeneratorSubgraph(topic: String) =
     com.ronjunevaldoz.graphyn.plugins.shorts.storyboardGeneratorSubgraph(topic)
 
 internal const val COMPARISON_PAIR_COUNT = com.ronjunevaldoz.graphyn.plugins.shorts.COMPARISON_PAIR_COUNT
-internal const val COMPARISON_FIELD_NODE_TYPE = ShortsNodeTypes.COMPARISON_FIELD
-internal const val COMPARISON_PAIR_FIELD_NODE_TYPE = ShortsNodeTypes.COMPARISON_PAIR_FIELD
+internal const val COMPARISON_FIELDS_NODE_TYPE = ShortsNodeTypes.COMPARISON_FIELDS
 internal const val COMPARISON_CAPTIONS_NODE_TYPE = ShortsNodeTypes.COMPARISON_CAPTIONS
 internal const val COMPARISON_PAIR_DURATION_NODE_TYPE = ShortsNodeTypes.COMPARISON_PAIR_DURATION
 

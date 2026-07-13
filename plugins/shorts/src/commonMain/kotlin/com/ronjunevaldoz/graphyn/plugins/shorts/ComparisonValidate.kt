@@ -34,9 +34,10 @@ public val comparisonValidateExecutor: NodeExecutor = NodeExecutor { inputs ->
         if (rawPairs == null) add("pairs")
     }
     check(missing.isEmpty()) {
+        val diagnostics = (inputs["diagnostics"] as? WorkflowValue.StringValue)?.value ?: "no chain diagnostics wired"
         "Ollama comparison-arc response is missing top-level field(s): ${missing.joinToString()}. " +
             "Check GRAPHYN_OLLAMA_HOST is reachable and the model is returning valid JSON. " +
-            "Chain: ${ollamaChainDiagnostics(inputs)}. Raw response: $raw"
+            "Chain: $diagnostics. Raw response: $raw"
     }
 
     // A blank string (Ollama returned the key with an empty value) must salvage the same as a

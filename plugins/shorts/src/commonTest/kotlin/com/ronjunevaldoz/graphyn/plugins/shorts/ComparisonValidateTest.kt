@@ -87,14 +87,20 @@ class ComparisonValidateTest {
 
     @Test
     fun malformedTopLevelWithChainDiagnosticsSurfacesRootCause() = runTest {
-        // Sibling to StoryboardValidateTest's equivalent case — comparisonGeneratorSubgraph wires
-        // the same chain diagnostic ports into demo.comparison.validate.
+        // Sibling to StoryboardValidateTest's equivalent case — comparisonGeneratorSubgraph's
+        // ollamaFetchSubgraph bundles chain diagnostics into one string before wiring it into
+        // demo.comparison.validate's "diagnostics" port.
+        val diagnostics = ollamaChainDiagnostics(
+            mapOf(
+                "innerParseOk" to WorkflowValue.BooleanValue(false),
+                "innerParseError" to WorkflowValue.StringValue("Unexpected token at offset 0"),
+            ),
+        )
         val error = assertFailsWith<IllegalStateException> {
             comparisonValidateExecutor.execute(
                 mapOf(
                     "input" to WorkflowValue.RecordValue(emptyMap()),
-                    "innerParseOk" to WorkflowValue.BooleanValue(false),
-                    "innerParseError" to WorkflowValue.StringValue("Unexpected token at offset 0"),
+                    "diagnostics" to WorkflowValue.StringValue(diagnostics),
                 ),
             )
         }

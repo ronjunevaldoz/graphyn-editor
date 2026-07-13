@@ -1,5 +1,6 @@
 package com.ronjunevaldoz.graphyn.plugins.shorts
 
+import com.ronjunevaldoz.graphyn.core.execution.NodeExecutor
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 
 /**
@@ -26,4 +27,13 @@ internal fun ollamaChainDiagnostics(inputs: Map<String, WorkflowValue>): String 
         if (ok) "$label: ok" else "$label: FAILED" + (error?.let { " ($it)" } ?: "")
     }
     return lines.ifEmpty { listOf("no chain diagnostics wired") }.joinToString(separator = "; ")
+}
+
+/**
+ * Node wrapper around [ollamaChainDiagnostics] — the sole consumer of the raw per-stage ok/error
+ * ports inside [ollamaFetchSubgraph], bundling them into the one `diagnostics` string that subgraph
+ * exposes outward.
+ */
+public val ollamaChainDiagnosticsExecutor: NodeExecutor = NodeExecutor { inputs ->
+    mapOf("diagnostics" to WorkflowValue.StringValue(ollamaChainDiagnostics(inputs)))
 }

@@ -7,45 +7,68 @@ import com.ronjunevaldoz.graphyn.core.model.WorkflowType
 import com.ronjunevaldoz.graphyn.core.model.WorkflowValue
 import com.ronjunevaldoz.graphyn.core.model.doubleOr
 import com.ronjunevaldoz.graphyn.core.model.intOr
-import com.ronjunevaldoz.graphyn.core.model.stringOr
 
-/** Extracts a single top-level string field (niche/visual_style/narration) from a validated
- * comparison-arc record. Sibling to [storyboardFieldSpec] — same shape, different record. */
-public val comparisonFieldSpec: NodeSpec = NodeSpec(
-    type = ShortsNodeTypes.COMPARISON_FIELD, label = "Comparison Field", category = ShortsConstants.CATEGORY,
-    description = "Extracts a single string field from a validated comparison-arc record.",
-    inputs = listOf(PortSpec("input", WorkflowType.OpaqueType, required = false), PortSpec("field", WorkflowType.StringType)),
-    outputs = listOf(PortSpec("result", WorkflowType.StringType)),
+/**
+ * Extracts niche/visual_style/narration from a validated comparison-arc record in one step —
+ * replaces 3 separate single-field extractor nodes that only ever appeared together at the
+ * comparison-short workflow's top level (never independently), same consolidation reasoning as
+ * [fluxPlainGenerationSubgraph]/[ollamaFetchSubgraph] elsewhere in this plugin.
+ */
+public val comparisonFieldsSpec: NodeSpec = NodeSpec(
+    type = ShortsNodeTypes.COMPARISON_FIELDS, label = "Comparison Fields", category = ShortsConstants.CATEGORY,
+    description = "Extracts niche, visual_style, and narration from a validated comparison-arc record.",
+    inputs = listOf(PortSpec("input", WorkflowType.OpaqueType, required = false)),
+    outputs = listOf(
+        PortSpec("niche", WorkflowType.StringType),
+        PortSpec("visual_style", WorkflowType.StringType),
+        PortSpec("narration", WorkflowType.StringType),
+    ),
 )
 
-/** Executor for [comparisonFieldSpec]. */
-public val comparisonFieldExecutor: NodeExecutor = NodeExecutor { inputs ->
-    val field = inputs.stringOr("field", "")
+/** Executor for [comparisonFieldsSpec]. */
+public val comparisonFieldsExecutor: NodeExecutor = NodeExecutor { inputs ->
     val record = (inputs["input"] as? WorkflowValue.RecordValue)?.fields
-    val value = (record?.get(field) as? WorkflowValue.StringValue)?.value.orEmpty()
-    mapOf("result" to WorkflowValue.StringValue(value))
+    fun field(name: String) = (record?.get(name) as? WorkflowValue.StringValue)?.value.orEmpty()
+    mapOf(
+        "niche" to WorkflowValue.StringValue(field("niche")),
+        "visual_style" to WorkflowValue.StringValue(field("visual_style")),
+        "narration" to WorkflowValue.StringValue(field("narration")),
+    )
 }
 
-/** Extracts one field of one pair (by index) from a validated comparison-arc record. */
-public val comparisonPairFieldSpec: NodeSpec = NodeSpec(
-    type = ShortsNodeTypes.COMPARISON_PAIR_FIELD, label = "Comparison Pair Field", category = ShortsConstants.CATEGORY,
-    description = "Extracts one field of one pair (by index) from a validated comparison-arc record.",
+/**
+ * Extracts label_a/label_b/prompt_a/prompt_b of one pair (by index) from a validated
+ * comparison-arc record in one step — replaces 4 separate single-field extractor nodes that only
+ * ever appeared together, once per [comparisonPairSubgraph] instance, same consolidation
+ * reasoning as [comparisonFieldsSpec] above.
+ */
+public val comparisonPairFieldsSpec: NodeSpec = NodeSpec(
+    type = ShortsNodeTypes.COMPARISON_PAIR_FIELDS, label = "Comparison Pair Fields", category = ShortsConstants.CATEGORY,
+    description = "Extracts label_a/label_b/prompt_a/prompt_b of one pair (by index) from a validated comparison-arc record.",
     inputs = listOf(
         PortSpec("input", WorkflowType.OpaqueType, required = false),
         PortSpec("index", WorkflowType.IntType),
-        PortSpec("field", WorkflowType.StringType),
     ),
-    outputs = listOf(PortSpec("result", WorkflowType.StringType)),
+    outputs = listOf(
+        PortSpec("label_a", WorkflowType.StringType),
+        PortSpec("label_b", WorkflowType.StringType),
+        PortSpec("prompt_a", WorkflowType.StringType),
+        PortSpec("prompt_b", WorkflowType.StringType),
+    ),
 )
 
-/** Executor for [comparisonPairFieldSpec]. */
-public val comparisonPairFieldExecutor: NodeExecutor = NodeExecutor { inputs ->
+/** Executor for [comparisonPairFieldsSpec]. */
+public val comparisonPairFieldsExecutor: NodeExecutor = NodeExecutor { inputs ->
     val index = (inputs["index"] as? WorkflowValue.IntValue)?.value ?: 0
-    val field = inputs.stringOr("field", "")
     val pairs = (inputs["input"] as? WorkflowValue.RecordValue)?.fields?.get("pairs") as? WorkflowValue.ListValue
     val pair = pairs?.items?.getOrNull(index) as? WorkflowValue.RecordValue
-    val value = (pair?.fields?.get(field) as? WorkflowValue.StringValue)?.value.orEmpty()
-    mapOf("result" to WorkflowValue.StringValue(value))
+    fun field(name: String) = (pair?.fields?.get(name) as? WorkflowValue.StringValue)?.value.orEmpty()
+    mapOf(
+        "label_a" to WorkflowValue.StringValue(field("label_a")),
+        "label_b" to WorkflowValue.StringValue(field("label_b")),
+        "prompt_a" to WorkflowValue.StringValue(field("prompt_a")),
+        "prompt_b" to WorkflowValue.StringValue(field("prompt_b")),
+    )
 }
 
 /**

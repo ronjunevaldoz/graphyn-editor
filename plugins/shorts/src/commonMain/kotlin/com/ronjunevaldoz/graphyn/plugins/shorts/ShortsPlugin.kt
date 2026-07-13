@@ -9,11 +9,12 @@ import com.ronjunevaldoz.graphyn.pluginapi.GraphynPluginRegistrar
 /**
  * Runtime plugin for the storyboard-first shorts pipeline. Registers the Ollama storyboard
  * generator/validator executors, the storyboard field/scene/caption extractors, the Ollama-unload
- * gate, and the scene/batch/storyboard subgraph-wrapper nodes.
+ * gate, and the scene/batch/storyboard/ollama-fetch subgraph-wrapper nodes.
  *
- * The three subgraph-wrapper executors each pick out a single terminal output port of their nested
- * definition ("video" / "value") — a bare untyped subgraph node has no registered executor and
- * would instead fall back to merging every unconsumed internal output into one confusing record.
+ * Each subgraph-wrapper executor picks out its nested definition's named terminal output port(s)
+ * ("video" / "value", or "value" + "diagnostics" for [ShortsNodeTypes.OLLAMA_FETCH_SUBGRAPH]) — a
+ * bare untyped subgraph node has no registered executor and would instead fall back to merging every
+ * unconsumed internal output into one confusing record.
  *
  * ```kotlin
  * registry.install(ShortsPlugin)
@@ -34,6 +35,8 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerNodeSpec(storyboardSubgraphSpec)
         registrar.registerNodeSpec(storyboardValidateSpec)
         registrar.registerNodeSpec(ollamaUnloadSpec)
+        registrar.registerNodeSpec(ollamaFetchSubgraphSpec)
+        registrar.registerNodeSpec(ollamaChainDiagnosticsSpec)
         registrar.registerNodeSpec(ollamaUrlSpec)
         registrar.registerNodeSpec(ollamaBodySpec)
         registrar.registerNodeSpec(storyboardFieldSpec)
@@ -42,8 +45,8 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerNodeSpec(ollamaGenerateSpec)
         registrar.registerNodeSpec(comparisonOllamaBodySpec)
         registrar.registerNodeSpec(comparisonValidateSpec)
-        registrar.registerNodeSpec(comparisonFieldSpec)
-        registrar.registerNodeSpec(comparisonPairFieldSpec)
+        registrar.registerNodeSpec(comparisonFieldsSpec)
+        registrar.registerNodeSpec(comparisonPairFieldsSpec)
         registrar.registerNodeSpec(comparisonCaptionsSpec)
         registrar.registerNodeSpec(comparisonPairDurationSpec)
         registrar.registerNodeSpec(comparisonMetadataSpec)
@@ -60,6 +63,13 @@ public object ShortsPlugin : GraphynPlugin {
         }
         registrar.registerExecutor(ShortsNodeTypes.STORYBOARD_VALIDATE, storyboardValidateExecutor)
         registrar.registerExecutor(ShortsNodeTypes.OLLAMA_UNLOAD, ollamaUnloadExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.OLLAMA_FETCH_SUBGRAPH) { inputs ->
+            mapOf(
+                "value" to (inputs["value"] ?: WorkflowValue.NullValue),
+                "diagnostics" to (inputs["diagnostics"] ?: WorkflowValue.StringValue("no chain diagnostics wired")),
+            )
+        }
+        registrar.registerExecutor(ShortsNodeTypes.OLLAMA_CHAIN_DIAGNOSTICS, ollamaChainDiagnosticsExecutor)
         registrar.registerExecutor(ShortsNodeTypes.OLLAMA_URL, ollamaUrlExecutor)
         registrar.registerExecutor(ShortsNodeTypes.OLLAMA_BODY, ollamaBodyExecutor)
         registrar.registerExecutor(ShortsNodeTypes.STORYBOARD_FIELD, storyboardFieldExecutor)
@@ -68,8 +78,8 @@ public object ShortsPlugin : GraphynPlugin {
         registrar.registerExecutor(ShortsNodeTypes.OLLAMA_GENERATE, ollamaGenerateExecutor)
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_OLLAMA_BODY, comparisonOllamaBodyExecutor)
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_VALIDATE, comparisonValidateExecutor)
-        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_FIELD, comparisonFieldExecutor)
-        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_PAIR_FIELD, comparisonPairFieldExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_FIELDS, comparisonFieldsExecutor)
+        registrar.registerExecutor(ShortsNodeTypes.COMPARISON_PAIR_FIELDS, comparisonPairFieldsExecutor)
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_CAPTIONS, comparisonCaptionsExecutor)
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_PAIR_DURATION, comparisonPairDurationExecutor)
         registrar.registerExecutor(ShortsNodeTypes.COMPARISON_METADATA, comparisonMetadataExecutor)

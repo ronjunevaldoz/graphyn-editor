@@ -10,11 +10,15 @@ class ShortsBuildersTest {
     @Test
     fun storyboardGeneratorWiresOllamaCallThroughValidate() {
         val wf = storyboardGeneratorSubgraph("origami cranes")
-        assertTrue(wf.nodes.any { it.type == "io.http_request" })
-        assertTrue(wf.nodes.any { it.type == ShortsNodeTypes.OLLAMA_URL })
-        assertTrue(wf.nodes.any { it.type == ShortsNodeTypes.OLLAMA_BODY })
+        assertTrue(wf.nodes.any { it.type == ShortsNodeTypes.OLLAMA_FETCH_SUBGRAPH })
         assertTrue(wf.nodes.any { it.type == ShortsNodeTypes.STORYBOARD_VALIDATE })
-        val body = wf.nodes.first { it.id == "ollama_body" }
+
+        val fetch = wf.nodes.first { it.type == ShortsNodeTypes.OLLAMA_FETCH_SUBGRAPH }.subgraph!!
+        assertTrue(fetch.nodes.any { it.type == "io.http_request" })
+        assertTrue(fetch.nodes.any { it.type == ShortsNodeTypes.OLLAMA_URL })
+        assertTrue(fetch.nodes.any { it.type == ShortsNodeTypes.OLLAMA_BODY })
+        assertTrue(fetch.nodes.any { it.type == ShortsNodeTypes.OLLAMA_CHAIN_DIAGNOSTICS })
+        val body = fetch.nodes.first { it.id == "ollama_body" }
         assertEquals(WorkflowValue.StringValue("origami cranes"), body.config["topic"])
     }
 

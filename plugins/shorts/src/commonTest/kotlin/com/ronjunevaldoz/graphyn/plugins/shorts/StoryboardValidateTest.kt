@@ -33,14 +33,20 @@ class StoryboardValidateTest {
     fun malformedTopLevelWithChainDiagnosticsSurfacesRootCause() = runTest {
         // Reproduces the real incident: an unreachable Ollama host means the top-level fields are
         // missing, but previously the only diagnostic was "Raw response: null" — the actual HTTP
-        // failure was lost three layers upstream. Wiring the chain ports (as
-        // storyboardGeneratorSubgraph now does) must put the root cause in the thrown message.
+        // failure was lost three layers upstream. ollamaFetchSubgraph bundles the chain's per-stage
+        // signals into one "diagnostics" string (as storyboardGeneratorSubgraph now wires in), which
+        // must put the root cause in the thrown message.
+        val diagnostics = ollamaChainDiagnostics(
+            mapOf(
+                "httpOk" to WorkflowValue.BooleanValue(false),
+                "httpError" to WorkflowValue.StringValue("Connection refused"),
+            ),
+        )
         val error = assertFailsWith<IllegalStateException> {
             storyboardValidateExecutor.execute(
                 mapOf(
                     "input" to WorkflowValue.RecordValue(emptyMap()),
-                    "httpOk" to WorkflowValue.BooleanValue(false),
-                    "httpError" to WorkflowValue.StringValue("Connection refused"),
+                    "diagnostics" to WorkflowValue.StringValue(diagnostics),
                 ),
             )
         }

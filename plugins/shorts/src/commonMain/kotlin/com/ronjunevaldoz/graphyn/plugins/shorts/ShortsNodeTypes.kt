@@ -18,6 +18,17 @@ public object ShortsNodeTypes {
     /** Ollama `/api/generate` URL builder. */
     public const val OLLAMA_URL: String = "demo.storyboard.ollama_url"
 
+    /** Fetch+parse subgraph wrapper — runs the Ollama request/outer-parse/response-path/inner-parse
+     * chain shared by [storyboardGeneratorSubgraph] and [comparisonGeneratorSubgraph], exposing just
+     * the parsed `value` and a bundled `diagnostics` summary instead of every stage's raw ok/error
+     * ports. See [OLLAMA_CHAIN_DIAGNOSTICS]. */
+    public const val OLLAMA_FETCH_SUBGRAPH: String = "demo.subgraph.ollama_fetch"
+
+    /** Bundles the Ollama request/parse chain's per-stage ok/error signals into one `diagnostics`
+     * string via [ollamaChainDiagnostics] — the sole internal consumer of those raw ports, so a
+     * generator subgraph's validate node only needs one wire instead of one per stage. */
+    public const val OLLAMA_CHAIN_DIAGNOSTICS: String = "demo.ollama.chain_diagnostics"
+
     /** Ollama `/api/generate` request-body builder for the storyboard prompt. */
     public const val OLLAMA_BODY: String = "demo.storyboard.ollama_body"
 
@@ -51,12 +62,12 @@ public object ShortsNodeTypes {
      * [STORYBOARD_VALIDATE] with the same salvage/fallback discipline, different shape. */
     public const val COMPARISON_VALIDATE: String = "demo.comparison.validate"
 
-    /** Extracts one top-level string field (niche/visual_style/narration) from a validated
-     * comparison-arc record. */
-    public const val COMPARISON_FIELD: String = "demo.comparison.field"
+    /** Extracts niche/visual_style/narration from a validated comparison-arc record in one step. */
+    public const val COMPARISON_FIELDS: String = "demo.comparison.fields"
 
-    /** Extracts one field of one pair (by index) from a validated comparison-arc record. */
-    public const val COMPARISON_PAIR_FIELD: String = "demo.comparison.pair_field"
+    /** Extracts label_a/label_b/prompt_a/prompt_b of one pair (by index) from a validated
+     * comparison-arc record in one step. */
+    public const val COMPARISON_PAIR_FIELDS: String = "demo.comparison.pair_fields"
 
     /** Builds caption records (text/start_ms/end_ms) from a validated comparison-arc's pairs —
      * each pair contributes a question beat then an answer beat. */

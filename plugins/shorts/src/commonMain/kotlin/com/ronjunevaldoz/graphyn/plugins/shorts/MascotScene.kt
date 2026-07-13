@@ -8,13 +8,10 @@ import com.ronjunevaldoz.graphyn.core.model.doubleValue as d
 import com.ronjunevaldoz.graphyn.core.model.intValue as i
 import com.ronjunevaldoz.graphyn.core.model.stringValue as s
 
-// Same base Flux schnell checkpoint as characterSheetSubgraphDynamic — a mascot illustration is a
-// plain generation, not an edit, so it doesn't need FLUX Kontext's extra sampling steps or
-// ref-image conditioning overhead just to produce the reference itself.
-private const val MASCOT_DIFFUSION = "/models/flux/diffusion/flux1-schnell-Q4_K_S.gguf"
-private const val MASCOT_CLIP_L = "/models/flux/text_encoder/clip_l.safetensors"
-private const val MASCOT_T5XXL = "/models/flux/text_encoder/t5xxl_Q5_K_M.gguf"
-private const val MASCOT_VAE = "/models/flux/vae/ae.safetensors"
+// The base mascot reference is a plain FLUX schnell generation, same checkpoint as
+// characterSheetSubgraphDynamic/comparisonImageSubgraph — see fluxPlainGenerationSubgraph
+// (FluxPlainGeneration.kt), which [mascotSubgraph] below now delegates to, for the shared
+// FLUX_DIFFUSION/FLUX_CLIP_L/FLUX_T5XXL/FLUX_VAE constants (ImageMotionScene.kt).
 
 /**
  * Default original mascot design, not tied to any specific existing character — a generic,
@@ -114,76 +111,19 @@ public fun mascotSubgraph(
     height: Int = ShortsConstants.HEIGHT,
     seed: Int = 42,
     useLlmPromptEnhance: Boolean = false,
-): WorkflowDefinition = WorkflowDefinition(
+): WorkflowDefinition = fluxPlainGenerationSubgraph(
     id = id,
     name = "Mascot Base",
-    nodes = buildList {
-        add(NodeRef("diffusion", "sd.diffusion", config = mapOf("diffusion_model_path" to s(MASCOT_DIFFUSION))))
-        add(NodeRef("encoders", "sd.encoders", config = mapOf("clip_l_path" to s(MASCOT_CLIP_L), "t5xxl_path" to s(MASCOT_T5XXL))))
-        add(NodeRef("vae", "sd.vae", config = mapOf("vae_path" to s(MASCOT_VAE))))
-        add(NodeRef("model", "sd.model"))
-        add(NodeRef("ctx", "sd.context", config = mapOf("diffusion_flash_attn" to b(true), "n_threads" to i(-1))))
-        if (useLlmPromptEnhance) {
-            // The LLM node expects one rough description to expand, not separate lighting/details
-            // fields — fold them into the description text instead of dropping them.
-            add(NodeRef("promptEnhance", ShortsNodeTypes.PROMPT_ENHANCE_LLM, config = mapOf(
-                "prompt" to s("$mascotDescription, soft even lighting, plain white background, clean subject separation, single character only, no text, no props"),
-            )))
-            // Same pattern as storyboardGeneratorSubgraph/comparisonGeneratorSubgraph — read the
-            // real deployed model name from the environment instead of relying on this node's own
-            // internal "llama3.1" fallback, which isn't installed on this project's actual Ollama
-            // deployment (confirmed: a raw call with the unresolved default returned "model
-            // 'llama3.1' not found", meaning the enhancer was silently falling back to the raw
-            // prompt on every single call until this was wired).
-            add(NodeRef("ollamaModel", "env.read", config = mapOf("name" to s("GRAPHYN_OLLAMA_MODEL"))))
-            // Same fix, same reason, for the host: this node's own internal default
-            // (http://localhost:11434) isn't the real deployment either — confirmed via a
-            // real run that failed with FileNotFoundException against that exact default URL.
-            add(NodeRef("ollamaHost", "env.read", config = mapOf("name" to s("GRAPHYN_OLLAMA_HOST"))))
-        } else {
-            add(NodeRef("promptEnhance", ShortsConstants.PROMPT_ENHANCE_NODE_TYPE, config = mapOf(
-                "prompt" to s(mascotDescription),
-                "lighting" to s("soft even lighting, plain white background"),
-                "details" to s("clean subject separation, single character only, no text, no props"),
-            )))
-        }
-        add(NodeRef("sampler", "sd.sampler", config = mapOf(
-            "sample_method" to s("euler"),
-            "scheduler" to s("discrete"),
-            "sample_steps" to i(4),
-            "txt_cfg" to d(1.0),
-            "distilled_guidance" to d(3.5),
-            "flow_shift" to d(3.0),
-        )))
-        add(NodeRef("txt2img", "sd.txt2img", config = mapOf(
-            "negative_prompt" to s(""),
-            "width" to i(width),
-            "height" to i(height),
-            "seed" to i(seed),
-            "batch_count" to i(1),
-        )))
-        add(NodeRef("preview", "preview.view"))
-    },
-    connections = buildList {
-        add(ConnectionRef("diffusion", "diffusion", "model", "diffusion"))
-        add(ConnectionRef("encoders", "encoders", "model", "encoders"))
-        add(ConnectionRef("vae", "vae", "model", "vae"))
-        add(ConnectionRef("model", "model", "ctx", "model"))
-        if (useLlmPromptEnhance) {
-            add(ConnectionRef("ollamaModel", "value", "promptEnhance", "model"))
-            add(ConnectionRef("ollamaHost", "value", "promptEnhance", "host"))
-        }
-        add(ConnectionRef("promptEnhance", "prompt", "txt2img", "prompt"))
-        add(ConnectionRef("promptEnhance", "negative_prompt", "txt2img", "negative_prompt"))
-        add(ConnectionRef("ctx", "context", "txt2img", "context"))
-        add(ConnectionRef("sampler", "sampler", "txt2img", "sampler"))
-        // SHORTS_SCENE_SUBGRAPH_NODE_TYPE's wrapper executor reads the subgraph's free output by
-        // the fixed key "value" (see comparisonImageSubgraph for the same pattern) — without this
-        // terminal passthrough, the free output stays keyed "image" (txt2img's own port name) and
-        // the wrapper silently resolves to NullValue instead of throwing, which is exactly what
-        // broke mascotSave/mascotImport in the first real end-to-end run.
-        add(ConnectionRef("txt2img", "image", "preview", "value"))
-    },
+    width = width,
+    height = height,
+    prompt = mascotDescription,
+    lighting = "soft even lighting, plain white background",
+    details = "clean subject separation, single character only, no text, no props",
+    seed = seed,
+    useLlmPromptEnhance = useLlmPromptEnhance,
+    // The base mascot's own raw path is consumed as sd.id_cond's ref_images by
+    // mascotPointEditSubgraph — importing it here to a real image handle would break that cast, so
+    // importResult stays false (the default).
 )
 
 /**

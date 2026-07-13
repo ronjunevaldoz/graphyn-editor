@@ -41,9 +41,10 @@ public val storyboardValidateExecutor: NodeExecutor = NodeExecutor { inputs ->
         if (rawScenes == null) add("scenes")
     }
     check(missing.isEmpty()) {
+        val diagnostics = (inputs["diagnostics"] as? WorkflowValue.StringValue)?.value ?: "no chain diagnostics wired"
         "Ollama storyboard response is missing top-level field(s): ${missing.joinToString()}. " +
             "Check GRAPHYN_OLLAMA_HOST is reachable and the model is returning valid JSON. " +
-            "Chain: ${ollamaChainDiagnostics(inputs)}. Raw response: $raw"
+            "Chain: $diagnostics. Raw response: $raw"
     }
 
     val scenes = List(STORYBOARD_SCENE_COUNT) { index ->

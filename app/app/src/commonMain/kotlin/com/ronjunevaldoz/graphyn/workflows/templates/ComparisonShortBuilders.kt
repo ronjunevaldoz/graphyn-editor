@@ -38,9 +38,7 @@ internal fun comparisonShortNodes(
     // Extracted ONCE here and fanned out to every pair, instead of each comparisonPairSubgraph
     // instance re-extracting the same value 4 times (niche/visualStyle don't vary per pair, unlike
     // labelA/labelB/promptA/promptB — see comparisonPairSubgraph's doc comment).
-    add(NodeRef("niche", COMPARISON_FIELD_NODE_TYPE, config = mapOf("field" to s("niche"))))
-    add(NodeRef("visualStyle", COMPARISON_FIELD_NODE_TYPE, config = mapOf("field" to s("visual_style"))))
-    add(NodeRef("narration", COMPARISON_FIELD_NODE_TYPE, config = mapOf("field" to s("narration"))))
+    add(NodeRef("fields", COMPARISON_FIELDS_NODE_TYPE))
     add(NodeRef("captionsScript", COMPARISON_CAPTIONS_NODE_TYPE))
     add(NodeRef("narrate", "media.text_to_speech.say", config = mapOf("voice_id" to s("Samantha"), "speed" to d(1.0))))
     add(NodeRef("pairDuration", COMPARISON_PAIR_DURATION_NODE_TYPE))
@@ -61,11 +59,9 @@ internal fun comparisonShortNodes(
 }
 
 internal fun comparisonShortConnections() = buildList {
-    add(ConnectionRef("comparison", "value", "niche", "input"))
-    add(ConnectionRef("comparison", "value", "visualStyle", "input"))
-    add(ConnectionRef("comparison", "value", "narration", "input"))
+    add(ConnectionRef("comparison", "value", "fields", "input"))
     add(ConnectionRef("comparison", "value", "captionsScript", "input"))
-    add(ConnectionRef("narration", "result", "narrate", "text"))
+    add(ConnectionRef("fields", "narration", "narrate", "text"))
     add(ConnectionRef("narrate", "duration_ms", "pairDuration", "narration_duration_ms"))
     add(ConnectionRef("pairDuration", "result", "captionsScript", "pair_duration_ms"))
     // Base mascot generates once; the left-pointing edit conditions on the base's raw image output
@@ -81,8 +77,8 @@ internal fun comparisonShortConnections() = buildList {
         val previous = if (index == 0) "mascotRight" else "pair${index - 1}"
         add(ConnectionRef(previous, "video", "pair$index", "gate"))
         add(ConnectionRef("comparison", "value", "pair$index", "input"))
-        add(ConnectionRef("niche", "result", "pair$index", "niche"))
-        add(ConnectionRef("visualStyle", "result", "pair$index", "visual_style"))
+        add(ConnectionRef("fields", "niche", "pair$index", "niche"))
+        add(ConnectionRef("fields", "visual_style", "pair$index", "visual_style"))
         // mascotLeft/mascotRight already import their own raw path into a real image handle
         // internally (see mascotPointEditSubgraph) — no separate top-level Import node needed.
         add(ConnectionRef("mascot${directionName(index % COMPARISON_MASCOT_DIRECTION_COUNT)}", "video", "pair$index", "mascot"))

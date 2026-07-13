@@ -10,11 +10,11 @@ import com.ronjunevaldoz.graphyn.core.model.stringValue as s
  * Builds one comparison pair once so the outer workflow can loop without repeating the same
  * image-generation, import, and layout wiring four times.
  *
- * `niche`/`visual_style` are NOT extracted in here (unlike `labelA`/`labelB`/`promptA`/`promptB`,
- * which genuinely differ per [pairIndex]) — niche/visual_style are the *same* value across every
- * pair, so re-extracting them 4 times (once per pair instance) was pure duplication. The caller
- * extracts them once and wires them into this subgraph node's own `niche`/`visual_style` ports;
- * `imageA`/`imageB`'s same-named inner ports are left unconnected here and resolve via the
+ * `niche`/`visual_style` are NOT extracted in here (unlike `fields`' label_a/label_b/prompt_a/
+ * prompt_b, which genuinely differ per [pairIndex]) — niche/visual_style are the *same* value
+ * across every pair, so re-extracting them 4 times (once per pair instance) was pure duplication.
+ * The caller extracts them once and wires them into this subgraph node's own `niche`/`visual_style`
+ * ports; `imageA`/`imageB`'s same-named inner ports are left unconnected here and resolve via the
  * free-boundary-port fallback (`buildInputMap`'s `externalInputs`, `WorkflowExecutionScheduling.kt`)
  * — the same mechanism already used for `gate`/`mascot`/`duration_ms` below, just for two more
  * port names. See [comparisonShortNodes]/[comparisonShortConnections] in the app module for the
@@ -39,10 +39,7 @@ public fun comparisonPairSubgraph(
     id = id,
     name = "Comparison Pair",
     nodes = buildList {
-        add(NodeRef("labelA", ShortsNodeTypes.COMPARISON_PAIR_FIELD, config = mapOf("index" to i(pairIndex), "field" to s("label_a"))))
-        add(NodeRef("labelB", ShortsNodeTypes.COMPARISON_PAIR_FIELD, config = mapOf("index" to i(pairIndex), "field" to s("label_b"))))
-        add(NodeRef("promptA", ShortsNodeTypes.COMPARISON_PAIR_FIELD, config = mapOf("index" to i(pairIndex), "field" to s("prompt_a"))))
-        add(NodeRef("promptB", ShortsNodeTypes.COMPARISON_PAIR_FIELD, config = mapOf("index" to i(pairIndex), "field" to s("prompt_b"))))
+        add(NodeRef("fields", ShortsNodeTypes.COMPARISON_PAIR_FIELDS, config = mapOf("index" to i(pairIndex))))
         // comparisonImageSubgraph now imports its own raw path into a real image handle
         // internally (see its own doc comment) — no separate top-level Import node needed here.
         add(NodeRef("imageA", ShortsNodeTypes.SCENE_SUBGRAPH, subgraph = comparisonImageSubgraph(id = "$id-a", width = width, height = height)))
@@ -56,22 +53,22 @@ public fun comparisonPairSubgraph(
         }
     },
     connections = buildList {
-        // labelA/labelB/promptA/promptB's "input" port, imageA/imageB's "niche"/"visual_style"
-        // ports, imageA's "gate" port, and layout's "mascot"/"duration_ms" ports are deliberately
-        // left unconnected here — they resolve via the free-boundary-port fallback (buildInputMap's
-        // externalInputs), which fills an unconnected inner port by name from this subgraph node's
-        // own resolved inputs at the outer level. Wiring them to a literal ConnectionRef with a
-        // source id like "input" or "gate" doesn't work: that id isn't a real node in this
-        // subgraph's `nodes` list, so topologicalLayers() counts the edge as permanently
-        // unsatisfiable incoming, which trips its cycle check. Confirmed via a real end-to-end run
-        // (pair0 failed with "Workflow contains a cycle") before those lines were removed.
+        // "fields"' "input" port, imageA/imageB's "niche"/"visual_style" ports, imageA's "gate"
+        // port, and layout's "mascot"/"duration_ms" ports are deliberately left unconnected here —
+        // they resolve via the free-boundary-port fallback (buildInputMap's externalInputs), which
+        // fills an unconnected inner port by name from this subgraph node's own resolved inputs at
+        // the outer level. Wiring them to a literal ConnectionRef with a source id like "input" or
+        // "gate" doesn't work: that id isn't a real node in this subgraph's `nodes` list, so
+        // topologicalLayers() counts the edge as permanently unsatisfiable incoming, which trips its
+        // cycle check. Confirmed via a real end-to-end run (pair0 failed with "Workflow contains a
+        // cycle") before those lines were removed.
         add(ConnectionRef("imageA", "video", "imageB", "gate"))
-        add(ConnectionRef("promptA", "result", "imageA", "prompt"))
-        add(ConnectionRef("promptB", "result", "imageB", "prompt"))
+        add(ConnectionRef("fields", "prompt_a", "imageA", "prompt"))
+        add(ConnectionRef("fields", "prompt_b", "imageB", "prompt"))
         add(ConnectionRef("imageA", "video", "layout", "image_a"))
         add(ConnectionRef("imageB", "video", "layout", "image_b"))
-        add(ConnectionRef("labelA", "result", "layout", "label_a"))
-        add(ConnectionRef("labelB", "result", "layout", "label_b"))
+        add(ConnectionRef("fields", "label_a", "layout", "label_a"))
+        add(ConnectionRef("fields", "label_b", "layout", "label_b"))
         // "layout" is itself a SCENE_SUBGRAPH node, so its own output already arrives keyed "video"
         // (that wrapper's executor relabels its inner "value" free output to "video" — see
         // ShortsPlugin.kt). Without this terminal pass-through, this subgraph's free output would
