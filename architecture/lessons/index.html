@@ -1,0 +1,2325 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Kotlin Multiplatform workflow editor library">
+      
+      
+      
+        <link rel="canonical" href="https://ronjunevaldoz.github.io/graphyn-editor/architecture/lessons/">
+      
+      
+        <link rel="prev" href="../roadmap/">
+      
+      
+        <link rel="next" href="../../guides/analytics-hooks/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Lessons Learned - Graphyn</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#engineering-lessons" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Graphyn" class="md-header__button md-logo" aria-label="Graphyn" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Graphyn
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Lessons Learned
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ronjunevaldoz/graphyn-editor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    graphyn-editor
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="/graphyn-editor/app/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Live Demo
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="/graphyn-editor/api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/running-locally/" class="md-tabs__link">
+          
+  
+  
+  Integration Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/plugin-authoring/" class="md-tabs__link">
+          
+  
+  
+  Extending
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/type-system/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/analytics-hooks/" class="md-tabs__link">
+          
+  
+  
+  Production
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../test-coverage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Testing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Graphyn" class="md-nav__button md-logo" aria-label="Graphyn" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Graphyn
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ronjunevaldoz/graphyn-editor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    graphyn-editor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="/graphyn-editor/app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="/graphyn-editor/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/running-locally/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Locally
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/persistence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/read-only-mode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read-only Mode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/remote-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding-android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding on Android
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding-web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding on Web
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/server-embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server Embedding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/mcp-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extending
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Extending
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/plugin-authoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Authoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/custom-cards/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/theming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/plugin-versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/type-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Type System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/keyboard-shortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/serialization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serialization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../editor-panels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Editor Panels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../node-design-research/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Design Research
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lessons Learned
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lessons Learned
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-and-ai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow and AI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stable-diffusion-and-media-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stable Diffusion and Media Runtime
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stable Diffusion and Media Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#known-good-performance-baselines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known-good performance baselines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-issues-open-as-of-this-writing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues (open as of this writing)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#catalog-and-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catalog and Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publishing-and-gradle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing and Gradle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-and-layout-bugs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State and Layout Bugs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extracting-the-shorts-pipeline-into-a-published-plugin-step-02" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extracting the shorts pipeline into a published plugin (step 0.2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/analytics-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analytics Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../test-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#workflow-and-ai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow and AI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stable-diffusion-and-media-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stable Diffusion and Media Runtime
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stable Diffusion and Media Runtime">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#known-good-performance-baselines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known-good performance baselines
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#known-issues-open-as-of-this-writing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known issues (open as of this writing)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#catalog-and-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catalog and Layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publishing-and-gradle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing and Gradle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-and-layout-bugs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State and Layout Bugs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extracting-the-shorts-pipeline-into-a-published-plugin-step-02" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extracting the shorts pipeline into a published plugin (step 0.2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="engineering-lessons">Engineering Lessons</h1>
+<p>Short index of durable lessons discovered while building Graphyn. Keep the canonical guidance in the code or in the more specific architecture/reference docs linked below.</p>
+<h2 id="workflow-and-ai">Workflow and AI</h2>
+<ul>
+<li>Canonical settings keys should be snake_case, with legacy aliases only for compatibility.</li>
+<li>AI-generated workflows should emit <code>nodePositions</code>; auto-layout should stay a fallback.</li>
+<li>AI assistants are more useful when they can see node descriptions and layout state.</li>
+<li>Shorts prompt shaping belongs in a real node contract, not inline <code>script.eval</code> glue.</li>
+<li>Scene prompt scripts should fall back across caption/title/topic fields so one missing <code>prompt</code> key does not break the whole shorts pipeline.</li>
+<li>Comparison shorts had a hidden minimum length from the per-pair duration floor; if the result feels too long, check the floor and pair count before assuming the narration is the only driver.</li>
+<li>Reusable subgraphs work best when they expose one clean boundary value.</li>
+<li>A host app can silently shadow a shared canvas renderer with a local <code>registerCanvasCard</code> override; if a new card is not showing up, check the app/plugin registry before assuming the shared factory is wrong.</li>
+<li>Editor connection creation should enforce single incoming connections by default and only allow fan-in on list-typed inputs; otherwise the graph becomes valid only after a validator pass.</li>
+<li>Intra-node progress (e.g. diffusion steps) is reported via a <code>ProgressReporter</code> <code>CoroutineContext.Element</code> the engine installs around each <code>executor.execute()</code> — executors call the opt-in <code>suspend reportProgress(step, total, phase)</code>; this keeps <code>NodeExecutor</code>'s single-method <code>fun interface</code> SAM signature intact so the dozens of <code>NodeExecutor { }</code> lambda call sites are untouched. Reports surface as <code>ExecutionEvent.Progress</code> on the same <code>onEvent</code>/<code>ExecutionStreamMessage</code> stream as <code>Started</code>/<code>Succeeded</code>, so SSE (<code>GET /executions/{id}/events</code>) carries them with zero server change. Adding the sealed case only breaks <em>exhaustive</em> <code>when(event)</code> blocks (one existed: <code>GraphynEditorExecutionActions</code>); <code>.any {}</code>-style predicate tests are source-compatible.</li>
+<li><code>media.video_stitch</code> needs video clips, not stills; generate clips first, then stitch.</li>
+<li>Nullable workflow fields should round-trip as <code>NullValue</code>, not empty strings.</li>
+<li>Script-based media templates need the script plugin in the JVM runtime bundle.</li>
+<li>Desktop-only demo templates should be validated with the desktop runtime plugin set, or common-runtime tests will report missing-node false positives.</li>
+<li>Subgraph boundary ports still need explicit validation handling when they are intentionally injected.</li>
+</ul>
+<h2 id="stable-diffusion-and-media-runtime">Stable Diffusion and Media Runtime</h2>
+<ul>
+<li>Stable Diffusion workers should be selected by settings, not hardcoded hostnames.</li>
+<li>Keep the worker adapter behind one HTTP client and vary only URL plus API key per environment.</li>
+<li>Readiness, job polling, and cancelation checks should stay aligned with the worker OpenAPI contract.</li>
+<li><code>script.eval</code>'s JSR-223 engine must be created fresh per call, not cached as a singleton — a
+  shared engine's compiler state corrupts after a few different scripts, crashing later ones
+  (even trivial ones) with an IR backend error unrelated to script complexity.</li>
+<li>Image-edit models (Qwen-Image-Edit, FLUX Kontext) condition on the source image as a <strong>reference
+  image</strong> (<code>sd.id_cond.ref_images</code>), not <code>sd.img2img</code>'s denoising-strength <code>init_image</code> — confirmed
+  against both models' own stable-diffusion.cpp reference commands, neither of which ever sets
+  <code>--init-img</code>/<code>--strength</code>. Using img2img here silently ignores the source image's content
+  entirely (at strength 1.0, 0.75, <em>and</em> 0.6 — strength wasn't the variable) and generates an
+  unrelated image from the prompt alone. No error, just wrong output — validate any new
+  image-conditioning wiring by eye, not just "did it run."</li>
+<li>Any client-side image/file path sent to server-sd must be staged (uploaded, then swapped to the
+  server-returned path) before being included in the request JSON <em>and</em> in the pre-flight
+  existence check — a local path slipping through either step fails silently (wrong output) rather
+  than loudly (a clear "missing on server" error). <code>sd.id_cond.ref_images</code> was missed on both counts
+  even after <code>init_image</code>/<code>control_image</code>/<code>mask_image</code> were handled correctly.</li>
+<li>A CLI/override mechanism that always serializes overrides as strings will silently fail for any
+  non-string-typed port (a <code>strength=0.6</code> override landing on a <code>Double</code> field falls back to the
+  port's default instead of applying) — convert to match the existing config value's type instead.</li>
+<li>Flux's <code>t5xxl</code> quant choice is a real VRAM budget line item, not a rounding error: swapping
+  <code>Q5_K_M</code> (3.4GB) for <code>Q3_K_S</code> (2.1GB) took a Kontext edit from 30+ minutes (CPU-offloaded, &lt;100MB
+  VRAM free) to 63 seconds on the same 12GB card — the "encoder" is often the actual long pole once
+  a diffusion checkpoint is quantized down already.</li>
+<li><code>docker exec</code> over a remote TCP daemon connection can hang indefinitely (attached <em>and</em> detached)
+  even when <code>docker ps</code>/<code>docker version</code> on the same connection return instantly — <code>exec</code> needs an
+  HTTP connection-hijack the intervening network path may not relay correctly. Don't assume <code>exec</code>
+  works just because other Docker API calls do.</li>
+</ul>
+<h3 id="known-good-performance-baselines">Known-good performance baselines</h3>
+<p>Reference points for "is this run just slow, or is something actually wrong" — on the 12GB RTX
+5070 sd host, FLUX.1-schnell (Q4_K_S diffusion, <code>t5-v1_1-xxl-encoder-Q3_K_S</code>, 4 steps, 720×1280,
+<code>cfgScale 1.0</code>, <code>distilledGuidance 3.5</code>, <code>flowShift 3.0</code>), a single <code>sd.txt2img</code> generation via
+<code>/api/sd/generate-ex</code> with no other GPU consumer running:</p>
+<ul>
+<li><strong>~16-20s</strong> is normal (confirmed repeatedly: 15.9s, 16.0s, 17.8s, 19.5s across separate runs).</li>
+<li>Isolated back-to-back calls on the same loaded context have shown a real but mild ~2x variance
+  (44s → 88s) that's still GPU-bound the whole time (100% utilization, no CPU-offload signature).</li>
+<li>Anything in the hundreds of seconds (as seen in some <code>image-motion-storyboard-short</code> history
+  entries: 400-560s) is the anomaly under investigation, not expected behavior — see the shorts
+  pipeline scene-timing variance thread; root cause not yet confirmed (Ollama VRAM contention,
+  fixed <code>sd-wrapper.cpp</code> compute-graph reuse, and idle VRAM margin were all tested and ruled out
+  as the sole cause under controlled conditions).</li>
+<li><strong>2026-07-07 update:</strong> re-ran <code>workflow=regenerate-scene</code> (one Flux scene regen + stitch +
+  caption + TTS + encode against the same host) after a round of server-sd native fixes made the
+  same day — <code>te=cpu</code> text-encoder-offload was dead code before this and is now actually wired,
+  and a VAE-tiling override bug (an env-only block that could silently force tiling with a
+  hardcoded <code>rel_size</code> regardless of Kotlin config) was fixed. Result: <strong>89s total</strong> for the whole
+  16-node run, not 400-560s — the anomaly did not reproduce. Not a confirmed root-cause fix (only
+  one re-test, and the fixes targeted different specific bugs, mostly on the Wan video path), but
+  a strong signal worth noting before assuming this is still an open problem.</li>
+<li><strong>2026-07-07 Modal L4 480p baseline:</strong> full 3-scene <code>workflow=storyboard</code> (Ollama + 3 Flux
+  calls at 480x848 + Ken Burns + stitch + caption + TTS + encode, 25 nodes) against the Modal
+  <code>serve_image</code> (L4) deployment instead of the Windows host: <strong>99s total, zero errors.</strong> Fixed a
+  real blocker along the way — <code>ImageMotionScene.kt</code>'s hardcoded <code>FLUX_T5XXL</code> path
+  (<code>t5-v1_1-xxl-encoder-Q3_K_S.gguf</code>) doesn't exist on the Modal volume or in server-sd's model
+  catalog; switched to <code>t5xxl_Q5_K_M.gguf</code>, which does. Output verified visually (real food
+  photography, correctly-timed burned-in captions, correct 480x848 dimensions). <code>width</code>/<code>height</code>
+  are now optional params on <code>imageMotionSceneSubgraph(Dynamic)</code>/<code>imageMotionStoryboardShortWorkflow</code>
+  (default to <code>ShortsConstants.WIDTH/HEIGHT</code>) instead of being hardcoded, and the CLI runner
+  accepts <code>width=</code>/<code>height=</code> args, so a Modal/low-res test run no longer requires touching the
+  shared constants other consumers rely on.</li>
+<li><strong>2026-07-07 character-sheet reference-image consistency, first real test:</strong> added
+  <code>characterSheetSubgraphDynamic</code> (<code>plugins/shorts/.../CharacterSheetScene.kt</code>) — one Flux
+  portrait of the storyboard's <code>character</code> field, generated once before the scene loop — and a new
+  <code>useCharacterSheet</code> param on <code>imageMotionSceneSubgraphDynamic</code> that swaps each scene's diffusion
+  checkpoint to FLUX Kontext, adds an <code>sd.id_cond</code> node wired to the character sheet's image
+  (auto-wrapped into a one-element list by <code>buildInputMap</code>'s existing list-port collection logic —
+  no wrapper node needed, verified by reading <code>WorkflowExecutionScheduling.kt</code> directly), and bumps
+  sampling from 4 to 20 steps (matching <code>DemoFluxKontextImg2ImgDef.kt</code>'s validated config). Full
+  pipeline with this enabled, against Modal L4 at 480x848: <strong>183s total, all 26 nodes succeeded.</strong>
+  Visually verified across all 3 scene clips: same dark hair, same face shape, same skin tone, same
+  general styling in every scene — a real, positive result, not just "no errors." This was
+  genuinely untested before (Kontext's only prior validated use was editing one specific photo, not
+  conditioning multiple different scene compositions off a reusable reference) — it works
+  noticeably better than the text-only baseline. Off by default (<code>useCharacterSheet = false</code>) since
+  it costs meaningfully more time per scene; opt in via <code>character_sheet=true</code> on the CLI runner.</li>
+<li><strong>2026-07-07 multi-reference (3 poses/expressions) + full 720x1280 resolution:</strong> generalized
+  <code>characterSheetSubgraphDynamic</code> to take a <code>poseInstruction</code>/<code>expressionDetail</code> (see
+  <code>CharacterSheetPoses</code>: NEUTRAL/SMILING/ACTION) and call it 3x as separate outer nodes, all wired
+  into every scene's <code>ref_images</code> list port (multiple connections to one list-typed port collect
+  automatically — confirmed no wrapper/adapter node needed). A single grid image with multiple
+  poses was considered and rejected: Kontext conditions on one reference as a whole and can't be
+  told "use only this panel," so a composite would likely confuse it rather than help — separate
+  images into the same list port is the supported shape. Full pipeline, 3 references, full
+  720x1280 (not the 480p test tier) against Modal L4: <strong>398s total, all 28 nodes succeeded.</strong>
+  Visual result was, if anything, more convincing than the single-reference test — same
+  hair-in-a-bun styling, same face shape, same warm cinematic look recognizable across all 3
+  scenes. Still comfortably a single test iteration (under 7 minutes), not the original 20+.</li>
+</ul>
+<h3 id="known-issues-open-as-of-this-writing">Known issues (open as of this writing)</h3>
+<ul>
+<li>
+<p><strong>Qwen-Image-Edit-2511 is disabled/skipped for now</strong> (<code>DemoQwenImg2ImgDef.kt</code> carries a
+  <code>TODO(qwen-edit-crash)</code>) — generation fails fast (~8s) with a <code>502 Bad Gateway</code>. Root-caused via
+  <code>docker logs</code> on the sd host (<code>exec</code> hangs over the remote TCP connection, <code>logs</code> doesn't — see
+  below): a native SIGSEGV inside stable-diffusion.cpp's <code>ggml_graph_cut</code> memory planner, while
+  <code>LLM::LLMRunner::encode_image</code> (the Qwen2.5-VL vision encoder) processes the <code>sd.id_cond</code>
+  reference image (<code>conditioner.hpp:1715 - QwenImageEditPlusPipeline</code>). Qwen-Image-Edit-2511's own
+  components (diffusion + Qwen2.5-VL-7B-Instruct encoder + mmproj + LoRA) already exceed this
+  12GB card's VRAM before any reference image is involved, forcing graph-cut to engage just to
+  load — and that specific segment-measurement code path crashes. FLUX Kontext succeeds on the
+  identical <code>sd.id_cond</code> code path because its full footprint fits without graph-cut engaging at
+  all. This is vendored, read-only native code (<code>native/stable-diffusion.cpp</code>) — not fixable in
+  Kotlin. Two remediation paths, neither pursued yet: (1) file upstream against
+  <code>leejet/stable-diffusion.cpp</code> with the stack trace, or (2) retry with smaller Qwen
+  diffusion/LLM quants so graph-cut isn't needed at all (same category as the Kontext t5xxl swap
+  above).</p>
+</li>
+<li>
+<p><strong>No engine-level concurrency-limit primitive for GPU-bound node types.</strong> Every shorts workflow
+  that runs multiple <code>sd.*</code> generations against the same GPU-bound server (comparison-short's
+  mascot + 8 photo generations, storyboard's N scenes, etc.) serializes them by manually wiring
+  one node's data <em>output</em> into an unrelated downstream node's <code>gate</code> <em>input</em> purely so the
+  scheduler treats it as a dependency — the <code>gate</code> port doesn't use the value, only the fact that
+  the connection exists. This works, but it means every workflow author has to hand-thread these
+  fake edges through an otherwise-unrelated part of the graph, and it visibly clutters the graph
+  (confirmed: real user feedback on the comparison-short workflow's rendered graph called this out
+  specifically, independent of auto-layout quality). Compare to ComfyUI, which solves the identical
+  single-GPU-serialization problem for free via its own sequential execution model — no manual
+  gate-wiring needed at all. The clean fix is a first-class primitive in <code>WorkflowExecutionEngine</code>
+  (e.g. a node-type or resource-tag-based concurrency cap declared once, not threaded through every
+  workflow's own connections) — that's a <code>core/execution</code> change, not something fixable by
+  rearranging Kotlin workflow-builder code in this repo. Not pursued yet; flagging so it doesn't
+  get silently re-solved with more gate-wiring in the next workflow that needs GPU serialization.</p>
+</li>
+</ul>
+<h2 id="catalog-and-layout">Catalog and Layout</h2>
+<ul>
+<li>Launcher catalogs need explicit badge priority once recency and status both matter.</li>
+<li>Layout or zoom heuristics should preserve a consistent inset so graphs do not start on the border.</li>
+<li>Collapsed subgraph nodes should use a dedicated boundary card/factory instead of borrowing the generic FieldCard; otherwise the UI reads like a fake port list, and any extra section labels must be reflected in the port-anchor math so the canvas dots stay aligned.</li>
+</ul>
+<h2 id="publishing-and-gradle">Publishing and Gradle</h2>
+<ul>
+<li><code>implementation()</code> deps can still leak into the POM in KMP; published modules must be audited.</li>
+<li>The publishing audit should check both directions: listed modules apply the convention, and convention users are listed.</li>
+<li><code>MavenPublishBaseExtension.coordinates()</code> is a setter, not a readable property.</li>
+<li>Retrying a partially published version on Maven Central can conflict with the existing deployment.</li>
+</ul>
+<h2 id="state-and-layout-bugs">State and Layout Bugs</h2>
+<ul>
+<li>Never write from a fallback value that differs from the real initial state.</li>
+<li>Keep viewport and auto-layout limits aligned so manual zoom and layout behavior feel consistent.</li>
+</ul>
+<h2 id="extracting-the-shorts-pipeline-into-a-published-plugin-step-02">Extracting the shorts pipeline into a published plugin (step 0.2)</h2>
+<ul>
+<li>The reusable storyboard/scene builders had to become a <strong>multiplatform</strong> module, not JVM-only:
+  <code>WorkflowCatalog</code> is a <code>commonMain</code> enum whose entries (<code>ImageMotionShort</code>) call
+  <code>imageMotionSceneSubgraph</code>/<code>stitchBatchSubgraph</code>, so those builders must resolve on every app
+  target. Only <code>unloadOllamaModel()</code> is platform-specific — it's an <code>expect suspend fun</code> with real
+  <code>java.net</code> actuals on jvm/android and no-op actuals on js/wasm/ios (those never drive Ollama).</li>
+<li><code>graphyn-maven-publish</code>'s <code>verifyPublishing</code> auto-discovers published modules and asserts each
+  appears in three files: <code>scripts/verify-maven-central.sh</code>, <code>.github/workflows/publish.yml</code>
+  (matched by the <code>:path</code> minus leading colon), and <code>scripts/publish-local.sh</code>. There is no
+  <code>publishedModulePaths</code> set in <code>build.gradle.kts</code> to edit despite the CLAUDE.md wording — the task
+  enumerates <code>subprojects</code> with the vanniktech plugin applied.</li>
+<li>Kept the desktop <code>app/demo/bootstrap</code> wiring thin via an app-side <code>ShortsBridge.kt</code> that re-aliases
+  the moved public symbols under their old <code>internal</code> bootstrap names, so unrelated bootstrap files
+  (video/image shorts, captioning) compiled unchanged. The app deliberately keeps its <strong>own</strong>
+  <code>stitchBatchSubgraph</code> (with canvas <code>nodePositions</code>) in <code>DemoShortsScenes.kt</code>; the module's copy
+  omits positions since positions are an editor-layout concern, not execution data.</li>
+<li>The <code>*RunTest</code> integration tests (<code>ImageMotionStoryboardShortRunTest</code>, <code>SdTemplateApiRunTest</code>,
+  <code>MediaWorkflowExecutionTest</code>) execute against a live server-sd/Ollama/FFmpeg deployment and fail
+  with "got null" output in any environment without it — not a regression signal. <code>sd.id_cond</code>
+  unregistered in <code>DemoSceneWorkflowTest</code> is a separate pre-existing failure on <code>main</code>.</li>
+<li>The standalone <code>ollama.generate</code> node (Studio's <code>studio.generate-script</code> shape) is intentionally
+  <strong>additive</strong> — it does the bare LLM call in one executor (<code>OllamaGenerate.kt</code>) and shares the
+  storyboard subgraph's defaults (host <code>http://localhost:11434</code>, model <code>llama3.1</code>, <code>stream:false</code>,
+  <code>keep_alive:0</code>) but does NOT reuse <code>storyboardGeneratorSubgraph</code>, which stays byte-for-byte
+  unchanged so the verified <code>image-motion-storyboard-short</code> pipeline is untouched. The HTTP call is
+  an injectable <code>transport: suspend (url, body) -&gt; String</code> param on <code>ollamaGenerateExecutor(...)</code>,
+  defaulting to the platform <code>expect suspend fun ollamaHttpPost</code> — this makes the response-parse and
+  URL/body logic fully <code>commonTest</code>-able with a fake, no live server. js/wasm/ios actuals throw
+  (not no-op like <code>unloadOllamaModel</code>) since the function must return a String; the executor catches
+  it and degrades to <code>ok = false</code>. Needed <code>implementation(libs.serialization.json)</code> in shorts'
+  commonMain (it was pulling JSON via <code>json.*</code> engine nodes before, so serialization wasn't a dep) —
+  <code>implementation</code>, not <code>api</code>, so no POM leak / <code>verifyPublishing</code> failure.</li>
+<li>Converted the SD server URL/API key from an app-wide <code>GraphynSettings</code> value into a graph-level
+  <code>sd.server</code> config node (multi-server support, e.g. Modal deployments) without touching the
+  <code>StableDiffusionBackend</code> interface: the override rides along as a plain nullable field
+  (<code>SdServerConfig</code>) on <code>SdGenerateImageRequest</code>/<code>SdGenerateVideoRequest</code>, and <code>ServerSdClient</code>
+  merges it over the settings-resolved <code>SdConnection</code> only for that one call. Every other
+  <code>ServerSdClient</code> method (<code>ping</code>/<code>status</code>/<code>jobs</code>/<code>cancel</code>/<code>unload</code>/<code>load</code>) keeps its old app-wide
+  behavior via a nullable <code>conn: SdConnection? = null</code> param resolved lazily inside the function
+  body — Kotlin rejects a suspend call as a default-parameter <em>value</em> (<code>conn: SdConnection =
+  connection()</code> fails to compile with "Suspend function call in default parameter value is
+  unsupported"), so the resolution has to happen in the body, not the signature. Also had to thread
+  the override into <code>ensureReady()</code>/<code>ready()</code> explicitly; they call <code>ping</code>/<code>status</code>/<code>jobs</code>
+  internally, so without passing the resolved <code>conn</code> through, readiness would silently check the
+  wrong server while generation hit the right one.</li>
+<li>Auto-layout "nodes pile up on the canvas edge" had three compounding causes, none in the layering
+  itself: <code>GraphynNodeLayoutState.clamp()</code> clamped every node with a fixed 280×180
+  <code>GraphynCanvasMetrics.NodeSize</code> (so all overflowing nodes collapsed onto the <em>same</em> max-edge
+  coordinate), <code>GraphynAutoLayout</code> centered its bounding box on the 8192×6144 logical canvas without
+  checking the box actually fit, and annotation placement (<code>graphMinX - maxAnnW - gap</code>) went
+  negative and got clamp-collapsed to 0. Rule: any coordinate producer that feeds
+  <code>setNodePosition</code> must stay within canvas bounds itself — the clamp is a last resort that
+  destroys relative layout, not a fitting mechanism. Fix pattern: per-node size resolution lives in
+  one shared <code>GraphynEditorState.resolveNodeSize(type)</code> extension (registry → spec-derived
+  FieldCard → default), injected into <code>GraphynNodeLayoutState</code> as a <code>(String) -&gt; IntSize</code> lambda.</li>
+<li>Tree-band vertical placement (bandH = sum of children, first parent claims child's bandStart)
+  double-books space for diamond dependencies — a shared child belongs to <em>every</em> parent's band.
+  Replaced with per-column barycenter placement: y = average of placed parents' centers, floored by
+  a per-column <code>nextFreeY</code> cursor. Simpler (fewer lines) and overlap-free by construction.</li>
+<li>Writing a test that shows BFS layout <em>crossing</em> edges is subtle: with single-parent children, BFS
+  visit order naturally mirrors parent order, so edges don't cross. A crossing needs a multi-parent
+  child whose enqueue is delayed until its last parent is visited (e.g. edges <code>b→d, a→c, b→c</code>: <code>c</code>
+  waits for both <code>a</code> and <code>b</code>, so <code>d</code> enqueues first and <code>a→c</code> must cross <code>b→d</code>).</li>
+<li>Kotlin gotcha: adding a new parameter <em>after</em> a trailing-lambda parameter silently breaks every
+  <code>f(x, y) { ... }</code> call site (the lambda binds to the new last param). Keep the lambda param last
+  when extending a signature.</li>
+<li><strong>2026-07-07 regenerate-scene edit mode fails on Modal, works on Windows — Modal-specific,
+  not a code bug:</strong> <code>workflow=regenerate-scene index=N edit=true instruction='...'</code> (the new
+  <code>imageMotionSceneEditSubgraph</code> Kontext+<code>sd.id_cond</code> path) reproducibly failed against Modal
+  L4 with <code>server-sd responded 303:</code> (empty body) on the actual <code>/api/sd/generate-ex</code> call,
+  after running the full ~160s generation — twice, including an immediate retry on the likely
+  same warm container (<code>max_containers=1</code>). Ruled out: a bug in the new subgraph (compared
+  line-by-line against the proven <code>useCharacterSheet</code> Kontext path, no meaningful difference);
+  server-sd's own Ktor routes (grepped for redirect logic — only a 302 for video/Cloudinary,
+  unrelated); Modal function timeout config (<code>timeout=600</code>, <code>startup_timeout=300</code>, both
+  generous for a 160s call). <code>modal app logs graphyn-sd</code> didn't surface a clear HTTP
+  request/response line to pin down further. <strong>Re-ran the identical command against the
+  Windows host (<code>default</code> environment) — succeeded cleanly: 258s, all 16 nodes, valid
+  720x1280 h264 + aac output.</strong> This isolates the failure to something Modal-specific (its
+  <code>web_server</code> proxy layer, most likely) rather than the new edit-mode code. Root cause still
+  unresolved — using Windows for regenerate-scene edit mode until it is. Also surfaced:
+  <code>regenerate-scene</code> doesn't thread <code>width=</code>/<code>height=</code> through at all (unlike <code>storyboard</code>),
+  so an edited scene can come out at a different resolution than the rest of the short if the
+  original run used non-default dimensions — didn't cause a hard failure in this test, but is
+  a real gap worth fixing.</li>
+<li>Subgraph connection endpoints were misaligned from their port dots because
+  <code>GraphynConnectionLayer</code>/<code>GraphynConnectionMidpoints</code> resolved specs via <code>nodeSpecs.resolve(type)</code>
+  only — null for editor-created subgraph nodes (no registered spec) — falling back to the generic
+  <code>GraphynCanvasMetrics.portAnchorY</code> <em>and</em> coercing every port index to 0, while the dots in
+  <code>GraphynNodeLayer</code> used the boundary-derived spec + <code>SubgraphNodeCardFactory</code>. Rule: every
+  consumer of port geometry must go through one shared resolver
+  (<code>resolveRenderSpec</code>/<code>resolvePortAnchor</code> in <code>GraphynPortAnchorResolver.kt</code>) — duplicated
+  spec-resolution chains <em>will</em> drift.</li>
+<li><code>EnumType</code> and <code>MultiEnumType</code> silently shared a port color, and color is load-bearing
+  (<code>PortCompatibility</code> uses <code>portColor</code> as a semantic channel id for opaque ports).
+  <code>GraphynPortTypeColorTest</code> now asserts one-color-per-type; extend its <code>baseTypes</code> list when
+  adding a <code>WorkflowType</code> variant or the test won't guard it.</li>
+<li><code>deriveSubgraphSpec</code> now filters boundary inputs to <code>required</code> ones — display contract only;
+  <code>subgraphBoundary</code> (execution injection, expand rewiring) stays unfiltered. Known limitation:
+  an outer connection into an <em>optional</em> boundary input (possible when collapsing a selection
+  whose crossing edge fed an optional port) references a hidden port and anchors at row 0.</li>
+<li>Collapsed subgraph nodes had a second, bespoke card (<code>SubgraphNodeCard</code>) with its own
+  HEADER/ROW/DIVIDER/WIDTH constants, separate from <code>FieldCardFactory</code>'s. Both computed
+  <code>portAnchorY</code> correctly for their own geometry, so it wasn't a bug, just permanent drift risk —
+  and it meant subgraph nodes looked structurally different (width, header height) from every
+  other card. Deleted it; subgraph nodes now render via the same <code>FieldCardFactory</code> as any other
+  node, sized from the derived boundary spec. The one thing the bespoke card had that <code>FieldCard</code>
+  didn't — double-click-to-enter — became a <strong>generic</strong> <code>FieldCard</code> behavior gated on
+  <code>ctx.onEnterSubgraph != null</code> (already null for every non-subgraph node), so it needed no
+  subgraph-specific branching in a general-purpose, published card (<code>graphyn-ui-cards</code>).</li>
+<li><code>deriveSubgraphSpec</code>'s required-only filter (previous entry) had a gap: an outer connection into
+  an <em>optional</em> boundary input becomes invisible on the card, so the wire has nothing to land on.
+  Fixed by adding <code>connectedInputs: Set&lt;String&gt;</code> — a port is shown when <code>required || connected</code>.
+  Threading this through required passing the <em>outer</em> workflow (not just the node) into every
+  consumer of <code>deriveSubgraphSpec</code>/<code>resolveNodeFactory</code>/<code>resolvePortAnchor</code>
+  (<code>GraphynNodeLayer</code>, <code>GraphynConnectionLayer</code>, <code>GraphynConnectionMidpoints</code>,
+  <code>GraphynCanvasGestures</code>, <code>GraphynMinimapDebugger</code>, <code>GraphynEditorViewportActions</code>,
+  <code>GraphynInspectorPanel</code>) — a reminder that a "just add a parameter" fix to a shared resolver
+  fans out to every call site, not just the one you're looking at.</li>
+<li>The first pass at the "↳ Enter" subgraph hint used an <code>Alignment.BottomEnd</code>-aligned <code>Box</code>
+  overlaid on the card — it painted directly on top of the last port row's text whenever the card
+  had no output rows to absorb it (screenshot caught it immediately). Floating UI over
+  content-that-can-vary-in-height is a trap; the fix reserves real space instead: <code>FieldCardFactory</code>
+  gained a <code>hasEnterHint: Boolean</code> constructor param that adds <code>ENTER_HINT_DP</code> to <code>nodeHeight</code>, and
+  the hint renders as a genuine trailing <code>Column</code> child, not an overlay. Port anchors are
+  unaffected since the row is appended <em>after</em> the last output — <code>portAnchorY</code> never reads
+  <code>nodeHeight</code>. Rule: always render a Roborazzi screenshot for a new visual element before calling
+  it done — an overlap like this is invisible in a text-only diff review.</li>
+<li>Qwen3 TTS voice drift showed up when narration used a blank <code>voice</code> and let the model fall back
+  to its default expressive speaker. The fix was to pin a named Qwen3 CustomVoice speaker
+  (<code>Ryan</code>) for the default narration path and keep OuteTTS as the explicit alternate engine.
+  Rule: if narration must stay consistent across many clips, do not rely on the model's implicit
+  default voice; pick a speaker or clone a reference voice on purpose.</li>
+<li>For result metadata on comparison shorts, use <code>kotlin.time.Clock.System.now()</code> in a tiny compiled
+  node instead of a scripted timestamp or a new datetime dependency. The first pass reached for the
+  wrong <code>kotlinx.datetime.Clock</code> API, which does not expose <code>System</code> in this codebase's dependency
+  mix. Rule: match the repo's existing clock API before adding a timestamp helper, and keep the
+  timestamp in a wrapper node so the validated comparison payload stays unchanged.</li>
+<li>Canvas port colors should not be the same thing as semantic <code>PortSpec.portColor</code> overrides. A
+  type-only fallback makes same-type workflow values look duplicated across the canvas, even when
+  the model is correct. Rule: keep explicit port colors for compatibility channels, but derive the
+  visual dot color from the node instance when a port does not opt into a fixed semantic color.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.instant", "navigation.sections", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

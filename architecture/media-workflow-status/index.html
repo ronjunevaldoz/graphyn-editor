@@ -1,0 +1,2356 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Kotlin Multiplatform workflow editor library">
+      
+      
+      
+        <link rel="canonical" href="https://ronjunevaldoz.github.io/graphyn-editor/architecture/media-workflow-status/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Media Workflow Status - Graphyn</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#media-workflow-status" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Graphyn" class="md-header__button md-logo" aria-label="Graphyn" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Graphyn
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Media Workflow Status
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ronjunevaldoz/graphyn-editor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    graphyn-editor
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="/graphyn-editor/app/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Live Demo
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="/graphyn-editor/api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/quickstart/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/running-locally/" class="md-tabs__link">
+          
+  
+  
+  Integration Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/plugin-authoring/" class="md-tabs__link">
+          
+  
+  
+  Extending
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/type-system/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/analytics-hooks/" class="md-tabs__link">
+          
+  
+  
+  Production
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../test-coverage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Testing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Graphyn" class="md-nav__button md-logo" aria-label="Graphyn" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Graphyn
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ronjunevaldoz/graphyn-editor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    graphyn-editor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="/graphyn-editor/app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="/graphyn-editor/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Integration Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/running-locally/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Locally
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/persistence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/read-only-mode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read-only Mode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/remote-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding-android/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding on Android
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/embedding-web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Embedding on Web
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/server-embedding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Server Embedding
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/mcp-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extending
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Extending
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/plugin-authoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Authoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/custom-cards/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Cards
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/theming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/plugin-versioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin Versioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/type-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Type System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/keyboard-shortcuts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Keyboard Shortcuts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/serialization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serialization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../editor-panels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Editor Panels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../node-design-research/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Node Design Research
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lessons Learned
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Production
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/analytics-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Analytics Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../test-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#current-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node Status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#template-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Template Coverage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#editor-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Editor Behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-gaps-missing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known Gaps / Missing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-bugs-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known Bugs / Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conflicts-gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conflicts &amp; Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dos-and-donts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do's and Don'ts
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="media-workflow-status">Media Workflow Status</h1>
+<p>Canonical status and verification snapshot for the media workflow suite.</p>
+<p>This page covers the demo workflows that ship with Graphyn and the node types they depend on:</p>
+<ul>
+<li><code>io.resolve_path</code></li>
+<li><code>io.file_read</code></li>
+<li><code>media.video_import</code></li>
+<li><code>media.audio_extract</code></li>
+<li><code>media.audios_list</code></li>
+<li><code>media.audio_mix</code></li>
+<li><code>media.videos_list</code></li>
+<li><code>media.video_stitch</code></li>
+<li><code>media.video_encode</code></li>
+<li><code>media.text_to_speech</code></li>
+<li><code>media.caption_style</code></li>
+<li><code>media.file_output</code></li>
+<li><code>preview.view</code> (generic value preview, used to surface audio handles)</li>
+<li><code>graphyn.sticky_note</code> (on-canvas guide annotation embedded in each template)</li>
+</ul>
+<p>Phase 2 (captioning &amp; composition) adds:</p>
+<ul>
+<li><code>media.image_import</code> (loads an image handle + dimensions; produces the handle OCR consumes)</li>
+<li><code>media.caption_overlay</code> (burns timed captions into a video)</li>
+<li><code>media.video_compose</code> (layers overlay clips over a base video)</li>
+<li><code>media.timing_controller</code> (averages sync points into delays)</li>
+<li><code>media.speech_to_text</code> (audio → text + timed caption segments)</li>
+<li><code>media.ocr</code> (image → text + bounding blocks)</li>
+<li><code>media.video_overlay</code> + <code>media.overlays_list</code> (build the overlay list <code>video_compose</code> needs)</li>
+<li><code>media.sync_point</code> + <code>media.sync_points_list</code> (build the sync-point list <code>timing_controller</code> needs)</li>
+<li><code>media.audio_encode</code> (saves an audio handle to WAV/MP3/AAC so audio templates can output a file)</li>
+</ul>
+<p>Phase 3 (image ops) adds:</p>
+<ul>
+<li><code>media.image_resize</code> + <code>media.image_crop</code> (scale / trim an image)</li>
+<li><code>media.images_list</code> + <code>media.image_sequence_to_video</code> (render images into an MP4 slideshow)</li>
+</ul>
+<h2 id="current-status">Current Status</h2>
+<p>Phase 1 media workflows are implemented for JVM/Desktop and are covered by both template
+contract tests and workflow execution tests.</p>
+<p>Phase 2 nodes are implemented for JVM/Desktop and covered by plugin unit tests (with fakes) plus
+availability-guarded FFmpeg backend tests. Every Phase 2 capability now ships in a template — four flows:
+<strong>Captioned Video</strong> (<code>speech_to_text → caption_overlay</code> + <code>caption_style</code>), <strong>Document Text Extract</strong>
+(<code>image_import → ocr</code>), <strong>Picture-in-Picture</strong> (<code>video_overlay → overlays_list → video_compose</code>),
+and <strong>Sync Calibration</strong> (<code>sync_point → sync_points_list → timing_controller</code>). The builder +
+collector nodes assemble the record lists <code>video_compose</code> and <code>timing_controller</code> consume.</p>
+<h2 id="node-status">Node Status</h2>
+<table>
+<thead>
+<tr>
+<th>Node</th>
+<th>Area</th>
+<th>Implementation</th>
+<th>Direct unit test</th>
+<th>Template wiring test</th>
+<th>Workflow execution test</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>io.resolve_path</code></td>
+<td>shared IO helper</td>
+<td>implemented</td>
+<td>yes (<code>IoPluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Resolves demo resource paths before file reads</td>
+</tr>
+<tr>
+<td><code>io.file_read</code></td>
+<td>shared IO helper</td>
+<td>implemented</td>
+<td>yes (<code>IoPluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Reads the text fixtures used by the demo templates</td>
+</tr>
+<tr>
+<td><code>media.video_import</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>FFprobe-backed video metadata import</td>
+</tr>
+<tr>
+<td><code>media.audio_extract</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Extracts the first audio stream to WAV</td>
+</tr>
+<tr>
+<td><code>media.audios_list</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Collector helper used before <code>media.audio_mix</code></td>
+</tr>
+<tr>
+<td><code>media.audio_mix</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>FFmpeg-backed mix with optional volumes</td>
+</tr>
+<tr>
+<td><code>media.videos_list</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Collector helper used before <code>media.video_stitch</code></td>
+</tr>
+<tr>
+<td><code>media.video_stitch</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Cut-only concat flow in Phase 1</td>
+</tr>
+<tr>
+<td><code>media.video_encode</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>MP4 render with destination <code>output_path</code> input</td>
+</tr>
+<tr>
+<td><code>media.audio_encode</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (TTS, Audio Mix)</td>
+<td>yes</td>
+<td>Saves audio to WAV/MP3/AAC; lets audio templates terminate in <code>media.file_output</code></td>
+</tr>
+<tr>
+<td><code>media.text_to_speech</code></td>
+<td><code>media-ai</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaAiPluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Cache key includes text, language, voice, and speed</td>
+</tr>
+<tr>
+<td><code>media.caption_style</code></td>
+<td><code>media-ai</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaAiPluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Metadata-only node for Phase 2 caption overlays</td>
+</tr>
+<tr>
+<td><code>media.file_output</code></td>
+<td>preview</td>
+<td>implemented</td>
+<td>no dedicated direct unit test yet</td>
+<td>yes</td>
+<td>yes</td>
+<td>Pass-through file preview; only video-encode terminals expose a <code>file_path</code></td>
+</tr>
+<tr>
+<td><code>preview.view</code></td>
+<td>preview</td>
+<td>implemented</td>
+<td>yes (<code>PreviewPluginTest</code>)</td>
+<td>yes</td>
+<td>yes</td>
+<td>Generic opaque preview; used to surface TTS/mix audio handles</td>
+</tr>
+<tr>
+<td><code>graphyn.sticky_note</code></td>
+<td>sticky-notes</td>
+<td>implemented</td>
+<td>n/a (annotation)</td>
+<td>yes</td>
+<td>yes</td>
+<td>No-op executor so an embedded guide note never fails execution</td>
+</tr>
+<tr>
+<td><code>media.image_import</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Document Text Extract)</td>
+<td>yes</td>
+<td>FFprobe-backed image handle + dimensions; produces the image handle <code>media.ocr</code> consumes</td>
+</tr>
+<tr>
+<td><code>media.caption_overlay</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>, <code>FfmpegMediaCoreBackendTest</code>)</td>
+<td>yes (Captioned Video)</td>
+<td>yes</td>
+<td>Burns captions via the <code>ass</code> filter; <strong>requires FFmpeg built with libass</strong></td>
+</tr>
+<tr>
+<td><code>media.video_compose</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>, <code>FfmpegMediaCoreBackendTest</code>)</td>
+<td>yes (Picture-in-Picture)</td>
+<td>yes</td>
+<td>Overlay-filter chain with per-overlay timing + opacity</td>
+</tr>
+<tr>
+<td><code>media.timing_controller</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Sync Calibration)</td>
+<td>yes</td>
+<td>Pure compute; averages <code>(source_ms,target_ms)</code> sync points into delays</td>
+</tr>
+<tr>
+<td><code>media.video_overlay</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Picture-in-Picture)</td>
+<td>yes</td>
+<td>Builds one overlay record for <code>video_compose</code></td>
+</tr>
+<tr>
+<td><code>media.overlays_list</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Picture-in-Picture)</td>
+<td>yes</td>
+<td>Collects overlay records into the compose list</td>
+</tr>
+<tr>
+<td><code>media.sync_point</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Sync Calibration)</td>
+<td>yes</td>
+<td>Builds one <code>(source_ms,target_ms)</code> record</td>
+</tr>
+<tr>
+<td><code>media.sync_points_list</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Sync Calibration)</td>
+<td>yes</td>
+<td>Collects sync-point records into the timing list</td>
+</tr>
+<tr>
+<td><code>media.speech_to_text</code></td>
+<td><code>media-ai</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaAiPluginTest</code>)</td>
+<td>yes (Captioned Video)</td>
+<td>yes</td>
+<td>CLI adapter <code>GRAPHYN_STT_EXECUTABLE</code>; emits caption segments</td>
+</tr>
+<tr>
+<td><code>media.ocr</code></td>
+<td><code>media-ai</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaAiPluginTest</code>)</td>
+<td>yes (Document Text Extract)</td>
+<td>yes</td>
+<td>CLI adapter <code>GRAPHYN_OCR_EXECUTABLE</code>; pairs with <code>media.image_import</code></td>
+</tr>
+<tr>
+<td><code>media.image_resize</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Image Edit)</td>
+<td>yes</td>
+<td>FFmpeg <code>scale</code>; outputs a resized image handle</td>
+</tr>
+<tr>
+<td><code>media.image_crop</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Image Edit)</td>
+<td>yes</td>
+<td>FFmpeg <code>crop</code>; trims to an x/y/w/h region</td>
+</tr>
+<tr>
+<td><code>media.images_list</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Slideshow)</td>
+<td>yes</td>
+<td>Collects image handles for the sequence encoder</td>
+</tr>
+<tr>
+<td><code>media.image_sequence_to_video</code></td>
+<td><code>media-core</code></td>
+<td>implemented</td>
+<td>yes (<code>MediaCorePluginTest</code>)</td>
+<td>yes (Slideshow)</td>
+<td>yes</td>
+<td>Concat-demuxer slideshow at a fixed fps</td>
+</tr>
+</tbody>
+</table>
+<h2 id="template-coverage">Template Coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Template</th>
+<th>Status</th>
+<th>Covered by</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simple Text to Speech</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Path resolution, file read, TTS → <code>audio_encode</code> (WAV) → <code>media.file_output</code></td>
+</tr>
+<tr>
+<td>Video Narration</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Import, audio extraction, narration, mixing, encoding. Output preview via <code>media.file_output</code></td>
+</tr>
+<tr>
+<td>Audio Mix</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Video → extract + TTS → mix → <code>audio_encode</code> (MP3) → <code>media.file_output</code>; caption-style metadata</td>
+</tr>
+<tr>
+<td>Smart Video Encode</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Script-driven bitrate selection before encode. Output preview via <code>media.file_output</code></td>
+</tr>
+<tr>
+<td>Video Stitch</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Clip ordering, stitching, encode. Output preview via <code>media.file_output</code></td>
+</tr>
+<tr>
+<td>Captioned Video</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Phase 2: transcribe → style → burn-in captions → encode. Output via <code>media.file_output</code></td>
+</tr>
+<tr>
+<td>Document Text Extract</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Phase 2: import image → OCR → preview text. Needs <code>GRAPHYN_OCR_EXECUTABLE</code> to run</td>
+</tr>
+<tr>
+<td>Picture-in-Picture</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Phase 2: build overlay → compose over base → encode. Needs FFmpeg <code>overlay</code> filter</td>
+</tr>
+<tr>
+<td>Sync Calibration</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Phase 2: build sync points → average into delays → preview config. Pure compute</td>
+</tr>
+<tr>
+<td>Image Edit</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Phase 3: import → resize → crop → preview</td>
+</tr>
+<tr>
+<td>Slideshow</td>
+<td>ready</td>
+<td><code>MediaWorkflowTemplateTest</code>, <code>MediaWorkflowExecutionTest</code></td>
+<td>Phase 3: import images → images_list → sequence → encode → output</td>
+</tr>
+</tbody>
+</table>
+<p>The launcher groups templates by <code>WorkflowCategory</code> (Media / Data &amp; IO / Examples); media templates
+are the Media section. Every template also carries a <code>graphyn.sticky_note</code> guide node (title, flow, use-cases, tips) and
+ends in an output-preview node. Templates ship without positions; the editor runs auto-layout on
+first load (see Editor Behavior).</p>
+<h2 id="editor-behavior">Editor Behavior</h2>
+<ul>
+<li><strong>Auto-layout on load.</strong> Demo templates have no stored node positions, so the editor dispatches
+  <code>AutoLayout</code> once the canvas is measured (<code>GraphynApp</code>), guarded so a saved/edited layout is never
+  clobbered. Triggered for all scenes, not just one.</li>
+<li><strong>Annotation parking.</strong> <code>performAutoLayout</code> lays out the dataflow DAG, then parks annotation
+  nodes (sticky guides) in a column to the left of the graph so they read as a legend. Annotation
+  positions/sizes are included in the layout result so the viewport fit frames them too.</li>
+<li><strong>Default card.</strong> Nodes without a registered <code>NodeCanvasFactory</code> (e.g. <code>io.resolve_path</code>) render
+  through a default <code>FieldCardFactory</code> sized from their spec — there is no separate fallback card.</li>
+<li><strong>Output preview rule.</strong> <code>media.file_output</code> requires a <code>file_path</code> (String); only
+  <code>media.video_encode</code> terminals expose one. Audio/TTS terminals output an opaque audio handle, so
+  those templates preview with <code>preview.view</code> instead.</li>
+</ul>
+<h2 id="verification-commands">Verification Commands</h2>
+<p>Run the focused media checks:</p>
+<div class="highlight"><pre><span></span><code>./gradlew<span class="w"> </span>:app:demo:jvmTest<span class="w"> </span>--tests<span class="w"> </span>com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowTemplateTest
+./gradlew<span class="w"> </span>:app:demo:jvmTest<span class="w"> </span>--tests<span class="w"> </span>com.ronjunevaldoz.graphyn.bootstrap.MediaWorkflowExecutionTest
+./gradlew<span class="w"> </span>:plugins:media-core:test<span class="w"> </span>:plugins:media-ai:test
+</code></pre></div>
+<p>Run the full demo JVM suite:</p>
+<div class="highlight"><pre><span></span><code>./gradlew<span class="w"> </span>:app:demo:jvmTest
+</code></pre></div>
+<h2 id="known-gaps-missing">Known Gaps / Missing</h2>
+<ul>
+<li><code>media.file_output</code> still lacks a dedicated direct unit test file.</li>
+<li>The workflow-level execution tests use deterministic fakes (no FFmpeg/TTS launch). Real-tool
+  coverage is per-node and availability-guarded: <code>FfmpegMediaCoreBackendTest</code> and the <code>say</code>/tesseract
+  fallback tests. There is no single end-to-end test that runs a whole template against real tools.</li>
+<li>Speech-to-text has no zero-config fallback (no standard CLI), so the captioning template still
+  needs <code>GRAPHYN_STT_EXECUTABLE</code>. TTS (macOS <code>say</code>) and OCR (<code>tesseract</code>) do fall back automatically.</li>
+<li><code>media.video_stitch</code> supports only the <code>cut</code> transition in Phase 1.</li>
+<li><code>media.video_compose</code> overlays are video handles only; image and text overlays are deferred.</li>
+<li><code>media.image_import</code> reads only dimensions (no color space / frame extraction yet).</li>
+<li>Slideshow assumes input frames share dimensions (no auto-scale in <code>image_sequence_to_video</code>).</li>
+<li>Remaining Phase 3 nodes (<code>audio_resample</code>, advanced/custom encoding) are still planned in
+  <code>media-workflow-plan.md</code>.</li>
+</ul>
+<h2 id="known-bugs-constraints">Known Bugs / Constraints</h2>
+<ul>
+<li><strong>System dependencies required for real runs.</strong> <code>media-core</code> shells out to FFmpeg/FFprobe and
+  <code>media-ai</code> to the TTS/STT/OCR binaries (<code>GRAPHYN_TTS_EXECUTABLE</code>, <code>GRAPHYN_STT_EXECUTABLE</code>,
+  <code>GRAPHYN_OCR_EXECUTABLE</code>). If these are absent, real execution fails at the node; the deterministic
+  tests still pass because they fake the executors/engines.</li>
+<li><strong><code>media.caption_overlay</code> needs FFmpeg built with libass.</strong> It burns subtitles via the <code>ass</code>
+  filter. On a stripped FFmpeg the executor fails fast with a clear message
+  (<code>FfmpegMediaCoreBackend.supportsFilter("ass")</code>), and the backend test skips that leg.</li>
+<li><strong>Working directory sensitivity.</strong> <code>media.video_encode</code>'s <code>output_path</code> and resolved input paths
+  are interpreted relative to the process working directory. The desktop app runs from
+  <code>app/desktopApp/</code>, which is why templates resolve inputs via <code>io.resolve_path</code> against
+  <code>../../app/demo/src/commonMain/resources/media</code>. Generated outputs (<code>*.mp4</code>, <code>*.wav</code>) land in the
+  desktop app dir and are git-ignored.</li>
+<li><strong>Script string escaping.</strong> Kotlin Script (<code>script.eval</code>) code embedded in a triple-quoted
+  workflow definition must escape template variables as <code>$$name</code> so the host compiler does not
+  interpolate them (see <code>ScriptSpec</code> KDoc). JVM-only APIs such as <code>String.format</code> are fine — the
+  script runs on the JVM.</li>
+<li><strong><code>media.*</code> types are JVM-only.</strong> The media plugins live in <code>src/main</code> (JVM). In the KMP
+  <code>commonTest</code> registry they are unregistered, so scene validation ignores <code>unknown_node_type</code> for
+  media scenes and lists media types in <code>jvmOnlyTypes</code>.</li>
+</ul>
+<h2 id="conflicts-gotchas">Conflicts &amp; Gotchas</h2>
+<ul>
+<li>A node in a <code>WorkflowDefinition</code> always needs an executor or execution throws
+  <code>"No executor registered for node type '…'"</code>. Annotation nodes are an editor concept the core
+  engine does not know about, so <code>graphyn.sticky_note</code> registers a <strong>no-op executor</strong> to stay
+  harmless inside an executable template.</li>
+<li><code>media.file_output</code> and <code>preview.view</code> cards: the spec/executor are <code>commonMain</code>, but the JVM
+  <code>media.file_output</code> card (Open button, file metadata) is <code>jvmMain</code>-only.</li>
+<li>Adding nodes to a template breaks the exact-match assertions in <code>MediaWorkflowTemplateTest</code> and
+  the node-count assertions in <code>MediaWorkflowExecutionTest</code> — update both together.</li>
+</ul>
+<h2 id="dos-and-donts">Do's and Don'ts</h2>
+<p><strong>Do</strong>
+- Resolve every file path through <code>io.resolve_path</code> (base dir + relative) instead of hardcoding.
+- Terminate a video template in <code>media.video_encode → media.file_output</code>; terminate an audio/TTS
+  template in <code>preview.view</code>.
+- Give each template one <code>graphyn.sticky_note</code> guide (title, flow, use-cases, tips).
+- Keep templates position-free and rely on auto-layout-on-load.
+- Update <code>MediaWorkflowTemplateTest</code> and <code>MediaWorkflowExecutionTest</code> whenever a template changes.</p>
+<p><strong>Don't</strong>
+- Don't wire an audio handle into <code>media.file_output</code> (it expects a <code>file_path</code> String).
+- Don't hardcode absolute paths or assume the project root as the working directory.
+- Don't add domain-specific nodes to the sample plugins (see <code>CLAUDE.md</code>).
+- Don't bake node positions into a template — let auto-layout place them.
+- Don't commit generated run outputs (<code>app/desktopApp/*.mp4</code> / <code>*.wav</code>); they are git-ignored.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.instant", "navigation.sections", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
