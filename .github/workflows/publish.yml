@@ -35,50 +35,47 @@ jobs:
       - name: Strip tag prefix
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
 
-      - name: Publish core modules
-        run: ./gradlew :core:model:publishAllPublicationsToMavenCentralRepository :core:execution:publishAllPublicationsToMavenCentralRepository :core:serialization:publishAllPublicationsToMavenCentralRepository :core:data:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-ui-design (core/designsystem)
-        run: ./gradlew :core:designsystem:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-ui-common (core/common)
-        run: ./gradlew :core:common:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish plugin-api
-        run: ./gradlew :plugin-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-ai
-        run: ./gradlew :ai:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish editor-api
-        run: ./gradlew :editor-api:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish ui-cards
-        run: ./gradlew :ui:cards:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish first-party plugins
-        run: ./gradlew :plugins:control:publishAllPublicationsToMavenCentralRepository :plugins:list-ops:publishAllPublicationsToMavenCentralRepository :plugins:types:publishAllPublicationsToMavenCentralRepository :plugins:text:publishAllPublicationsToMavenCentralRepository :plugins:io:publishAllPublicationsToMavenCentralRepository :plugins:json:publishAllPublicationsToMavenCentralRepository :plugins:preview:publishAllPublicationsToMavenCentralRepository :plugins:sticky-notes:publishAllPublicationsToMavenCentralRepository :plugins:script:publishAllPublicationsToMavenCentralRepository :plugins:gmail:publishAllPublicationsToMavenCentralRepository :plugins:linkedin:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish media plugins
-        run: ./gradlew :plugins:media-core:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-plugin-media-ai
-        run: ./gradlew :plugins:media-ai:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-plugin-stable-diffusion
-        run: ./gradlew :plugins:stable-diffusion:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-plugin-shorts
-        run: ./gradlew :plugins:shorts:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-runtime
-        run: ./gradlew :runtime:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-editor (app/shared)
-        run: ./gradlew :app:shared:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
-
-      - name: Publish graphyn-ktor-plugin
-        run: ./gradlew :server:publishAllPublicationsToMavenCentralRepository -PVERSION=$VERSION --no-daemon --no-configuration-cache
+      # One Gradle invocation for all 28 publish tasks instead of 17 separate `./gradlew` calls.
+      # Each separate invocation was paying its own cold JVM start + full project-graph
+      # configuration for this whole KMP monorepo before running the one task it was asked for —
+      # that repeated overhead, not the actual signing/upload work, was the bulk of a release's
+      # 15-20 minutes. Gradle resolves task ordering from the real project dependency graph
+      # regardless of the order listed here, so this is equivalent to the old sequence, just
+      # configured once. Every artifact is still published every release (lockstep versioning —
+      # the README's install snippet uses one version.ref for every graphyn-* artifact, so
+      # skipping unchanged modules would 404 on Maven Central for anyone following it).
+      - name: Publish all modules to Maven Central
+        run: |
+          ./gradlew \
+            :core:model:publishAllPublicationsToMavenCentralRepository \
+            :core:execution:publishAllPublicationsToMavenCentralRepository \
+            :core:serialization:publishAllPublicationsToMavenCentralRepository \
+            :core:data:publishAllPublicationsToMavenCentralRepository \
+            :core:designsystem:publishAllPublicationsToMavenCentralRepository \
+            :core:common:publishAllPublicationsToMavenCentralRepository \
+            :plugin-api:publishAllPublicationsToMavenCentralRepository \
+            :ai:publishAllPublicationsToMavenCentralRepository \
+            :editor-api:publishAllPublicationsToMavenCentralRepository \
+            :ui:cards:publishAllPublicationsToMavenCentralRepository \
+            :plugins:control:publishAllPublicationsToMavenCentralRepository \
+            :plugins:list-ops:publishAllPublicationsToMavenCentralRepository \
+            :plugins:types:publishAllPublicationsToMavenCentralRepository \
+            :plugins:text:publishAllPublicationsToMavenCentralRepository \
+            :plugins:io:publishAllPublicationsToMavenCentralRepository \
+            :plugins:json:publishAllPublicationsToMavenCentralRepository \
+            :plugins:preview:publishAllPublicationsToMavenCentralRepository \
+            :plugins:sticky-notes:publishAllPublicationsToMavenCentralRepository \
+            :plugins:script:publishAllPublicationsToMavenCentralRepository \
+            :plugins:gmail:publishAllPublicationsToMavenCentralRepository \
+            :plugins:linkedin:publishAllPublicationsToMavenCentralRepository \
+            :plugins:media-core:publishAllPublicationsToMavenCentralRepository \
+            :plugins:media-ai:publishAllPublicationsToMavenCentralRepository \
+            :plugins:stable-diffusion:publishAllPublicationsToMavenCentralRepository \
+            :plugins:shorts:publishAllPublicationsToMavenCentralRepository \
+            :runtime:publishAllPublicationsToMavenCentralRepository \
+            :app:shared:publishAllPublicationsToMavenCentralRepository \
+            :server:publishAllPublicationsToMavenCentralRepository \
+            -PVERSION=$VERSION --no-daemon --no-configuration-cache
 
       # Postflight: a green publish job must mean the artifacts actually reached
       # repo1.maven.org. Without this, uploads can sit unreleased in the Central
