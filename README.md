@@ -355,10 +355,10 @@ Artifacts are published to Maven Central automatically when a version tag is pus
 ./scripts/publish-local.sh
 
 # Explicit version
-./scripts/publish-local.sh 0.7.4
+./scripts/publish-local.sh 0.9.2
 
 # Single module only (fastest for hotfixes)
-./scripts/publish-local.sh 0.7.4 server
+./scripts/publish-local.sh 0.9.2 server
 ```
 
 See [`.env.example`](.env.example) for all supported environment variables and [`docs/reference/compatibility-matrix.md`](docs/reference/compatibility-matrix.md) for the full artifact list.
